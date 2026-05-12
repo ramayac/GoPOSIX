@@ -26,7 +26,7 @@ func startDaemon(t *testing.T) string {
 	
 	// Start daemon in background
 	go func() {
-		err := daemon.RunDaemon(socketPath, 2)
+		err := daemon.RunDaemon(socketPath, 2, "")
 		if err != nil {
 			t.Logf("daemon exited: %v", err)
 		}

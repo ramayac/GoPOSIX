@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://korego.dev/schemas/kill.schema.json",
+  "title": "KoreGo kill --json output",
+  "description": "Validates the complete JSON output of korego kill --json.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": { "type": "string", "const": "kill" },
+    "version": { "type": "string" },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "exitCode": { "type": "integer" },
+    "data": {"type": "object", "required": ["signaled"], "properties": {"signaled": {"type": "array", "items": {"type": "object", "required": ["pid", "signal", "success"], "properties": {"pid": {"type": "integer"}, "signal": {"type": "string"}, "success": {"type": "boolean"}}}}}},
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -17,7 +17,7 @@ import (
 
 func BenchmarkDaemonEcho(b *testing.B) {
 	socket := filepath.Join(b.TempDir(), "korego-bench.sock")
-	server := daemon.NewServer(socket, 4)
+	server := daemon.NewServer(socket, 4, "")
 	server.Start()
 	defer server.Stop()
 
@@ -49,7 +49,7 @@ func BenchmarkDaemonEcho(b *testing.B) {
 
 func BenchmarkDaemonLs(b *testing.B) {
 	socket := filepath.Join(b.TempDir(), "korego-bench-ls.sock")
-	server := daemon.NewServer(socket, 4)
+	server := daemon.NewServer(socket, 4, "")
 	server.Start()
 	defer server.Stop()
 

@@ -1,0 +1,1 @@
+{"command":"gzip","version":"0.1.0","schemaVersion":"1.0","exitCode":0,"data":[{"file":"test.txt","originalSize":1024,"newSize":512,"ratio":50.0}],"error":null}

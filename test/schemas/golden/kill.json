@@ -1,0 +1,1 @@
+{"command":"kill","version":"0.1.0","schemaVersion":"1.0","exitCode":1,"data":{"signaled":[{"pid":99999,"signal":"SIGTERM","success":false}]},"error":null}

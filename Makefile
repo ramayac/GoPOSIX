@@ -309,6 +309,16 @@ testsuite: build
 	@echo "--- BusyBox Test Suite ---"
 	cd test/busybox_testsuite && ./runtest
 
+.PHONY: validate-schemas
+validate-schemas: build
+	@echo "--- Validate JSON output against schemas ---"
+	bash test/validate_schemas.sh
+
+.PHONY: bench
+bench:
+	@echo "--- Running benchmarks ---"
+	go test -bench=. -benchmem ./test/benchmark/...
+
 .PHONY: ci
 ci: vet test build docker smoke-docker
 	@echo "ci: full pipeline complete"

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://korego.dev/schemas/expr.schema.json",
+  "title": "KoreGo expr --json output",
+  "description": "Validates the complete JSON output of korego expr --json.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": { "type": "string", "const": "expr" },
+    "version": { "type": "string" },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "exitCode": { "type": "integer" },
+    "data": {"type": "object", "required": ["result", "exitCode"], "properties": {"result": {"type": "string"}, "exitCode": {"type": "integer"}}},
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

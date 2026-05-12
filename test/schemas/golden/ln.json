@@ -1,0 +1,1 @@
+{"command":"ln","version":"dcdd733","schemaVersion":"1.0","exitCode":0,"data":{"links":[{"target":"/etc/passwd","link":"/tmp/korego_ln_test"}]},"error":null}

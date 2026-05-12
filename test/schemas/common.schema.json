@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://korego.dev/schemas/common.schema.json",
+  "title": "KoreGo JSON Output Envelope",
+  "description": "Common envelope shared by all korego utility --json output.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": {
+      "type": "string",
+      "description": "Name of the utility that produced this output."
+    },
+    "version": {
+      "type": "string",
+      "description": "KoreGo release version."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version for detecting breaking changes."
+    },
+    "exitCode": {
+      "type": "integer",
+      "description": "POSIX exit code (0 = success)."
+    },
+    "data": {
+      "description": "Utility-specific payload. Null on error."
+    },
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

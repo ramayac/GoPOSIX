@@ -1,0 +1,1 @@
+{"command":"stat","version":"dcdd733","schemaVersion":"1.0","exitCode":0,"data":{"path":"/etc/passwd","size":3335,"mode":"-rw-r--r--","uid":0,"gid":0,"atime":"2026-04-23T21:23:08.597879825-07:00","mtime":"2026-04-23T21:23:08.59931245-07:00","ctime":"2026-04-23T21:23:08.651879471-07:00","inode":7403656,"links":1,"blocks":8,"isDir":false,"isLink":false},"error":null}

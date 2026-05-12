@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://korego.dev/schemas/ls.schema.json",
+  "title": "KoreGo ls --json output",
+  "description": "Validates the complete JSON output of korego ls --json.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": { "type": "string", "const": "ls" },
+    "version": { "type": "string" },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "exitCode": { "type": "integer" },
+    "data": {"oneOf": [{"type": "object", "required": ["path", "files", "total"], "properties": {"path": {"type": "string"}, "files": {"type": "array", "items": {"type": "object", "required": ["name", "path", "size", "mode", "modTime", "isDir", "owner", "group", "inode", "links", "blocks"], "properties": {"name": {"type": "string"}, "path": {"type": "string"}, "size": {"type": "integer"}, "mode": {"type": "string"}, "modTime": {"type": "string"}, "isDir": {"type": "boolean"}, "owner": {"type": "string"}, "group": {"type": "string"}, "inode": {"type": "integer"}, "links": {"type": "integer"}, "target": {"type": "string"}, "blocks": {"type": "integer"}}}}, "total": {"type": "integer"}}}, {"type": "array", "items": {"type": "object", "required": ["path", "files", "total"], "properties": {"path": {"type": "string"}, "files": {"type": "array", "items": {"type": "object", "required": ["name", "path", "size", "mode", "modTime", "isDir", "owner", "group", "inode", "links", "blocks"], "properties": {"name": {"type": "string"}, "path": {"type": "string"}, "size": {"type": "integer"}, "mode": {"type": "string"}, "modTime": {"type": "string"}, "isDir": {"type": "boolean"}, "owner": {"type": "string"}, "group": {"type": "string"}, "inode": {"type": "integer"}, "links": {"type": "integer"}, "target": {"type": "string"}, "blocks": {"type": "integer"}}}}, "total": {"type": "integer"}}}}]},
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

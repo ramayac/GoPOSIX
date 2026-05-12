@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://korego.dev/schemas/chmod.schema.json",
+  "title": "KoreGo chmod --json output",
+  "description": "Validates the complete JSON output of korego chmod --json.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": { "type": "string", "const": "chmod" },
+    "version": { "type": "string" },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "exitCode": { "type": "integer" },
+    "data": {"type": "object", "required": ["changed"], "properties": {"changed": {"type": "array", "items": {"type": "object", "required": ["path", "mode"], "properties": {"path": {"type": "string"}, "mode": {"type": "string"}}}}}},
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

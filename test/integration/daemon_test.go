@@ -23,7 +23,7 @@ func TestDaemonConcurrent(t *testing.T) {
 	socket := filepath.Join(t.TempDir(), "korego.sock")
 
 	// Start server in background
-	server := daemon.NewServer(socket, 4)
+	server := daemon.NewServer(socket, 4, "")
 	if err := server.Start(); err != nil {
 		t.Fatalf("Failed to start server: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestDaemonBatch(t *testing.T) {
 	// To test batch, we could use net.Dial directly, or modify the client.
 	// We'll use net.Dial for a quick check.
 	socket := filepath.Join(t.TempDir(), "korego-batch.sock")
-	server := daemon.NewServer(socket, 4)
+	server := daemon.NewServer(socket, 4, "")
 	server.Start()
 	defer server.Stop()
 	time.Sleep(100 * time.Millisecond)

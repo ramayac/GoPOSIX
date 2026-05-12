@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://korego.dev/schemas/find.schema.json",
+  "title": "KoreGo find --json output",
+  "description": "Validates the complete JSON output of korego find --json.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": { "type": "string", "const": "find" },
+    "version": { "type": "string" },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "exitCode": { "type": "integer" },
+    "data": {"type": "array", "items": {"type": "object", "required": ["path", "type", "size", "mtime"], "properties": {"path": {"type": "string"}, "type": {"type": "string"}, "size": {"type": "integer"}, "mtime": {"type": "string"}}}},
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

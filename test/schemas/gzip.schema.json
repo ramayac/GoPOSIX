@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://korego.dev/schemas/gzip.schema.json",
+  "title": "KoreGo gzip --json output",
+  "description": "Validates the complete JSON output of korego gzip --json.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": { "type": "string", "const": "gzip" },
+    "version": { "type": "string" },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "exitCode": { "type": "integer" },
+    "data": {"type": "array", "items": {"type": "object", "required": ["file", "originalSize", "newSize", "ratio"], "properties": {"file": {"type": "string"}, "originalSize": {"type": "integer"}, "newSize": {"type": "integer"}, "ratio": {"type": "number"}}}},
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

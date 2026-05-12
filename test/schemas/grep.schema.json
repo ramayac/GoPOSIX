@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://korego.dev/schemas/grep.schema.json",
+  "title": "KoreGo grep --json output",
+  "description": "Validates the complete JSON output of korego grep --json.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": { "type": "string", "const": "grep" },
+    "version": { "type": "string" },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "exitCode": { "type": "integer" },
+    "data": {"type": "array", "items": {"type": "object", "required": ["line", "text", "matches"], "properties": {"file": {"type": "string"}, "line": {"type": "integer"}, "text": {"type": "string"}, "matches": {"type": "array", "items": {"type": "string"}}}}},
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

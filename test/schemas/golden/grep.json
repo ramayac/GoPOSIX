@@ -1,0 +1,1 @@
+{"command":"grep","version":"dcdd733","schemaVersion":"1.0","exitCode":0,"data":[{"file":"(standard input)","line":1,"text":"hello world","matches":["hello"]}],"error":null}

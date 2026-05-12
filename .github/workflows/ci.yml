@@ -36,6 +36,9 @@ jobs:
       - name: Verify --list-commands
         run: ./korego --list-commands
 
+      - name: Validate JSON schemas
+        run: make validate-schemas
+
       - name: Build Docker image
         run: make docker
 

@@ -16,6 +16,7 @@ var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "s", Long: "socket", Type: common.FlagValue},
 		{Short: "w", Long: "workers", Type: common.FlagValue},
+		{Short: "l", Long: "listen-addr", Type: common.FlagValue},
 	},
 }
 
@@ -38,7 +39,9 @@ func run(args []string, out io.Writer) int {
 		}
 	}
 
-	if err := daemon.RunDaemon(socket, workers); err != nil {
+	httpAddr := flags.Get("l")
+
+	if err := daemon.RunDaemon(socket, workers, httpAddr); err != nil {
 		fmt.Fprintf(os.Stderr, "daemon: %v\n", err)
 		return 1
 	}

@@ -77,7 +77,7 @@ type Server struct {
 	listener   net.Listener
 	pool       *WorkerPool
 	uptime     time.Time
-	
+
 	sm *SessionManager
 
 	activeWorkers int32
@@ -86,17 +86,31 @@ type Server struct {
 	connSem      chan struct{}
 	connWG       sync.WaitGroup
 	shuttingDown int32
+
+	workersMax int
+	metrics    *Metrics
+	obsServer  *ObservabilityServer
 }
 
 // NewServer creates a new daemon server.
-func NewServer(socketPath string, workers int) *Server {
-	return &Server{
+func NewServer(socketPath string, workers int, httpAddr string) *Server {
+	m := NewMetrics()
+	s := &Server{
 		socketPath: socketPath,
 		pool:       NewWorkerPool(workers),
 		uptime:     time.Now(),
 		sm:         NewSessionManager(30 * time.Minute),
 		connSem:    make(chan struct{}, 100), // Max 100 concurrent connections
+		workersMax: workers,
+		metrics:    m,
 	}
+
+	if httpAddr != "" {
+		s.obsServer = NewObservabilityServer(httpAddr, &s.totalRequests, &s.activeWorkers,
+			workers, s.uptime, &s.shuttingDown, s.sm, m)
+	}
+
+	return s
 }
 
 // Start begins listening on the unix socket.
@@ -116,6 +130,13 @@ func (s *Server) Start() error {
 		return err
 	}
 
+	if s.obsServer != nil {
+		if err := s.obsServer.Start(); err != nil {
+			l.Close()
+			return err
+		}
+	}
+
 	go s.acceptLoop()
 	return nil
 }
@@ -123,6 +144,9 @@ func (s *Server) Start() error {
 // Stop gracefully shuts down the server.
 func (s *Server) Stop() {
 	atomic.StoreInt32(&s.shuttingDown, 1)
+	if s.obsServer != nil {
+		s.obsServer.Stop()
+	}
 	if s.listener != nil {
 		s.listener.Close()
 	}
@@ -178,6 +202,7 @@ func (s *Server) handleConn(conn net.Conn) {
 		}
 
 		if !rl.Allow() {
+			s.metrics.RecordRateLimited()
 			s.writeError(conn, nil, -32000, "Rate limit exceeded")
 			continue
 		}
@@ -280,13 +305,20 @@ type KoregoParams struct {
 
 func (s *Server) processRequest(req Request) *Response {
 	start := time.Now()
-	
+
+	var (
+		rpcExitCode int
+		rpcError    string
+		rpcCmd      string
+	)
+
 	atomic.AddInt64(&s.totalRequests, 1)
 	atomic.AddInt32(&s.activeWorkers, 1)
 	defer atomic.AddInt32(&s.activeWorkers, -1)
-	
+
 	defer func() {
 		duration := time.Since(start)
+		durationMs := float64(duration.Microseconds()) / 1000.0
 		sessionId := ""
 		if len(req.Params) > 0 {
 			var p KoregoParams
@@ -294,10 +326,28 @@ func (s *Server) processRequest(req Request) *Response {
 				sessionId = p.SessionId
 			}
 		}
-		slog.Info("rpc handled", "method", req.Method, "sessionId", sessionId, "durationMs", float64(duration.Microseconds())/1000.0)
+		args := []any{
+			"method", req.Method,
+			"sessionId", sessionId,
+			"durationMs", durationMs,
+		}
+		if rpcCmd != "" {
+			args = append(args, "cmd", rpcCmd)
+		}
+		if rpcExitCode != 0 {
+			args = append(args, "exitCode", rpcExitCode)
+		}
+		if rpcError != "" {
+			args = append(args, "error", rpcError)
+		}
+		slog.Info("rpc handled", args...)
+		if s.metrics != nil {
+			s.metrics.RecordRequest(req.Method, durationMs)
+		}
 	}()
 
 	if req.JSONRPC != "2.0" {
+		rpcError = "Invalid Request"
 		if req.ID != nil {
 			return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32600, Message: "Invalid Request"}}
 		}
@@ -305,6 +355,7 @@ func (s *Server) processRequest(req Request) *Response {
 	}
 
 	if len(req.Method) > 256 {
+		rpcError = "Method too long"
 		if req.ID != nil {
 			return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32600, Message: "Method too long"}}
 		}
@@ -313,6 +364,7 @@ func (s *Server) processRequest(req Request) *Response {
 
 	if req.Method == "korego.ping" {
 		if req.ID == nil {
+		rpcCmd = "ping"
 			return nil
 		}
 		return &Response{
@@ -330,12 +382,14 @@ func (s *Server) processRequest(req Request) *Response {
 	}
 
 	if req.Method == "korego.session.create" {
+		rpcCmd = "session.create"
 		if req.ID == nil { return nil }
 		s := s.sm.Create()
 		return &Response{JSONRPC: "2.0", ID: req.ID, Result: s}
 	}
 
 	if req.Method == "korego.session.setCwd" {
+		rpcCmd = "session.setCwd"
 		if req.ID == nil { return nil }
 		var p struct {
 			SessionId string `json:"sessionId"`
@@ -350,12 +404,14 @@ func (s *Server) processRequest(req Request) *Response {
 	}
 
 	if req.Method == "korego.session.list" {
+		rpcCmd = "session.list"
 		if req.ID == nil { return nil }
 		sessions := s.sm.List()
 		return &Response{JSONRPC: "2.0", ID: req.ID, Result: sessions}
 	}
 
 	if req.Method == "korego.session.destroy" {
+		rpcCmd = "session.destroy"
 		if req.ID == nil { return nil }
 		var p struct {
 			SessionId string `json:"sessionId"`
@@ -369,6 +425,7 @@ func (s *Server) processRequest(req Request) *Response {
 	}
 
 	if req.Method == "korego.shell.exec" {
+		rpcCmd = "shell.exec"
 		if req.ID == nil { return nil }
 		var p struct {
 			SessionId string `json:"sessionId"`
@@ -397,6 +454,7 @@ func (s *Server) processRequest(req Request) *Response {
 	}
 
 	cmdName := strings.TrimPrefix(req.Method, "korego.")
+		rpcCmd = cmdName
 	cmd, ok := dispatch.Lookup(cmdName)
 	if !ok {
 		if req.ID != nil {
@@ -425,6 +483,7 @@ func (s *Server) processRequest(req Request) *Response {
 				}
 				securePath, err := common.SecurePath(p.Path, base)
 				if err != nil {
+					rpcError = "Path traversal detected"
 					if req.ID != nil {
 						return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Path traversal detected"}}
 					}
@@ -452,6 +511,7 @@ func (s *Server) processRequest(req Request) *Response {
 
 	// Execute the command
 	exitCode := cmd.Run(args, lw)
+		rpcExitCode = exitCode
 
 	// We intercept the output which should be a JSONEnvelope.
 	// But `buf` might contain multiple lines or other things if the utility misbehaves.
@@ -484,6 +544,7 @@ func (s *Server) processRequest(req Request) *Response {
 
 	// If there's an envelope error, map it
 	if env.Error != nil {
+		rpcError = env.Error.Message
 		return &Response{
 			JSONRPC: "2.0",
 			ID:      req.ID,
@@ -509,7 +570,7 @@ func (s *Server) processRequest(req Request) *Response {
 }
 
 // RunDaemon sets up signal handling and runs until terminated.
-func RunDaemon(socketPath string, workers int) error {
+func RunDaemon(socketPath string, workers int, httpAddr string) error {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
 
@@ -524,7 +585,7 @@ func RunDaemon(socketPath string, workers int) error {
 		}()
 	}
 
-	server := NewServer(socketPath, workers)
+	server := NewServer(socketPath, workers, httpAddr)
 	if err := server.Start(); err != nil {
 		slog.Error("failed to start server", "error", err)
 		return err

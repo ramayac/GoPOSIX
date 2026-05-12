@@ -1,0 +1,1 @@
+{"command":"diff","version":"dcdd733","schemaVersion":"1.0","exitCode":0,"data":{"files":["/tmp/korego_diff1.txt","/tmp/korego_diff2.txt"],"differ":true,"hunks":[{"oldStart":1,"oldLines":3,"newStart":1,"newLines":3,"lines":[" a","-b","+x"," c"]}]},"error":null}

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://korego.dev/schemas/wc.schema.json",
+  "title": "KoreGo wc --json output",
+  "description": "Validates the complete JSON output of korego wc --json.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": { "type": "string", "const": "wc" },
+    "version": { "type": "string" },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "exitCode": { "type": "integer" },
+    "data": {"oneOf": [{"type": "object", "required": ["lines", "words", "bytes", "chars"], "properties": {"lines": {"type": "integer"}, "words": {"type": "integer"}, "bytes": {"type": "integer"}, "chars": {"type": "integer"}}}, {"type": "object", "additionalProperties": {"oneOf": [{"type": "object", "required": ["lines", "words", "bytes", "chars"], "properties": {"lines": {"type": "integer"}, "words": {"type": "integer"}, "bytes": {"type": "integer"}, "chars": {"type": "integer"}}}, {"type": "null"}]}, "required": ["total"]}]},
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

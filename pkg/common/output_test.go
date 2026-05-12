@@ -61,13 +61,13 @@ func TestRenderJSONStructure(t *testing.T) {
 	}
 }
 
-func TestRenderJSONAllFiveKeys(t *testing.T) {
+func TestRenderJSONAllSixKeys(t *testing.T) {
 	out := redirectStdout(t, func() {
 		Render("ls", nil, true, os.Stdout, func() {})
 	})
 
-	// Check raw JSON has all five keys present.
-	for _, key := range []string{"command", "version", "exitCode", "data", "error"} {
+	// Check raw JSON has all six keys present.
+	for _, key := range []string{"command", "version", "schemaVersion", "exitCode", "data", "error"} {
 		if !strings.Contains(out, `"`+key+`"`) {
 			t.Errorf("JSON missing key %q in output: %s", key, out)
 		}

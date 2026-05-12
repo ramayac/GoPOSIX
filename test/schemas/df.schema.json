@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://korego.dev/schemas/df.schema.json",
+  "title": "KoreGo df --json output",
+  "description": "Validates the complete JSON output of korego df --json.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": { "type": "string", "const": "df" },
+    "version": { "type": "string" },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "exitCode": { "type": "integer" },
+    "data": {"type": "array", "items": {"type": "object", "required": ["filesystem", "size", "used", "avail", "mountpoint"], "properties": {"filesystem": {"type": "string"}, "size": {"type": "integer"}, "used": {"type": "integer"}, "avail": {"type": "integer"}, "mountpoint": {"type": "string"}}}},
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

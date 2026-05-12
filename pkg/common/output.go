@@ -10,13 +10,14 @@ import (
 var Version = "0.1.0"
 
 // JSONEnvelope is the standard top-level response format for every utility when
-// run with --json.  All five keys are always present.
+// run with --json.  All six keys are always present.
 type JSONEnvelope struct {
-	Command  string      `json:"command"`
-	Version  string      `json:"version"`
-	ExitCode int         `json:"exitCode"`
-	Data     interface{} `json:"data"`
-	Error    *ErrorInfo  `json:"error"`
+	Command       string      `json:"command"`
+	Version       string      `json:"version"`
+	SchemaVersion string      `json:"schemaVersion"`
+	ExitCode      int         `json:"exitCode"`
+	Data          interface{} `json:"data"`
+	Error         *ErrorInfo  `json:"error"`
 }
 
 // ErrorInfo carries a POSIX-style error code and a human-readable message.
@@ -30,11 +31,12 @@ type ErrorInfo struct {
 func Render(cmdName string, data interface{}, jsonMode bool, out io.Writer, textFn func()) {
 	if jsonMode {
 		env := JSONEnvelope{
-			Command:  cmdName,
-			Version:  Version,
-			ExitCode: 0,
-			Data:     data,
-			Error:    nil,
+			Command:       cmdName,
+			Version:       Version,
+			SchemaVersion: "1.0",
+			ExitCode:      0,
+			Data:          data,
+			Error:         nil,
 		}
 		enc := json.NewEncoder(out)
 		enc.SetEscapeHTML(false)
@@ -51,10 +53,11 @@ func RenderError(cmdName string, exitCode int, errCode, message string, jsonMode
 		return
 	}
 	env := JSONEnvelope{
-		Command:  cmdName,
-		Version:  Version,
-		ExitCode: exitCode,
-		Data:     nil,
+		Command:       cmdName,
+		Version:       Version,
+		SchemaVersion: "1.0",
+		ExitCode:      exitCode,
+		Data:          nil,
 		Error: &ErrorInfo{
 			Code:    errCode,
 			Message: message,

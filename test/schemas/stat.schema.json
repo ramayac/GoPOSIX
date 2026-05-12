@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://korego.dev/schemas/stat.schema.json",
+  "title": "KoreGo stat --json output",
+  "description": "Validates the complete JSON output of korego stat --json.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": { "type": "string", "const": "stat" },
+    "version": { "type": "string" },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "exitCode": { "type": "integer" },
+    "data": {"type": "object", "required": ["path", "size", "mode", "uid", "gid", "atime", "mtime", "ctime", "inode", "links", "blocks", "isDir", "isLink"], "properties": {"path": {"type": "string"}, "size": {"type": "integer"}, "mode": {"type": "string"}, "uid": {"type": "integer"}, "gid": {"type": "integer"}, "atime": {"type": "string"}, "mtime": {"type": "string"}, "ctime": {"type": "string"}, "inode": {"type": "integer"}, "links": {"type": "integer"}, "blocks": {"type": "integer"}, "isDir": {"type": "boolean"}, "isLink": {"type": "boolean"}}},
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

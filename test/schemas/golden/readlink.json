@@ -1,0 +1,1 @@
+{"command":"readlink","version":"dcdd733","schemaVersion":"1.0","exitCode":0,"data":{"path":"/proc/self","target":"27831"},"error":null}

@@ -1,0 +1,1 @@
+{"command":"mv","version":"dcdd733","schemaVersion":"1.0","exitCode":0,"data":{"moved":[{"from":"/tmp/korego_mv_src.txt","to":"/tmp/korego_mv_dst.txt"}]},"error":null}
