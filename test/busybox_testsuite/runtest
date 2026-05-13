@@ -26,33 +26,13 @@ run_applet_testcase()
 	mkdir -p ".tmpdir.$applet"
 	cd ".tmpdir.$applet" || return 1
 
-	# For tar/gzip/gunzip old-style tests, create a local 'busybox' -> korego
-	# symlink so 'busybox tar' etc. routes to korego instead of system busybox.
-	# Also prepend LINKSDIR for tar so archive creation uses korego tar too.
-	case "$applet" in
-		tar)
-			ln -s "$bindir/korego" busybox 2>/dev/null
-			;;
-		gzip|gunzip)
-			ln -s "$bindir/korego" busybox 2>/dev/null
-			;;
-	esac
-
 #	echo "Running testcase $testcase"
-	case "$applet" in
-		tar)
-			PATH=".:$LINKSDIR:$PATH" d="$tsdir" \
-				sh -x -e "$testcase" >"$testname.stdout.txt" 2>&1 || status=$?
-			;;
-		gzip|gunzip)
-			PATH=".:$PATH" d="$tsdir" \
-				sh -x -e "$testcase" >"$testname.stdout.txt" 2>&1 || status=$?
-			;;
-		*)
-			d="$tsdir" \
-				sh -x -e "$testcase" >"$testname.stdout.txt" 2>&1 || status=$?
-			;;
-	esac
+	# All old-style tests use a shared PATH that finds korego first.
+	# BBDIR (busybox → korego) and LINKSDIR (applet → korego) are in the
+	# inherited PATH, so 'busybox <applet>' and direct applet calls both
+	# route to korego.
+	PATH=".:$PATH" d="$tsdir" \
+		sh -x -e "$testcase" >"$testname.stdout.txt" 2>&1 || status=$?
 	if [ $status -ne 0 ]; then
 		echo "FAIL: $testname"
 		if [ x"$VERBOSE" != x ]; then
@@ -135,6 +115,17 @@ for i in $implemented; do
 	# not an applet.
 	ln -s "$bindir/korego" "$LINKSDIR/$i" 2>/dev/null
 done
+
+# Route ALL 'busybox <applet>' calls to korego (not system busybox).
+# Old-style tests call 'busybox <applet>' and expect it to dispatch to the
+# same binary being tested. Without this, CI finds /usr/bin/busybox.
+BBDIR=$(mktemp -d)
+ln -s "$bindir/korego" "$BBDIR/busybox"
+trap 'rm -rf "$BBDIR"' EXIT
+
+# Prepend BBDIR (busybox → korego) and LINKSDIR (applet → korego) to PATH
+# so both 'busybox <applet>' and direct applet calls route to korego.
+export PATH="$BBDIR:$LINKSDIR:$PATH"
 
 # Create .config for tests that need it (e.g., md5sum checks CONFIG_FEATURE_FANCY_HEAD).
 cat > "$bindir/.config" <<'CONFIGEOF'

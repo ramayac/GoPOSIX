@@ -137,11 +137,11 @@ Making coverage a hard gate is tracked in [12_road_to_gold.md](12_road_to_gold.m
 
 - [x] Compliance test approach changed: per-utility scripts removed in favor of BusyBox test suite (11a.1 — superseded)
 - [x] 6 missing unit test files added (cp, mv, ln, rmdir, yes, daemon); coverage step in CI (11a.2)
-- [ ] Shell interpreter security model documented (11a.3 — tracked in [12.2](12_road_to_gold.md))
+- [x] Shell interpreter security model documented (11a.3 — completed via [12.2](12_road_to_gold.md): KOREGO_SHELL_TIMEOUT wired, interpreter_test.go with 10 tests, docs/SECURITY.md)
 - [x] BusyBox baseline enforced; image size gate hard failure; coverage CI step added (informational only; hard-fail tracked in [12.3](12_road_to_gold.md)) (11a.4)
 - [x] `make help`, `make bench`, `make validate-schemas`, `make example-agent`, `make cover-pct` all work (11a.5)
 - [x] Three deployment patterns documented with a working docker-compose example (11a.6)
 - [ ] Release pipeline hardened (11a.7 — tracked in [12.1](12_road_to_gold.md))
 - [x] `scratch.go` deleted (11a.8)
 
-**Summary:** 6 of 8 items complete. Deferred items (11a.3 shell security, 11a.7 release hardening, 11a.4 coverage hard-fail) are now tracked in [12_road_to_gold.md](12_road_to_gold.md). 11a.1 superseded (compliance scripts removed, BusyBox suite is the path forward).
+**Summary:** 7 of 8 items complete (11a.3 resolved via 12.2; 11a.4 resolved via 12.4). Remaining: 11a.7 (release hardening, tracked in [12.1](12_road_to_gold.md)). 11a.1 superseded (compliance scripts removed, BusyBox suite is the path forward).

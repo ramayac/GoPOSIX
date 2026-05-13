@@ -18,14 +18,14 @@ and **discrepancies** between wiki claims and the actual codebase.
 
 ## Summary
 
-| # | Gap | In Wiki? | Code Evidence | Effort |
+| # | Gap | In Wiki? | Code Evidence | Status |
 |---|-----|----------|---------------|--------|
-| 13.0 | macOS build breakage (`uname`, `stat`, `client`) | No | `syscall.Utsname`, `sys.Atim` undefined on darwin | 2h |
-| 13.1 | No supply chain security (SBOM, Cosign, SLSA, Trivy) | Yes (12.1) | `.goreleaser.yml` has no `sboms:`; `release.yml` has no signing step | 1d |
-| 13.2 | Shell security model undocumented, untested | Yes (12.2) | `interpreter_test.go` does not exist; `KOREGO_SHELL_TIMEOUT` hardcoded, not env-driven | 1d |
-| 13.3 | Coverage gate is informational only; real coverage 41.6% | Yes (12.3) | `ci.yml` emits `::warning::`, exits 0; worst packages at 3–14% | 3d |
-| 13.4 | BusyBox CI/local discrepancy | Yes (12.4) | `runtest` creates KoreGo symlink only for `tar`/`gzip`; all other old-style tests hit system BusyBox | 1–2d |
-| 13.5 | `awk` not implemented (Platinum gate) | Yes (12.5) | `pkg/awk/` does not exist | 5–10d |
+| 13.0 | macOS build breakage (`uname`, `stat`, `client`) | No | `syscall.Utsname`, `sys.Atim` undefined on darwin | ✅ Fixed |
+| 13.1 | No supply chain security (SBOM, Cosign, SLSA, Trivy) | Yes (12.1) | `.goreleaser.yml` has no `sboms:`; `release.yml` has no signing step | ⏳ Open |
+| 13.2 | Shell security model undocumented, untested | Yes (12.2) | `interpreter_test.go` does not exist; `KOREGO_SHELL_TIMEOUT` hardcoded | ✅ Fixed |
+| 13.3 | Coverage gate is informational only; real coverage 41.6% | Yes (12.3) | `ci.yml` emits `::warning::`, exits 0; worst packages at 3–14% | ⏳ Open |
+| 13.4 | BusyBox CI/local discrepancy | Yes (12.4) | `runtest` creates KoreGo symlink only for `tar`/`gzip`; now global | ✅ Fixed |
+| 13.5 | `awk` not implemented (Platinum gate) | Yes (12.5) | `pkg/awk/` does not exist | ⏳ Open |
 
 ---
 

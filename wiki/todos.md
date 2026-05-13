@@ -1,6 +1,10 @@
 # KoreGo — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-02 | **BusyBox pass rate:** 97.9% effective (479 passed, 1 failed, 10 skipped out of 490)
+> **Last updated:** 2026-05-13 | **BusyBox pass rate:** 83.5% real (409 passed, 71 failed, 10 skipped out of 490)
+>
+> **Note:** The previous 97.9% / 479 passed figure was inflated. Old-style BusyBox
+> tests were running against the system BusyBox on CI, not KoreGo. Fixed in [12.4](12_road_to_gold.md).
+> The current numbers reflect true KoreGo behavior. See [12_road_to_gold.md](12_road_to_gold.md) for Gold roadmap.
 
 This is the living document tracking the final remaining test failures, known deviations,
 and future improvements. See [10_posix_framework.md](10_posix_framework.md) for the full
@@ -11,22 +15,19 @@ Phase 10 implementation log.
 ## Final Summary
 
 All planned implementation phases (00–10) are complete. The BusyBox test suite
-is integrated into CI and runs on every push to `main`.
+is integrated into CI and runs on every push to `main`. All old-style tests now
+route through KoreGo (not system BusyBox) — resolved 2026-05-13.
 
 **Final numbers:**
 
 | Metric | Value |
 |--------|-------|
 | Tests running | 490 |
-| Passed | 479 |
-| Failed | 1 (umask-dependent, passes with umask 022) |
+| Passed | 409 |
+| Failed | 71 |
 | Skipped | 10 (all external-dependency-gated: bzip2/xz/uudecode/pax) |
-| **Effective pass rate** | **97.9%** |
+| **Real pass rate** | **83.5%** |
 | Target utilities implemented | 49/49 (100%) |
-
-99% requires bzip2/xz decompression support for the remaining 10 tar tests.
-The single remaining failure (`tar writing into read-only dir`) is umask-dependent
-(expected 644, gets 664 with umask 002).
 
 ---
 
@@ -231,18 +232,12 @@ not yet implemented in KoreGo.
 
 ---
 
-## CI vs Local Discrepancy Note
+## CI vs Local Discrepancy Note — RESOLVED (2026-05-13)
 
-The GitHub Actions CI runs the BusyBox test suite on `ubuntu-latest` where the system
-BusyBox (`/usr/bin/busybox`) is available. Old-style tests (in `test/busybox_testsuite/<applet>/`
-directories) use `busybox <applet>` calls that resolve to the **system BusyBox**, not KoreGo.
-Only new-style `.tests` files run against KoreGo. This means:
-- **CI shows 100% pass** (413 passed, 75 skipped) — old-style tests pass via system BusyBox.
-- **Locally, old-style tests may fail** if a `/tmp/busybox` symlink shadows the system BusyBox
-  and routes calls to KoreGo (which has minor behavioral differences from BusyBox).
-
-To reproduce the CI result locally: ensure no `busybox` symlink exists in `$bindir` or `$LINKSDIR`
-so the system BusyBox is used for old-style tests.
+The discrepancy was fixed by adding a global `busybox → korego` symlink in `runtest`.
+All old-style `busybox <applet>` calls now resolve to KoreGo on both CI and local.
+The true KoreGo BusyBox pass rate is now **409 passed, 71 failed, 10 skipped**.
+See [12_road_to_gold.md](12_road_to_gold.md) (12.4) for the implementation details.
 
 ---
 

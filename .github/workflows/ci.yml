@@ -73,8 +73,8 @@ jobs:
             echo "--- Failures ---"
             grep "^FAIL:" testsuite.log || true
           fi
-          if [ $PASS -lt 479 ]; then
-            echo "::error::BusyBox pass count ($PASS) dropped below baseline (479)"
+          if [ $PASS -lt 409 ]; then
+            echo "::error::BusyBox pass count ($PASS) dropped below baseline (409)"
             exit 1
           fi
   # ---------------------------------------------------------------------------
