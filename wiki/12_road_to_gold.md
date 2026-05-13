@@ -19,7 +19,7 @@ to close them, ordered by impact. Completing items 12.0–12.4 achieves Gold. It
 |------|---------|
 | Bronze | ✅ Cleared |
 | Silver | ✅ Cleared |
-| **Gold** | ⚠️ In Progress — 3/5 gaps resolved (12.1 supply chain + 12.3 coverage remaining) |
+| **Gold** | ⚠️ In Progress — 4/5 gaps resolved (only 12.3 coverage gate remaining) |
 | Platinum | ❌ Requires awk + Gold first |
 
 ---
@@ -73,27 +73,11 @@ no image signing, no vulnerability scanning, no provenance attestation.
 
 ### Tasks
 
-- [ ] Add SBOM generation to `.goreleaser.yml`:
-  ```yaml
-  sboms:
-    - artifacts: archive
-    - artifacts: binary
-  ```
-- [ ] Add container image signing via Cosign in `.github/workflows/release.yml`:
-  ```yaml
-  - uses: sigstore/cosign-installer@v3
-  - run: cosign sign --yes ghcr.io/ramayac/korego:${{ github.ref_name }}
-  ```
-- [ ] Add SLSA Level 3 provenance via `slsa-framework/slsa-github-generator` in release workflow
-- [ ] Add vulnerability scanning step in CI (`ci.yml`) after Docker build:
-  ```yaml
-  - uses: aquasecurity/trivy-action@master
-    with:
-      image-ref: korego:dev
-      exit-code: 1
-      severity: CRITICAL,HIGH
-  ```
-- [ ] Update `docs/SECURITY.md` with artifact verification instructions for end users
+- [x] Add SBOM generation to `.goreleaser.yml` (`sboms: artifacts: archive + binary`)
+- [x] Add container image signing via Cosign (keyless/OIDC) in `release.yml`
+- [x] Add SLSA Level 3 provenance via `slsa-framework/slsa-github-generator` in release workflow
+- [x] Add vulnerability scanning (Trivy) in `ci.yml` after Docker build (CRITICAL,HIGH)
+- [x] Update `docs/SECURITY.md` with artifact verification instructions + slsa-verifier
 
 ### Acceptance
 
@@ -226,14 +210,14 @@ actually testing system BusyBox on CI, not KoreGo. The CI gate now enforces ≥4
 
 ```
 [x] 12.0 — macOS builds cleanly (GOOS=darwin go build ./... exits 0)
-[ ] 12.1 — SBOM + Cosign + SLSA + trivy in release/CI pipeline
+[x] 12.1 — SBOM + Cosign + SLSA + trivy in release/CI pipeline
 [x] 12.2 — Shell security model documented + KOREGO_SHELL_TIMEOUT wired + tests passing
 [ ] 12.3 — Coverage gate hard-fails CI (staged: 45% → 60%)
 [x] 12.4 — CI/local BusyBox discrepancy resolved; baselines match
 [ ] 12.5 — awk implemented, BusyBox awk tests pass (Platinum gate)
 ```
 
-Completing 12.0–12.4 = **Gold** (3/5 done, 12.1 + 12.3 remaining).
+Completing 12.0–12.4 = **Gold** (4/5 done, only 12.3 remaining).
 Completing 12.0–12.5 = **Platinum**.
 
 ---

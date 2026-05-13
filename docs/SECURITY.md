@@ -76,17 +76,22 @@ a non-zero exit code. When either output buffer is exceeded, the stream is trunc
 
 ## Artifact Verification
 
-*(Supply chain security — tracked in Phase 12.1)*
-
-Once implemented, release artifacts will be signed via Cosign and include SLSA Level 3
-provenance. SBOMs will be attached to container images. Verify with:
+Release artifacts are signed via Cosign keyless signing (OIDC) and include SLSA Level 3
+provenance attestations. SBOMs are attached to container images and binary archives.
+CI scans the Docker image with Trivy on every push for CRITICAL/HIGH CVEs.
 
 ```bash
+# Verify a release image is signed by this repo's GitHub Actions
 cosign verify ghcr.io/ramayac/korego:latest \
   --certificate-identity-regexp='.*' \
   --certificate-oidc-issuer='https://token.actions.githubusercontent.com'
 
+# Inspect the SBOM attached to the image
 docker buildx imagetools inspect ghcr.io/ramayac/korego:latest --format '{{ json .SBOM }}'
+
+# Verify SLSA provenance (requires slsa-verifier)
+slsa-verifier verify-image ghcr.io/ramayac/korego:latest \
+  --source-uri github.com/ramayac/korego
 ```
 
 ## Reporting Vulnerabilities

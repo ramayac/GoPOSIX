@@ -5,9 +5,18 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed for GoReleaser to create the release
+      id-token: write   # needed for Cosign keyless signing (OIDC)
+      packages: write   # needed to push to GHCR
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,3 +47,38 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign container image with Cosign
+        run: |
+          cosign sign --yes \
+            "ghcr.io/ramayac/korego:${{ github.ref_name }}"
+          cosign sign --yes \
+            "ghcr.io/ramayac/korego:latest"
+
+      - name: Generate artifact hashes for SLSA provenance
+        id: hash
+        run: |
+          set -euo pipefail
+          # GoReleaser archives land in dist/
+          sha256sum dist/*.tar.gz dist/*.zip 2>/dev/null > hashes.txt || true
+          if [ ! -s hashes.txt ]; then
+            # fallback: hash the binary itself
+            sha256sum dist/*/korego 2>/dev/null > hashes.txt || sha256sum dist/korego_* 2>/dev/null > hashes.txt
+          fi
+          echo "hashes=$(base64 -w0 hashes.txt)" >> "$GITHUB_OUTPUT"
+
+  provenance:
+    needs: [goreleaser]
+    if: ${{ needs.goreleaser.outputs.hashes != '' }}
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: ${{ needs.goreleaser.outputs.hashes }}
+      attestation-name: korego-${{ github.ref_name }}.intoto.jsonl
+      upload-assets: true

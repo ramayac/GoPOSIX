@@ -54,6 +54,19 @@ jobs:
       - name: Smoke tests (in container)
         run: make smoke
 
+      - name: Tag image for vulnerability scan
+        run: |
+          VERSION=$(git describe --tags --always 2>/dev/null || echo "0.0.0-dev")
+          docker tag korego:${VERSION} korego:ci-scan
+
+      - name: Vulnerability scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: korego:ci-scan
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+
       - name: Run BusyBox Test Suite
         run: |
           echo "Running BusyBox test suite..."

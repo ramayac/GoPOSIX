@@ -141,7 +141,7 @@ Making coverage a hard gate is tracked in [12_road_to_gold.md](12_road_to_gold.m
 - [x] BusyBox baseline enforced; image size gate hard failure; coverage CI step added (informational only; hard-fail tracked in [12.3](12_road_to_gold.md)) (11a.4)
 - [x] `make help`, `make bench`, `make validate-schemas`, `make example-agent`, `make cover-pct` all work (11a.5)
 - [x] Three deployment patterns documented with a working docker-compose example (11a.6)
-- [ ] Release pipeline hardened (11a.7 — tracked in [12.1](12_road_to_gold.md))
+- [x] Release pipeline hardened (11a.7 — completed via [12.1](12_road_to_gold.md): SBOM + Cosign + SLSA + Trivy)
 - [x] `scratch.go` deleted (11a.8)
 
-**Summary:** 7 of 8 items complete (11a.3 resolved via 12.2; 11a.4 resolved via 12.4). Remaining: 11a.7 (release hardening, tracked in [12.1](12_road_to_gold.md)). 11a.1 superseded (compliance scripts removed, BusyBox suite is the path forward).
+**Summary:** 8 of 8 items complete. All deferred items resolved via Phase 12 (11a.3 → 12.2 shell security; 11a.4 → 12.4 BusyBox fix; 11a.7 → 12.1 supply chain). 11a.1 superseded (compliance scripts removed, BusyBox suite is the path forward).

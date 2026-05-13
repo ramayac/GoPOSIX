@@ -29,6 +29,10 @@ docker_manifests:
       - ghcr.io/ramayac/korego:{{.Version}}-amd64
       - ghcr.io/ramayac/korego:{{.Version}}-arm64
 
+sboms:
+  - artifacts: archive
+  - artifacts: binary
+
 changelog:
   sort: asc
   filters:
