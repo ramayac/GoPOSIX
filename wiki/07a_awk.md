@@ -1,11 +1,25 @@
 # Phase 07a — `awk` (POSIX Text Processing)
 
-> **Status:** ⏳ Not Started | **Depends on:** Phase 07.4 (Tier 5 utilities)
+> **Status:** ⏳ Not Started | **Depends on:** Phase 07.4 (Tier 5 utilities) | **Canonical awk document**
 >
 > Separated from the main Phase 07 document because `awk` is a substantially
 > more complex utility than the rest of Tier 5 — closer to a small programming
 > language than a CLI tool. It can be tackled independently without blocking
 > other milestones.
+>
+> **This is the single source of truth for all awk work.** Other documents
+> ([11_post_mvp_priorities.md](11_post_mvp_priorities.md), [12_road_to_gold.md](12_road_to_gold.md))
+> reference this document rather than duplicating task lists.
+
+---
+
+## Why It Matters
+
+`awk` is the last missing POSIX.2 utility in KoreGo. Without it, the project's
+"POSIX-compliant userland" claim carries a permanent asterisk. Every serious
+shell script that processes structured text uses awk. Completing this utility
+is the **Platinum gate** — it qualifies the project for the highest compliance
+tier.
 
 ---
 
@@ -14,6 +28,22 @@
 Implement a subset of POSIX `awk` in pure Go. Start with the most commonly
 used features and expand incrementally. Full POSIX `awk` compliance is a
 stretch goal, not a blocker for release.
+
+---
+
+## Cross-Cutting Deliverables
+
+These span all sub-phases and must be completed for the utility to ship:
+
+- [ ] Register `awk` in multicall dispatch (`cmd/korego/main.go`)
+- [ ] `--json` output: array of per-record results with matched fields
+- [ ] `test/schemas/awk.schema.json` — JSON Schema draft-07 for `--json` output
+- [ ] `docs/schemas/awk.schema.json` — copy for documentation
+- [ ] BusyBox `awk.tests` (or equivalent) integrated and passing
+- [ ] Unit tests: ≥20 cases covering patterns, fields, `BEGIN`/`END`, built-ins
+- [ ] Update [posix_coverage.md](posix_coverage.md): change awk from ❌ to ✅
+- [ ] Update README status table
+- [ ] Update `todos.md` to remove awk from "Known Deviations"
 
 ---
 

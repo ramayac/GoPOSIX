@@ -1,6 +1,6 @@
 # KoreGo — Development Roadmap
 
-> **Version:** 2.1 | **Date:** 2026-05-02
+> **Version:** 2.2 | **Date:** 2026-05-13
 
 ---
 
@@ -113,12 +113,14 @@ korego/
 | [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | **COMPLETED** |
 | [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 | [10a_sed.md](10a_sed.md) | Sed Implementation Details | **COMPLETED** |
-| [07a_awk.md](07a_awk.md) | Awk Deferral Analysis | **DEFERRED** |
+| [07a_awk.md](07a_awk.md) | Awk Implementation Plan (canonical; Platinum gate) | **DEFERRED** |
 | [posix_coverage.md](posix_coverage.md) | POSIX Compliance Matrix (49 utilities) | **COMPLETED** |
 | [posix_faq.md](posix_faq.md) | POSIX Compliance FAQ | **COMPLETED** |
 | [11_lessons_learned.md](11_lessons_learned.md) | Phase 11 Lessons Learned, Insights & Gotchas | **COMPLETED** |
-| [11_post_mvp_priorities.md](11_post_mvp_priorities.md) | Post-MVP Priorities | **COMPLETED** |
-| [11a_lower_priority.md](11a_lower_priority.md) | Lower Priority Improvements | **IN PROGRESS** |
+| [11_post_mvp_priorities.md](11_post_mvp_priorities.md) | Post-MVP Priorities (11.1–11.3 complete; 11.4 awk → 07a) | **COMPLETED** |
+| [11a_lower_priority.md](11a_lower_priority.md) | Lower Priority Improvements (6/8 complete; remaining → 12) | **IN PROGRESS** |
+| [12_road_to_gold.md](12_road_to_gold.md) | Road to Gold (authoritative gap analysis + execution plan) | **PLANNING** |
+| [13_code_audit.md](13_code_audit.md) | Code Audit (code-level evidence, merged into 12) | **REVIEW** |
 
 ---
 

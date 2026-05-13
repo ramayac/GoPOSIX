@@ -10,7 +10,7 @@ KoreGo MVP and all post-MVP cleanup phases (00–11a) are complete or near-compl
 The project is assessed at **Strong Silver / borderline Gold**.
 
 This phase documents the specific gaps preventing a Gold rating and the tasks required
-to close them, ordered by impact. Completing items 12.1–12.4 achieves Gold. Item 12.5
+to close them, ordered by impact. Completing items 12.0–12.4 achieves Gold. Item 12.5
 (`awk`) pushes toward Platinum.
 
 ### Current Rating Summary
@@ -19,7 +19,7 @@ to close them, ordered by impact. Completing items 12.1–12.4 achieves Gold. It
 |------|---------|
 | Bronze | ✅ Cleared |
 | Silver | ✅ Cleared |
-| **Gold** | ⚠️ Borderline — 4 blocking gaps |
+| **Gold** | ⚠️ Borderline — 5 blocking gaps |
 | Platinum | ❌ Requires awk + Gold first |
 
 ---
@@ -28,11 +28,37 @@ to close them, ordered by impact. Completing items 12.1–12.4 achieves Gold. It
 
 | # | Gap | Risk | Impact |
 |---|-----|------|--------|
+| 12.0 | macOS build broken (`uname`, `stat`, `client`) | High — blocks local development on macOS | Dev velocity |
 | 12.1 | No supply chain security (SBOM, Cosign, SLSA, scanning) | High — infra tooling supply chain attacks are common | Release trust |
-| 12.2 | Shell security model undocumented | High — tool explicitly targets AI agents with untrusted input | Adoption blocker |
-| 12.3 | Coverage gate is informational (warns at 50%, never fails) | Medium — a patch can drop coverage to 0% and pass CI | Code quality |
+| 12.2 | Shell security model undocumented, timeout hardcoded | High — tool explicitly targets AI agents with untrusted input | Adoption blocker |
+| 12.3 | Coverage gate is informational (warns at 50%, never fails); actual coverage 41.6% | Medium — a patch can drop coverage to 0% and pass CI | Code quality |
 | 12.4 | CI/local BusyBox test discrepancy | Medium — old-style tests pass via system BusyBox on CI, not KoreGo | Test reliability |
 | 12.5 | `awk` not implemented | Low (MVP scope excluded it) — qualifies the "100% POSIX" claim | Compliance claim |
+
+---
+
+## 12.0 — macOS Build Breakage
+
+**Why it matters:** Three packages fail to compile on `GOOS=darwin`, blocking local
+development for anyone on macOS. This was discovered during the code audit ([13_code_audit.md](13_code_audit.md))
+and is not captured in earlier phase docs.
+
+**Current state:** `pkg/uname/uname.go` uses `syscall.Utsname`/`syscall.Uname()` (Linux-only).
+`pkg/stat/stat.go` uses `sys.Atim`/`sys.Ctim` (Linux `syscall.Timespec`; Darwin uses
+`Atimespec`/`Ctimespec`). `pkg/client` fails as a transitive dependency.
+
+### Tasks
+
+- [ ] Add `//go:build linux` tag to `pkg/uname/uname.go`; create `pkg/uname/uname_darwin.go` using `golang.org/x/sys/unix.Uname`
+- [ ] Split `pkg/stat/stat.go` into `stat_linux.go` and `stat_darwin.go` for the `Sys()` cast difference
+- [ ] Verify: `GOOS=darwin CGO_ENABLED=0 go build ./...` exits 0
+
+### Acceptance
+
+```bash
+GOOS=darwin CGO_ENABLED=0 go build ./...   # must exit 0
+GOOS=linux CGO_ENABLED=0 go build ./...    # must still exit 0 (no regression)
+```
 
 ---
 
@@ -88,12 +114,25 @@ The daemon is explicitly positioned for AI agent use — agents may pass partial
 untrusted or model-generated shell scripts. Without a documented and tested security
 contract, operators cannot safely expose the daemon.
 
-**Current state:** `internal/shell/interpreter.go` wraps `mvdan.cc/sh` with a 30s timeout
-(configurable via `KOREGO_SHELL_TIMEOUT`) and a memory limit. No tests enforce these limits.
-No documentation states what is and is not accessible from a shell script.
+**Current state:** `internal/shell/interpreter.go` wraps `mvdan.cc/sh` with a hardcoded 30s
+timeout (the `KOREGO_SHELL_TIMEOUT` env var is documented but **not actually read by the code** —
+found during code audit) and a `LimitWriter` cap of 128 MB per stream. `SecurePath` confines
+file opens to the session CWD. No tests enforce these limits. No `docs/SECURITY.md` exists.
+
+**Code audit finding:** The wiki previously stated `KOREGO_SHELL_TIMEOUT` was configurable,
+but `interpreter.go` hardcodes `30*time.Second`. This needs to be wired up (see tasks).
 
 ### Tasks
 
+- [ ] Wire `KOREGO_SHELL_TIMEOUT` env var in `internal/shell/interpreter.go` (currently hardcoded):
+  ```go
+  timeout := 30 * time.Second
+  if s := os.Getenv("KOREGO_SHELL_TIMEOUT"); s != "" {
+      if d, err := time.ParseDuration(s); err == nil {
+          timeout = d
+      }
+  }
+  ```
 - [ ] Write `docs/SECURITY.md` defining the security model:
   - Trust level: "trusted input only" vs "safe for untrusted input" — decide and state explicitly
   - What can a script access? (filesystem paths, env vars, network)
@@ -128,18 +167,30 @@ warning at <50% but never fails the build. A commit that drops coverage to 0% pa
 undetected. This defeats the purpose of the gate.
 
 **Current state:** `.github/workflows/ci.yml` — coverage step uses `::warning::` and exits 0.
-Overall coverage is around 50–60% (exact number varies per package).
+**Actual overall coverage is 41.6%** (audit measured via `go test -coverprofile` across
+`./pkg/...` `./internal/...`). Worst packages: `internal/daemon` 3.3%, `pkg/tee` 3.3%,
+`pkg/tail` 10.3%, `pkg/head` 11.2%, `pkg/grep` 12.4%. Best: `pkg/truefalse` 100%,
+`pkg/printf` 89.6%, `pkg/chown` 89.7%.
+
+Enforcing 60% immediately would break CI. A staged approach is needed.
 
 ### Tasks
 
-- [ ] Change coverage check in `ci.yml` from `::warning::` to `::error:: exit 1` at the threshold:
+- [ ] **Stage 1:** Change coverage check from `::warning::` to `exit 1` at 45% (current 41.6% → need ~3% more):
   ```bash
-  if (( $(echo "$COVERED < 60" | bc -l) )); then
-    echo "::error::Coverage ${COVERED}% is below 60% threshold"
+  if (( $(echo "$COVERED < 45" | bc -l) )); then
+    echo "::error::Coverage ${COVERED}% is below 45% threshold"
     exit 1
   fi
   ```
-- [ ] Raise threshold to 60% (current state already meets this if the suite is passing)
+- [ ] **Stage 2:** Add unit tests to highest-ROI packages (trivial input/output contracts):
+  - `pkg/head` (11.2%) — table-driven tests, can reach 70%+ quickly
+  - `pkg/tail` (10.3%) — same pattern
+  - `pkg/grep` (12.4%) — pattern matching tests
+  - `pkg/dirname` (14.3%) — simple path manipulation
+  - `pkg/echo` (20.8%) — basic output tests
+  - `pkg/tee` (3.3%) — I/O multiplexing tests
+- [ ] **Stage 3:** Raise threshold to 60% once coverage exceeds it
 - [ ] Add per-package coverage reporting to `make cover-pct` output so regressions are visible
 - [ ] Document the coverage policy in `AGENTS.md` so contributors know the bar
 
@@ -165,8 +216,19 @@ The `todos.md` documents this but it is not resolved.
 ### Tasks
 
 - [ ] Audit which old-style tests exist and whether they cover functionality not in `.tests` files
-- [ ] Option A (preferred): Convert remaining old-style tests to `.tests` format so they route to KoreGo on all platforms
-- [ ] Option B (fallback): In CI, remove or shadow `/usr/bin/busybox` so old-style tests always exercise KoreGo
+- [ ] **Option A (preferred):** At the top of `test/busybox_testsuite/runtest`, route ALL `busybox` calls to KoreGo:
+  ```sh
+  # Route ALL 'busybox <applet>' calls to korego
+  BBDIR=$(mktemp -d)
+  ln -s "$bindir/korego" "$BBDIR/busybox"
+  export PATH="$BBDIR:$LINKSDIR:$PATH"
+  trap 'rm -rf "$BBDIR"' EXIT
+  ```
+- [ ] **Option B (CI-only fallback):** In `ci.yml`, shadow system busybox:
+  ```yaml
+  - name: Shadow system busybox with korego
+    run: sudo ln -sf "$PWD/korego" /usr/local/bin/busybox
+  ```
 - [ ] Update CI baseline counter to reflect true KoreGo pass rate (not system BusyBox pass rate)
 - [ ] Document the resolution in `todos.md` and close the discrepancy note
 
@@ -182,75 +244,53 @@ make testsuite 2>&1 | tail -5
 
 ## 12.5 — `awk` Implementation (Platinum Gate)
 
-**Why it matters:** `awk` is the last missing POSIX.2 utility. Without it, the project's
-"POSIX-compliant userland" claim carries a permanent asterisk. Every serious shell script
-that processes structured text uses awk. The implementation plan already exists in
-[07a_awk.md](07a_awk.md).
-
-**Current state:** Deferred since MVP. No `pkg/awk/` exists. All other 49 target utilities
-are implemented.
-
-### Tasks
-
-> Full implementation plan is in [07a_awk.md](07a_awk.md). This task tracks execution.
-
-- [ ] Implement `pkg/awk/awk.go` per the plan in [07a_awk.md](07a_awk.md)
-- [ ] Register in multicall dispatch (`cmd/korego/main.go`)
-- [ ] `--json` output: array of per-record results with matched fields
-- [ ] BusyBox test suite `awk` tests must pass
-- [ ] Unit tests: ≥20 cases covering patterns, fields, `BEGIN`/`END`, built-ins (`NR`, `NF`, `FS`, `OFS`)
-- [ ] Add `awk.schema.json` in `test/schemas/` and `docs/schemas/`
-- [ ] Update `posix_coverage.md`: change awk from ❌ to ✅
-- [ ] Update README status table
-
-### Acceptance
-
-```bash
-echo -e "a 1\nb 2\nc 3" | ./korego awk '{print $2}'
-# → 1\n2\n3
-
-./korego awk --json '{sum += $1} END {print sum}' numbers.txt
-# → {"output":"42\n","exitCode":0,"schemaVersion":"1.0"}
-
-go test ./pkg/awk/... -v
-make testsuite   # awk tests now in passed count
-```
+> **Full plan:** [07a_awk.md](07a_awk.md) — the canonical awk document.
+>
+> `awk` is the last missing POSIX.2 utility. Without it, the "POSIX-compliant
+> userland" claim carries a permanent asterisk. All task details, sub-phase
+> breakdowns, and acceptance criteria live in 07a_awk.md. Completing this
+> alongside 12.0–12.4 achieves **Platinum**.
 
 ---
 
 ## Milestone 12 — Gold Checklist
 
 ```
+[ ] 12.0 — macOS builds cleanly (GOOS=darwin go build ./... exits 0)
 [ ] 12.1 — SBOM + Cosign + SLSA + trivy in release/CI pipeline
-[ ] 12.2 — Shell security model documented + timeout/resource tests passing
-[ ] 12.3 — Coverage gate hard-fails CI at ≥60%
+[ ] 12.2 — Shell security model documented + KOREGO_SHELL_TIMEOUT wired + tests passing
+[ ] 12.3 — Coverage gate hard-fails CI (staged: 45% → 60%)
 [ ] 12.4 — CI/local BusyBox discrepancy resolved; baselines match
 [ ] 12.5 — awk implemented, BusyBox awk tests pass (Platinum gate)
 ```
 
-Completing 12.1–12.4 = **Gold**.
-Completing 12.1–12.5 = **Platinum**.
+Completing 12.0–12.4 = **Gold**.
+Completing 12.0–12.5 = **Platinum**.
 
 ---
 
 ## How to Verify
 
 ```bash
+# macOS build
+GOOS=darwin CGO_ENABLED=0 go build ./...   # must exit 0
+
 # Supply chain
-cosign verify ghcr.io/ramayac/korego:latest ...
+cosign verify ghcr.io/ramayac/korego:latest \
+  --certificate-identity-regexp='.*' \
+  --certificate-oidc-issuer='https://token.actions.githubusercontent.com'
 docker buildx imagetools inspect ghcr.io/ramayac/korego:latest --format '{{ json .SBOM }}'
 
 # Shell security
-go test ./internal/shell/... -v -run TestTimeout
+KOREGO_SHELL_TIMEOUT=5s go test ./internal/shell/... -v -run TestTimeout
 go test ./internal/shell/... -v -run TestResourceLimits
 
 # Coverage gate
-make cover-pct   # ≥60% required
+make cover-pct   # ≥60% required (staged: 45% first, then 60%)
 
 # BusyBox parity
 make testsuite   # same result locally and in CI
 
-# awk (Platinum)
+# awk (Platinum) — see 07a_awk.md for full criteria
 echo "hello world" | ./korego awk '{print $1}'
-go test ./pkg/awk/... -v
 ```

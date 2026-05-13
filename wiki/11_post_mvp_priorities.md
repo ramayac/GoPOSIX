@@ -84,28 +84,11 @@ fmt.Println(result.Files[0].Name)
 
 ## 11.4 — `awk` Implementation
 
-**Why it matters:** `awk` is mandatory for strict POSIX.2 compliance. The existing docs ([posix_faq.md](posix_faq.md)) acknowledge this explicitly. Every serious shell script that processes structured text uses awk. Without it, "POSIX-compliant userland" is a qualified claim.
-
-> Full implementation plan already exists in [07a_awk.md](07a_awk.md). This task is to execute it.
-
-### Tasks
-
-- [ ] Implement `pkg/awk/awk.go` per the plan in [07a_awk.md](07a_awk.md)
-- [ ] Register in multicall dispatch
-- [ ] `--json` output: array of per-record results
-- [ ] BusyBox test suite awk tests must pass
-- [ ] Unit tests (target: ≥ 20 test cases covering patterns, fields, BEGIN/END, built-in variables)
-- [ ] Update [posix_coverage.md](posix_coverage.md) and README status table
-
-### Acceptance
-
-```bash
-echo -e "a 1\nb 2\nc 3" | ./korego awk '{print $2}' 
-# → 1\n2\n3
-
-./korego awk --json '{sum += $1} END {print sum}' numbers.txt
-# → {"output": "42\n", "exitCode": 0}
-```
+> **Full plan:** [07a_awk.md](07a_awk.md) — the canonical awk document.
+>
+> `awk` is mandatory for strict POSIX.2 compliance and is the last unimplemented
+> POSIX utility. It is the **Platinum gate** for this project. All task details,
+> acceptance criteria, and sub-phase breakdowns live in 07a_awk.md.
 
 ---
 
@@ -114,7 +97,7 @@ echo -e "a 1\nb 2\nc 3" | ./korego awk '{print $2}'
 - [x] Every utility's `--json` output validates against a published JSON schema
 - [x] A working agent example (Go) runs end-to-end against the daemon (`make example-agent`)
 - [x] `pkg/client` supports connection pooling and typed helper methods (42 utilities)
-- [ ] `awk` passes BusyBox awk tests and is listed as complete in `posix_coverage.md`
+- [ ] `awk` implemented (see [07a_awk.md](07a_awk.md)) — passes BusyBox awk tests, listed as complete in `posix_coverage.md`
 
 ## How to Verify
 
@@ -128,8 +111,6 @@ make example-agent
 # Client library
 go test ./pkg/client/... -v
 
-# awk
+# awk (see 07a_awk.md for full acceptance criteria)
 echo "hello world" | ./korego awk '{print $1}'
-go test ./pkg/awk/... -v
-make testsuite   # awk tests should now pass
 ```

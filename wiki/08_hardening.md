@@ -13,11 +13,14 @@ Harden the daemon and container for production use. Security audit, resource lim
 ### 08.1 — Security Audit
 
 - [x] **Path traversal:** All file operations validate paths. No `../../etc/shadow` escapes.
-- [x] **Shell sandbox:** `korego.shell.exec` runs with:
+- [x] **Shell sandbox (design + implementation):** `korego.shell.exec` runs with:
   - No network access (no `net.Dial` exposed)
-  - Restricted filesystem (configurable allowed paths)
-  - Execution timeout (default 30s, max 5min)
-  - Memory limit (default 128MB per script)
+  - Restricted filesystem (configurable allowed paths via `SecurePath`)
+  - Execution timeout (30s hardcoded in `interpreter.go`)
+  - Memory limit (128MB per stream via `LimitWriter`)
+  > **Note:** The sandbox is implemented but lacks tests and formal documentation.
+  > Wiring `KOREGO_SHELL_TIMEOUT` from env, writing `internal/shell/interpreter_test.go`,
+  > and creating `docs/SECURITY.md` are tracked in [12_road_to_gold.md](12_road_to_gold.md) (12.2).
 - [x] **Rate limiting:** Max 100 RPC requests/sec per connection (configurable)
 - [x] **Input validation:** All RPC params validated against expected types/ranges
 - [x] **Symlink following:** Configurable — refuse to follow symlinks outside allowed paths

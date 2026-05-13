@@ -41,37 +41,42 @@ These items improve quality, robustness, and production-readiness but are not bl
 
 ## 11a.3 — Shell Interpreter Security Model
 
-**Current state:** `internal/shell/interpreter.go` wraps `mvdan.cc/sh` with a 30s timeout and memory limit (per [07_agent_features.md](07_agent_features.md)), but there are no tests for these limits and no documentation of the security boundaries.
-This timeout is configurable via `KOREGO_SHELL_TIMEOUT`, but it's not clear to users what the default is or why it exists. Additionally, if the shell is intended to be safe for untrusted input, that should be explicitly stated and tested.
+> **Note:** The sandbox design and implementation were completed in Phase 08
+> ([08_hardening.md](08_hardening.md) 08.1). Testing (`interpreter_test.go`), env-var
+> wiring (`KOREGO_SHELL_TIMEOUT`), and documentation (`docs/SECURITY.md`) are tracked
+> in [12_road_to_gold.md](12_road_to_gold.md) (12.2). This section is superseded.
 
-### Tasks
+**Current state:** `internal/shell/interpreter.go` wraps `mvdan.cc/sh` with a hardcoded
+30s timeout and a 128MB `LimitWriter` per stream. `SecurePath` confines file opens to
+the session CWD. Code audit confirmed `KOREGO_SHELL_TIMEOUT` is not actually read from
+the environment (env var is documented but not wired). No tests, no `docs/SECURITY.md`.
 
-- [ ] Write tests that verify timeout is enforced (e.g., `sleep 60` must be killed)
-- [ ] Write tests that verify dangerous operations are blocked (if sandboxing is intended)
-- [ ] Document the security model in `docs/SECURITY.md`:
-  - What can a script access? (filesystem, env, network)
-  - What are the resource limits?
-  - What syscalls are blocked (if any)?
-- [ ] Decide and document whether `korego.shell.exec` is "trusted input only" or "untrusted input safe"
+### Tasks (tracked in 12.2)
+
+- [ ] Wire `KOREGO_SHELL_TIMEOUT` env var (currently hardcoded 30s)
+- [ ] Write `internal/shell/interpreter_test.go` (timeout enforcement, path escape, resource limits)
+- [ ] Write `docs/SECURITY.md` (trust model, accessible resources, limits, deployment posture)
 
 ---
 
 ## 11a.4 — CI Quality Gates
 
-**Current state:** Several CI checks are informational and don't fail the build.
+**Current state:** BusyBox baseline and image size are enforced as hard failures.
+Coverage is **reported but informational** (warns at <50%, never fails the build).
+Making coverage a hard gate is tracked in [12_road_to_gold.md](12_road_to_gold.md) (12.3).
 
 | Check | Current | Target |
 |-------|---------|--------|
-| BusyBox suite | `continue-on-error: true` | Fail on regression from baseline |
-| Image size | Warn if >20MB | Fail if >20MB |
-| Coverage | Not enforced | Fail if <70% on changed packages |
+| BusyBox suite | Hard fail if <479 passed | ✅ Enforced |
+| Image size | Hard fail if >20MB | ✅ Enforced |
+| Coverage | `::warning::` at <50%, exits 0 | Fail at 45% (stage 1) → 60% (stage 2) |
 | Compliance tests | `test/compliance/` removed | BusyBox suite (479+ tests) |
 
 ### Tasks
 
 - [x] Change BusyBox CI step to fail if pass count drops below 479 (current baseline)
 - [x] Make image size gate a hard failure (was `::warning::`, now `::error::` with `exit 1`)
-- [x] Add `go test -coverprofile` with a threshold check (overall coverage reported; per-package gate deferred)
+- [x] Add `go test -coverprofile` with a threshold check (coverage reported via `::warning::`; hard-fail gate deferred to 12.3)
 - [x] Add compliance test step that runs all scripts from 11a.1 (step added, later removed — superseded by BusyBox suite)
 
 ---
@@ -132,11 +137,11 @@ This timeout is configurable via `KOREGO_SHELL_TIMEOUT`, but it's not clear to u
 
 - [x] Compliance test approach changed: per-utility scripts removed in favor of BusyBox test suite (11a.1 — superseded)
 - [x] 6 missing unit test files added (cp, mv, ln, rmdir, yes, daemon); coverage step in CI (11a.2)
-- [ ] Shell interpreter security model documented (11a.3 — deferred)
-- [x] BusyBox baseline enforced; image size gate hard failure; coverage CI step added; compliance CI step removed as redundant (11a.4)
+- [ ] Shell interpreter security model documented (11a.3 — tracked in [12.2](12_road_to_gold.md))
+- [x] BusyBox baseline enforced; image size gate hard failure; coverage CI step added (informational only; hard-fail tracked in [12.3](12_road_to_gold.md)) (11a.4)
 - [x] `make help`, `make bench`, `make validate-schemas`, `make example-agent`, `make cover-pct` all work (11a.5)
 - [x] Three deployment patterns documented with a working docker-compose example (11a.6)
-- [ ] Release pipeline hardened (11a.7 — deferred)
+- [ ] Release pipeline hardened (11a.7 — tracked in [12.1](12_road_to_gold.md))
 - [x] `scratch.go` deleted (11a.8)
 
-**Summary:** 6 of 8 items complete. Deferred: 11a.3 (shell security docs), 11a.7 (release hardening). 11a.1 superseded (compliance scripts removed, BusyBox suite is the path forward).
+**Summary:** 6 of 8 items complete. Deferred items (11a.3 shell security, 11a.7 release hardening, 11a.4 coverage hard-fail) are now tracked in [12_road_to_gold.md](12_road_to_gold.md). 11a.1 superseded (compliance scripts removed, BusyBox suite is the path forward).

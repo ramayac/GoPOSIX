@@ -6,11 +6,11 @@
 
 ## Context
 
-This document records the findings of a code-first audit conducted against the live repository.
-The approach was: explore code → validate against the wiki → report discrepancies.
-
-The wiki's `12_road_to_gold.md` is accurate in its gap identification. This document adds
-code-level specifics, line-number references, and two gaps not captured in the wiki.
+This document records code-level findings from a live-repository audit.
+The execution plan originally in this document has been merged into
+[12_road_to_gold.md](12_road_to_gold.md), which is the authoritative
+source for the Gold roadmap. This document focuses on **code evidence**
+and **discrepancies** between wiki claims and the actual codebase.
 
 **Overall coverage at time of audit: 41.6%** (`go test -coverprofile` across `./pkg/...` `./internal/...`)
 
@@ -175,8 +175,9 @@ if (( $(echo "$COVERED < 60" | bc -l) )); then
 fi
 ```
 
-Note: at 41.6% current, enforcing 60% immediately would break CI. A staged approach:
-enforce 45% now, raise to 60% after targeted test additions (see tasks below).
+Note: at 41.6% current, enforcing 60% immediately would break CI. A staged approach
+(enforce 45% first, add tests to high-ROI packages, then raise to 60%) is detailed in
+[12_road_to_gold.md](12_road_to_gold.md) (12.3).
 
 ### Highest-ROI packages to test first
 `pkg/head`, `pkg/tail`, `pkg/grep`, `pkg/dirname`, `pkg/echo` — all have trivial
@@ -223,61 +224,27 @@ In `ci.yml`, before `make testsuite`:
 
 **Confirmed: `pkg/awk/` does not exist. No code at all.**
 
-Implementation plan exists at [07a_awk.md](07a_awk.md). This is the only remaining
-POSIX.2 utility. Without it the "100% POSIX userland" claim carries a permanent asterisk.
-
-Required deliverables:
-- `pkg/awk/awk.go` — core interpreter (patterns, `$N` fields, `BEGIN`/`END`, builtins: `NR`, `NF`, `FS`, `OFS`, `print`, `printf`, `sub`, `gsub`, `split`, `length`)
-- `--json` output: array of per-record results
-- `test/schemas/awk.schema.json`
-- BusyBox `awk.tests` passing
-- ≥20 unit test cases
+> **Full plan:** [07a_awk.md](07a_awk.md) — the canonical awk document. All task
+> details and acceptance criteria live there.
 
 ---
 
-## Prioritized Execution Plan
+## Verification Commands
 
-Tasks ordered by impact/effort ratio:
-
-| Step | Task | Effort | Result |
-|------|------|--------|--------|
-| 1 | Add `//go:build linux` tags to `uname`, `stat`; add Darwin stubs | 2h | `make test` works on macOS |
-| 2 | Wire `KOREGO_SHELL_TIMEOUT` env var in `interpreter.go` | 30min | Wiki/code parity restored |
-| 3 | Write `internal/shell/interpreter_test.go` (3–5 tests) | 4h | 12.2 test requirement met |
-| 4 | Write `docs/SECURITY.md` | 2h | 12.2 doc requirement met |
-| 5 | Change coverage gate from `::warning::` to `exit 1` at 45% | 15min | Gate is real; raise to 60% after step 6 |
-| 6 | Add unit tests to `head`, `tail`, `grep`, `dirname`, `echo`, `tee` | 2d | Coverage > 60% overall |
-| 7 | Raise coverage gate threshold to 60% | 5min | 12.3 closed |
-| 8 | Fix `runtest` to route all `busybox` calls to KoreGo | 4h | 12.4 closed |
-| 9 | Add Trivy to `ci.yml` after Docker build | 30min | Vulnerability scanning live |
-| 10 | Add SBOM stanza to `.goreleaser.yml` | 30min | Provenance on binaries |
-| 11 | Add Cosign signing + SLSA provenance to `release.yml` | 4h | 12.1 closed |
-| 12 | Write `pkg/awk/` | 5–10d | Platinum gate |
-
-**Steps 1–11 = Gold. Steps 1–12 = Platinum.**
-
----
-
-## How to Verify (Acceptance Criteria)
+See [12_road_to_gold.md](12_road_to_gold.md) for the full acceptance criteria and
+verification commands for each gap. The audit-specific commands below validate the
+code-level findings in this document:
 
 ```bash
-# macOS builds cleanly
-GOOS=darwin CGO_ENABLED=0 go build ./...
+# Confirm macOS build breakage
+GOOS=darwin CGO_ENABLED=0 go build ./... 2>&1 | grep "undefined"
 
-# Shell timeout is configurable
-KOREGO_SHELL_TIMEOUT=5s go test ./internal/shell/... -v -run TestTimeout
+# Confirm KOREGO_SHELL_TIMEOUT is not read from env
+grep -r "KOREGO_SHELL_TIMEOUT" internal/shell/
 
-# Coverage gate fails when below threshold
-make cover-pct   # must show ≥60% overall
+# Confirm coverage gate is warning-only
+grep -A5 "COVERED" .github/workflows/ci.yml
 
-# BusyBox results are same locally and on CI
-make testsuite 2>&1 | tail -5
-
-# Supply chain: image is signed
-cosign verify ghcr.io/ramayac/korego:latest \
-  --certificate-identity-regexp='.*' \
-  --certificate-oidc-issuer='https://token.actions.githubusercontent.com'
-
-# awk works (Platinum)
-echo -e "a 1\nb 2\nc 3" | ./korego awk '{print $2}'
+# Confirm old-style tests hit system busybox
+grep -r "busybox" test/busybox_testsuite/runtest | head -5
 ```
