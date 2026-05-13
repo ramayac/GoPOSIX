@@ -10,7 +10,7 @@ Integrate a formal POSIX testing framework to programmatically verify KoreGo's c
 
 ## Rationale
 
-Currently, `test/compliance/` compares KoreGo's output to the host system's GNU Coreutils. While effective, GNU Coreutils often implements extensions beyond POSIX. A dedicated POSIX test suite ensures strict adherence to the standard, avoiding GNU-specific bloat and identifying subtle deviations.
+Previously, `test/compliance/` bash scripts compared KoreGo's output to the host system's GNU Coreutils. Those scripts have been removed — the BusyBox test suite (`make testsuite`, 479+ tests at 97.9% pass rate) now serves as the primary external compliance check. GNU Coreutils often implements extensions beyond POSIX; the BusyBox suite provides a more appropriate baseline for a minimal multi-call binary.
 
 ## Framework Options
 
@@ -121,7 +121,7 @@ Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline b
 > **Remaining:** 10 sort advanced features, 3 diff edge cases, 2 tar, 2 xargs, 2 sort glibc.
 
 ## Milestone 10 — ✅ COMPLETE (2026-05-02)
-- [x] External test suite integrated into `make test` or `make compliance`.
+- [x] External test suite integrated via `make testsuite` (BusyBox, 479+ tests).
 - [x] CI pipeline runs the external test suite.
 - [x] `posix_coverage.md` updated with programmatic results.
 - [x] Phase C (`tar -X`, stdin) completed. See [todos.md](todos.md).

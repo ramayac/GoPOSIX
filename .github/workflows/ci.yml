@@ -39,9 +39,6 @@ jobs:
             echo "::warning::Coverage ${COVERED}% is below 50% threshold"
           fi
 
-      - name: Compliance tests
-        run: make compliance
-
       - name: Build binary
         run: make build
 

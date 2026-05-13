@@ -105,36 +105,7 @@ Must handle stdin (`cat -` or `cat` with no args) and pipes.
 
 ## Compliance Testing
 
-Create `test/compliance/` with shell scripts comparing korego vs system tools:
-
-```bash
-#!/bin/bash
-# test/compliance/test_ls.sh
-KOREGO=./korego
-PASS=0; FAIL=0
-
-run_test() {
-    local desc="$1"; shift
-    expected=$("$@" 2>&1); exp_rc=$?
-    got=$($KOREGO "$@" 2>&1); got_rc=$?
-    if [ "$expected" = "$got" ] && [ "$exp_rc" = "$got_rc" ]; then
-        ((PASS++))
-    else
-        ((FAIL++))
-        echo "FAIL: $desc (exit: expected=$exp_rc got=$got_rc)"
-        diff <(echo "$expected") <(echo "$got")
-    fi
-}
-
-run_test "ls /tmp" ls /tmp
-run_test "ls -la /tmp" ls -la /tmp
-run_test "ls nonexistent" ls nonexistent
-
-echo "Results: $PASS passed, $FAIL failed"
-```
-
-- [x] Per-utility compliance scripts in `test/compliance/`
-- [x] Checks both output content AND exit codes
+Per-utility behavior is verified through the BusyBox test suite (`make testsuite`, 479+ tests) and per-package unit tests. The previous `test/compliance/` bash scripts comparing against the host system's GNU Coreutils have been removed — the BusyBox suite provides broader, standardized coverage without depending on the CI runner's installed tool versions.
 
 ---
 
@@ -146,14 +117,13 @@ echo "Results: $PASS passed, $FAIL failed"
 - [x] `korego rm -rf /` is refused
 - [x] `korego stat --json /etc/passwd` returns full stat struct
 - [x] All 13 utilities have unit tests with > 85% coverage
-- [x] Compliance test suite passes > 80% vs system tools
+- [x] BusyBox test suite verifies utility behavior (479+ tests)
 
 ## How to Verify
 
 ```bash
 make test
+make testsuite
 docker run --rm korego:dev ls --json /bin
 docker run --rm korego:dev stat --json /bin/korego
-bash test/compliance/test_ls.sh
-bash test/compliance/test_cat.sh
 ```

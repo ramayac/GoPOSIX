@@ -10,31 +10,15 @@ These items improve quality, robustness, and production-readiness but are not bl
 
 ---
 
-## 11a.1 — Compliance Test Suite Expansion
+## 11a.1 — Compliance Test Suite Expansion (superseded)
 
-**Current state:** Only 3 Bash compliance scripts exist (`test_ls.sh`, `test_cat.sh`, `test_basename_dirname.sh`). 46 utilities have no dedicated compliance tests. Regressions outside BusyBox coverage are invisible.
+**Decision:** The per-utility `test/compliance/` bash scripts and `make compliance` target have been removed. The BusyBox test suite (`make testsuite`, 479+ tests at 97.9% pass rate) provides broader, more standardized coverage. Expanding the BusyBox suite with additional test cases for KoreGo-specific features (e.g., `--json` output) is the preferred path going forward.
 
 ### Tasks
 
-- [ ] Write compliance test scripts for all 49 utilities under `test/compliance/`
-- [ ] Each script should: test the happy path, at least one edge case, and `--json` output validity
-- [ ] Wire all scripts into `make compliance` (currently only runs 3)
-- [ ] Add a CI step that fails on compliance test failure (no `continue-on-error`)
-
-### Template
-
-```bash
-#!/usr/bin/env bash
-# test/compliance/test_grep.sh
-set -euo pipefail
-KOREGO=${KOREGO:-./korego}
-
-echo "hello world" | $KOREGO grep "hello"  # exit 0
-echo "hello world" | $KOREGO grep "xyz" && exit 1 || true  # exit 1 expected
-out=$($KOREGO grep --json "hello" <(echo "hello world"))
-echo "$out" | jq -e '.matches | length > 0'
-echo "PASS: grep"
-```
+- [x] Remove `test/compliance/` scripts and `make compliance` target (superseded by BusyBox suite)
+- [ ] Extend BusyBox test suite with `--json` output validation for key utilities
+- [ ] Add missing BusyBox test cases for utilities not yet covered
 
 ---
 
@@ -81,14 +65,14 @@ This timeout is configurable via `KOREGO_SHELL_TIMEOUT`, but it's not clear to u
 | BusyBox suite | `continue-on-error: true` | Fail on regression from baseline |
 | Image size | Warn if >20MB | Fail if >20MB |
 | Coverage | Not enforced | Fail if <70% on changed packages |
-| Compliance tests | 3 scripts only | All 49 utilities |
+| Compliance tests | `test/compliance/` removed | BusyBox suite (479+ tests) |
 
 ### Tasks
 
 - [x] Change BusyBox CI step to fail if pass count drops below 479 (current baseline)
 - [x] Make image size gate a hard failure (was `::warning::`, now `::error::` with `exit 1`)
 - [x] Add `go test -coverprofile` with a threshold check (overall coverage reported; per-package gate deferred)
-- [x] Add compliance test step that runs all scripts from 11a.1 (step added after unit tests)
+- [x] Add compliance test step that runs all scripts from 11a.1 (step added, later removed — superseded by BusyBox suite)
 
 ---
 
@@ -146,13 +130,13 @@ This timeout is configurable via `KOREGO_SHELL_TIMEOUT`, but it's not clear to u
 
 ## Milestone 11a
 
-- [ ] All 49 utilities have compliance test scripts and CI runs them (11a.1 — deferred)
+- [x] Compliance test approach changed: per-utility scripts removed in favor of BusyBox test suite (11a.1 — superseded)
 - [x] 6 missing unit test files added (cp, mv, ln, rmdir, yes, daemon); coverage step in CI (11a.2)
 - [ ] Shell interpreter security model documented (11a.3 — deferred)
-- [x] BusyBox baseline enforced; image size gate hard failure; coverage/compliance CI steps added (11a.4)
+- [x] BusyBox baseline enforced; image size gate hard failure; coverage CI step added; compliance CI step removed as redundant (11a.4)
 - [x] `make help`, `make bench`, `make validate-schemas`, `make example-agent`, `make cover-pct` all work (11a.5)
 - [x] Three deployment patterns documented with a working docker-compose example (11a.6)
 - [ ] Release pipeline hardened (11a.7 — deferred)
 - [x] `scratch.go` deleted (11a.8)
 
-**Summary:** 5 of 8 items complete. Deferred: 11a.1 (compliance test expansion), 11a.3 (shell security docs), 11a.7 (release hardening).
+**Summary:** 6 of 8 items complete. Deferred: 11a.3 (shell security docs), 11a.7 (release hardening). 11a.1 superseded (compliance scripts removed, BusyBox suite is the path forward).

@@ -293,17 +293,6 @@ tidy:
 all: vet test build
 	@echo "all: vet + test + build complete"
 
-.PHONY: compliance
-compliance: build
-	@chmod +x test/compliance/*.sh
-	@echo "--- ls compliance ---"
-	bash test/compliance/test_ls.sh
-	@echo "--- cat compliance ---"
-	bash test/compliance/test_cat.sh
-	@echo "--- basename/dirname compliance ---"
-	bash test/compliance/test_basename_dirname.sh
-	@echo "compliance: all suites passed"
-
 .PHONY: testsuite
 testsuite: build
 	@echo "--- BusyBox Test Suite ---"

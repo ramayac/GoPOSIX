@@ -129,7 +129,7 @@ Add control flow statements to make awk Turing-complete.
 - [ ] Multiple `-e` programs
 - [ ] Proper exit codes
 - [ ] Comprehensive `--json` structured output mode
-- [ ] Compliance test (`test/compliance/test_awk.sh`)
+- [ ] BusyBox awk test suite integration (`test/busybox_testsuite/awk.tests`)
 - [ ] Performance benchmarks on large files
 
 ---
