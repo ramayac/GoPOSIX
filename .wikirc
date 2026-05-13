@@ -1,0 +1,10 @@
+wiki_dir = "wiki"
+default_diff = "main...HEAD"
+log_lines = 10
+
+ignore = [
+  "wiki/",
+  "bin/",
+  "*.log",
+  "*.tmp",
+]

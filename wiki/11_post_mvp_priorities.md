@@ -84,18 +84,18 @@ fmt.Println(result.Files[0].Name)
 
 ## 11.4 — `awk` Implementation
 
-**Why it matters:** `awk` is mandatory for strict POSIX.2 compliance. The existing docs (`wiki/posix_faq.md`) acknowledge this explicitly. Every serious shell script that processes structured text uses awk. Without it, "POSIX-compliant userland" is a qualified claim.
+**Why it matters:** `awk` is mandatory for strict POSIX.2 compliance. The existing docs ([posix_faq.md](posix_faq.md)) acknowledge this explicitly. Every serious shell script that processes structured text uses awk. Without it, "POSIX-compliant userland" is a qualified claim.
 
 > Full implementation plan already exists in [07a_awk.md](07a_awk.md). This task is to execute it.
 
 ### Tasks
 
-- [ ] Implement `pkg/awk/awk.go` per the plan in `wiki/07a_awk.md`
+- [ ] Implement `pkg/awk/awk.go` per the plan in [07a_awk.md](07a_awk.md)
 - [ ] Register in multicall dispatch
 - [ ] `--json` output: array of per-record results
 - [ ] BusyBox test suite awk tests must pass
 - [ ] Unit tests (target: ≥ 20 test cases covering patterns, fields, BEGIN/END, built-in variables)
-- [ ] Update `wiki/posix_coverage.md` and README status table
+- [ ] Update [posix_coverage.md](posix_coverage.md) and README status table
 
 ### Acceptance
 

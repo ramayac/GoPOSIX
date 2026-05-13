@@ -1,6 +1,6 @@
-# KoreGo — Updated Development Roadmap
+# KoreGo — Development Roadmap
 
-> **Version:** 2.1 | **Date:** 2026-05-02 | **Original:** `plan.md`
+> **Version:** 2.1 | **Date:** 2026-05-02
 
 ---
 
@@ -110,13 +110,15 @@ korego/
 | [07_agent_features.md](07_agent_features.md) | Agent-Ready Features (sessions, shell, Tier 5) | **COMPLETED** |
 | [08_hardening.md](08_hardening.md) | Production Hardening & Security | **COMPLETED** |
 | [09_release_docs.md](09_release_docs.md) | Release Automation & Documentation | **COMPLETED** |
-| [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | **COMPLETED** ✅ |
+| [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | **COMPLETED** |
 | [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 | [10a_sed.md](10a_sed.md) | Sed Implementation Details | **COMPLETED** |
 | [07a_awk.md](07a_awk.md) | Awk Deferral Analysis | **DEFERRED** |
 | [posix_coverage.md](posix_coverage.md) | POSIX Compliance Matrix (49 utilities) | **COMPLETED** |
 | [posix_faq.md](posix_faq.md) | POSIX Compliance FAQ | **COMPLETED** |
 | [11_lessons_learned.md](11_lessons_learned.md) | Phase 11 Lessons Learned, Insights & Gotchas | **COMPLETED** |
+| [11_post_mvp_priorities.md](11_post_mvp_priorities.md) | Post-MVP Priorities | **COMPLETED** |
+| [11a_lower_priority.md](11a_lower_priority.md) | Lower Priority Improvements | **IN PROGRESS** |
 
 ---
 

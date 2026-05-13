@@ -41,7 +41,7 @@ These items improve quality, robustness, and production-readiness but are not bl
 
 ## 11a.3 — Shell Interpreter Security Model
 
-**Current state:** `internal/shell/interpreter.go` wraps `mvdan.cc/sh` with a 30s timeout and memory limit (per `wiki/07_agent_features.md`), but there are no tests for these limits and no documentation of the security boundaries.
+**Current state:** `internal/shell/interpreter.go` wraps `mvdan.cc/sh` with a 30s timeout and memory limit (per [07_agent_features.md](07_agent_features.md)), but there are no tests for these limits and no documentation of the security boundaries.
 This timeout is configurable via `KOREGO_SHELL_TIMEOUT`, but it's not clear to users what the default is or why it exists. Additionally, if the shell is intended to be safe for untrusted input, that should be explicitly stated and tested.
 
 ### Tasks
