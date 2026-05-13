@@ -16,10 +16,10 @@ KoreGo MVP is complete: 49 utilities implemented, 97.9% BusyBox pass rate, daemo
 
 ### Tasks
 
-- [ ] Define a canonical JSON schema (JSON Schema draft-07 or OpenAPI 3.1 component) for every utility's `--json` output
-- [ ] Add schemas to `docs/JSON_SCHEMA.md` (currently a stub that says "see Go structs")
-- [ ] Add a schema validation step in CI (use `ajv` or equivalent) against golden output fixtures
-- [ ] Version the schema — include a `"schemaVersion"` field in the JSON envelope so consumers can detect breaking changes
+- [x] Define a canonical JSON schema (JSON Schema draft-07) for every utility's `--json` output (`test/schemas/`)
+- [x] Add schemas and update `docs/JSON_SCHEMA.md` (now documents all 42 JSON-enabled utilities)
+- [x] Add a schema validation step in CI (`make validate-schemas` runs `ajv` against golden fixtures)
+- [x] Version the schema — added `"schemaVersion": "1.0"` field to the JSON envelope (`pkg/common/output.go`)
 
 ### Acceptance
 
@@ -109,7 +109,7 @@ echo -e "a 1\nb 2\nc 3" | ./korego awk '{print $2}'
 
 ## Milestone 11
 
-- [ ] Every utility's `--json` output validates against a published JSON schema
+- [x] Every utility's `--json` output validates against a published JSON schema
 - [ ] A working agent example (Go + Python) runs end-to-end against the daemon
 - [ ] `pkg/client` supports connection pooling and typed helper methods
 - [ ] `awk` passes BusyBox awk tests and is listed as complete in `posix_coverage.md`
