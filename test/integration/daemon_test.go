@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -36,7 +37,8 @@ func TestDaemonConcurrent(t *testing.T) {
 
 	// Single ping test
 	var pingRes map[string]interface{}
-	err := c.Call("korego.ping", nil, &pingRes)
+	ctx := context.Background()
+	err := c.Call(ctx, "korego.ping", nil, &pingRes)
 	if err != nil {
 		t.Fatalf("Ping failed: %v", err)
 	}
@@ -46,7 +48,7 @@ func TestDaemonConcurrent(t *testing.T) {
 
 	// Single ls test
 	var lsRes map[string]interface{}
-	err = c.Call("korego.ls", map[string]interface{}{"path": "/tmp"}, &lsRes)
+	err = c.Call(ctx, "korego.ls", map[string]interface{}{"path": "/tmp"}, &lsRes)
 	if err != nil {
 		t.Fatalf("ls failed: %v", err)
 	}
@@ -64,7 +66,7 @@ func TestDaemonConcurrent(t *testing.T) {
 		go func(idx int) {
 			defer wg.Done()
 			var res map[string]interface{}
-			err := c.Call("korego.echo", map[string]interface{}{"text": fmt.Sprintf("req-%d", idx)}, &res)
+			err := c.Call(ctx, "korego.echo", map[string]interface{}{"text": fmt.Sprintf("req-%d", idx)}, &res)
 			if err != nil {
 				errs <- err
 			}

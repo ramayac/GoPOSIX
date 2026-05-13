@@ -30,6 +30,18 @@ jobs:
       - name: Unit tests
         run: make test
 
+      - name: Coverage check
+        run: |
+          CGO_ENABLED=0 go test -coverprofile=coverage.out $(go list ./pkg/... ./internal/... | grep -v /cmd/)
+          COVERED=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | sed 's/%//')
+          echo "Overall coverage: ${COVERED}%"
+          if (( $(echo "$COVERED < 50" | bc -l) )); then
+            echo "::warning::Coverage ${COVERED}% is below 50% threshold"
+          fi
+
+      - name: Compliance tests
+        run: make compliance
+
       - name: Build binary
         run: make build
 
@@ -46,7 +58,6 @@ jobs:
         run: make smoke
 
       - name: Run BusyBox Test Suite
-        continue-on-error: true
         run: |
           echo "Running BusyBox test suite..."
           make testsuite > testsuite.log 2>&1 || true
@@ -64,6 +75,10 @@ jobs:
           if [ $FAIL -gt 0 ]; then
             echo "--- Failures ---"
             grep "^FAIL:" testsuite.log || true
+          fi
+          if [ $PASS -lt 479 ]; then
+            echo "::error::BusyBox pass count ($PASS) dropped below baseline (479)"
+            exit 1
           fi
   # ---------------------------------------------------------------------------
   # Job 2: Image size gate — must be < 20 MB
@@ -97,7 +112,8 @@ jobs:
           MB=$(( SIZE / 1024 / 1024 ))
           echo "Image size: ${MB} MB (${SIZE} bytes)"
           if [ "${SIZE}" -gt 20971520 ]; then
-            echo "::warning::Image size ${MB} MB exceeds 20 MB target"
+            echo "::error::Image size ${MB} MB exceeds 20 MB limit"
+            exit 1
           else
             echo "PASS: image size ${MB} MB is within the 20 MB target"
           fi

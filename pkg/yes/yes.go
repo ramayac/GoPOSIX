@@ -36,7 +36,7 @@ func run(args []string, out io.Writer) int {
 		case <-sig:
 			return 0
 		default:
-			if _, err := fmt.Println(text); err != nil {
+			if _, err := fmt.Fprintln(out, text); err != nil {
 				return 0 // broken pipe
 			}
 		}

@@ -1,0 +1,61 @@
+version: "3.8"
+
+# KoreGo sidecar example.
+# The daemon container listens on a shared Unix socket and the client
+# container exercises it with a quick smoke script.
+#
+# Usage:
+#   docker compose -f examples/docker-compose.yml up --build
+#   docker compose -f examples/docker-compose.yml down
+
+services:
+  korego:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: korego:latest
+    command: korego daemon -s /var/run/korego/korego.sock -w 4
+    user: "65534:65534"
+    read_only: true
+    volumes:
+      - korego-socket:/var/run/korego
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "echo '{\"jsonrpc\":\"2.0\",\"method\":\"korego.ping\",\"id\":1}' | nc -U /var/run/korego/korego.sock",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  client:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.debug
+    image: korego:debug
+    command: |
+      sh -c '
+        echo "--- waiting for daemon ---"
+        sleep 2
+        echo "--- ping ---"
+        echo "{\"jsonrpc\":\"2.0\",\"method\":\"korego.ping\",\"id\":1}" | nc -U /var/run/korego/korego.sock
+        echo ""
+        echo "--- echo ---"
+        echo "{\"jsonrpc\":\"2.0\",\"method\":\"korego.echo\",\"params\":{\"text\":\"hello from compose\"},\"id\":2}" | nc -U /var/run/korego/korego.sock
+        echo ""
+        echo "--- ls /etc ---"
+        echo "{\"jsonrpc\":\"2.0\",\"method\":\"korego.ls\",\"params\":{\"path\":\"/etc\"},\"id\":3}" | nc -U /var/run/korego/korego.sock
+        echo ""
+        echo "--- done ---"
+      '
+    depends_on:
+      korego:
+        condition: service_healthy
+    volumes:
+      - korego-socket:/var/run/korego
+
+volumes:
+  korego-socket:
