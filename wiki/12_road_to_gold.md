@@ -194,7 +194,7 @@ actually testing system BusyBox on CI, not KoreGo. The CI gate now enforces ≥4
 - [x] Route ALL `busybox` calls to KoreGo via global `BBDIR` symlink (Option A)
 - [x] Simplify old-style test PATH blocks (per-applet `case` removed; single shared PATH)
 - [x] Update CI baseline from 479 to 409 (`ci.yml`)
-- [ ] Document the resolution in `todos.md` and close the discrepancy note
+- [x] Document the resolution in `todos.md` and close the discrepancy note
 
 ---
 

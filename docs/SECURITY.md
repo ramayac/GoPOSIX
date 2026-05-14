@@ -71,8 +71,18 @@ a non-zero exit code. When either output buffer is exceeded, the stream is trunc
 5. **Read-only filesystem.** Mount the container filesystem as read-only except for the
    socket directory and any paths the daemon needs to write to.
 6. **Session isolation.** Use sessions (`korego.session.create`) for multi-step workflows.
-   Sessions confine file operations to a working directory. Stateless calls operate
-   against `/` by default.
+   Sessions confine file operations to a working directory and carry environment state
+   across calls. Stateless calls operate against `/` by default.
+
+### Should `shell.exec` require a session?
+
+**Decision: No.** Sessions are optional for `shell.exec` (sessionId can be empty).
+
+**Rationale:** Stateless one-off shell commands are a valid and common use case (e.g., `echo hello`)
+that should not require session-creation boilerplate. The security boundaries — timeout enforcement,
+output buffer limits, `SecurePath` confinement — apply identically with or without a session.
+Sessions provide CWD context and environment state for multi-step workflows, not a security boundary.
+If a deployment requires stronger isolation, restrict access at the socket permission level.
 
 ## Artifact Verification
 
