@@ -2,6 +2,22 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-13] design | 16 — MCP Server design (replaces Phase 14)
+
+Created `wiki/16_mcp_server.md` — design for exposing KoreGo as an MCP (Model
+Context Protocol) server. External agents (Claude Desktop, Claude Code, Cursor,
+Continue) drive KoreGo as their sandboxed Linux environment via stdio or HTTP/SSE
+transport. Six curated tools: shell.exec, file.read, file.write, file.edit,
+file.list, workspace.set. Reuses existing shell interpreter, session manager,
+worker pool, and SecurePath. No new external dependencies — MCP uses JSON-RPC 2.0.
+
+Rejected `wiki/14_agent_architecture.md` — KoreGo's natural role is as a tool
+backend for external agents, not as an agent itself. Building an LLM agent inside
+KoreGo duplicates what external agents already do well. Phase 16 is a protocol
+adapter (~600 lines) vs Phase 14's full agent engine (~3000+ lines).
+
+Updated wiki/index.md, wiki/phases.md.
+
 ## [2026-05-13] plan | 15 — Coverage Ramp plan (50% → 75%)
 
 Created `wiki/15_coverage_ramp.md` — 3-stage plan targeting 75% overall coverage.

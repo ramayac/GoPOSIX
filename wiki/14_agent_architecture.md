@@ -1,6 +1,8 @@
-# Phase 14 — Autonomous Coding Agent
+# Phase 14 — Autonomous Coding Agent (Rejected)
 
-> **Status:** Design | **Depends on:** Phase 05 (daemon), Phase 07 (sessions, shell) | **Milestone:** Phase 14
+> **Status:** Rejected | **Superseded by:** [Phase 16 — MCP Server](16_mcp_server.md)
+
+This design was rejected in favor of Phase 16. The architectural insight: KoreGo's natural role is as a *tool backend* for external agents (via MCP), not as an agent itself. Building an LLM agent inside KoreGo duplicates what external agents (Claude Code, Cursor, etc.) already do well, while adding maintenance burden for LLM provider integrations, ReAct loop logic, and prompt engineering. Instead, Phase 16 exposes KoreGo as an MCP server so any MCP-compatible agent can use KoreGo as its sandboxed Linux environment.
 
 ---
 
