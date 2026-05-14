@@ -33,6 +33,14 @@ make testsuite
 ./korego daemon --socket /tmp/korego.sock &
 ```
 
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `KOREGO_SHELL_TIMEOUT` | `30s` | Shell execution timeout (Go duration format, e.g. `60s`, `5m`) |
+
+> `KOREGO_SHELL_TIMEOUT` controls how long `korego.shell.exec` RPC calls will run before being terminated. See [Security Model](docs/SECURITY.md) for details.
+
 ## Documentation
 - [Architecture](docs/ARCHITECTURE.md)
 - [JSON Schema](docs/JSON_SCHEMA.md)
