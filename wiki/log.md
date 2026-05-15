@@ -2,6 +2,18 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-15] consolidate | Remove rejected/future phases, merge audit + coverage ramp
+
+Removed wiki/14_agent_architecture.md (ReAct agent — rejected) and
+wiki/16_mcp_server.md (MCP design — out of scope). Merged
+wiki/13_code_audit.md + wiki/15_coverage_ramp.md into a single page:
+wiki/13_coverage_and_hardening.md — audit findings plus 3-stage coverage
+ramp (50%→75%) plus speed targets.
+
+Updated wiki/phases.md (v3.0): removed original plan analysis (phases 00–10
+are complete), focused on five post-MVP pillars: Coverage, POSIX, Security,
+Speed, Docker. Updated wiki/index.md to match.
+
 ## [2026-05-13] design | 16 — MCP Server design (replaces Phase 14)
 
 Created `wiki/16_mcp_server.md` — design for exposing KoreGo as an MCP (Model

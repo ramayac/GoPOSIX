@@ -40,7 +40,7 @@ to close them, ordered by impact. Completing items 12.0–12.4 achieves Gold. It
 ## 12.0 — macOS Build Breakage
 
 **Why it matters:** Three packages fail to compile on `GOOS=darwin`, blocking local
-development for anyone on macOS. This was discovered during the code audit ([13_code_audit.md](13_code_audit.md))
+development for anyone on macOS. This was discovered during the code audit ([13_coverage_and_hardening.md](13_coverage_and_hardening.md))
 and is not captured in earlier phase docs.
 
 **Current state:** `pkg/uname/uname.go` uses `syscall.Utsname`/`syscall.Uname()` (Linux-only).

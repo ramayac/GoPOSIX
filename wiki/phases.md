@@ -1,37 +1,25 @@
 # KoreGo — Development Roadmap
 
-> **Version:** 2.2 | **Date:** 2026-05-13
+> **Version:** 3.0 | **Date:** 2026-05-15
 
 ---
 
-## Analysis of the Original Plan
+## Post-MVP Focus (Five Pillars)
 
-### Strengths
+All build phases (00–10) are **COMPLETED**. The project now targets:
 
-- Clear vision: Go-native POSIX userland with JSON-RPC for agentic runtimes.
-- Multicall binary pattern (BusyBox-style) is proven and efficient.
-- `FROM scratch` Docker image is the gold standard for minimal attack surface.
-- Library-first design (`pkg/ls` returns structs) enables both CLI and RPC.
-
-### Gaps Identified
-
-| Gap | Risk | Fix |
-|-----|------|-----|
-| No POSIX flag parser up front | Blocks every utility — `-laR` must work | Move to Phase 00 as foundational |
-| `--json` output format undefined | Each utility invents its own schema | Define a universal JSON envelope in Phase 00 |
-| Only 4 utilities in Phase 2 | Far from "100% POSIX compliant" | Tier utilities (50+) across phases |
-| No testing strategy per phase | "80% POSIX" is unmeasurable | Add concrete test commands & compliance suite |
-| No CI/CD pipeline | Regressions go undetected | Add GitHub Actions in Phase 01 |
-| No Phase 5 for hardening | Security & release not addressed | Add production hardening phase |
-| Go `regexp` != POSIX BRE/ERE | `grep`/`sed` will silently differ | Document; may need custom BRE parser |
-| No binary size / latency targets | No way to track perf regressions | Set targets: <15MB binary, <1ms daemon |
-| Missing docs plan | JSON schemas, RPC API undocumented | Add 7 documentation deliverables |
-| No `sed` mentioned at all | Core POSIX text tool missing | Add to Tier 3 |
+| Pillar | Goal | Primary Doc |
+|--------|------|-------------|
+| **Coverage** | 75% overall test coverage | [13_coverage_and_hardening.md](13_coverage_and_hardening.md) |
+| **POSIX** | 99%+ BusyBox pass rate, zero regressions | [posix_coverage.md](posix_coverage.md), [10_posix_framework.md](10_posix_framework.md) |
+| **Security** | Hardened shell, SBOM, Cosign/SLSA, secured defaults | [08_hardening.md](08_hardening.md), [docs/SECURITY.md](../docs/SECURITY.md) |
+| **Speed** | <1ms daemon, <12MB binary, <10MB image, <5ms CLI | [13_coverage_and_hardening.md](13_coverage_and_hardening.md) |
+| **Docker** | Usable, signed `FROM scratch` image, smoke-tested | [09_release_docs.md](09_release_docs.md) |
 
 ### Architecture
 
 ```
-korego binary (single static ELF, ~15MB)
+korego binary (single static ELF, <12MB)
 ├── Multicall Dispatch (os.Args[0] or subcommand)
 ├── CLI Wrappers (--json flag → JSON envelope)
 ├── Daemon Mode (JSON-RPC 2.0 over Unix socket)
@@ -42,45 +30,16 @@ korego binary (single static ELF, ~15MB)
     └── pkg/common/   → JSON-RPC types, flag parser, output helpers
 ```
 
-### Utility Tiers
+### Utility Tiers (All Complete)
 
 | Tier | Utilities | Phase |
 |------|-----------|-------|
-| **1 — Trivial** | `echo`, `true`, `false`, `yes`, `whoami`, `hostname`, `uname`, `pwd`, `printenv`, `env` | 01 |
-| **2 — Filesystem** | `ls`, `cat`, `mkdir`, `rmdir`, `rm`, `cp`, `mv`, `touch`, `ln`, `stat`, `readlink`, `basename`, `dirname` | 03 |
-| **3 — Text** | `head`, `tail`, `wc`, `sort`, `uniq`, `tr`, `cut`, `tee`, `grep`, `sed` | 04 |
-| **4 — System** | `ps`, `kill`, `sleep`, `date`, `id`, `groups`, `chmod`, `chown`, `chgrp`, `df`, `du`, `find`, `xargs` | 06 |
-| **5 — Advanced** | `awk` (Deferred), `tar`, `gzip`, `sha256sum`, `md5sum`, `diff`, `patch`, `test`/`[`, `printf`, `expr` | 07 |
-
-### Directory Layout
-
-```
-korego/
-├── cmd/korego/main.go          # Multicall entry point
-├── pkg/
-│   ├── common/                 # JSON-RPC types, flag parser, output helpers
-│   ├── echo/                   # One package per utility
-│   ├── ls/
-│   └── ...
-├── internal/
-│   ├── dispatch/               # Command registry + routing
-│   ├── daemon/                 # Unix socket server + RPC router
-│   └── shell/                  # mvdan/sh integration
-├── test/
-│   ├── compliance/             # POSIX compliance tests
-│   ├── integration/            # Docker-based E2E tests
-│   └── benchmark/              # CLI vs daemon latency
-├── docker/
-│   ├── Dockerfile              # Multi-stage → scratch
-│   └── Dockerfile.debug        # Multi-stage → alpine
-├── docs/
-│   ├── JSON_SCHEMA.md
-│   ├── RPC_API.md
-│   └── ...
-├── go.mod
-├── Makefile
-└── README.md
-```
+| **1 — Trivial** | `echo`, `true`, `false`, `yes`, `whoami`, `hostname`, `uname`, `pwd`, `printenv`, `env` | 01 ✅ |
+| **2 — Filesystem** | `ls`, `cat`, `mkdir`, `rmdir`, `rm`, `cp`, `mv`, `touch`, `ln`, `stat`, `readlink`, `basename`, `dirname` | 03 ✅ |
+| **3 — Text** | `head`, `tail`, `wc`, `sort`, `uniq`, `tr`, `cut`, `tee`, `grep`, `sed` | 04 ✅ |
+| **4 — System** | `ps`, `kill`, `sleep`, `date`, `id`, `groups`, `chmod`, `chown`, `chgrp`, `df`, `du`, `find`, `xargs` | 06 ✅ |
+| **5 — Advanced** | `tar`, `gzip`, `sha256sum`, `md5sum`, `diff`, `patch`, `test`/`[`, `printf`, `expr` | 07 ✅ |
+| **Platinum** | `awk` | 07a ⏳ |
 
 ### Technical Specs
 
@@ -90,9 +49,9 @@ korego/
 | Protocol | JSON-RPC 2.0 over Unix Domain Sockets |
 | Base Image | `scratch` (prod), `alpine` (debug) |
 | Key Dep | `mvdan.cc/sh/v3` (shell interpreter) |
-| Binary Target | < 15 MB stripped |
-| Image Target | < 20 MB |
-| Daemon Latency | < 1ms trivial, < 5ms filesystem |
+| Binary Target | < 12 MB stripped |
+| Image Target | < 10 MB |
+| Daemon Latency | < 1ms |
 
 ---
 
@@ -111,7 +70,6 @@ korego/
 | [08_hardening.md](08_hardening.md) | Production Hardening & Security | **COMPLETED** |
 | [09_release_docs.md](09_release_docs.md) | Release Automation & Documentation | **COMPLETED** |
 | [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | **COMPLETED** |
-| [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 | [10a_sed.md](10a_sed.md) | Sed Implementation Details | **COMPLETED** |
 | [07a_awk.md](07a_awk.md) | Awk Implementation Plan (canonical; Platinum gate) | **DEFERRED** |
 | [posix_coverage.md](posix_coverage.md) | POSIX Compliance Matrix (49 utilities) | **COMPLETED** |
@@ -119,11 +77,9 @@ korego/
 | [11_lessons_learned.md](11_lessons_learned.md) | Phase 11 Lessons Learned, Insights & Gotchas | **COMPLETED** |
 | [11_post_mvp_priorities.md](11_post_mvp_priorities.md) | Post-MVP Priorities (11.1–11.3 complete; 11.4 awk → 07a) | **COMPLETED** |
 | [11a_lower_priority.md](11a_lower_priority.md) | Lower Priority Improvements (8/8 complete) | **COMPLETED** |
-| [12_road_to_gold.md](12_road_to_gold.md) | Road to Gold (5/5 Gold gaps resolved; 60% coverage in progress) | **GOLD ACHIEVED** |
-| [13_code_audit.md](13_code_audit.md) | Code Audit (code-level evidence; 5/6 fixed, only awk open) | **REVIEW** |
-| [14_agent_architecture.md](14_agent_architecture.md) | Autonomous Coding Agent (ReAct loop, go-git, LLM providers, CLI + RPC) | **REJECTED** |
-| [15_coverage_ramp.md](15_coverage_ramp.md) | Coverage Ramp: 50% → 75% (3-stage plan: daemon, CLI layer, refactors) | **PLANNING** |
-| [16_mcp_server.md](16_mcp_server.md) | MCP Server (expose KoreGo as sandboxed Linux environment for MCP-compatible agents) | **DESIGN** |
+| [12_road_to_gold.md](12_road_to_gold.md) | Road to Gold (5/5 Gold gaps resolved) | **GOLD ACHIEVED** |
+| [13_coverage_and_hardening.md](13_coverage_and_hardening.md) | Coverage & Hardening — Audit findings + ramp plan (50%→75%) | **IN PROGRESS** |
+| [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 
 ---
 
@@ -132,8 +88,8 @@ korego/
 | Risk | Impact | Likelihood | Mitigation |
 |------|--------|------------|------------|
 | POSIX spec ambiguity | Med | High | Use GNU coreutils behavior as reference |
-| `awk`/`sed` complexity | High | High | `awk` deferred to post-MVP, `sed` implemented incrementally |
-| Binary size bloat | Med | Med | `-ldflags="-s -w"`, build tags |
+| `awk` complexity | High | Med | Deferred to post-MVP (see 07a_awk.md) |
+| Binary size bloat | Med | Med | `-ldflags="-s -w"`, strip, UPX |
 | Daemon memory leaks | High | Med | `go test -race`, `pprof`, session TTLs |
 | Shell interpreter security | High | Med | Sandbox: no network, restricted fs, timeouts |
 | Go regexp ≠ POSIX BRE | Med | High | Document differences, custom BRE if needed |
