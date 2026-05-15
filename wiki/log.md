@@ -2,6 +2,23 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-15] plan | 14 + 14a — XML output support + gap fill
+
+Created wiki/14_xml_output.md — plan to add `--xml` structured output to all 52
+registered KoreGo utilities, consistent with the existing `--json` / `-j` system.
+XML envelope mirrors JSON envelope: <korego> with command/version/schemaVersion/
+exitCode attrs, <data> innerxml payload, <error> block. Uses `encoding/xml` from
+stdlib. Five phases: foundation (output.go XMLElement), Core batch (18 utilities),
+Remaining batch (26), Gap-fill batch (12 including the 8 missing --json), and
+Integration (test/posix-xml/ mirroring test/posix-json/). No short form `-x` —
+reserved for future POSIX flags.
+
+Created wiki/14a_json_gap_fill.md — detailed implementation plan for the 8
+utilities that currently lack `--json` structured output: echo (manual parsing),
+testcmd (strips --json before parse), sed, tee, tr, sleep, truefalse, yes.
+Each gets a typed Result struct, FlagSpec integration, both --json and --xml
+flags, and tests. Updated wiki/phases.md and wiki/index.md.
+
 ## [2026-05-15] consolidate | Remove rejected/future phases, merge audit + coverage ramp
 
 Removed wiki/14_agent_architecture.md (ReAct agent — rejected) and
