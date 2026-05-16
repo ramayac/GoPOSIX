@@ -1,3 +1,4 @@
+.config
 korego
 !cmd/korego/korego
 test/busybox_testsuite/runtest-tempdir-links/
