@@ -114,3 +114,11 @@ func isWellKnown(name string) bool {
 	}
 	return false
 }
+
+// Command is an alias for dispatch.Command.
+type Command = dispatch.Command
+
+// Register adds a command to the global registry.
+func Register(cmd Command) {
+	dispatch.Register(cmd)
+}
