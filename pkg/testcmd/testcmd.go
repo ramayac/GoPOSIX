@@ -105,9 +105,24 @@ func (p *testParser) parseAnd() (bool, error) {
 
 func (p *testParser) parseNot() (bool, error) {
 	if p.peek() == "!" {
+		// If '!' is followed by a binary operator, it's a string literal,
+		// not the NOT operator. E.g., "test '!' = '!'" should compare strings.
+		if p.pos+1 < len(p.tokens) && isBinaryOp(p.tokens[p.pos+1]) {
+			return p.parsePrimary()
+		}
 		p.next()
+		// If '!' is the last token, it negates the empty expression (which is false).
+		// POSIX: "test !" should return true (0).
+		if p.done() {
+			return true, nil
+		}
 		result, err := p.parseNot()
 		if err != nil {
+			// If the recursive parse fails because expression is empty,
+			// treat it as negating false = true.
+			if err.Error() == "unexpected end of expression" {
+				return true, nil
+			}
 			return false, err
 		}
 		return !result, nil
@@ -118,35 +133,56 @@ func (p *testParser) parseNot() (bool, error) {
 func (p *testParser) parsePrimary() (bool, error) {
 	tok := p.peek()
 
-	// Parenthesized expression
+	// Parenthesized expression — but only if '(' is NOT followed by a binary
+	// operator (i.e., "test '(' = '('" should compare strings).
 	if tok == "(" {
-		p.next()
-		result, err := p.parseExpr()
-		if err != nil {
-			return false, err
+		if p.pos+1 < len(p.tokens) && isBinaryOp(p.tokens[p.pos+1]) {
+			// '(' is a string literal, fall through to bare string handling
+		} else {
+			p.next()
+			result, err := p.parseExpr()
+			if err != nil {
+				return false, err
+			}
+			if p.peek() != ")" {
+				return false, fmt.Errorf("missing ')'")
+			}
+			p.next()
+			return result, nil
 		}
-		if p.peek() != ")" {
-			return false, fmt.Errorf("missing ')'")
-		}
-		p.next()
-		return result, nil
 	}
 
-	// Unary file/string tests
-	switch tok {
-	case "-e", "-f", "-d", "-s", "-r", "-w", "-x", "-L", "-h",
-		"-b", "-c", "-p", "-S", "-g", "-u", "-k", "-t",
-		"-z", "-n":
-		p.next()
-		if p.done() {
-			return false, fmt.Errorf("missing argument for %s", tok)
+	// Unary file/string tests — but only if there IS an argument following.
+	// If the unary op is the last token (no argument available), treat it
+	// as a non-empty string (true). E.g., "test -f" → true.
+	if isUnaryOp(tok) {
+		// Look ahead: is there an argument, and is the next token NOT a binary op?
+		hasArg := p.pos+1 < len(p.tokens)
+		nextIsBinary := hasArg && isBinaryOp(p.tokens[p.pos+1])
+		if hasArg && !nextIsBinary {
+			p.next()
+			arg := p.next()
+			return evalUnary(tok, arg)
 		}
-		arg := p.next()
-		return evalUnary(tok, arg)
+		// No argument or next is binary op: treat tok as a string
+		p.next()
+		// If next is binary, this is LHS of comparison; fall through to binary handling.
+		// But we've already consumed tok. Put it back conceptually.
+		// Actually: tok was a potential unary op, but no valid argument follows.
+		// Treat it as the 'left' in a binary comparison or a bare string.
+		if !p.done() && isBinaryOp(p.peek()) {
+			op := p.next()
+			if p.done() {
+				return false, fmt.Errorf("missing argument after %s", op)
+			}
+			right := p.next()
+			return evalBinary(tok, op, right)
+		}
+		return tok != "", nil
 	}
 
 	if p.done() {
-		return false, fmt.Errorf("unexpected end of expression")
+		return false, nil // Empty string is false (used by ! negation)
 	}
 
 	// Must be either a binary test or a bare string test.
@@ -167,6 +203,16 @@ func (p *testParser) parsePrimary() (bool, error) {
 
 	// Single arg: true if non-empty
 	return left != "", nil
+}
+
+func isUnaryOp(tok string) bool {
+	switch tok {
+	case "-e", "-f", "-d", "-s", "-r", "-w", "-x", "-L", "-h",
+		"-b", "-c", "-p", "-S", "-g", "-u", "-k", "-t",
+		"-z", "-n":
+		return true
+	}
+	return false
 }
 
 func isBinaryOp(op string) bool {

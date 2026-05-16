@@ -1,10 +1,14 @@
 // Package echo implements the POSIX echo utility.
+//
+// echo prints its arguments to stdout, separated by spaces and
+// terminated with a newline. It supports -n (suppress newline),
+// -e (enable backslash escapes), and -E (disable escapes, default).
+// Only --json is accepted as a long flag; everything else is literal text.
 package echo
 
 import (
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/ramayac/korego/internal/dispatch"
@@ -16,15 +20,6 @@ type EchoResult struct {
 	Text string `json:"text"`
 }
 
-var spec = common.FlagSpec{
-	Defs: []common.FlagDef{
-		{Short: "n", Type: common.FlagBool},
-		{Short: "e", Type: common.FlagBool},
-		{Short: "E", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
-	},
-}
-
 // Run is the library function: given flags and words, return EchoResult.
 func Run(noNewline, escape bool, words []string) EchoResult {
 	text := strings.Join(words, " ")
@@ -34,7 +29,7 @@ func Run(noNewline, escape bool, words []string) EchoResult {
 	return EchoResult{Text: text}
 }
 
-// processEscapes expands \n, \t, \\ etc. like echo -e.
+// processEscapes expands \n, \t, \\, \NNN (octal), etc. like echo -e.
 func processEscapes(s string) string {
 	var sb strings.Builder
 	for i := 0; i < len(s); i++ {
@@ -49,19 +44,6 @@ func processEscapes(s string) string {
 			case 'a': sb.WriteByte('\a')
 			case 'b': sb.WriteByte('\b')
 			case 'v': sb.WriteByte('\v')
-			case '0':
-				// octal
-				if i+1 < len(s) && s[i+1] >= '0' && s[i+1] <= '7' {
-					oct := 0
-					j := i + 1
-					for ; j < len(s) && j < i+4 && s[j] >= '0' && s[j] <= '7'; j++ {
-						oct = oct*8 + int(s[j]-'0')
-					}
-					sb.WriteByte(byte(oct))
-					i = j - 1
-				} else {
-					sb.WriteByte(0)
-				}
 			case 'x':
 				// hex
 				if i+1 < len(s) {
@@ -91,8 +73,21 @@ func processEscapes(s string) string {
 					sb.WriteByte('x')
 				}
 			default:
-				sb.WriteByte('\\')
-				sb.WriteByte(c)
+				// Handle octal escape: \NNN where N is 0-7 (1-3 digits).
+				// This covers \0, \41, \041, \0041, etc.
+				if c >= '0' && c <= '7' {
+					oct := int(c - '0')
+					j := i + 1
+					for ; j < len(s) && j < i+3 && s[j] >= '0' && s[j] <= '7'; j++ {
+						oct = oct*8 + int(s[j]-'0')
+					}
+					sb.WriteByte(byte(oct))
+					i = j - 1
+				} else {
+					// Unknown escape: preserve backslash + char
+					sb.WriteByte('\\')
+					sb.WriteByte(c)
+				}
 			}
 		} else {
 			sb.WriteByte(s[i])
@@ -101,19 +96,61 @@ func processEscapes(s string) string {
 	return sb.String()
 }
 
-func run(args []string, out io.Writer) int {
-	flags, err := common.ParseFlags(args, spec)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "echo: %v\n", err)
-		return 2
+// parseEchoFlags manually extracts echo-specific flags from the start of args.
+// Only -n, -e, -E, and --json are recognized. All other arguments (including
+// anything starting with -) are treated as literal text. This avoids the
+// general ParseFlags which would choke on "---" or similar strings.
+func parseEchoFlags(args []string) (noNewline, escape, jsonMode bool, words []string) {
+	var i int
+	for i < len(args) {
+		a := args[i]
+		// --json (long flag only, no -j short form to avoid collisions)
+		if a == "--json" {
+			jsonMode = true
+			i++
+			continue
+		}
+		// Short flag groups: only -n, -e, -E are recognized
+		if len(a) >= 2 && a[0] == '-' && a[1] != '-' {
+			chars := a[1:]
+			// Accumulate flags first; only apply if all chars are valid.
+			// This prevents partial side-effects when an invalid char
+			// appears (e.g., -neEZ should be printed literally).
+			nnl, esc, allValid := false, false, true
+			hasE := false
+			for _, c := range chars {
+				switch c {
+				case 'n':
+					nnl = true
+				case 'e':
+					esc = true
+				case 'E':
+					esc = false
+					hasE = true
+				default:
+					allValid = false
+				}
+			}
+			if allValid {
+				noNewline = nnl
+				if esc || hasE {
+					escape = esc
+				}
+				i++
+				continue
+			}
+		}
+		// Anything else: stop flag parsing, rest is literal text
+		break
 	}
+	words = args[i:]
+	return
+}
 
-	jsonMode := flags.Has("json")
-	noNewline := flags.Has("n")
-	escapeMode := flags.Has("e") && !flags.Has("E")
-	words := flags.Positional
+func run(args []string, out io.Writer) int {
+	noNewline, escape, jsonMode, words := parseEchoFlags(args)
 
-	result := Run(noNewline, escapeMode, words)
+	result := Run(noNewline, escape, words)
 
 	common.Render("echo", result, jsonMode, out, func() {
 		if noNewline {

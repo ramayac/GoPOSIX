@@ -411,3 +411,104 @@ func TestEvaluateDoubleNot(t *testing.T) {
 		t.Error("!! 'hello' should be true")
 	}
 }
+
+// --- BusyBox test suite hardening ---
+
+func TestBusyBox_Test_BangOnly(t *testing.T) {
+	// BusyBox: test ! → true (0)
+	result, err := Evaluate([]string{"!"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result {
+		t.Error("test ! should be true")
+	}
+}
+
+func TestBusyBox_Test_UnaryWithoutArg(t *testing.T) {
+	// BusyBox: test -f → true (0) — treat -f as non-empty string
+	result, err := Evaluate([]string{"-f"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result {
+		t.Error("test -f (no arg) should be true")
+	}
+}
+
+func TestBusyBox_Test_BangUnary(t *testing.T) {
+	// BusyBox: test ! -f → false (1) — negate one-arg test of -f
+	result, err := Evaluate([]string{"!", "-f"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result {
+		t.Error("test ! -f should be false")
+	}
+}
+
+func TestBusyBox_Test_AndBang(t *testing.T) {
+	// BusyBox: test a -a ! → true (0)
+	result, err := Evaluate([]string{"a", "-a", "!"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result {
+		t.Error("test a -a ! should be true")
+	}
+}
+
+func TestBusyBox_Test_UnaryEqualsOr(t *testing.T) {
+	// BusyBox: test -f = a -o b → true (0)
+	result, err := Evaluate([]string{"-f", "=", "a", "-o", "b"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result {
+		t.Error("test -f = a -o b should be true")
+	}
+}
+
+func TestBusyBox_Test_BangEqualsString(t *testing.T) {
+	// BusyBox: test '!' = '!' → true (0) — ! as string literal LHS of =
+	result, err := Evaluate([]string{"!", "=", "!"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result {
+		t.Error("test '!' = '!' should be true")
+	}
+}
+
+func TestBusyBox_Test_ParenEqualsString(t *testing.T) {
+	// BusyBox: test '(' = '(' → true (0) — ( as string literal LHS of =
+	result, err := Evaluate([]string{"(", "=", "("})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result {
+		t.Error("test '(' = '(' should be true")
+	}
+}
+
+func TestBusyBox_Test_BangBangEquals(t *testing.T) {
+	// BusyBox: test '!' '!' = '!' → false (1) — NOT('!' = '!')
+	result, err := Evaluate([]string{"!", "!", "=", "!"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result {
+		t.Error("test '!' '!' = '!' should be false")
+	}
+}
+
+func TestBusyBox_Test_BangParenEquals(t *testing.T) {
+	// BusyBox: test '!' '(' = '(' → false (1) — NOT('(' = '(')
+	result, err := Evaluate([]string{"!", "(", "=", "("})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result {
+		t.Error("test '!' '(' = '(' should be false")
+	}
+}
