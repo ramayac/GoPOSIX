@@ -82,7 +82,7 @@ korego binary (single static ELF, <12MB)
 | [14_xml_output.md](14_xml_output.md) | XML Output Support — `--xml` flag for all 52 utilities | **PLANNING** (JSON gap fill complete) |
 | [14a_json_gap_fill.md](14a_json_gap_fill.md) | JSON Gap Fill — 8 utilities now support `--json` | **COMPLETED** |
 | [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md) | BusyBox Regression Fix — 79→3 failures, lessons learned | **COMPLETED** |
-| [14c_posix_json_gap.md](14c_posix_json_gap.md) | JSON-RPC Coverage Gap — 9/55 utilities tested via daemon | **IDENTIFIED** |
+| [14c_posix_json_gap.md](14c_posix_json_gap.md) | JSON-RPC Coverage Gap — 9/55→55/55 (100%) utilities tested via daemon | **COMPLETED** |
 | [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 
 ---

@@ -64,6 +64,8 @@ func run(args []string, out io.Writer) int {
 			if i < len(args) && args[i] == "+" {
 				execPlus = true
 			}
+		} else if strings.HasPrefix(a, "--") {
+			flagArgs = append(flagArgs, a)
 		} else if strings.HasPrefix(a, "-") && len(a) > 2 {
 			flagArgs = append(flagArgs, "-"+a)
 		} else {

@@ -146,15 +146,17 @@ func run(args []string, out io.Writer) int {
 		in = f
 	}
 
-	out = os.Stdout
-	if len(flags.Positional) > 1 && flags.Positional[1] != "-" {
-		f, err := os.Create(flags.Positional[1])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "uniq: %v\n", err)
-			return 1
+	if !jsonMode {
+		out = os.Stdout
+		if len(flags.Positional) > 1 && flags.Positional[1] != "-" {
+			f, err := os.Create(flags.Positional[1])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "uniq: %v\n", err)
+				return 1
+			}
+			defer f.Close()
+			out = f
 		}
-		defer f.Close()
-		out = f
 	}
 
 	items, err := Run(in, countMode, duplicatesOnly, uniqueOnly, ignoreCase, skipFields, skipChars, checkChars)

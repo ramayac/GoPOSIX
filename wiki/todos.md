@@ -24,13 +24,15 @@
 | `date-timezone` | Same | ❌ Same |
 | `date-works-1` | Error format: korego says `date: invalid date` but test expects BusyBox banner | ⚠️ Cosmetic |
 
-### JSON-RPC Coverage Gap (14c)
+### JSON-RPC Coverage Gap (14c) — **COMPLETED (2026-05-16)**
 
 | Metric | Value |
 |--------|-------|
-| Utilities with JSON-RPC daemon tests | 9/55 (16%) |
-| Target | 55/55 (100%) |
+| Utilities with JSON-RPC daemon tests | 55/55 (100%) |
+| Target | 55/55 (100%) ✅ |
 | Plan | [14c_posix_json_gap.md](14c_posix_json_gap.md) |
+
+Achieved via 5 new test files (46 new test cases). Two bugs found and fixed: find `--json` flag preprocessing and uniq `out` writer override.
 
 ---
 

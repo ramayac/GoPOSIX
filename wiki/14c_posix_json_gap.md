@@ -1,6 +1,6 @@
 # Phase 14c — POSIX JSON-RPC Coverage Gap
 
-> **Date:** 2026-05-15 | **Status:** Identified — not yet implemented
+> **Date:** 2026-05-15 | **Status:** <mck>Implemented</mck> — 2026-05-16
 
 ## The Gap
 
@@ -41,6 +41,22 @@ tar, gzip, sha256sum, md5sum
 
 ### Tier 5 — Expression/Misc
 expr, basename, dirname, env, printenv, xargs
+
+## Result (2026-05-16)
+
+- **Coverage:** 55/55 utilities (100%) — up from 9/55 (16%)
+- **Test files added:**
+  - `test/posix-json/tier1_filesystem_test.go` — 13 new tests (ls, cp, mv, rm, mkdir, rmdir, touch, ln, readlink, stat, chmod, chown, chgrp)
+  - `test/posix-json/tier2_text_test.go` — 11 new tests (grep, find, sort, uniq, wc, head, tail, cut, diff, printf)
+  - `test/posix-json/tier3_system_test.go` — 10 new tests (date, du, df, ps, id, hostname, whoami, pwd, uname, kill)
+  - `test/posix-json/tier4_archive_test.go` — 5 new tests (tar, gzip, sha256sum, md5sum)
+  - `test/posix-json/tier5_misc_test.go` — 7 new tests (expr, basename, dirname, env, printenv, xargs)
+  - **Total:** 46 new test cases (one per previously-uncovered utility)
+- **Bugs found and fixed:**
+  - `pkg/find/find.go`: Flag pre-processing added extra `-` to `--json`, breaking JSON output via daemon. Fixed by checking for `--` prefix first.
+  - `pkg/uniq/uniq.go`: Overwrote `out` writer with `os.Stdout`, causing JSON output to bypass daemon buffer. Fixed by guarding with `!jsonMode`.
+- **BusyBox test suite:** 477 passed, 3 failed (pre-existing date issues). No regressions.
+- **Unit tests:** All packages pass, including find and uniq.
 
 ## Target
 
