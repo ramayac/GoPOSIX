@@ -49,7 +49,7 @@ When implementing a new utility or feature, follow this checklist:
 
 ## 4a. Coverage Policy
 
-- **Gate:** `make ci` enforces a hard coverage gate at **≥60%** overall (see `COVERAGE_THRESHOLD` in Makefile). PRs that drop coverage below this threshold fail CI.
+- **Gate:** `make ci` enforces a hard coverage gate at **≥70%** overall (see `COVERAGE_THRESHOLD` in Makefile). PRs that drop coverage below this threshold fail CI.
 - **CLI Layer Testing:** The `run()` function (CLI glue) must be tested, not just the library-layer `Run()`. Extract an injectable entry point (e.g., `grepRun()`, `catRun()`) that accepts `io.Reader`/`io.Writer` instead of hardcoding `os.Stdin`/`os.Stdout`. See `pkg/cat/cat.go` for the canonical `catRun()` pattern.
 - **Per-package:** Use `make cover-pkg` to audit per-package coverage. No package should be below 5%.
 - **Before committing:** Always run `make testsuite` (BusyBox integration tests) in addition to `make test` (unit tests). The BusyBox suite catches cascading integration failures that unit tests miss.

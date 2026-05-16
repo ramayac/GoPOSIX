@@ -226,7 +226,7 @@ func TestRunViaDispatch(t *testing.T) {
 
 ```bash
 make cover-pct          # 57.9% (current); target ≥60% (Stage 1), ≥68% (Stage 2), ≥75% (Stage 3)
-make cover-pkg          # no package below 5% / 25% / 40% / 55%
+make cover-gate          # ≥70% (hard CI gate); make cover-pkg for per-package
 make ci                 # coverage gate hard-fails below threshold
 make testsuite          # 477 passed, 3 failed (date), 0 regressions
 make smoke-docker       # docker run korego ls -la works
