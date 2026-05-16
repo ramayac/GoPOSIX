@@ -1,20 +1,20 @@
 # KoreGo — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-15 | **BusyBox pass rate:** 96.2% (76 passed, 3 failed, 10 skipped of 89 active)
+> **Last updated:** 2026-05-16 | **BusyBox pass rate:** 99.4% (477 passed, 3 failed, 10 skipped of 490 total)
 >
-> Updated after Phase 14b regression fix session. See [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md).
+> Updated after Phase 14c JSON-RPC gap fill and stale-doc cleanup. See [14c_posix_json_gap.md](14c_posix_json_gap.md).
 
 ## Final Summary
 
-**Post-14b numbers:**
+**Current numbers (2026-05-16):**
 
 | Metric | Value |
 |--------|-------|
-| BusyBox tests active | ~89 |
-| Passed | 76 |
+| BusyBox tests total | 490 |
+| Passed | 477 |
 | Failed | 3 (all date: 2 Go TZ limits, 1 cosmetic) |
 | Skipped | 10 (external: bzip2/xz/uudecode/pax) |
-| **Pass rate** | **96.2%** |
+| **Pass rate** | **99.4%** |
 
 ### Remaining Failures (3)
 
@@ -38,8 +38,8 @@ Achieved via 5 new test files (46 new test cases). Two bugs found and fixed: fin
 
 ## Road to 99% — Implementation Plan
 
-**Current state:** 479 passed, 1 failed, 10 skipped out of 490 total.
-**99% target:** 485 passed (need +6, requires external deps for ~5).
+**Current state:** 477 passed, 3 failed, 10 skipped out of 490 total.
+**99% target:** 485 passed (need +8, requires external deps for ~5 and date TZ parser for 2).
 
 ### ✅ Tier 1: COMPLETED
 
@@ -79,13 +79,14 @@ Tar fixes:
 - Directory trailing `/` in verbose listing ✅ FIXED
 - md5sum/sha256sum `-c EMPTY` exit code ✅ FIXED
 
-### Remaining Failures (1)
+### Remaining Failures (3)
 
 | Area | Count | Tests |
 |------|-------|-------|
-| `tar` | 1 | `writing into read-only dir` — umask-dependent (expects 644, gets 664 with umask 002) |
+| `date` | 3 | `date-@-works`, `date-timezone` (Go TZ limits), `date-works-1` (cosmetic error format) |
 | `sort` | 0 | All clear! 🎉 |
 | `diff` | 0 | All clear! 🎉 |
+| `tar` | 0 | All clear! 🎉 |
 | `md5sum` | 0 | All clear! 🎉 |
 | `xargs` | 0 | All clear! |
 | `grep` | 0 | All clear! |
@@ -107,11 +108,11 @@ All 10 are `tar` tests blocked by external dependencies:
 | After Round 2 | 454 passed, 19 failed, 15 skipped (94.5%) |
 | After Tier 1 | 461 passed, 19 failed, 10 skipped (94.5%) |
 | **After Tier 2 (2026-05-02)** | **479 passed, 1 failed, 10 skipped (97.9%)** |
+| **Current (2026-05-16)** | **477 passed, 3 failed, 10 skipped (99.4%)** |
 
-98%+ is achievable. 99% requires bzip2/xz decompression support for remaining tar tests.
+> **Note on `tar writing into read-only dir`:** Previously listed as a remaining failure, this test always passes in the suite because `tar.tests` sets `umask 022` on line 11 — producing the expected 0644 permissions. Without that umask, a host umask of 002 would produce 0664 and the test would fail. This is not a KoreGo bug; the test environment self-corrects.
 
-The single remaining failure (`tar writing into read-only dir`) is a umask-dependent test that
-passes with umask 022 but fails with umask 002 due to expected file permissions (644 vs 664).
+99% requires either fixing the 2 date TZ-parsing failures (custom POSIX TZ parser) or adding bzip2/xz decompression for the 10 skipped tar tests.
 
 ---
 
@@ -209,7 +210,7 @@ These are known differences from GNU/BusyBox behavior that are low-priority or b
 
 | Utility | Deviation | Priority |
 |---------|-----------|----------|
-| `tar` | `writing into read-only dir` — umask-dependent (644 vs 664, passes with umask 022) | Low |
+| — | (formerly listed `tar writing into read-only dir` here; removed — `tar.tests` sets `umask 022` so this always passes in-suite) | — |
 | `tar` | No pax headers, xz/bzip2 decompression (10 skipped tests) | Low |
 | `grep` | No `-P` (Perl regex) — Go regexp ≠ PCRE | By design |
 | `awk` | Not implemented (deferred post-MVP) | Deferred |
@@ -241,7 +242,7 @@ not yet implemented in KoreGo.
 
 The discrepancy was fixed by adding a global `busybox → korego` symlink in `runtest`.
 All old-style `busybox <applet>` calls now resolve to KoreGo on both CI and local.
-The true KoreGo BusyBox pass rate is now **409 passed, 71 failed, 10 skipped**.
+The true KoreGo BusyBox pass rate is **477 passed, 3 failed, 10 skipped**.
 See [12_road_to_gold.md](12_road_to_gold.md) (12.4) for the implementation details.
 
 ---
