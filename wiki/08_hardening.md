@@ -1,5 +1,7 @@
 # Phase 08 — Production Hardening & Security
 
+> **HISTORICAL — COMPLETED.** This phase is done. Document retained for reference.
+>
 > **Timeline:** Week 11–12 | **Depends on:** Phase 07
 
 ---

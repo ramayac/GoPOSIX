@@ -1,5 +1,7 @@
 # Phase 06 — Tier 4: System & Process Utilities
 
+> **HISTORICAL — COMPLETED.** This phase is done. Document retained for reference.
+>
 > **Timeline:** Week 7–8 | **Depends on:** Phase 05
 
 ---

@@ -1,5 +1,7 @@
 # Phase 07 — Agent-Ready Features + Tier 5
 
+> **HISTORICAL — COMPLETED.** This phase is done. Document retained for reference.
+>
 > **Timeline:** Week 9–10 | **Depends on:** Phase 05, 06
 
 ---

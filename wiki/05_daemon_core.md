@@ -1,5 +1,7 @@
 # Phase 05 — JSON-RPC Daemon Core
 
+> **HISTORICAL — COMPLETED.** This phase is done. Document retained for reference.
+>
 > **Timeline:** Week 6–7 | **Depends on:** Phase 03, 04
 
 ---

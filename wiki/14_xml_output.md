@@ -1,6 +1,6 @@
 # Phase 14 — XML Output Support
 
-> **Status:** Planning (Phase 14a JSON gap fill COMPLETED) | **Date:** 2026-05-15 | **Depends on:** Phases 00–10 complete, 14a complete
+> **Status:** DEFERRED (design complete, not implemented) | **Date:** 2026-05-15 | **Depends on:** Phases 00–10 complete, 14a complete
 
 ---
 

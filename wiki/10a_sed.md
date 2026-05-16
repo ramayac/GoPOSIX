@@ -1,5 +1,7 @@
 # Phase 10a — Sed Implementation Plan
 
+> **HISTORICAL — COMPLETED.** This phase is done. Document retained for reference.
+>
 > **Timeline:** Phase 10 | **Depends on:** Phase 09
 
 ---

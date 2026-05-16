@@ -4,44 +4,61 @@
 
 - [README.md](README.md) | Purpose, rules, and shell-first navigation.
 - [schema.md](schema.md) | Required structure and maintenance contract.
-- [phases.md](phases.md) | Project roadmap and phase index.
+- [phases.md](phases.md) | Project roadmap, current state, and phase index.
 - [repo-map.md](repo-map.md) | Current repo architecture and exclusions.
 - [log.md](log.md) | Append-only timeline of wiki maintenance.
 
-## Phases
+## Current State
 
-- [00_foundation_libs.md](00_foundation_libs.md) | Phase 00 — Foundation Libraries (flag parser, JSON envelope, JSON-RPC types)
-- [01_multicall_tier1.md](01_multicall_tier1.md) | Phase 01 — Multicall Dispatcher + Tier 1 Utilities
-- [02_docker_ci.md](02_docker_ci.md) | Phase 02 — Docker Scratch Build + CI Pipeline
-- [03_filesystem_utils.md](03_filesystem_utils.md) | Phase 03 — Tier 2: Filesystem Utilities
-- [04_text_processing.md](04_text_processing.md) | Phase 04 — Tier 3: Text Processing Utilities
-- [05_daemon_core.md](05_daemon_core.md) | Phase 05 — JSON-RPC Daemon Core
-- [06_system_utils.md](06_system_utils.md) | Phase 06 — Tier 4: System & Process Utilities
-- [07_agent_features.md](07_agent_features.md) | Phase 07 — Agent-Ready Features (sessions, shell, Tier 5)
-- [07a_awk.md](07a_awk.md) | Phase 07a — Awk Implementation Plan (canonical awk document; Platinum gate)
-- [08_hardening.md](08_hardening.md) | Phase 08 — Production Hardening & Security (sandbox design complete; tests/docs tracked in Phase 12)
-- [09_release_docs.md](09_release_docs.md) | Phase 09 — Release Automation & Documentation
-- [10_posix_framework.md](10_posix_framework.md) | Phase 10 — POSIX Testing Framework
-- [10a_sed.md](10a_sed.md) | Phase 10a — Sed Implementation Details
-- [11_post_mvp_priorities.md](11_post_mvp_priorities.md) | Phase 11 — Post-MVP Priorities (11.1–11.3 complete; 11.4 awk → 07a_awk.md)
-- [11_lessons_learned.md](11_lessons_learned.md) | Phase 11 — Lessons Learned, Insights & Gotchas
-- [11a_lower_priority.md](11a_lower_priority.md) | Phase 11a — Lower Priority Improvements (6/8 complete; shell security + coverage gate hardening → Phase 12)
-- [12_road_to_gold.md](12_road_to_gold.md) | Phase 12 — Road to Gold (authoritative roadmap: 5/5 Gold gaps resolved)
-- [13_coverage_and_hardening.md](13_coverage_and_hardening.md) | Phase 13 — Coverage & Hardening (audit findings + 50%→75% coverage ramp + speed targets)
-- [14_xml_output.md](14_xml_output.md) | Phase 14 — XML Output Support (--xml flag for all 52 utilities + foundation)
-- [14a_json_gap_fill.md](14a_json_gap_fill.md) | Phase 14a — JSON/XML Gap Fill (8 utilities missing --json get both flags)
-- [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md) | Phase 14b — BusyBox Regression Fix (79→3 failures, lessons learned)
-- [14c_posix_json_gap.md](14c_posix_json_gap.md) | Phase 14c — JSON-RPC Coverage Gap (9/55 utilities tested via daemon)
+- [phases.md](phases.md) | **Start here** — current metrics, active work, and phase status
+- [todos.md](todos.md) | Open TODOs, remaining BusyBox failures, and session insights
+- [12_road_to_gold.md](12_road_to_gold.md) | Gold certification — gap analysis and resolution log (COMPLETED)
+- [13_coverage_and_hardening.md](13_coverage_and_hardening.md) | Coverage audit, hardening plan, speed targets (COMPLETED — 70.5%)
+
+## Historical Phase Docs (retained for reference)
+
+All phases 00–11 are complete. These documents describe the as-built implementation.
+
+| File | Phase |
+|------|-------|
+| [00_foundation_libs.md](00_foundation_libs.md) | Foundation Libraries |
+| [01_multicall_tier1.md](01_multicall_tier1.md) | Multicall + Tier 1 |
+| [02_docker_ci.md](02_docker_ci.md) | Docker CI (maintained as living doc) |
+| [03_filesystem_utils.md](03_filesystem_utils.md) | Filesystem Utils |
+| [04_text_processing.md](04_text_processing.md) | Text Processing |
+| [05_daemon_core.md](05_daemon_core.md) | Daemon Core |
+| [06_system_utils.md](06_system_utils.md) | System Utils |
+| [07_agent_features.md](07_agent_features.md) | Agent Features |
+| [08_hardening.md](08_hardening.md) | Hardening |
+| [09_release_docs.md](09_release_docs.md) | Release (maintained as living doc) |
+| [10_posix_framework.md](10_posix_framework.md) | POSIX Framework |
+| [10a_sed.md](10a_sed.md) | Sed Details |
+| [11_post_mvp_priorities.md](11_post_mvp_priorities.md) | Post-MVP Priorities |
+| [11a_lower_priority.md](11a_lower_priority.md) | Lower Priority |
+| [11_lessons_learned.md](11_lessons_learned.md) | Lessons Learned |
+
+## Post-MVP Fix Sessions (retained for reference)
+
+| File | Description |
+|------|-------------|
+| [14a_json_gap_fill.md](14a_json_gap_fill.md) | JSON Gap Fill — 8 utilities added `--json` |
+| [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md) | BusyBox Regression Fix — 79→3 failures |
+| [14c_posix_json_gap.md](14c_posix_json_gap.md) | JSON-RPC Coverage Gap — 55/55 utilities |
+
+## Deferred / Future
+
+- [07a_awk.md](07a_awk.md) | Awk Implementation Plan (canonical; Platinum gate)
+- [14_xml_output.md](14_xml_output.md) | XML Output Support design (not implemented)
+- [prepare_to_goose.md](prepare_to_goose.md) | KoreGoOS prep — changes needed in KoreGo for the bootable distro
 
 ## Design
 
-- [koregoos.md](koregoos.md) | KoreGoOS — Bootable Linux Distro powered by KoreGo (separate project, imports KoreGo as library)
+- [koregoos.md](koregoos.md) | KoreGoOS design — historical snapshot (moved to separate repo)
 
 ## Reference
 
-- [posix_coverage.md](posix_coverage.md) | POSIX Compliance Matrix (49 utilities)
+- [posix_coverage.md](posix_coverage.md) | POSIX Compliance Matrix (55 utilities)
 - [posix_faq.md](posix_faq.md) | POSIX Compliance FAQ
-- [todos.md](todos.md) | Open TODOs & Remaining Work
 
 ## Operations
 

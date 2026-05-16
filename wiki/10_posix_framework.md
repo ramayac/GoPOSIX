@@ -1,5 +1,7 @@
 # Phase 10 — POSIX Testing Framework
 
+> **HISTORICAL — COMPLETED.** This phase is done. Document retained for reference.
+>
 > **Timeline:** Future | **Depends on:** Phase 09
 
 ---

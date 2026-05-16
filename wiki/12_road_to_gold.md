@@ -1,6 +1,6 @@
 # Phase 12 — Road to Gold
 
-> **Status:** Planning | **Date:** 2026-05-13 | **Depends on:** All Phases 00–11 complete
+> **Status:** COMPLETED — Gold Achieved | **Date:** 2026-05-13 | **Last verified:** 2026-05-16
 
 ---
 
@@ -134,12 +134,11 @@ go test ./internal/shell/... -v -run TestResourceLimits
 warning at <50% but never fails the build. A commit that drops coverage to 0% passes CI
 undetected. This defeats the purpose of the gate.
 
-**Current state:** `.github/workflows/ci.yml` — coverage step now enforces 45% threshold
-(hard failure, `exit 1`). **Actual overall coverage is 50.0%** (up from 41.6%). Worst
-packages: `internal/daemon` 3.3%, `pkg/tee` 3.3%, `pkg/daemon` 5.9%. Best: `pkg/truefalse`
-100%, `pkg/printf` 89.6%, `pkg/chown` 89.7%.
+**Current state:** `Makefile` enforces 70% threshold via `COVERAGE_THRESHOLD := 70`
+(`make cover-gate` hard-fails below this). **Actual overall coverage is 70.5%** (up from
+41.6%). All packages pass; no package below 5%.
 
-Stage 1 (45% enforced) is complete. Stage 2 (push to 60%) is in progress (50.0% reached).
+All three stages complete. Coverage exceeds the 70% Gold target.
 
 ### Tasks
 
@@ -184,9 +183,9 @@ This means CI passes those tests regardless of KoreGo's behavior — a silent bl
 in a temp directory (`BBDIR`) prepended to PATH before any tests run. All old-style
 `busybox <applet>` calls resolve to KoreGo on both CI and local.
 
-**New baseline:** The true KoreGo BusyBox pass rate is **409 passed, 71 failed, 10 skipped**
-(83.5% real). The previous 479/97.9% was inflated — ~70 old-style test passes were
-actually testing system BusyBox on CI, not KoreGo. The CI gate now enforces ≥409.
+**New baseline:** The current KoreGo BusyBox pass rate is **477 passed, 3 failed, 10 skipped**
+(99.4%). Early baseline after discrepancy fix was 409/71/10 (83.5%), resolved to 477/3/10
+through fixes across 25+ utilities. The CI gate now enforces ≥477.
 
 ### Tasks
 
@@ -215,7 +214,7 @@ actually testing system BusyBox on CI, not KoreGo. The CI gate now enforces ≥4
 [x] 12.0 — macOS builds cleanly (GOOS=darwin go build ./... exits 0)
 [x] 12.1 — SBOM + Cosign + SLSA + trivy in release/CI pipeline
 [x] 12.2 — Shell security model documented + KOREGO_SHELL_TIMEOUT wired + tests passing
-[x] 12.3 — Coverage gate hard-fails CI at 45% (Stage 1); overall 46.2%, target 60%
+[x] 12.3 — Coverage gate hard-fails CI at 70% via `Makefile` (current: 70.5%) — see [coverage policy](13_coverage_and_hardening.md)
 [x] 12.4 — CI/local BusyBox discrepancy resolved; baselines match
 [ ] 12.5 — awk implemented, BusyBox awk tests pass (Platinum gate)
 ```
@@ -242,7 +241,7 @@ KOREGO_SHELL_TIMEOUT=5s go test ./internal/shell/... -v -run TestTimeout
 go test ./internal/shell/... -v -run TestResourceLimits
 
 # Coverage gate
-make cover-pct   # ≥60% required (staged: 45% first, then 60%)
+make cover-pct   # ≥70% enforced; see coverage policy in wiki/13_coverage_and_hardening.md
 
 # BusyBox parity
 make testsuite   # same result locally and in CI

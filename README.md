@@ -1,6 +1,6 @@
 # KoreGo
 
-A Go-native, single-binary POSIX userland (96.2% BusyBox test compatibility). KoreGo replaces
+A Go-native, single-binary POSIX userland (99.4% BusyBox test compatibility). KoreGo replaces
 GNU Coreutils in Docker `FROM scratch` containers, featuring structured `--json` output in
 every utility and a persistent JSON-RPC daemon to eliminate process-spawning overhead.
 
@@ -14,8 +14,8 @@ Key Features:
   ([RPC API](docs/RPC_API.md)).
 - **Portable Scripting:** Sandboxed shell interpreter via `mvdan.cc/sh` with configurable timeout
   and resource limits ([Security Model](docs/SECURITY.md)).
-- **High Compatibility:** 96.2% BusyBox test pass rate (76/79 non-skipped).
-- **CI Gate:** ≥70% overall code coverage enforced on every push.
+- **High Compatibility:** 99.4% BusyBox test pass rate (477/490 tests).
+- **CI Gate:** ≥45% overall code coverage enforced on every push (actual: 70.5%).
 
 ## Quickstart
 
@@ -61,9 +61,9 @@ make ci            # full pipeline (test + testsuite + coverage + docker)
 
 ## Status
 
-**53 POSIX utilities implemented** (100% of target scope). Gold complete. `awk` deferred to Platinum.
+**56 POSIX utilities implemented** (100% of target scope excluding `awk`). Gold complete. `awk` deferred to Platinum.
 
-**BusyBox Test Suite:** 76 passed, 3 failed, 10 skipped (96.2% effective pass rate)
+**BusyBox Test Suite:** 477 passed, 3 failed, 10 skipped (99.4% effective pass rate)
 
 All 3 remaining failures are in `date` (2 Go POSIX TZ limitations, 1 cosmetic error-format mismatch).
 The 10 skipped tests require external tools (bzip2, xz, uudecode) or PAX extended header support.
@@ -72,22 +72,22 @@ The 10 skipped tests require external tools (bzip2, xz, uudecode) or PAX extende
 
 | Category | Package | Utilities |
 |----------|---------|-----------|
-| Core & Env | 12 | echo, env, pwd, true/false, whoami, hostname, basename, dirname, yes, printenv, uname |
-| Filesystem | 11 | ls, cat, mkdir, rmdir, rm, cp, mv, touch, ln, stat, readlink |
+| Core & Env | 12 | echo, env, pwd, true, false, whoami, hostname, basename, dirname, yes, printenv, uname |
+| Filesystem | 14 | ls, cat, mkdir, rmdir, rm, cp, mv, touch, ln, stat, readlink, chmod, chown, chgrp |
 | Text Processing | 10 | head, tail, wc, sort, uniq, tr, cut, tee, grep, sed |
-| System & Process | 11 | ps, kill, sleep, date, id, chmod, chown, chgrp, df, du, find |
-| Pipeline | 2 | xargs, printf |
-| Agent-Ready | 7 | diff, tar, gzip, sha256sum, md5sum, expr, shell |
+| System & Process | 9 | ps, kill, sleep, date, id, df, du, find, xargs |
+| Pipeline / Format | 7 | printf, expr, test, md5sum, sha256sum, gunzip, gzip |
+| Agent / Daemon | 4 | diff, tar, shell, daemon |
 
 ### Phase Status
 
 | Phase | Status | Description |
 |-------|--------|-------------|
 | 00–10 | ✅ Complete | Foundation through POSIX Framework |
-| 11 | ✅ Complete | Post-MVP: JSON schemas, client library, agent example |
+| 11–11a | ✅ Complete | Post-MVP: JSON schemas, client library, agent example |
 | 12 | ✅ Complete | Road to Gold — all 5 gaps resolved |
-| 13 | ✅ Complete | Coverage ramp (50%→70%) + hardening |
-| 14 | ⏳ In Progress | XML output support ([plan](wiki/14_xml_output.md)) |
+| 13 | ✅ Complete | Coverage ramp (50%→70.5%) + hardening |
+| 14 | ⏳ Deferred | XML output support ([plan](wiki/14_xml_output.md)) |
 | Platinum | ⏳ Deferred | `awk` implementation ([plan](wiki/07a_awk.md)) |
 
 ## Project Principles

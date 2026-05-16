@@ -1,5 +1,7 @@
 # Phase 09 — Release Automation & Documentation
 
+> **HISTORICAL — COMPLETED.** This phase is done. Document retained for reference (release pipeline is maintained as a living concern).
+>
 > **Timeline:** Week 13–14 | **Depends on:** Phase 08
 
 ---

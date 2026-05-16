@@ -1,5 +1,7 @@
 # Phase 04 — Tier 3: Text Processing Utilities
 
+> **HISTORICAL — COMPLETED.** This phase is done. Document retained for reference.
+>
 > **Timeline:** Week 4–5 | **Depends on:** Phase 03
 
 ---

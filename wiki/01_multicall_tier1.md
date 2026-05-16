@@ -1,5 +1,7 @@
 # Phase 01 — Multicall Dispatcher + Tier 1 Utilities
 
+> **HISTORICAL — COMPLETED.** This phase is done. Document retained for reference.
+>
 > **Timeline:** Week 1–2 | **Depends on:** Phase 00 | **Blocks:** Phase 02
 
 ---

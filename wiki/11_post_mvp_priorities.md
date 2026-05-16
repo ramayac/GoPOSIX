@@ -1,6 +1,6 @@
 # Phase 11 — Post-MVP Priorities
 
-> **Status:** 3/4 complete (11.1–11.3 done; 11.4 awk deferred) | **Date:** 2026-05-13
+> **Status:** COMPLETED (11.1–11.3 done via Phase 12; 11.4 awk → [07a_awk.md](07a_awk.md)) | **Date:** 2026-05-13
 > 
 > Lessons learned, insights, and gotchas are documented in [11_lessons_learned.md](11_lessons_learned.md).
 
@@ -104,7 +104,7 @@ fmt.Println(result.Files[0].Name)
 | # | Task | Status | Where Tracked |
 |---|------|--------|---------------|
 | 11.4 | `awk` implementation (Platinum gate) | ⏳ Deferred | [07a_awk.md](07a_awk.md), [12_road_to_gold.md](12_road_to_gold.md) (12.5) |
-| 12.3 | Coverage gate → 60% (currently 46.1%, CI enforces 45%) | ⏳ In Progress | [12_road_to_gold.md](12_road_to_gold.md) |
+| 12.3 | Coverage gate → 70% (70.5% actual, enforced via `Makefile`) | ✅ Complete | [13_coverage_and_hardening.md](13_coverage_and_hardening.md) |
 
 ## How to Verify
 
@@ -119,7 +119,7 @@ make example-agent
 go test ./pkg/client/... -v
 
 # Coverage
-make cover-pct   # must be >=45% (CI enforces this); target 60%
+make cover-pct   # ≥70% enforced via Makefile; see [coverage policy](13_coverage_and_hardening.md)
 
 # awk (see 07a_awk.md for full acceptance criteria)
 echo "hello world" | ./korego awk '{print $1}'

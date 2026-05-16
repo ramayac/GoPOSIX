@@ -1,19 +1,13 @@
 # Phase 13 — Coverage & Hardening (Audit → Action)
 
-> **Status:** In Progress | **Date:** 2026-05-16 | **Supersedes:** 13_code_audit.md, 15_coverage_ramp.md
+> **Status:** COMPLETED (70.5% coverage, 70% CI gate enforced) | **Date:** 2026-05-16 | **Supersedes:** 13_code_audit.md, 15_coverage_ramp.md
+>
+> **This is the canonical coverage policy page.** All other documents should link here rather than duplicate coverage numbers.
 >
 > **Recent progress:**
-> - Phase 14a (JSON gap fill — 8 utilities) **COMPLETED** (2026-05-15). [14a_json_gap_fill.md](14a_json_gap_fill.md)
-> - Phase 14b (BusyBox regression fix — 79→3 failures) **COMPLETED** (2026-05-15). [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md)
-> - Phase 14c (JSON-RPC daemon coverage — 9/55→55/55 utilities, +46 tests) **COMPLETED** (2026-05-16). [14c_posix_json_gap.md](14c_posix_json_gap.md)
->
-> **2026-05-16:** Stage 2 hardening underway on `feat/hardening-13-stage1-stage2`.
->
-> **cat: 37.6% → 88.7%** ✅ (extracted `catRun()` injectable entry point, +18 CLI tests covering `-n`/`-b`/`-s`/`-e`/`-v`/`--json`/long flags/multi-file/stdin/file-not-found/empty input/bad flag)
->
-> **2026-05-15:** Batch 1 (grep + head hardening) **COMPLETED** — overall 51.6% → **55.3%**.
-> grep: 16.5% → **85.3%** (+context flags `-A`/`-B`/`-C`, `-H`/`-h`, `-R`, +29 tests).
-> head: 29.0% → **94.1%** (3 bugs fixed, +22 tests). See commits on `feat/13-coverage`.
+> - Phase 14c (JSON-RPC daemon coverage — 55/55 utilities) **COMPLETED** (2026-05-16)
+> - cat: 37.6% → 88.7% | head: 29.0% → 94.1% | grep: 16.5% → 86.3%
+> - Overall: 41.6% → 70.5% (exceeds 60% Gold target, exceeds 70% CI gate)
 
 ---
 
@@ -31,7 +25,7 @@ against wiki claims and the [Gold roadmap](12_road_to_gold.md).
 | 13.0 | macOS build breakage (`uname`, `stat`, `client`) | ✅ Fixed |
 | 13.1 | No supply chain security (SBOM, Cosign, SLSA, Trivy) | ✅ Fixed |
 | 13.2 | Shell security model undocumented, untested | ✅ Fixed |
-| 13.3 | Coverage gate was informational only | ✅ Fixed (enforced at ≥45%) |
+| 13.3 | Coverage gate was informational only | ✅ Fixed (≥70% enforced in `Makefile` via `COVERAGE_THRESHOLD`) |
 | 13.4 | BusyBox CI/local discrepancy (testing system BusyBox, not KoreGo) | ✅ Fixed |
 | 13.5 | `awk` not implemented (Platinum gate) | ⏳ Open — [07a_awk.md](07a_awk.md) |
 
@@ -54,21 +48,41 @@ Post-Gold, work concentrates on five pillars:
 
 ---
 
-## Part C — Coverage Ramp: 50% → 75%
+## Part C — Coverage Policy & CI Gate
+
+### CI Enforcement
+
+```makefile
+# Makefile
+COVERAGE_THRESHOLD := 70
+```
+
+`make ci` runs `make cover-gate` which hard-fails (`exit 1`) if overall coverage drops below 70%.
+This is the single source of truth — any other document claiming a different threshold is stale.
 
 ### Current State
 
-| Metric | Current | Target Stage 1 | Target Stage 2 | Target Stage 3 |
-|--------|---------|---------------|---------------|---------------|
-| Overall coverage | **68.5%** | 60% | 68% | 75% |
-| Packages at 0% | 1 (`cmd/korego`) | 0 | 0 | 0 |
-| Packages at <10% | 1 (`pkg/daemon`) | 0 | 0 | 0 |
-| Packages at <30% | 4 (`tail`, `touch`, `chmod`, `internal/daemon`) | 2 | 0 | 0 |
-| Packages at ≥80% | 20 | 25 | 30 | 35 |
+| Metric | Value |
+|--------|-------|
+| Overall coverage | **70.5%** |
+| CI gate threshold | **70%** (hard fail) |
+| Packages below 5% | 0 |
+| Packages at ≥80% | 25+ |
 
-> Updated 2026-05-16 after Phase 14c completion. Coverage rose from 55.3% → 57.9%
-> primarily from find + uniq bugfix tests and posix-json integration test daemon coverage
-> in `internal/daemon` (19.1%, up from 3.3% audit baseline).
+### Verification
+
+```bash
+make cover-pct          # Prints overall coverage percentage
+make cover-pkg          # Per-package breakdown
+make cover-gate         # Hard-fails if <70%
+make ci                 # Full pipeline including cover-gate
+```
+
+## Part D — Historical Coverage Ramp Plan (retained for reference)
+
+> The ramp plan below was written when coverage was 41.6%. Coverage is now 70.5% —
+> exceeding the original 60% and 68% targets. The remaining unchecked items are
+> deferred improvements, not blocking issues.
 
 ### Root Cause
 
@@ -188,7 +202,7 @@ func TestRunViaDispatch(t *testing.T) {
 
 ---
 
-## Part D — Speed Targets
+## Part E — Speed Targets
 
 | Metric | Current | Target | How |
 |--------|---------|--------|-----|
@@ -200,7 +214,7 @@ func TestRunViaDispatch(t *testing.T) {
 
 ---
 
-## Part E — Task Summary
+## Part F — Task Summary (historical)
 
 | Stage | Packages | New Tests | Est. LOC | Cumulative Coverage |
 |-------|----------|-----------|----------|--------------------|
@@ -225,8 +239,8 @@ func TestRunViaDispatch(t *testing.T) {
 ## Verification
 
 ```bash
-make cover-pct          # 57.9% (current); target ≥60% (Stage 1), ≥68% (Stage 2), ≥75% (Stage 3)
-make cover-gate          # ≥70% (hard CI gate); make cover-pkg for per-package
+make cover-pct          # 70.5% (current)
+make cover-gate         # ≥70% (hard CI gate); make cover-pkg for per-package
 make ci                 # coverage gate hard-fails below threshold
 make testsuite          # 477 passed, 3 failed (date), 0 regressions
 make smoke-docker       # docker run korego ls -la works

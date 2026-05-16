@@ -2,6 +2,42 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-16] cleanup | Documentation sweep — stale numbers, historical markers, link consolidation
+
+Comprehensive wiki+docs cleanup post-v1.0 Gold release:
+
+**Stale numbers fixed:**
+- `README.md`: 96.2%→99.4% pass rate, 53→56 utilities, 45%→70% coverage gate
+- `docs/ARCHITECTURE.md`: 409→477 BusyBox passed, added Phases 13/14a-c to history
+- `wiki/12_road_to_gold.md`: 45%→70% coverage gate, 409→477 BusyBox baseline
+- `wiki/11a_lower_priority.md`: 45%→70% coverage gate, linked to canonical coverage page
+- `wiki/11_post_mvp_priorities.md`: 45%→70% gate, 3/4→COMPLETED status
+
+**Historical markers added to completed phase docs (00-10):**
+- Added "HISTORICAL — COMPLETED" banner to: 00_foundation_libs, 01_multicall_tier1,
+  03_filesystem_utils, 04_text_processing, 05_daemon_core, 06_system_utils,
+  07_agent_features, 08_hardening, 09_release_docs, 10_posix_framework, 10a_sed
+
+**Status lines corrected:**
+- `12_road_to_gold.md`: "Planning" → "COMPLETED — Gold Achieved"
+- `13_coverage_and_hardening.md`: "In Progress" → "COMPLETED (70.5%)"
+- `14_xml_output.md`: "Planning" → "DEFERRED"
+- `11_post_mvp_priorities.md`: "3/4 complete" → "COMPLETED"
+- `phases.md`: v3.0→v4.0, Gold status, current metrics, condensed layout
+
+**Coverage consolidation:**
+- `wiki/13_coverage_and_hardening.md` is now the **canonical coverage policy page**
+- Added CI gate section (70% enforced via Makefile `COVERAGE_THRESHOLD`)
+- All other docs link to it instead of duplicating stale numbers
+
+**Index reorganization:**
+- `wiki/index.md`: regrouped into Current State / Historical / Post-MVP Fix Sessions /
+  Deferred / Reference — clear hierarchy for readers
+- `wiki/todos.md`: removed stale `tar writing into read-only dir` failure (tar.tests
+  sets umask 022, test always passes in-suite)
+
+**Cross-references verified:** no broken internal links.
+
 ## [2026-05-16] design | KoreGoOS — bootable distro design document
 
 Created `wiki/koregoos.md` — comprehensive design for a separate project

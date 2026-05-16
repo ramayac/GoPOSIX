@@ -1,5 +1,7 @@
 # Phase 00 — Foundation Libraries
 
+> **HISTORICAL — COMPLETED.** This phase is done. Document retained for reference.
+>
 > **Timeline:** Week 1 | **Depends on:** Nothing | **Blocks:** Everything
 
 ---

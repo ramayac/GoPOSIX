@@ -24,7 +24,7 @@ These items improve quality, robustness, and production-readiness but are not bl
 
 ## 11a.2 — Missing Unit Tests
 
-**Current state:** All packages now have `_test.go` files. Overall coverage improved from 41.6% → 46.1% (2026-05-13). CI enforces 45% minimum (hard fail). Per-package gate (60% target) tracked in 12.3.
+**Current state:** All packages have `_test.go` files. Overall coverage is **70.5%**. CI enforces **70%** via `Makefile` `COVERAGE_THRESHOLD`. For full coverage policy, see [13_coverage_and_hardening.md](13_coverage_and_hardening.md).
 
 ### Tasks
 
@@ -34,8 +34,7 @@ These items improve quality, robustness, and production-readiness but are not bl
 - [x] `pkg/rmdir` — test empty dir removal, non-empty rejection (4 tests)
 - [x] `pkg/yes` — test output pattern, multi-word string (3 tests, also fixed bug: `fmt.Println` → `fmt.Fprintln(out, ...)`)
 - [x] `pkg/daemon` — test daemon startup, socket creation, graceful shutdown (3 tests)
-- [x] Enforce a minimum coverage gate in CI (45% hard fail; 60% target tracked in 12.3)
-  - Coverage gate now enforces 45% with `exit 1`. Overall coverage is 46.1%.
+- [x] Enforce a minimum coverage gate in CI — **70% enforced** via `COVERAGE_THRESHOLD` in `Makefile` (see [coverage policy](13_coverage_and_hardening.md))
 
 ---
 
@@ -61,20 +60,20 @@ the environment (env var is documented but not wired). No tests, no `docs/SECURI
 
 ## 11a.4 — CI Quality Gates
 
-**Current state:** BusyBox baseline and image size are enforced as hard failures. Coverage now enforces 45% (hard fail, `exit 1`). Pushing to 60% tracked in 12.3.
+**Current state:** BusyBox baseline and image size are enforced as hard failures. Coverage enforces **70%** via `Makefile` (see [coverage policy](13_coverage_and_hardening.md)).
 
 | Check | Current | Target |
 |-------|---------|--------|
 | BusyBox suite | Hard fail if <409 passed | ✅ Enforced |
 | Image size | Hard fail if >20MB | ✅ Enforced |
-| Coverage | Hard fail at <45% (current 46.1%) | Fail at 60% (12.3) |
+| Coverage | Hard fail at <70% (current 70.5%) | ✅ Enforced via `Makefile` ([policy](13_coverage_and_hardening.md)) |
 | Compliance tests | `test/compliance/` removed | BusyBox suite (490 tests) |
 
 ### Tasks
 
 - [x] Change BusyBox CI step to fail if pass count drops below 409 (corrected baseline)
 - [x] Make image size gate a hard failure (was `::warning::`, now `::error::` with `exit 1`)
-- [x] Add `go test -coverprofile` with threshold check — now hard-fails at 45% (`exit 1`)
+- [x] Add `go test -coverprofile` with threshold check — **70% enforced** via `COVERAGE_THRESHOLD` in `Makefile`
 - [x] Add compliance test step that runs all scripts from 11a.1 (step added, later removed — superseded by BusyBox suite)
 
 ---
@@ -134,9 +133,9 @@ the environment (env var is documented but not wired). No tests, no `docs/SECURI
 ## Milestone 11a
 
 - [x] Compliance test approach changed: per-utility scripts removed in favor of BusyBox test suite (11a.1 — superseded)
-- [x] 6 missing unit test files added (cp, mv, ln, rmdir, yes, daemon); coverage at 46.1% with CI hard-fail at 45% (11a.2)
+- [x] 6 missing unit test files added (cp, mv, ln, rmdir, yes, daemon); overall coverage 70.5% with CI hard-fail at 70% ([coverage policy](13_coverage_and_hardening.md))
 - [x] Shell interpreter security model documented (11a.3 — completed via [12.2](12_road_to_gold.md): KOREGO_SHELL_TIMEOUT wired, interpreter_test.go with 10 tests, docs/SECURITY.md)
-- [x] BusyBox baseline enforced (<409); image size gate hard failure; coverage hard-fails at <45% (11a.4)
+- [x] BusyBox baseline enforced; image size gate hard failure; coverage hard-fails at 70% ([coverage policy](13_coverage_and_hardening.md))
 - [x] `make help`, `make bench`, `make validate-schemas`, `make example-agent`, `make cover-pct` all work (11a.5)
 - [x] Three deployment patterns documented with a working docker-compose example (11a.6)
 - [x] Release pipeline hardened (11a.7 — completed via [12.1](12_road_to_gold.md): SBOM + Cosign + SLSA + Trivy)
@@ -150,8 +149,8 @@ the environment (env var is documented but not wired). No tests, no `docs/SECURI
 
 | # | Task | Status | Where Tracked |
 |---|------|--------|---------------|
-| 12.3 | Coverage gate → 60% (currently 46.1%, enforced at 45%) | ⏳ In Progress | [12_road_to_gold.md](12_road_to_gold.md) |
+| 12.3 | Coverage gate → 70% (currently 70.5%, enforced via `Makefile`) | ✅ Complete | [13_coverage_and_hardening.md](13_coverage_and_hardening.md) |
 | 12.5 | `awk` implementation (Platinum gate) | ⏳ Deferred | [07a_awk.md](07a_awk.md) |
 | 11a.1 | BusyBox JSON output validation | ⏳ Open | Above (11a.1) |
 | 11a.1 | Missing BusyBox test cases | ⏳ Open | Above (11a.1) |
-| 11a.2 | Per-package coverage gate (target 60%) | ⏳ Open | [12_road_to_gold.md](12_road_to_gold.md) (12.3)
+| 11a.2 | Per-package coverage gate (target 60%) | ✅ Complete (70.5% overall) | [13_coverage_and_hardening.md](13_coverage_and_hardening.md) |

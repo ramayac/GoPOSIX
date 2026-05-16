@@ -1,5 +1,7 @@
 # Phase 03 — Tier 2: Filesystem Utilities
 
+> **HISTORICAL — COMPLETED.** This phase is done. Document retained for reference.
+>
 > **Timeline:** Week 3–4 | **Depends on:** Phase 00, 01 | **Blocks:** Phase 04, 05
 
 ---
