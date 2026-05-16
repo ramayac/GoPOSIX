@@ -1,6 +1,6 @@
 # Phase 14 — XML Output Support
 
-> **Status:** Planning | **Date:** 2026-05-15 | **Depends on:** Phases 00–10 complete
+> **Status:** Planning (Phase 14a JSON gap fill COMPLETED) | **Date:** 2026-05-15 | **Depends on:** Phases 00–10 complete, 14a complete
 
 ---
 
@@ -102,7 +102,7 @@ func RenderError(cmdName string, exitCode int, errCode, message string, jsonMode
 |-------|-------|-------|
 | **Foundation** | 2 | `pkg/common/output.go`, `pkg/common/output_test.go` |
 | **Utilities (already have `--json`)** | **44** | Every utility `*.go` file + `*_test.go` |
-| **Gap-fill utilities (missing `--json`)** | **8** | echo, sed, sleep, tee, testcmd, tr, truefalse, yes — see [14a_json_gap_fill.md](14a_json_gap_fill.md) |
+| **Gap-fill utilities (missing `--json`)** | **8** | echo, sed, sleep, tee, testcmd, tr, truefalse, yes — **COMPLETED** in [14a_json_gap_fill.md](14a_json_gap_fill.md) |
 | **POSIX-XML test suite** | 2 | `test/posix-xml/` (mirrors `test/posix-json/`) |
 | **Total packages** | **56** | ~112 files |
 
@@ -147,10 +147,10 @@ Example diff for a typical utility:
 +common.Render("ls", results, jsonMode, xmlMode, out, func() {
 ```
 
-### Gap-Fill Utilities (8 packages)
+### Gap-Fill Utilities (8 packages) ✅ JSON Complete
 
-These packages currently lack `--json` in their FlagSpec (or parse it manually).
-Adding `--xml` is the right moment to add both flags properly:
+**JSON gap fill is COMPLETED** (Phase 14a). These packages now have proper `--json` support.
+Adding `--xml` is the next step:
 
 | Utility | Current JSON Status | Work Needed |
 |---------|-------------------|-------------|

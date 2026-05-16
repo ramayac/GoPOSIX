@@ -2,6 +2,7 @@ package sed
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -409,5 +410,80 @@ func TestParseSubCaseInsensitive(t *testing.T) {
 	}
 	if insts[0].Regexp == nil {
 		t.Error("expected regex")
+	}
+}
+
+// --- JSON output tests ---
+
+func TestSedJSONSubstitute(t *testing.T) {
+	in := "hello world\n"
+	f, _ := os.CreateTemp("", "sedtest")
+	defer os.Remove(f.Name())
+	f.WriteString(in)
+	f.Close()
+
+	var out bytes.Buffer
+	code := run([]string{"--json", "s/world/korego/", f.Name()}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+
+	// Parse JSON output
+	var env map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v (%s)", err, out.String())
+	}
+	data := env["data"].(map[string]interface{})
+	lines := data["lines"].([]interface{})
+	if len(lines) != 1 {
+		t.Fatalf("expected 1 line, got %d", len(lines))
+	}
+	if lines[0] != "hello korego" {
+		t.Errorf("got %q, want 'hello korego'", lines[0])
+	}
+	if data["lineCount"].(float64) != 1 {
+		t.Errorf("lineCount %v, want 1", data["lineCount"])
+	}
+}
+
+func TestSedJSONShortFlag(t *testing.T) {
+	in := "abc\n"
+	f, _ := os.CreateTemp("", "sedtest")
+	defer os.Remove(f.Name())
+	f.WriteString(in)
+	f.Close()
+
+	var out bytes.Buffer
+	code := run([]string{"-j", "s/a/b/", f.Name()}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+}
+
+func TestSedJSONMultiFile(t *testing.T) {
+	in := "hello\nworld\n"
+	f, _ := os.CreateTemp("", "sedtest")
+	defer os.Remove(f.Name())
+	f.WriteString(in)
+	f.Close()
+
+	var out bytes.Buffer
+	// p prints explicitly + default print with no -n = double output per line
+	code := run([]string{"--json", "-n", "p", f.Name()}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v (%s)", err, out.String())
+	}
+	data := env["data"].(map[string]interface{})
+	lines := data["lines"].([]interface{})
+	if len(lines) != 2 {
+		t.Errorf("expected 2 lines, got %d", len(lines))
 	}
 }

@@ -269,20 +269,30 @@ func evalBinary(left, op, right string) (bool, error) {
 	return false, fmt.Errorf("unknown binary operator: %s", op)
 }
 
+// spec for test command -- only the json flag (expression args are passthrough)
+var spec = common.FlagSpec{
+	Defs: []common.FlagDef{
+		{Short: "j", Long: "json", Type: common.FlagBool},
+	},
+}
+
 // --- CLI layer ---
 
 func runTest(args []string, out io.Writer) int {
-	// No flag parsing for test — all args are expression tokens
-	// But we do check for --json as first arg
+	// Pre-process: extract --json/-j before passing to flag parser
+	// because test's expression language uses single-dash flags (-n, -z, -eq etc.)
 	jsonMode := false
-	exprArgs := args
-
-	if len(args) > 0 && (args[0] == "--json" || args[0] == "-j") {
-		jsonMode = true
-		exprArgs = args[1:]
+	cleanArgs := make([]string, 0, len(args))
+	for _, a := range args {
+		switch a {
+		case "--json", "-j":
+			jsonMode = true
+		default:
+			cleanArgs = append(cleanArgs, a)
+		}
 	}
 
-	result, err := Evaluate(exprArgs)
+	result, err := Evaluate(cleanArgs)
 	if err != nil {
 		common.RenderError("test", 2, "SYNTAX", err.Error(), jsonMode, out)
 		if !jsonMode {
@@ -303,13 +313,48 @@ func runTest(args []string, out io.Writer) int {
 }
 
 func runBracket(args []string, out io.Writer) int {
+	// Pre-process: extract --json/-j
+	jsonMode := false
+	cleanArgs := make([]string, 0, len(args))
+	for _, a := range args {
+		switch a {
+		case "--json", "-j":
+			jsonMode = true
+		default:
+			cleanArgs = append(cleanArgs, a)
+		}
+	}
+
 	// Validate closing ']'
-	if len(args) == 0 || args[len(args)-1] != "]" {
-		fmt.Fprintf(os.Stderr, "[: missing ']'\n")
+	if len(cleanArgs) == 0 || cleanArgs[len(cleanArgs)-1] != "]" {
+		msg := "missing ']'"
+		common.RenderError("[", 2, "SYNTAX", msg, jsonMode, out)
+		if !jsonMode {
+			fmt.Fprintf(os.Stderr, "[: %s\n", msg)
+		}
 		return 2
 	}
-	// Strip the closing ']' and delegate to test
-	return runTest(args[:len(args)-1], out)
+	// Strip the closing ']' and delegate to test evaluation
+	exprArgs := cleanArgs[:len(cleanArgs)-1]
+
+	result, err := Evaluate(exprArgs)
+	if err != nil {
+		common.RenderError("[", 2, "SYNTAX", err.Error(), jsonMode, out)
+		if !jsonMode {
+			fmt.Fprintf(os.Stderr, "[: %v\n", err)
+		}
+		return 2
+	}
+
+	exitCode := 1
+	if result {
+		exitCode = 0
+	}
+
+	if jsonMode {
+		common.Render("[", TestResult{Result: result}, true, out, func() {})
+	}
+	return exitCode
 }
 
 func init() {

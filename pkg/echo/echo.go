@@ -4,6 +4,7 @@ package echo
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/ramayac/korego/internal/dispatch"
@@ -15,7 +16,14 @@ type EchoResult struct {
 	Text string `json:"text"`
 }
 
-// Echo has manual flag parsing so no spec is used
+var spec = common.FlagSpec{
+	Defs: []common.FlagDef{
+		{Short: "n", Type: common.FlagBool},
+		{Short: "e", Type: common.FlagBool},
+		{Short: "E", Type: common.FlagBool},
+		{Short: "j", Long: "json", Type: common.FlagBool},
+	},
+}
 
 // Run is the library function: given flags and words, return EchoResult.
 func Run(noNewline, escape bool, words []string) EchoResult {
@@ -94,36 +102,24 @@ func processEscapes(s string) string {
 }
 
 func run(args []string, out io.Writer) int {
-	jsonMode := false
-	noNewline := false
-	escape := false
-	var positional []string
-
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		if arg == "-j" || arg == "--json" {
-			jsonMode = true
-			continue
-		}
-		if arg == "-n" {
-			noNewline = true
-		} else if arg == "-e" {
-			escape = true
-		} else if arg == "-ne" || arg == "-en" {
-			noNewline = true
-			escape = true
-		} else {
-			positional = append(positional, arg)
-		}
+	flags, err := common.ParseFlags(args, spec)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "echo: %v\n", err)
+		return 2
 	}
 
-	result := Run(noNewline, escape, positional)
+	jsonMode := flags.Has("json")
+	noNewline := flags.Has("n")
+	escapeMode := flags.Has("e") && !flags.Has("E")
+	words := flags.Positional
+
+	result := Run(noNewline, escapeMode, words)
 
 	common.Render("echo", result, jsonMode, out, func() {
 		if noNewline {
-			fmt.Print(result.Text)
+			fmt.Fprint(out, result.Text)
 		} else {
-			fmt.Println(result.Text)
+			fmt.Fprintln(out, result.Text)
 		}
 	})
 	return 0

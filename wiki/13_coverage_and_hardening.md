@@ -1,6 +1,9 @@
 # Phase 13 — Coverage & Hardening (Audit → Action)
 
 > **Status:** In Progress | **Date:** 2026-05-15 | **Supersedes:** 13_code_audit.md, 15_coverage_ramp.md
+>
+> **Note:** Phase 14a (JSON gap fill — 8 utilities) is **COMPLETED** as of 2026-05-15.
+> See [14a_json_gap_fill.md](14a_json_gap_fill.md) for details.
 
 ---
 

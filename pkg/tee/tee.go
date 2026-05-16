@@ -10,10 +10,29 @@ import (
 	"github.com/ramayac/korego/pkg/common"
 )
 
+// TeeResult is the structured result for --json mode.
+type TeeResult struct {
+	BytesWritten int64    `json:"bytesWritten"`
+	Files        []string `json:"files"`
+}
+
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "a", Long: "append", Type: common.FlagBool},
+		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
+}
+
+// countingWriter wraps an io.Writer and counts bytes written.
+type countingWriter struct {
+	w     io.Writer
+	count int64
+}
+
+func (c *countingWriter) Write(p []byte) (int, error) {
+	n, err := c.w.Write(p)
+	c.count += int64(n)
+	return n, err
 }
 
 func run(args []string, out io.Writer) int {
@@ -23,39 +42,75 @@ func run(args []string, out io.Writer) int {
 		return 2
 	}
 	appendMode := flags.Has("a")
+	jsonMode := flags.Has("json")
 
 	var writers []io.Writer
-	writers = append(writers, os.Stdout)
+	var filePaths []string
+
+	// In json mode, discard stdout output (captured in result)
+	var stdoutCapture io.Writer
+	if jsonMode {
+		stdoutCapture = io.Discard
+	} else {
+		stdoutCapture = os.Stdout
+	}
+
+	writers = append(writers, stdoutCapture)
 
 	var files []*os.File
-
 	exitCode := 0
+
 	for _, path := range flags.Positional {
-		flags := os.O_WRONLY | os.O_CREATE
+		fileFlags := os.O_WRONLY | os.O_CREATE
 		if appendMode {
-			flags |= os.O_APPEND
+			fileFlags |= os.O_APPEND
 		} else {
-			flags |= os.O_TRUNC
+			fileFlags |= os.O_TRUNC
 		}
-		f, err := os.OpenFile(path, flags, 0666)
+		f, err := os.OpenFile(path, fileFlags, 0666)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "tee: %s: %v\n", path, err)
+			if jsonMode {
+				common.RenderError("tee", 1, "OPEN", fmt.Sprintf("%s: %v", path, err), true, out)
+			} else {
+				fmt.Fprintf(os.Stderr, "tee: %s: %v\n", path, err)
+			}
 			exitCode = 1
 			continue
 		}
 		files = append(files, f)
+		filePaths = append(filePaths, path)
 		writers = append(writers, f)
 	}
 
 	multiWriter := io.MultiWriter(writers...)
-	_, err = io.Copy(multiWriter, os.Stdin)
+
+	var totalWritten int64
+	if jsonMode {
+		cw := &countingWriter{w: multiWriter}
+		_, err = io.Copy(cw, os.Stdin)
+		totalWritten = cw.count
+	} else {
+		_, err = io.Copy(multiWriter, os.Stdin)
+	}
+
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tee: %v\n", err)
+		if jsonMode {
+			common.RenderError("tee", 1, "WRITE", err.Error(), true, out)
+		} else {
+			fmt.Fprintf(os.Stderr, "tee: %v\n", err)
+		}
 		exitCode = 1
 	}
 
 	for _, f := range files {
 		f.Close()
+	}
+
+	if jsonMode && exitCode == 0 {
+		common.Render("tee", TeeResult{
+			BytesWritten: totalWritten,
+			Files:        filePaths,
+		}, true, out, func() {})
 	}
 
 	return exitCode

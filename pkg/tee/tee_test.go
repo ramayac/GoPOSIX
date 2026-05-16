@@ -2,6 +2,7 @@ package tee
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
@@ -39,5 +40,88 @@ func TestRunBasic(t *testing.T) {
 	b2, _ := os.ReadFile(file2)
 	if string(b2) != "hello tee\n" {
 		t.Error("file2 missing")
+	}
+}
+
+func TestCountingWriter(t *testing.T) {
+	var buf bytes.Buffer
+	cw := &countingWriter{w: &buf}
+	_, err := cw.Write([]byte("hello"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cw.count != 5 {
+		t.Errorf("count %d, want 5", cw.count)
+	}
+}
+
+func TestTeeJSON(t *testing.T) {
+	dir := t.TempDir()
+	outFile := filepath.Join(dir, "out.txt")
+
+	// Simulate stdin
+	oldStdin := os.Stdin
+	defer func() { os.Stdin = oldStdin }()
+	r, w, _ := os.Pipe()
+	os.Stdin = r
+
+	go func() {
+		w.WriteString("hello world\n")
+		w.Close()
+	}()
+
+	var out bytes.Buffer
+	code := run([]string{"--json", outFile}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+
+	var env map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v (%s)", err, out.String())
+	}
+	data := env["data"].(map[string]interface{})
+	if data["bytesWritten"].(float64) != 12 {
+		t.Errorf("bytesWritten %v, want 12", data["bytesWritten"])
+	}
+	files := data["files"].([]interface{})
+	if len(files) != 1 || files[0] != outFile {
+		t.Errorf("files %v, want [%q]", files, outFile)
+	}
+
+	// Verify file was written
+	b, _ := os.ReadFile(outFile)
+	if string(b) != "hello world\n" {
+		t.Errorf("file content %q, want 'hello world\\n'", string(b))
+	}
+}
+
+func TestTeeJSONShortFlag(t *testing.T) {
+	dir := t.TempDir()
+	outFile := filepath.Join(dir, "out.txt")
+
+	oldStdin := os.Stdin
+	defer func() { os.Stdin = oldStdin }()
+	r, w, _ := os.Pipe()
+	os.Stdin = r
+
+	go func() {
+		w.WriteString("test\n")
+		w.Close()
+	}()
+
+	var out bytes.Buffer
+	code := run([]string{"-j", outFile}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+
+	var env map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	data := env["data"].(map[string]interface{})
+	if data["bytesWritten"].(float64) != 5 {
+		t.Errorf("bytesWritten %v, want 5", data["bytesWritten"])
 	}
 }

@@ -3,6 +3,7 @@ package tr
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -13,11 +14,20 @@ import (
 	"github.com/ramayac/korego/pkg/common"
 )
 
+// TrResult is the structured result for --json mode.
+type TrResult struct {
+	Lines     []string `json:"lines"`
+	LineCount int      `json:"lineCount"`
+	BytesIn   int64    `json:"bytesIn"`
+	BytesOut  int64    `json:"bytesOut"`
+}
+
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "d", Long: "delete", Type: common.FlagBool},
 		{Short: "s", Long: "squeeze-repeats", Type: common.FlagBool},
 		{Short: "c", Long: "complement", Type: common.FlagBool},
+		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -173,8 +183,12 @@ func run(args []string, out io.Writer) int {
 	deleteFlag := flags.Has("d")
 	squeezeFlag := flags.Has("s")
 	complementFlag := flags.Has("c")
+	jsonMode := flags.Has("json")
 
 	if len(flags.Positional) < 1 {
+		if jsonMode {
+			common.RenderError("tr", 1, "MISSING", "missing operand", true, out)
+		}
 		fmt.Fprintln(os.Stderr, "tr: missing operand")
 		return 1
 	}
@@ -190,6 +204,37 @@ func run(args []string, out io.Writer) int {
 	set1 = strings.ReplaceAll(set1, "\\t", "\t")
 	set2 = strings.ReplaceAll(set2, "\\n", "\n")
 	set2 = strings.ReplaceAll(set2, "\\t", "\t")
+
+	if jsonMode {
+		// Read all stdin, process, capture output
+		input, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			common.RenderError("tr", 1, "READ", err.Error(), true, out)
+			return 1
+		}
+		bytesIn := int64(len(input))
+
+		var buf bytes.Buffer
+		err = Run(strings.NewReader(string(input)), &buf, set1, set2, deleteFlag, squeezeFlag, complementFlag)
+		if err != nil {
+			common.RenderError("tr", 1, "PROCESS", err.Error(), true, out)
+			return 1
+		}
+		bytesOut := int64(buf.Len())
+
+		lines := strings.Split(buf.String(), "\n")
+		if len(lines) > 0 && lines[len(lines)-1] == "" {
+			lines = lines[:len(lines)-1]
+		}
+
+		common.Render("tr", TrResult{
+			Lines:     lines,
+			LineCount: len(lines),
+			BytesIn:   bytesIn,
+			BytesOut:  bytesOut,
+		}, true, out, func() {})
+		return 0
+	}
 
 	err = Run(os.Stdin, os.Stdout, set1, set2, deleteFlag, squeezeFlag, complementFlag)
 	if err != nil {

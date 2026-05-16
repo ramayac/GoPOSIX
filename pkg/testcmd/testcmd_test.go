@@ -330,6 +330,39 @@ func TestRunTestCLIJSON(t *testing.T) {
 	}
 }
 
+func TestRunTestCLIJSONShort(t *testing.T) {
+	var buf bytes.Buffer
+	code := runTest([]string{"-j", "hello", "=", "hello"}, &buf)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	data := env["data"].(map[string]interface{})
+	if data["result"] != true {
+		t.Errorf("got %v, want true", data["result"])
+	}
+}
+
+func TestRunTestJSONMiddleware(t *testing.T) {
+	// Test that --json can appear in the middle of expression args (edge case)
+	var buf bytes.Buffer
+	code := runTest([]string{"hello", "--json", "=", "hello"}, &buf)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0 (json extracted)", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	data := env["data"].(map[string]interface{})
+	if data["result"] != true {
+		t.Errorf("got %v, want true", data["result"])
+	}
+}
+
 func TestRunBracket(t *testing.T) {
 	var buf bytes.Buffer
 	code := runBracket([]string{"hello", "=", "hello", "]"}, &buf)
@@ -343,6 +376,22 @@ func TestRunBracketMissingClose(t *testing.T) {
 	code := runBracket([]string{"hello", "=", "hello"}, &buf)
 	if code != 2 {
 		t.Errorf("exit code %d, want 2", code)
+	}
+}
+
+func TestRunBracketJSON(t *testing.T) {
+	var buf bytes.Buffer
+	code := runBracket([]string{"--json", "hello", "=", "hello", "]"}, &buf)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	data := env["data"].(map[string]interface{})
+	if data["result"] != true {
+		t.Errorf("got %v, want true", data["result"])
 	}
 }
 

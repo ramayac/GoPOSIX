@@ -2,6 +2,7 @@ package yes
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"strings"
 	"testing"
@@ -64,5 +65,60 @@ func TestMultiWordString(t *testing.T) {
 		if line != "foo bar" {
 			t.Errorf("expected 'foo bar', got %q", line)
 		}
+	}
+}
+
+func TestYesJSON(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"--json"}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	// Output should be pure JSON only
+	var env map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v (%s)", err, out.String())
+	}
+	data := env["data"].(map[string]interface{})
+	if data["count"].(float64) != 1 {
+		t.Errorf("count %v, want 1", data["count"])
+	}
+	if data["truncated"] != true {
+		t.Errorf("truncated %v, want true", data["truncated"])
+	}
+	if data["string"] != "y" {
+		t.Errorf("string %v, want 'y'", data["string"])
+	}
+}
+
+func TestYesJSONWithCount(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"--json", "--count", "3"}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v (%s)", err, out.String())
+	}
+	data := env["data"].(map[string]interface{})
+	if data["count"].(float64) != 3 {
+		t.Errorf("count %v, want 3", data["count"])
+	}
+}
+
+func TestYesJSONWithString(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"-j", "hello"}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v (%s)", err, out.String())
+	}
+	data := env["data"].(map[string]interface{})
+	if data["string"] != "hello" {
+		t.Errorf("string %v, want 'hello'", data["string"])
 	}
 }

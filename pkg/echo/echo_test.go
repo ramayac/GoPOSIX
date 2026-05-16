@@ -1,6 +1,8 @@
 package echo
 
 import (
+	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -105,5 +107,104 @@ func TestRunMultiWordEscapes(t *testing.T) {
 	}
 	if !strings.HasSuffix(result.Text, "line3") {
 		t.Errorf("expected to end with line3, got %q", result.Text)
+	}
+}
+
+// CLI-level tests using run() directly (FlagSpec-based)
+
+func TestRunCLIBasic(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"hello", "world"}, &buf)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	if buf.String() != "hello world\n" {
+		t.Errorf("got %q, want %q", buf.String(), "hello world\n")
+	}
+}
+
+func TestRunCLINoNewline(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-n", "hello"}, &buf)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	if buf.String() != "hello" {
+		t.Errorf("got %q, want %q", buf.String(), "hello")
+	}
+}
+
+func TestRunCLINoNewlineEscapes(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-ne", `hello\nworld`}, &buf)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	if buf.String() != "hello\nworld" {
+		t.Errorf("got %q, want %q", buf.String(), "hello\nworld")
+	}
+}
+
+func TestRunCLIJSON(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--json", "hello", "world"}, &buf)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v (%s)", err, buf.String())
+	}
+	data := env["data"].(map[string]interface{})
+	if data["text"] != "hello world" {
+		t.Errorf("text %q, want %q", data["text"], "hello world")
+	}
+}
+
+func TestRunCLIJSONShort(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-j", "hello"}, &buf)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v (%s)", err, buf.String())
+	}
+	data := env["data"].(map[string]interface{})
+	if data["text"] != "hello" {
+		t.Errorf("text %q, want %q", data["text"], "hello")
+	}
+}
+
+func TestRunCLIJSONWithEscapes(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-je", `hello\nworld`}, &buf)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v (%s)", err, buf.String())
+	}
+	data := env["data"].(map[string]interface{})
+	if data["text"] != "hello\nworld" {
+		t.Errorf("text %q, want %q", data["text"], "hello\\nworld")
+	}
+}
+
+func TestRunCLIJSONNoNewline(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-nj", "hello"}, &buf)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v (%s)", err, buf.String())
+	}
+	data := env["data"].(map[string]interface{})
+	if data["text"] != "hello" {
+		t.Errorf("text %q, want %q", data["text"], "hello")
 	}
 }

@@ -79,8 +79,8 @@ korego binary (single static ELF, <12MB)
 | [11a_lower_priority.md](11a_lower_priority.md) | Lower Priority Improvements (8/8 complete) | **COMPLETED** |
 | [12_road_to_gold.md](12_road_to_gold.md) | Road to Gold (5/5 Gold gaps resolved) | **GOLD ACHIEVED** |
 | [13_coverage_and_hardening.md](13_coverage_and_hardening.md) | Coverage & Hardening — Audit findings + ramp plan (50%→75%) | **IN PROGRESS** |
-| [14_xml_output.md](14_xml_output.md) | XML Output Support — `--xml` flag for all 52 utilities | **PLANNING** |
-| [14a_json_gap_fill.md](14a_json_gap_fill.md) | JSON/XML Gap Fill — 8 utilities missing `--json` | **PLANNING** |
+| [14_xml_output.md](14_xml_output.md) | XML Output Support — `--xml` flag for all 52 utilities | **PLANNING** (JSON gap fill complete) |
+| [14a_json_gap_fill.md](14a_json_gap_fill.md) | JSON Gap Fill — 8 utilities now support `--json` | **COMPLETED** |
 | [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 
 ---

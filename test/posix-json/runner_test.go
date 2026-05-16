@@ -13,7 +13,13 @@ import (
 	"github.com/ramayac/korego/pkg/client"
 	_ "github.com/ramayac/korego/pkg/cat"
 	_ "github.com/ramayac/korego/pkg/echo"
+	_ "github.com/ramayac/korego/pkg/sed"
+	_ "github.com/ramayac/korego/pkg/sleep"
+	_ "github.com/ramayac/korego/pkg/tee"
+	_ "github.com/ramayac/korego/pkg/testcmd"
+	_ "github.com/ramayac/korego/pkg/tr"
 	_ "github.com/ramayac/korego/pkg/truefalse"
+	_ "github.com/ramayac/korego/pkg/yes"
 )
 
 // ResultWrapper represents the standardized output structure for KoreGo JSON-RPC
@@ -56,24 +62,38 @@ func TestStructuredOutputSemantics(t *testing.T) {
 		verifyData func(t *testing.T, data interface{})
 	}{
 		{
-			name:       "true utility exits 0 with nil data",
+			name:       "true utility exits 0 with value=true",
 			method:     "korego.true",
 			params:     nil,
 			expectCode: 0,
 			verifyData: func(t *testing.T, data interface{}) {
-				if data != nil {
-					t.Errorf("expected nil data for true, got %v", data)
+				m, ok := data.(map[string]interface{})
+				if !ok {
+					t.Fatalf("expected map, got %T", data)
+				}
+				if v := m["value"]; v != true {
+					t.Errorf("expected value=true, got %v", v)
+				}
+				if ec := m["exitCode"]; ec != float64(0) {
+					t.Errorf("expected exitCode=0, got %v", ec)
 				}
 			},
 		},
 		{
-			name:       "false utility exits 1 with nil data",
+			name:       "false utility exits 1 with value=false",
 			method:     "korego.false",
 			params:     nil,
 			expectCode: 1,
 			verifyData: func(t *testing.T, data interface{}) {
-				if data != nil {
-					t.Errorf("expected nil data for false, got %v", data)
+				m, ok := data.(map[string]interface{})
+				if !ok {
+					t.Fatalf("expected map, got %T", data)
+				}
+				if v := m["value"]; v != false {
+					t.Errorf("expected value=false, got %v", v)
+				}
+				if ec := m["exitCode"]; ec != float64(1) {
+					t.Errorf("expected exitCode=1, got %v", ec)
 				}
 			},
 		},
@@ -89,6 +109,45 @@ func TestStructuredOutputSemantics(t *testing.T) {
 				}
 				if text := m["text"]; text != "hello posix" {
 					t.Errorf("expected text 'hello posix', got '%v'", text)
+				}
+			},
+		},
+		{
+			name:       "sleep utility returns duration info",
+			method:     "korego.sleep",
+			params:     map[string]interface{}{"flags": []interface{}{"0.001"}},
+			expectCode: 0,
+			verifyData: func(t *testing.T, data interface{}) {
+				m, ok := data.(map[string]interface{})
+				if !ok {
+					t.Fatalf("expected map, got %T", data)
+				}
+				if d, ok := m["duration"]; !ok || d.(float64) <= 0 {
+					t.Errorf("expected duration > 0, got %v", d)
+				}
+				if r, ok := m["requested"]; !ok || r.(float64) <= 0 {
+					t.Errorf("expected requested > 0, got %v", r)
+				}
+			},
+		},
+		{
+			name:       "yes utility returns string/count in json mode",
+			method:     "korego.yes",
+			params:     nil,
+			expectCode: 0,
+			verifyData: func(t *testing.T, data interface{}) {
+				m, ok := data.(map[string]interface{})
+				if !ok {
+					t.Fatalf("expected map, got %T", data)
+				}
+				if s := m["string"]; s != "y" {
+					t.Errorf("expected string='y', got %v", s)
+				}
+				if c := m["count"]; c.(float64) != 1 {
+					t.Errorf("expected count=1, got %v", c)
+				}
+				if tr := m["truncated"]; tr != true {
+					t.Errorf("expected truncated=true, got %v", tr)
 				}
 			},
 		},
@@ -149,6 +208,38 @@ func TestStructuredOutputSemantics(t *testing.T) {
 		resObj := res["result"].(map[string]interface{})
 		if int(resObj["exitCode"].(float64)) != 1 {
 			t.Errorf("expected exit code 1 in result, got %v", resObj["exitCode"])
+		}
+	})
+	
+	t.Run("test utility via daemon returns bool result", func(t *testing.T) {
+		conn, err := net.Dial("unix", socket)
+		if err != nil {
+			t.Fatalf("failed to connect: %v", err)
+		}
+		defer conn.Close()
+
+		req := map[string]interface{}{
+			"jsonrpc": "2.0",
+			"method":  "korego.test",
+			"params":  map[string]interface{}{"flags": []interface{}{"hello", "=", "hello"}},
+			"id":      2,
+		}
+		b, _ := json.Marshal(req)
+		conn.Write(b)
+
+		var res map[string]interface{}
+		dec := json.NewDecoder(conn)
+		if err := dec.Decode(&res); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		resObj := res["result"].(map[string]interface{})
+		if int(resObj["exitCode"].(float64)) != 0 {
+			t.Errorf("expected exit code 0, got %v", resObj["exitCode"])
+		}
+		data := resObj["data"].(map[string]interface{})
+		if data["result"] != true {
+			t.Errorf("expected result=true, got %v", data["result"])
 		}
 	})
 }
