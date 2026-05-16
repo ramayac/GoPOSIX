@@ -45,7 +45,7 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 		}
 		
 		hc := interp.HandlerCtx(ctx)
-		exitCode := cmd.Run(args, hc.Stdout)
+		exitCode := cmd.Run(args[1:], hc.Stdout)
 		if exitCode != 0 {
 			return interp.NewExitStatus(uint8(exitCode))
 		}
