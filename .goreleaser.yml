@@ -9,12 +9,12 @@ builds:
 
 dockers:
   - image_templates: ["ghcr.io/ramayac/korego:{{.Version}}-amd64"]
-    dockerfile: docker/Dockerfile
+    dockerfile: docker/Dockerfile.goreleaser
     use: buildx
     build_flag_templates:
       - "--platform=linux/amd64"
   - image_templates: ["ghcr.io/ramayac/korego:{{.Version}}-arm64"]
-    dockerfile: docker/Dockerfile
+    dockerfile: docker/Dockerfile.goreleaser
     use: buildx
     build_flag_templates:
       - "--platform=linux/arm64"

@@ -1,0 +1,40 @@
+# =============================================================================
+# GoReleaser Dockerfile — binary is pre-built by GoReleaser.
+# Used by .goreleaser.yml. For local builds, use docker/Dockerfile.
+# =============================================================================
+
+# Stage 1: Extract runtime dependencies from Alpine
+FROM alpine:3.20 AS setup
+
+RUN apk add --no-cache ca-certificates tzdata
+
+# Generate symlinks AND passwd/group/home from the GoReleaser-built binary
+COPY korego /tmp/korego
+RUN /tmp/korego --list-commands > /commands.txt && \
+    while IFS= read -r cmd; do ln -s /bin/korego "/tmp/${cmd}"; done < /commands.txt
+
+RUN echo "korego:x:1000:1000::/home/korego:/bin/false" >> /etc/passwd && \
+    echo "korego:x:1000:" >> /etc/group && \
+    mkdir -p /home/korego && chown 1000:1000 /home/korego
+
+# Stage 2: Minimal scratch image
+FROM scratch
+
+# CA certificates
+COPY --from=setup /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# Timezone data
+COPY --from=setup /usr/share/zoneinfo /usr/share/zoneinfo
+ENV ZONEINFO=/usr/share/zoneinfo
+
+# Non-root user
+COPY --from=setup /etc/passwd /etc/passwd
+COPY --from=setup /etc/group  /etc/group
+COPY --from=setup /home/korego /home/korego
+
+# Binary + symlinks
+COPY korego /bin/korego
+COPY --from=setup /tmp/* /bin/
+
+USER korego
+ENTRYPOINT ["/bin/korego"]
