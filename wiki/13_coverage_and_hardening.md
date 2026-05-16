@@ -7,6 +7,10 @@
 > - Phase 14b (BusyBox regression fix — 79→3 failures) **COMPLETED** (2026-05-15). [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md)
 > - Phase 14c (JSON-RPC daemon coverage — 9/55→55/55 utilities, +46 tests) **COMPLETED** (2026-05-16). [14c_posix_json_gap.md](14c_posix_json_gap.md)
 >
+> **2026-05-16:** Stage 2 hardening underway on `feat/hardening-13-stage1-stage2`.
+>
+> **cat: 37.6% → 88.7%** ✅ (extracted `catRun()` injectable entry point, +18 CLI tests covering `-n`/`-b`/`-s`/`-e`/`-v`/`--json`/long flags/multi-file/stdin/file-not-found/empty input/bad flag)
+>
 > **2026-05-15:** Batch 1 (grep + head hardening) **COMPLETED** — overall 51.6% → **55.3%**.
 > grep: 16.5% → **85.3%** (+context flags `-A`/`-B`/`-C`, `-H`/`-h`, `-R`, +29 tests).
 > head: 29.0% → **94.1%** (3 bugs fixed, +22 tests). See commits on `feat/13-coverage`.
@@ -56,7 +60,7 @@ Post-Gold, work concentrates on five pillars:
 
 | Metric | Current | Target Stage 1 | Target Stage 2 | Target Stage 3 |
 |--------|---------|---------------|---------------|---------------|
-| Overall coverage | **57.9%** | 60% | 68% | 75% |
+| Overall coverage | **68.5%** | 60% | 68% | 75% |
 | Packages at 0% | 1 (`cmd/korego`) | 0 | 0 | 0 |
 | Packages at <10% | 1 (`pkg/daemon`) | 0 | 0 | 0 |
 | Packages at <30% | 4 (`tail`, `touch`, `chmod`, `internal/daemon`) | 2 | 0 | 0 |
@@ -138,7 +142,7 @@ func TestRunViaDispatch(t *testing.T) {
 |---------|---------|--------|-----------|
 | `grep` | ~~16.5%~~ **86.3%** ✅ | 45% | `-e`, `-f`, `-v`, `-r`, `-c`, `-l`/`-L`, `-i`, `-w`, `-x`, `-A`/`-B`/`-C`, `-H`/`-h`, `-R` |
 | `sed` | 49.1% | 65% | `s/foo/bar/`, `-n`, `d`, `-e`, `-f`, `-i`, address ranges, `y` |
-| `cat` | 37.6% | 55% | `-n`, `-b`, `-s`, `-v`, `-E`, `-A`, stdin `-` |
+| `cat` | ~~37.6%~~ **88.7%** ✅ | 55% | `-n`, `-b`, `-s`, `-v`, `-E`, `-A`, stdin `-` |
 | `find` | 50.0% | 65% | `-name`, `-type`, `-size`, `-exec`, `-print`, `-delete`, `-maxdepth` |
 | `tar` | 43.5% | 60% | `-c`, `-x`, `-t`, `-v`, `-f`, `-C` |
 | `sort` | 58.0% | 70% | `-n`, `-r`, `-u`, `-k`, `-o`, `-t` |

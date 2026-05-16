@@ -56,7 +56,7 @@ func run(args []string, out io.Writer) int {
 	}
 
 	common.Render("pwd", result, jsonMode, out, func() {
-		fmt.Println(result.Path)
+		fmt.Fprintln(out, result.Path)
 	})
 	return 0
 }

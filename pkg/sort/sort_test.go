@@ -1,6 +1,9 @@
 package sort
 
 import (
+	"bytes"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -222,5 +225,257 @@ func TestParseLinesNUL(t *testing.T) {
 	}
 	if len(items) != 3 {
 		t.Errorf("expected 3 items, got %d", len(items))
+	}
+}
+
+// --- CLI tests via run() ---
+
+func sortTempFile(t *testing.T, content string) string {
+	t.Helper()
+	f, err := os.CreateTemp("", "sorttest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.WriteString(content)
+	f.Close()
+	t.Cleanup(func() { os.Remove(f.Name()) })
+	return f.Name()
+}
+
+func TestCLI_BasicFile(t *testing.T) {
+	f := sortTempFile(t, "c\nb\na\n")
+	var out bytes.Buffer
+	code := run([]string{f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.String() != "a\nb\nc\n" {
+		t.Errorf("got %q, want a\\nb\\nc\\n", out.String())
+	}
+}
+
+func TestCLI_Reverse(t *testing.T) {
+	f := sortTempFile(t, "a\nb\nc\n")
+	var out bytes.Buffer
+	code := run([]string{"-r", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.String() != "c\nb\na\n" {
+		t.Errorf("got %q, want c\\nb\\na\\n", out.String())
+	}
+}
+
+func TestCLI_Numeric(t *testing.T) {
+	f := sortTempFile(t, "10\n2\n1\n")
+	var out bytes.Buffer
+	code := run([]string{"-n", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.String() != "1\n2\n10\n" {
+		t.Errorf("got %q, want 1\\n2\\n10\\n", out.String())
+	}
+}
+
+func TestCLI_Unique(t *testing.T) {
+	f := sortTempFile(t, "b\na\nb\nc\n")
+	var out bytes.Buffer
+	code := run([]string{"-u", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.String() != "a\nb\nc\n" {
+		t.Errorf("got %q, want a\\nb\\nc\\n", out.String())
+	}
+}
+
+func TestCLI_Combo(t *testing.T) {
+	f := sortTempFile(t, "10\n2\n10\n1\n2\n")
+	var out bytes.Buffer
+	code := run([]string{"-n", "-u", "-r", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.String() != "10\n2\n1\n" {
+		t.Errorf("got %q, want 10\\n2\\n1\\n", out.String())
+	}
+}
+
+func TestCLI_KeyField(t *testing.T) {
+	f := sortTempFile(t, "z a\nx b\ny c\n")
+	var out bytes.Buffer
+	code := run([]string{"-k", "2", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.String() != "z a\nx b\ny c\n" {
+		t.Errorf("got %q", out.String())
+	}
+}
+
+func TestCLI_KeyFieldDelimiter(t *testing.T) {
+	f := sortTempFile(t, "z,a\nx,b\ny,c\n")
+	var out bytes.Buffer
+	code := run([]string{"-t", ",", "-k", "2", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.String() != "z,a\nx,b\ny,c\n" {
+		t.Errorf("got %q", out.String())
+	}
+}
+
+func TestCLI_OutputFile(t *testing.T) {
+	in := sortTempFile(t, "c\nb\na\n")
+	outFile := filepath.Join(t.TempDir(), "out.txt")
+	var out bytes.Buffer
+	code := run([]string{"-o", outFile, in}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	data, _ := os.ReadFile(outFile)
+	if string(data) != "a\nb\nc\n" {
+		t.Errorf("got %q, want a\\nb\\nc\\n", string(data))
+	}
+}
+
+func TestCLI_JSON(t *testing.T) {
+	f := sortTempFile(t, "b\na\n")
+	var out bytes.Buffer
+	code := run([]string{"-j", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if !strings.Contains(out.String(), "\"lines\"") {
+		t.Errorf("expected JSON output, got: %s", out.String())
+	}
+}
+
+func TestCLI_LongFlags(t *testing.T) {
+	f := sortTempFile(t, "10\n2\n1\n")
+	var out bytes.Buffer
+	code := run([]string{"--numeric-sort", "--reverse", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.String() != "10\n2\n1\n" {
+		t.Errorf("got %q, want 10\\n2\\n1\\n", out.String())
+	}
+}
+
+func TestCLI_FileNotFound(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"/nonexistent/sort/file"}, &out)
+	if code != 1 {
+		t.Errorf("expected exit 1 for missing file, got %d", code)
+	}
+}
+
+func TestCLI_BadFlag(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"--nonexistent"}, &out)
+	if code != 2 {
+		t.Errorf("expected exit 2 for bad flag, got %d", code)
+	}
+}
+
+func TestCLI_MultiFile(t *testing.T) {
+	f1 := sortTempFile(t, "c\n")
+	f2 := sortTempFile(t, "a\nb\n")
+	var out bytes.Buffer
+	code := run([]string{f1, f2}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.String() != "a\nb\nc\n" {
+		t.Errorf("got %q, want a\\nb\\nc\\n", out.String())
+	}
+}
+
+func TestCLI_ZeroTerminated(t *testing.T) {
+	f := sortTempFile(t, "z\x00a\x00m\x00")
+	var out bytes.Buffer
+	code := run([]string{"-z", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	// Output should be zero-terminated: a\x00m\x00z\x00
+	if !strings.Contains(out.String(), "a") {
+		t.Error("expected 'a' in output")
+	}
+}
+
+func TestCLI_Stable(t *testing.T) {
+	f := sortTempFile(t, "c\nb\na\n")
+	var out bytes.Buffer
+	code := run([]string{"-s", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.String() != "a\nb\nc\n" {
+		t.Errorf("got %q", out.String())
+	}
+}
+
+func TestCLI_HumanNumeric(t *testing.T) {
+	f := sortTempFile(t, "10K\n5K\n1M\n")
+	var out bytes.Buffer
+	code := run([]string{"-h", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	// 5K < 10K < 1M
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("expected 3 lines, got %d", len(lines))
+	}
+	if lines[0] != "5K" {
+		t.Errorf("expected 5K first, got %q", lines[0])
+	}
+}
+
+func TestCLI_MonthSort(t *testing.T) {
+	f := sortTempFile(t, "DEC\nJan\nMAR\n")
+	var out bytes.Buffer
+	code := run([]string{"-M", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	if lines[0] != "Jan" {
+		t.Errorf("expected Jan first, got %q", lines[0])
+	}
+}
+
+func TestCLI_EmptyInput(t *testing.T) {
+	f := sortTempFile(t, "")
+	var out bytes.Buffer
+	code := run([]string{f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.String() != "" {
+		t.Errorf("expected empty output, got %q", out.String())
+	}
+}
+
+func TestCLI_DashStdin(t *testing.T) {
+	oldStdin := os.Stdin
+	r, w, _ := os.Pipe()
+	os.Stdin = r
+	go func() {
+		w.WriteString("b\na\n")
+		w.Close()
+	}()
+	defer func() { os.Stdin = oldStdin }()
+
+	var out bytes.Buffer
+	code := run([]string{"-"}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.String() != "a\nb\n" {
+		t.Errorf("got %q, want a\\nb\\n", out.String())
 	}
 }

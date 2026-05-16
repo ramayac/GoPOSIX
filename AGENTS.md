@@ -50,7 +50,7 @@ When implementing a new utility or feature, follow this checklist:
 ## 5. Security & Safety
 
 - **Root Protection:** Utilities that perform destructive operations (like `rm`) must include guards against destroying the root filesystem (e.g., `rm -rf /` must be refused without `--no-preserve-root`).
-- **BusyBox Test Suite:** 479 passed, 1 failed, 10 skipped (97.9% effective). The single remaining failure is umask-dependent.
+- **BusyBox Test Suite:** 477 passed, 3 failed, 10 skipped (99.4% pass rate). The 3 remaining failures are all in the `date` utility (2 Go POSIX TZ limitations, 1 cosmetic error-format mismatch). Run `make testsuite` before every commit to prevent regressions.
 
 ## 6. Current State & Progression
 

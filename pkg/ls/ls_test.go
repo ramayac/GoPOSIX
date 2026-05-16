@@ -1,8 +1,10 @@
 package ls
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -212,4 +214,106 @@ func names(files []FileInfo) []string {
 		n[i] = f.Name
 	}
 	return n
+}
+
+// --- CLI tests ---
+
+func TestCLI_BasicDir(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "f.txt"), []byte("x"), 0644)
+	var out bytes.Buffer
+	code := run([]string{dir}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+}
+
+func TestCLI_ShowAll(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, ".hidden"), []byte("x"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-a", dir}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+}
+
+func TestCLI_LongFormat(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "x.txt"), []byte("hi"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-l", dir}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+}
+
+func TestCLI_OnePerLine(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "a.txt"), []byte("a"), 0644)
+	os.WriteFile(filepath.Join(dir, "b.txt"), []byte("b"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-1", dir}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+}
+
+func TestCLI_Recursive(t *testing.T) {
+	dir := t.TempDir()
+	os.MkdirAll(filepath.Join(dir, "sub"), 0755)
+	os.WriteFile(filepath.Join(dir, "sub", "f.txt"), []byte("x"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-R", dir}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+}
+
+func TestCLI_JSON(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "json.txt"), []byte("x"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-j", dir}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if !strings.Contains(out.String(), "\"files\"") {
+		t.Errorf("expected JSON, got: %s", out.String())
+	}
+}
+
+func TestCLI_LongFlags(t *testing.T) {
+	dir := t.TempDir()
+	var out bytes.Buffer
+	code := run([]string{"--all", dir}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+}
+
+func TestCLI_NotExist(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"/nonexistent/ls/path"}, &out)
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+}
+
+func TestCLI_BadFlag(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"--nonexistent"}, &out)
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+}
+
+func TestCLI_MultipleDirs(t *testing.T) {
+	d1 := t.TempDir()
+	d2 := t.TempDir()
+	var out bytes.Buffer
+	code := run([]string{d1, d2}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
 }

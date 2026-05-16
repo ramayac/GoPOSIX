@@ -1,8 +1,10 @@
 package mkdir
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -53,3 +55,8 @@ func TestRunMode(t *testing.T) {
 		t.Errorf("expected mode 0700, got %v", info.Mode().Perm())
 	}
 }
+func TestCLI_Basic(t *testing.T) { d := filepath.Join(t.TempDir(), "newdir"); var out bytes.Buffer; code := run([]string{d}, &out); if code != 0 { t.Fatalf("exit %d", code) }; if _, err := os.Stat(d); os.IsNotExist(err) { t.Error("dir not created") } }
+func TestCLI_Parents(t *testing.T) { d := filepath.Join(t.TempDir(), "a", "b", "c"); var out bytes.Buffer; code := run([]string{"-p", d}, &out); if code != 0 { t.Fatalf("exit %d", code) }; if _, err := os.Stat(d); os.IsNotExist(err) { t.Error("nested dir not created") } }
+func TestCLI_JSON(t *testing.T) { d := filepath.Join(t.TempDir(), "jd"); var out bytes.Buffer; code := run([]string{"-j", d}, &out); if code != 0 { t.Fatalf("exit %d", code) }; if !strings.Contains(out.String(), "\"created\"") { t.Errorf("no JSON: %s", out.String()) } }
+func TestCLI_BadFlag(t *testing.T) { var out bytes.Buffer; code := run([]string{"--nonexistent"}, &out); if code != 2 { t.Errorf("exit %d, want 2", code) } }
+func TestCLI_LongFlag(t *testing.T) { d := filepath.Join(t.TempDir(), "long"); var out bytes.Buffer; code := run([]string{"--parents", d}, &out); if code != 0 { t.Fatalf("exit %d", code) } }

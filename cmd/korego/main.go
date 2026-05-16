@@ -4,11 +4,9 @@
 package main
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 
-	"github.com/ramayac/korego/internal/dispatch"
+	"github.com/ramayac/korego"
 
 	// Import all utilities to trigger their init() registrations.
 	_ "github.com/ramayac/korego/pkg/basename"
@@ -66,40 +64,6 @@ import (
 	_ "github.com/ramayac/korego/pkg/md5sum"
 )
 
-// Version is set by -ldflags at build time.
-var Version = "0.1.0"
-
 func main() {
-	name := filepath.Base(os.Args[0])
-
-	// Subcommand dispatch: `korego <cmd> [args]`
-	// Also handles invocation as `busybox` (BusyBox test suite compatibility).
-	if name == "korego" || name == "busybox" {
-		if len(os.Args) < 2 {
-			dispatch.PrintHelp(name)
-			os.Exit(0)
-		}
-		switch os.Args[1] {
-		case "--help", "-h":
-			dispatch.PrintHelp(name)
-			os.Exit(0)
-		case "--version":
-			fmt.Println("korego version", Version)
-			os.Exit(0)
-		case "--list-commands":
-			dispatch.ListCommands()
-			os.Exit(0)
-		}
-		name = os.Args[1]
-		os.Args = os.Args[1:] // shift so cmd sees os.Args[0] = name
-	}
-
-	cmd, ok := dispatch.Lookup(name)
-	if !ok {
-		fmt.Fprintf(os.Stderr, "korego: unknown command: %s\n", name)
-		os.Exit(127)
-	}
-
-	exitCode := cmd.Run(os.Args[1:], os.Stdout)
-	os.Exit(exitCode)
+	os.Exit(korego.Main())
 }

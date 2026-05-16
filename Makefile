@@ -7,11 +7,12 @@ CMD        := ./cmd/korego
 MODULE     := github.com/ramayac/korego
 VERSION    ?= $(shell git describe --tags --always 2>/dev/null || echo "dev")
 LDFLAGS    := -ldflags "-s -w -X '$(MODULE)/pkg/common.Version=$(VERSION)' \
-                              -X 'main.Version=$(VERSION)'"
+                              -X 'github.com/ramayac/korego.Version=$(VERSION)'"
 DOCKER_IMG := korego:$(VERSION)
 
 # Directories tested by the unit-test and coverage targets.
-PKG_DIRS   := ./pkg/common/... \
+PKG_DIRS   := . \
+              ./pkg/common/... \
               ./internal/dispatch/... \
               ./pkg/echo/... \
               ./pkg/truefalse/... \

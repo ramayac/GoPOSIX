@@ -66,7 +66,7 @@ func run(args []string, out io.Writer) int {
 			continue
 		}
 		common.Render("readlink", result, jsonMode, out, func() {
-			fmt.Println(result.Target)
+			fmt.Fprintln(out, result.Target)
 		})
 	}
 	return exitCode
