@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/ramayac/korego/internal/dispatch"
@@ -32,8 +33,11 @@ var spec = common.FlagSpec{
 		{Short: "L", Long: "files-without-match", Type: common.FlagBool},
 		{Short: "o", Long: "only-matching", Type: common.FlagBool},
 		{Short: "r", Long: "recursive", Type: common.FlagBool},
+		{Short: "R", Long: "dereference-recursive", Type: common.FlagBool},
 		{Short: "q", Long: "quiet", Type: common.FlagBool},
 		{Short: "s", Long: "no-messages", Type: common.FlagBool},
+		{Short: "H", Long: "with-filename", Type: common.FlagBool},
+		{Short: "h", Long: "no-filename", Type: common.FlagBool},
 		{Short: "f", Long: "file", Type: common.FlagValue},
 		{Short: "e", Long: "regexp", Type: common.FlagValue},
 		{Short: "E", Long: "extended-regexp", Type: common.FlagBool},
@@ -107,9 +111,15 @@ func Run(r io.Reader, filename string, re *regexp.Regexp, fixedPatterns []string
 }
 
 func run(args []string, out io.Writer) int {
+	return grepRun(args, out, os.Stderr, os.Stdin)
+}
+
+// grepRun is the testable core of the grep CLI. All output goes to out or errOut,
+// and stdin is read from stdinR.
+func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "grep: %v\n", err)
+		fmt.Fprintf(errOut, "grep: %v\n", err)
 		return 2
 	}
 
@@ -130,7 +140,7 @@ func run(args []string, out io.Writer) int {
 
 	if len(ePats) == 0 && len(fPats) == 0 {
 		if !suppressErrors {
-			fmt.Fprintln(os.Stderr, "grep: missing pattern")
+			fmt.Fprintln(errOut, "grep: missing pattern")
 		}
 		return 2
 	}
@@ -141,29 +151,62 @@ func run(args []string, out io.Writer) int {
 	countMode := flags.Has("c")
 	lineNum := flags.Has("n")
 	filesWithMatches := flags.Has("l")
+	filesWithoutMatch := flags.Has("L")
 	fixed := flags.Has("F")
 	wordRegexp := flags.Has("w")
 	lineRegexp := flags.Has("x")
+	onlyMatching := flags.Has("o")
+	recursive := flags.Has("r") || flags.Has("R")
+
+	// Context flags
+	var afterCtx, beforeCtx int
+	if ctxStr := flags.Get("A"); ctxStr != "" {
+		afterCtx, _ = strconv.Atoi(ctxStr)
+		if afterCtx < 0 {
+			afterCtx = 0
+		}
+	}
+	if ctxStr := flags.Get("B"); ctxStr != "" {
+		beforeCtx, _ = strconv.Atoi(ctxStr)
+		if beforeCtx < 0 {
+			beforeCtx = 0
+		}
+	}
+	if ctxStr := flags.Get("C"); ctxStr != "" {
+		n, _ := strconv.Atoi(ctxStr)
+		if n < 0 {
+			n = 0
+		}
+		afterCtx = n
+		beforeCtx = n
+	}
+	hasContext := afterCtx > 0 || beforeCtx > 0
 
 	for _, p := range ePats {
-		patterns = append(patterns, strings.Split(p, "\n")...)
+		for _, sp := range strings.Split(p, "\n") {
+			if sp != "" {
+				patterns = append(patterns, sp)
+			}
+		}
 	}
 
 	for _, fp := range fPats {
 		var b []byte
 		var err error
 		if fp == "-" {
-			b, err = io.ReadAll(os.Stdin)
+			b, err = io.ReadAll(stdinR)
 		} else {
 			b, err = os.ReadFile(fp)
 		}
-		
+
 		if err == nil {
-			if len(b) > 0 {
-				patterns = append(patterns, strings.Split(strings.TrimSuffix(string(b), "\n"), "\n")...)
+			for _, p := range strings.Split(strings.TrimSuffix(string(b), "\n"), "\n") {
+				if p != "" {
+					patterns = append(patterns, p)
+				}
 			}
 		} else if !suppressErrors {
-			fmt.Fprintf(os.Stderr, "grep: %v\n", err)
+			fmt.Fprintf(errOut, "grep: %v\n", err)
 			return 2
 		}
 	}
@@ -213,7 +256,7 @@ func run(args []string, out io.Writer) int {
 		compiled, err := regexp.Compile(pattern)
 		if err != nil {
 			if !suppressErrors {
-				fmt.Fprintf(os.Stderr, "grep: invalid regex: %v\n", err)
+				fmt.Fprintf(errOut, "grep: invalid regex: %v\n", err)
 			}
 			return 2
 		}
@@ -224,12 +267,12 @@ func run(args []string, out io.Writer) int {
 	var exitCode int = 1
 	if len(paths) == 0 {
 		readers = append(readers, "-")
-	} else if flags.Has("r") {
+	} else if recursive {
 		for _, root := range paths {
 			stat, err := os.Stat(root)
 			if err != nil {
 				if !suppressErrors {
-					fmt.Fprintf(os.Stderr, "grep: %s: %v\n", root, err)
+					fmt.Fprintf(errOut, "grep: %s: %v\n", root, err)
 				}
 				exitCode = 2
 				continue
@@ -242,7 +285,9 @@ func run(args []string, out io.Writer) int {
 					}
 				}
 				filepath.Walk(walkRoot, func(p string, info os.FileInfo, err error) error {
-					if err != nil { return nil }
+					if err != nil {
+						return nil
+					}
 					if !info.IsDir() {
 						readers = append(readers, p)
 					}
@@ -257,21 +302,26 @@ func run(args []string, out io.Writer) int {
 	}
 
 	var allMatches []GrepMatch
-	// exitCode is already declared
 
-	printPrefix := len(paths) > 1 || flags.Has("r") || len(readers) > 1
+	// Determine filename prefix policy: -H forces prefix, -h suppresses it.
+	// Without either, prefix is shown when multiple files are searched.
+	printPrefix := flags.Has("H")
+	noPrefix := flags.Has("h")
+	if !noPrefix && !printPrefix {
+		printPrefix = len(paths) > 1 || len(readers) > 1
+	}
 
 	for _, path := range readers {
 		var r io.Reader
 		var fname string
 		if path == "-" {
-			r = os.Stdin
+			r = stdinR
 			fname = "(standard input)"
 		} else {
 			f, err := os.Open(path)
 			if err != nil {
 				if !suppressErrors {
-					fmt.Fprintf(os.Stderr, "grep: %s: %v\n", path, err)
+					fmt.Fprintf(errOut, "grep: %s: %v\n", path, err)
 				}
 				exitCode = 2
 				continue
@@ -281,38 +331,105 @@ func run(args []string, out io.Writer) int {
 			fname = path
 		}
 
+		// Context mode: scan with context instead of using Run().
+		if hasContext && !countMode && !filesWithMatches && !filesWithoutMatch && !onlyMatching {
+			ctxMatches := scanWithContext(r, re, fixedPatterns, invert, fixed, lineRegexp, beforeCtx, afterCtx)
+			if jsonMode {
+				for _, cm := range ctxMatches {
+					allMatches = append(allMatches, GrepMatch{
+						File: fname,
+						Line: cm.line,
+						Text: cm.text,
+					})
+				}
+				if len(ctxMatches) > 0 {
+					if exitCode != 2 {
+						exitCode = 0
+					}
+					if quiet {
+						return 0
+					}
+				}
+				continue
+			}
+			if len(ctxMatches) > 0 {
+				if exitCode != 2 {
+					exitCode = 0
+				}
+				if quiet {
+					return 0
+				}
+			}
+			for _, cm := range ctxMatches {
+				prefix := ""
+				if printPrefix {
+					prefix = fname + ":"
+				}
+				if lineNum {
+					prefix += fmt.Sprintf("%d:", cm.line)
+				}
+				if cm.separator {
+					fmt.Fprintln(out, "--")
+				}
+				fmt.Fprintf(out, "%s%s%s\n", prefix, cm.matchMarker, cm.text)
+			}
+			continue
+		}
+
 		matches, err := Run(r, fname, re, fixedPatterns, invert, fixed, lineRegexp)
 		if err != nil {
 			if !suppressErrors {
-				fmt.Fprintf(os.Stderr, "grep: %v\n", err)
+				fmt.Fprintf(errOut, "grep: %v\n", err)
 			}
 			exitCode = 2
 		}
 
 		if jsonMode {
 			allMatches = append(allMatches, matches...)
+			if len(matches) > 0 {
+				if exitCode != 2 {
+					exitCode = 0
+				}
+				if quiet {
+					return 0
+				}
+			}
 			continue
 		}
 
 		if filesWithMatches {
 			if len(matches) > 0 {
-				fmt.Println(fname)
+				fmt.Fprintln(out, fname)
+				if exitCode != 2 {
+					exitCode = 0
+				}
+				if quiet {
+					return 0
+				}
 			}
 			continue
 		}
 
-		if flags.Has("L") {
+		if filesWithoutMatch {
 			if len(matches) == 0 {
-				fmt.Println(fname)
-				if exitCode != 2 { exitCode = 0 }
-				if quiet { return 0 }
+				fmt.Fprintln(out, fname)
+				if exitCode != 2 {
+					exitCode = 0
+				}
+				if quiet {
+					return 0
+				}
 			}
 			continue
 		}
 
 		if len(matches) > 0 {
-			if exitCode != 2 { exitCode = 0 }
-			if quiet { return 0 }
+			if exitCode != 2 {
+				exitCode = 0
+			}
+			if quiet {
+				return 0
+			}
 		}
 
 		if countMode {
@@ -320,7 +437,7 @@ func run(args []string, out io.Writer) int {
 			if printPrefix {
 				prefix = fname + ":"
 			}
-			fmt.Printf("%s%d\n", prefix, len(matches))
+			fmt.Fprintf(out, "%s%d\n", prefix, len(matches))
 			continue
 		}
 
@@ -332,12 +449,12 @@ func run(args []string, out io.Writer) int {
 			if lineNum {
 				prefix += fmt.Sprintf("%d:", m.Line)
 			}
-			if flags.Has("o") {
+			if onlyMatching {
 				for _, sub := range m.Matches {
-					fmt.Printf("%s%s\n", prefix, sub)
+					fmt.Fprintf(out, "%s%s\n", prefix, sub)
 				}
 			} else {
-				fmt.Printf("%s%s\n", prefix, m.Text)
+				fmt.Fprintf(out, "%s%s\n", prefix, m.Text)
 			}
 		}
 	}
@@ -347,6 +464,96 @@ func run(args []string, out io.Writer) int {
 	}
 
 	return exitCode
+}
+
+// ctxLine holds a line from the context-aware scanner.
+type ctxLine struct {
+	line        int
+	text        string
+	matchMarker string // ":" for match lines, "-" for context lines
+	separator   bool   // true if this is a group separator
+}
+
+// scanWithContext scans r and returns matches with surrounding context lines.
+// Groups of matches separated by more than (afterCtx+beforeCtx) lines get a "--" separator.
+func scanWithContext(r io.Reader, re *regexp.Regexp, fixedPatterns []string, invert, fixed, lineRegexp bool, beforeCtx, afterCtx int) []ctxLine {
+	scanner := bufio.NewScanner(r)
+	var allLines []string
+	for scanner.Scan() {
+		allLines = append(allLines, scanner.Text())
+	}
+
+	n := len(allLines)
+	if n == 0 {
+		return nil
+	}
+
+	// Determine which lines match.
+	matched := make([]bool, n)
+	for i, text := range allLines {
+		var found bool
+		if fixed {
+			for _, pat := range fixedPatterns {
+				if lineRegexp {
+					found = text == pat
+				} else {
+					found = strings.Contains(text, pat)
+				}
+				if found {
+					break
+				}
+			}
+		} else if re != nil {
+			if lineRegexp {
+				found = re.MatchString(text)
+			} else {
+				found = re.MatchString(text)
+			}
+		}
+		if invert {
+			found = !found
+		}
+		matched[i] = found
+	}
+
+	// Build the set of lines to print (match + context).
+	printLine := make([]bool, n)
+	for i := 0; i < n; i++ {
+		if matched[i] {
+			printLine[i] = true
+			for j := 1; j <= beforeCtx && i-j >= 0; j++ {
+				printLine[i-j] = true
+			}
+			for j := 1; j <= afterCtx && i+j < n && !matched[i+j]; j++ {
+				printLine[i+j] = true
+			}
+		}
+	}
+
+	// Build output with separators between non-contiguous groups.
+	var result []ctxLine
+	lastPrinted := -999
+	for i := 0; i < n; i++ {
+		if !printLine[i] {
+			continue
+		}
+		// Insert separator if there's a gap.
+		if len(result) > 0 && i-lastPrinted > 1 {
+			result = append(result, ctxLine{separator: true})
+		}
+		marker := "-"
+		if matched[i] {
+			marker = ":"
+		}
+		result = append(result, ctxLine{
+			line:        i + 1,
+			text:        allLines[i],
+			matchMarker: marker,
+		})
+		lastPrinted = i
+	}
+
+	return result
 }
 
 func init() {

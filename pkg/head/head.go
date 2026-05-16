@@ -46,6 +46,13 @@ func Run(r io.Reader, w io.Writer, linesCount int) ([]string, error) {
 	return lines, scanner.Err()
 }
 
+// headInput pairs a reader with its display name for multi-file headers.
+type headInput struct {
+	r      io.Reader
+	name   string
+	closer io.Closer // non-nil for files that need closing
+}
+
 func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
@@ -83,47 +90,43 @@ func run(args []string, out io.Writer) int {
 		}
 	}
 
-	var readers []io.Reader
-	if len(flags.Positional) == 0 || flags.Stdin {
-		readers = append(readers, os.Stdin)
+	// Build list of (reader, displayName) pairs.
+	// This correctly handles bare "-" (stdin) interleaved with file paths.
+	// Note: flags.Stdin is true when bare "-" appears, AND "-" is added to Positional.
+	// We must avoid adding stdin twice.
+	exitCode := 0
+	var inputs []headInput
+	// Only add stdin from the no-args / Stdin case if Positional is empty or
+	// the first positional is NOT "-" (which would duplicate).
+	if len(flags.Positional) == 0 {
+		inputs = append(inputs, headInput{r: os.Stdin, name: "standard input"})
 	}
 	for _, path := range flags.Positional {
 		if path == "-" {
-			readers = append(readers, os.Stdin)
+			inputs = append(inputs, headInput{r: os.Stdin, name: "standard input"})
 			continue
 		}
 		f, err := os.Open(path)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "head: %s: %v\n", path, err)
-			return 1
+			exitCode = 1
+			continue
 		}
-		defer f.Close()
-		readers = append(readers, f)
+		inputs = append(inputs, headInput{r: f, name: path, closer: f})
 	}
 
-	exitCode := 0
 	var allLines []string
-	for i, r := range readers {
-		if len(readers) > 1 {
-			name := "standard input"
-			if len(flags.Positional) > 0 && flags.Positional[i] != "-" {
-				name = flags.Positional[i]
-			}
-			header := fmt.Sprintf("==> %s <==", name)
+	for i, in := range inputs {
+		if len(inputs) > 1 {
 			if !jsonMode {
 				if i > 0 {
 					fmt.Println()
 				}
-				fmt.Println(header)
+				fmt.Printf("==> %s <==\n", in.name)
 			}
 		}
 
-		writer := os.Stdout
-		if jsonMode {
-			writer = os.NewFile(os.Stderr.Fd(), "/dev/null") // redirect to /dev/null temporarily, or rather just discard
-		}
-
-		var w io.Writer = writer
+		var w io.Writer = os.Stdout
 		if jsonMode {
 			w = io.Discard
 		}
@@ -131,11 +134,11 @@ func run(args []string, out io.Writer) int {
 		var lines []string
 		var errR error
 		if byteCount >= 0 {
-			lines, errR = runBytes(r, w, byteCount)
+			lines, errR = runBytes(in.r, w, byteCount)
 		} else if negativeCount {
-			lines, errR = runNegative(r, w, linesCount)
+			lines, errR = runNegative(in.r, w, linesCount)
 		} else {
-			lines, errR = Run(r, w, linesCount)
+			lines, errR = Run(in.r, w, linesCount)
 		}
 		if errR != nil {
 			fmt.Fprintf(os.Stderr, "head: %v\n", errR)
@@ -143,6 +146,10 @@ func run(args []string, out io.Writer) int {
 		}
 		if jsonMode {
 			allLines = append(allLines, lines...)
+		}
+		// Close per-file handles immediately to avoid fd exhaustion.
+		if in.closer != nil {
+			in.closer.Close()
 		}
 	}
 
