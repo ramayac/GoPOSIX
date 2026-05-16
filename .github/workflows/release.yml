@@ -80,5 +80,5 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: ${{ needs.goreleaser.outputs.hashes }}
-      attestation-name: korego-${{ github.ref_name }}.intoto.jsonl
+      provenance-name: korego-${{ github.ref_name }}.intoto.jsonl
       upload-assets: true
