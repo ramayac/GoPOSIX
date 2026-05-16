@@ -9,6 +9,7 @@ package echo
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/ramayac/korego/internal/dispatch"
@@ -74,8 +75,23 @@ func processEscapes(s string) string {
 				}
 			default:
 				// Handle octal escape: \NNN where N is 0-7 (1-3 digits).
-				// This covers \0, \41, \041, \0041, etc.
-				if c >= '0' && c <= '7' {
+				// \0 is special: the 0 is a marker, digits start after it.
+				// \1-\7: the digit IS the first octal digit.
+				if c == '0' {
+					// \0: consume up to 3 octal digits starting from i+1.
+					start := i + 1
+					end := start
+					for end < len(s) && end < start+3 && s[end] >= '0' && s[end] <= '7' {
+						end++
+					}
+					if end > start {
+						oct, _ := strconv.ParseUint(s[start:end], 8, 8)
+						sb.WriteByte(byte(oct))
+						i = end - 1
+					} else {
+						sb.WriteByte(0)
+					}
+				} else if c >= '1' && c <= '7' {
 					oct := int(c - '0')
 					j := i + 1
 					for ; j < len(s) && j < i+3 && s[j] >= '0' && s[j] <= '7'; j++ {

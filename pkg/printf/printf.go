@@ -217,12 +217,20 @@ func (s *runState) formatError(msg, detail string) {
 	if s.out.Len() > 0 && s.out.String()[s.out.Len()-1] != '\n' {
 		s.out.WriteByte('\n')
 	}
-	// Use POSIX-style format: "printf: invalid number 'arg'"
 	s.out.WriteString("printf: ")
-	s.out.WriteString(msg)
-	s.out.WriteString(" '")
-	s.out.WriteString(detail)
-	s.out.WriteString("'")
+	// Format depends on error type:
+	// - "invalid number" → printf: invalid number 'arg'
+	// - "invalid format" → printf: %: invalid format
+	if msg == "invalid format" {
+		s.out.WriteString(detail)
+		s.out.WriteString(": ")
+		s.out.WriteString(msg)
+	} else {
+		s.out.WriteString(msg)
+		s.out.WriteString(" '")
+		s.out.WriteString(detail)
+		s.out.WriteString("'")
+	}
 	s.out.WriteByte('\n')
 	s.hadErr = true
 }
