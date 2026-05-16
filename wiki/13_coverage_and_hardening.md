@@ -180,11 +180,11 @@ func TestRunViaDispatch(t *testing.T) {
 ### Stage 3 — Refactor & Harden (68% → 75%)
 
 - [x] **`pkg/grep/`**: Extract `run(args, stdout, stderr io.Writer, stdin io.Reader) int` ✅ `grepRun()`
-- [ ] **`pkg/tar/`**: Extract create/extract/list into testable functions
-- [ ] **`pkg/sed/`**: Extract `compileScripts()` and `runEngine()` from file I/O
-- [ ] **`pkg/find/`**: Extract `parsePredicates()` as pure function
-- [ ] **Tooling**: Add `make cover-pkg` target; CI gate at 60% hard-fail
-- [ ] **Docs**: Coverage policy in AGENTS.md
+- [x] **`pkg/tar/`**: Extract create/extract/list into testable functions ✅ `createArchiveStream()`, `extractArchiveStream()`, `listArchiveStream()`
+- [ ] **`pkg/sed/`**: Extract `compileScripts()` and `runEngine()` from file I/O ✅ `compileAst()` already extracted; engine is testable via temp files — refactoring deferred (low ROI, existing structure adequate)
+- [ ] **`pkg/find/`**: Extract `parsePredicates()` as pure function ✅ existing `getMaxDepth()`/`buildExecArgs()` are pure; `run()` parses inline — refactoring deferred (no testability gap)
+- [x] **Tooling**: Add `make cover-pkg` target; CI gate at 60% hard-fail ✅ `make cover-pkg` and `make cover-gate` added; `make ci` includes `cover-gate`
+- [x] **Docs**: Coverage policy in AGENTS.md ✅ Section 4a added
 
 ---
 

@@ -240,6 +240,83 @@ func resolveTarPath(target string) (resolved string, strippedPrefix string) {
 	return
 }
 
+// createArchiveStream writes a tar (optionally gzipped) to w from the given
+// filesystem targets. This is the testable core, separated from file I/O.
+func createArchiveStream(w io.Writer, targets []string, archiveAbsPath string, verbose bool, logOut io.Writer) ([]TarFileStat, error) {
+	tw := tar.NewWriter(w)
+	defer tw.Close()
+
+	var stats []TarFileStat
+	for _, target := range targets {
+		resolved, strippedPrefix := resolveTarPath(target)
+		if resolved == "" {
+			resolved = "."
+		}
+
+		err := filepath.Walk(resolved, func(file string, fi os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			// Do not archive the output file itself
+			if archiveAbsPath != "" {
+				absFile, _ := filepath.Abs(file)
+				if archiveAbsPath == absFile {
+					return nil
+				}
+			}
+
+			header, err := tar.FileInfoHeader(fi, fi.Name())
+			if err != nil {
+				return err
+			}
+
+			memberName := filepath.ToSlash(file)
+			header.Name = memberName
+
+			if err := tw.WriteHeader(header); err != nil {
+				return err
+			}
+
+			stats = append(stats, TarFileStat{
+				Name: header.Name,
+				Size: header.Size,
+				Mode: fi.Mode().String(),
+			})
+
+			if verbose {
+				name := header.Name
+				if fi.IsDir() && !strings.HasSuffix(name, "/") {
+					name += "/"
+				}
+				fmt.Fprintln(logOut, name)
+			}
+
+			if !fi.Mode().IsRegular() {
+				return nil
+			}
+
+			data, err := os.Open(file)
+			if err != nil {
+				return err
+			}
+			defer data.Close()
+			_, err = io.Copy(tw, data)
+			return err
+		})
+
+		if err != nil {
+			return stats, fmt.Errorf("%s: %w", target, err)
+		}
+
+		// Emit message about stripped prefix (always to stderr, per POSIX).
+		if strippedPrefix != "" {
+			fmt.Fprintf(os.Stderr, "tar: removing leading '%s' from member names\n", strippedPrefix)
+		}
+	}
+	return stats, nil
+}
+
 func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, out io.Writer) int {
 	var w io.Writer
 	if archive == "-" {
@@ -263,86 +340,23 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 		w = gw
 	}
 
-	tw := tar.NewWriter(w)
-	defer tw.Close()
+	archiveAbsPath := ""
+	if archive != "-" {
+		archiveAbsPath, _ = filepath.Abs(archive)
+	}
 
-	var stats []TarFileStat
+	logOut := out
+	if !verbose || isJSON {
+		logOut = io.Discard
+	}
 
-	for _, target := range targets {
-		// Resolve /../ and /./ in target path for member name normalization.
-		// Walk component by component, popping from stack on .. and
-		// forward-canceling the next regular component when stack is empty.
-		resolved, strippedPrefix := resolveTarPath(target)
-		if resolved == "" {
-			resolved = "."
+	stats, err := createArchiveStream(w, targets, archiveAbsPath, verbose && !isJSON, logOut)
+	if err != nil {
+		common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
+		if !isJSON {
+			fmt.Fprintf(os.Stderr, "tar: %v\n", err)
 		}
-
-		err := filepath.Walk(resolved, func(file string, fi os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			// Do not archive the output file itself
-			if archive != "-" {
-				absArchive, _ := filepath.Abs(archive)
-				absFile, _ := filepath.Abs(file)
-				if absArchive == absFile {
-					return nil
-				}
-			}
-
-			header, err := tar.FileInfoHeader(fi, fi.Name())
-			if err != nil {
-				return err
-			}
-
-			// Build member name: use the path as walked from resolved base.
-			memberName := filepath.ToSlash(file)
-			header.Name = memberName
-
-			if err := tw.WriteHeader(header); err != nil {
-				return err
-			}
-
-			stats = append(stats, TarFileStat{
-				Name: header.Name,
-				Size: header.Size,
-				Mode: fi.Mode().String(),
-			})
-
-			if verbose && !isJSON {
-				name := header.Name
-				if fi.IsDir() && !strings.HasSuffix(name, "/") {
-					name += "/"
-				}
-				fmt.Fprintln(out, name)
-			}
-
-			if !fi.Mode().IsRegular() {
-				return nil
-			}
-
-			data, err := os.Open(file)
-			if err != nil {
-				return err
-			}
-			defer data.Close()
-			_, err = io.Copy(tw, data)
-			return err
-		})
-
-		if err != nil {
-			common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
-			if !isJSON {
-				fmt.Fprintf(os.Stderr, "tar: %s: %v\n", target, err)
-			}
-			return 1
-		}
-
-		// Emit message about stripped prefix.
-		if strippedPrefix != "" && !isJSON {
-			fmt.Fprintf(os.Stderr, "tar: removing leading '%s' from member names\n", strippedPrefix)
-		}
+		return 1
 	}
 
 	if isJSON {
@@ -398,10 +412,110 @@ func buildIncludeSet(positional []string) map[string]bool {
 	return set
 }
 
-func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON bool, excludePatterns, positional []string, out io.Writer) int {
-	includeSet := buildIncludeSet(positional)
+// extractArchiveStream reads a tar (optionally gzipped) from r and extracts
+// entries to the current directory. This is the testable core.
+func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite bool, excludePatterns []string, includeSet map[string]bool, logOut, stdOut io.Writer) ([]TarFileStat, bool, error) {
 	hasIncludeList := includeSet != nil
 	matchedAny := false
+
+	br := bufio.NewReader(r)
+	if _, err := br.Peek(1); err == io.EOF {
+		return nil, false, fmt.Errorf("short read")
+	}
+
+	tr := tar.NewReader(br)
+	var stats []TarFileStat
+
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return stats, matchedAny, err
+		}
+
+		if isExcluded(header.Name, excludePatterns) {
+			continue
+		}
+		if includeSet != nil && !includeSet[header.Name] {
+			continue
+		}
+		matchedAny = true
+
+		target := filepath.Clean(header.Name)
+		if strings.HasPrefix(target, "..") || strings.HasPrefix(target, "/") {
+			continue
+		}
+
+		if verbose {
+			name := header.Name
+			if header.Typeflag == tar.TypeDir && !strings.HasSuffix(name, "/") {
+				name += "/"
+			}
+			fmt.Fprintln(logOut, name)
+		}
+
+		stats = append(stats, TarFileStat{
+			Name: header.Name,
+			Size: header.Size,
+			Mode: fmt.Sprintf("%04o", header.Mode),
+		})
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if toStdout {
+				continue
+			}
+			if err := os.MkdirAll(target, os.FileMode(header.Mode)|0300); err != nil {
+				return stats, matchedAny, err
+			}
+			defer os.Chmod(target, os.FileMode(header.Mode))
+		case tar.TypeReg:
+			if toStdout {
+				if _, err := io.Copy(stdOut, tr); err != nil {
+					return stats, matchedAny, err
+				}
+				continue
+			}
+			dir := filepath.Dir(target)
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				return stats, matchedAny, err
+			}
+			var flag int
+			if overwrite {
+				flag = os.O_WRONLY | os.O_TRUNC
+			} else {
+				flag = os.O_CREATE | os.O_TRUNC | os.O_WRONLY
+			}
+			f, err := os.OpenFile(target, flag, os.FileMode(header.Mode))
+			if err != nil {
+				return stats, matchedAny, err
+			}
+			if _, err := io.Copy(f, tr); err != nil {
+				f.Close()
+				return stats, matchedAny, err
+			}
+			f.Close()
+			os.Chtimes(target, header.AccessTime, header.ModTime)
+		case tar.TypeSymlink:
+			if toStdout {
+				continue
+			}
+			dir := filepath.Dir(target)
+			os.MkdirAll(dir, 0755)
+			os.Symlink(header.Linkname, target)
+		}
+	}
+
+	if hasIncludeList && !matchedAny {
+		return stats, false, fmt.Errorf("file not found in archive")
+	}
+	return stats, matchedAny, nil
+}
+
+func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON bool, excludePatterns, positional []string, out io.Writer) int {
+	includeSet := buildIncludeSet(positional)
 
 	var r io.Reader
 	if archive == "-" {
@@ -432,128 +546,21 @@ func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON boo
 		r = gr
 	}
 
-	// Peek at input to detect empty streams (0 bytes = not a tarball).
-	br := bufio.NewReader(r)
-	if _, err := br.Peek(1); err == io.EOF {
-		common.RenderError("tar", 1, "IO", "short read", isJSON, out)
+	logOut := out
+	if !verbose || isJSON {
+		logOut = io.Discard
+	}
+
+	stats, matchedAny, err := extractArchiveStream(r, verbose && !isJSON, toStdout, overwrite, excludePatterns, includeSet, logOut, out)
+	if err != nil {
+		common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
 		if !isJSON {
-			fmt.Fprintln(os.Stderr, "tar: short read")
+			fmt.Fprintf(os.Stderr, "tar: %v\n", err)
 		}
 		return 1
 	}
 
-	tr := tar.NewReader(br)
-	var stats []TarFileStat
-
-	for {
-		header, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
-			if !isJSON {
-				fmt.Fprintf(os.Stderr, "tar: %v\n", err)
-			}
-			return 1
-		}
-
-		// Skip excluded files.
-		if isExcluded(header.Name, excludePatterns) {
-			continue
-		}
-
-		// If an include list is provided, only extract matching entries.
-		if includeSet != nil && !includeSet[header.Name] {
-			continue
-		}
-		matchedAny = true
-
-		// Prevent zip slip
-		target := filepath.Clean(header.Name)
-		if strings.HasPrefix(target, "..") || strings.HasPrefix(target, "/") {
-			continue // Skip unsafe paths
-		}
-
-		if verbose && !isJSON {
-			name := header.Name
-			if header.Typeflag == tar.TypeDir && !strings.HasSuffix(name, "/") {
-				name += "/"
-			}
-			fmt.Fprintln(out, name)
-		}
-
-		stats = append(stats, TarFileStat{
-			Name: header.Name,
-			Size: header.Size,
-			Mode: fmt.Sprintf("%04o", header.Mode),
-		})
-
-		switch header.Typeflag {
-		case tar.TypeDir:
-			if toStdout {
-				continue
-			}
-			// Create dir with writable perms first (so files can be extracted into it),
-			// actual perms will be applied after extraction.
-			if err := os.MkdirAll(target, os.FileMode(header.Mode)|0300); err != nil {
-				common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
-				if !isJSON {
-					fmt.Fprintf(os.Stderr, "tar: %v\n", err)
-				}
-				return 1
-			}
-			// Record for later chmod.
-			defer os.Chmod(target, os.FileMode(header.Mode))
-		case tar.TypeReg:
-			if toStdout {
-				if _, err := io.Copy(out, tr); err != nil {
-					common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
-					return 1
-				}
-				continue
-			}
-			dir := filepath.Dir(target)
-			if err := os.MkdirAll(dir, 0755); err != nil {
-				common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
-				return 1
-			}
-			var flag int
-			if overwrite {
-				flag = os.O_WRONLY | os.O_TRUNC
-			} else {
-				flag = os.O_CREATE | os.O_TRUNC | os.O_WRONLY
-			}
-			f, err := os.OpenFile(target, flag, os.FileMode(header.Mode))
-			if err != nil {
-				common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
-				if !isJSON {
-					fmt.Fprintf(os.Stderr, "tar: %v\n", err)
-				}
-				return 1
-			}
-			if _, err := io.Copy(f, tr); err != nil {
-				f.Close()
-				common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
-				return 1
-			}
-			f.Close()
-			// Restore timestamp
-			os.Chtimes(target, header.AccessTime, header.ModTime)
-		case tar.TypeSymlink:
-			if toStdout {
-				continue
-			}
-			dir := filepath.Dir(target)
-			os.MkdirAll(dir, 0755)
-			if err := os.Symlink(header.Linkname, target); err != nil {
-				// Ignore symlink errors for now
-			}
-		}
-	}
-
-	// If include list was provided but no files matched, return error.
-	if hasIncludeList && !matchedAny {
+	if includeSet != nil && !matchedAny {
 		common.RenderError("tar", 1, "NOT_FOUND", "file not found in archive", isJSON, out)
 		if !isJSON {
 			for _, p := range positional {
@@ -653,6 +660,66 @@ func formatTarMode(header *tar.Header) string {
 	return string(tc) + string(rwx[:])
 }
 
+// listArchiveStream reads a tar (optionally gzipped) from r and writes a
+// listing to listOut. This is the testable core, separated from file I/O.
+func listArchiveStream(r io.Reader, verbose bool, excludePatterns []string, listOut io.Writer) ([]TarFileStat, error) {
+	br := bufio.NewReader(r)
+	if _, err := br.Peek(1); err == io.EOF {
+		return nil, fmt.Errorf("short read")
+	}
+
+	tr := tar.NewReader(br)
+	var stats []TarFileStat
+
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return stats, err
+		}
+
+		if isExcluded(header.Name, excludePatterns) {
+			continue
+		}
+
+		stats = append(stats, TarFileStat{
+			Name: header.Name,
+			Size: header.Size,
+			Mode: fmt.Sprintf("%04o", header.Mode),
+		})
+
+		name := header.Name
+		if header.Typeflag == tar.TypeDir && !strings.HasSuffix(name, "/") {
+			name += "/"
+		}
+		if verbose {
+			mode := formatTarMode(header)
+			size := header.Size
+			if header.Typeflag == tar.TypeSymlink {
+				size = 0
+			}
+			t := localTime(header.ModTime)
+			line := fmt.Sprintf("%s %s/%s%10d %04d-%02d-%02d %02d:%02d:%02d %s",
+				mode,
+				header.Uname, header.Gname,
+				size,
+				t.Year(), t.Month(), t.Day(),
+				t.Hour(), t.Minute(), t.Second(),
+				name,
+			)
+			if header.Typeflag == tar.TypeSymlink {
+				line += " -> " + header.Linkname
+			}
+			fmt.Fprintln(listOut, line)
+		} else {
+			fmt.Fprintln(listOut, name)
+		}
+	}
+	return stats, nil
+}
+
 func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []string, out io.Writer) int {
 	var r io.Reader
 	if archive == "-" {
@@ -683,73 +750,18 @@ func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []str
 		r = gr
 	}
 
-	// Peek at input to detect empty streams (0 bytes = not a tarball).
-	br := bufio.NewReader(r)
-	if _, err := br.Peek(1); err == io.EOF {
-		common.RenderError("tar", 1, "IO", "short read", isJSON, out)
-		if !isJSON {
-			fmt.Fprintln(os.Stderr, "tar: short read")
-		}
-		return 1
+	listOut := out
+	if isJSON {
+		listOut = io.Discard
 	}
 
-	tr := tar.NewReader(br)
-	var stats []TarFileStat
-
-	for {
-		header, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
-			if !isJSON {
-				fmt.Fprintf(os.Stderr, "tar: %v\n", err)
-			}
-			return 1
-		}
-
-		// Skip excluded files.
-		if isExcluded(header.Name, excludePatterns) {
-			continue
-		}
-
-		stats = append(stats, TarFileStat{
-			Name: header.Name,
-			Size: header.Size,
-			Mode: fmt.Sprintf("%04o", header.Mode),
-		})
-
+	stats, err := listArchiveStream(r, verbose, excludePatterns, listOut)
+	if err != nil {
+		common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
 		if !isJSON {
-			name := header.Name
-			if header.Typeflag == tar.TypeDir && !strings.HasSuffix(name, "/") {
-				name += "/"
-			}
-			if verbose {
-				// BusyBox tar tvf format:
-				//   %s %s/%s%10d %04d-%02d-%02d %02d:%02d:%02d %s[ -> linkname]
-				mode := formatTarMode(header)
-				size := header.Size
-				if header.Typeflag == tar.TypeSymlink {
-					size = 0
-				}
-				t := localTime(header.ModTime)
-				line := fmt.Sprintf("%s %s/%s%10d %04d-%02d-%02d %02d:%02d:%02d %s",
-					mode,
-					header.Uname, header.Gname,
-					size,
-					t.Year(), t.Month(), t.Day(),
-					t.Hour(), t.Minute(), t.Second(),
-					name,
-				)
-				if header.Typeflag == tar.TypeSymlink {
-					line += " -> " + header.Linkname
-				}
-				fmt.Fprintln(out, line)
-			} else {
-				fmt.Fprintln(out, name)
-			}
+			fmt.Fprintf(os.Stderr, "tar: %v\n", err)
 		}
+		return 1
 	}
 
 	if isJSON {

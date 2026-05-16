@@ -1,6 +1,8 @@
 package uniq
 
 import (
+	"bytes"
+	"os"
 	"strings"
 	"testing"
 )
@@ -129,4 +131,79 @@ func TestExtractCompareKey(t *testing.T) {
 				c.line, c.skipFields, c.skipChars, c.checkChars, got, c.want)
 		}
 	}
+}
+
+// --- CLI tests ---
+
+func uniqTempFile(t *testing.T, content string) string {
+	t.Helper()
+	f, err := os.CreateTemp("", "uniqtest")
+	if err != nil { t.Fatal(err) }
+	f.WriteString(content)
+	f.Close()
+	t.Cleanup(func() { os.Remove(f.Name()) })
+	return f.Name()
+}
+
+func TestCLI_Basic(t *testing.T) {
+	f := uniqTempFile(t, "a\na\nb\nb\nc\n")
+	var out bytes.Buffer
+	code := run([]string{f}, &out)
+	if code != 0 { t.Fatalf("exit %d", code) }
+	lines := strings.Split(strings.TrimRight(out.String(), "\n"), "\n")
+	if len(lines) != 3 { t.Errorf("expected 3 lines, got %d: %q", len(lines), out.String()) }
+}
+
+func TestCLI_Count(t *testing.T) {
+	f := uniqTempFile(t, "a\na\nb\n")
+	var out bytes.Buffer
+	code := run([]string{"-c", f}, &out)
+	if code != 0 { t.Fatalf("exit %d", code) }
+	if !strings.Contains(out.String(), "2 a") { t.Errorf("expected count prefix, got: %s", out.String()) }
+}
+
+func TestCLI_Duplicates(t *testing.T) {
+	f := uniqTempFile(t, "a\na\nb\nc\nc\n")
+	var out bytes.Buffer
+	code := run([]string{"-d", f}, &out)
+	if code != 0 { t.Fatalf("exit %d", code) }
+	lines := strings.Split(strings.TrimRight(out.String(), "\n"), "\n")
+	if len(lines) != 2 || lines[0] != "a" || lines[1] != "c" { t.Errorf("expected a\\nc, got %q", out.String()) }
+}
+
+func TestCLI_Unique(t *testing.T) {
+	f := uniqTempFile(t, "a\na\nb\nc\nc\n")
+	var out bytes.Buffer
+	code := run([]string{"-u", f}, &out)
+	if code != 0 { t.Fatalf("exit %d", code) }
+	if strings.TrimRight(out.String(), "\n") != "b" { t.Errorf("expected 'b', got %q", out.String()) }
+}
+
+func TestCLI_IgnoreCase(t *testing.T) {
+	f := uniqTempFile(t, "a\nA\nb\n")
+	var out bytes.Buffer
+	code := run([]string{"-i", f}, &out)
+	if code != 0 { t.Fatalf("exit %d", code) }
+	lines := strings.Split(strings.TrimRight(out.String(), "\n"), "\n")
+	if len(lines) != 2 { t.Errorf("expected 2 lines, got %d", len(lines)) }
+}
+
+func TestCLI_JSON(t *testing.T) {
+	f := uniqTempFile(t, "a\na\nb\n")
+	var out bytes.Buffer
+	code := run([]string{"-j", f}, &out)
+	if code != 0 { t.Fatalf("exit %d", code) }
+	if out.Len() == 0 { t.Error("expected JSON output") }
+}
+
+func TestCLI_FileNotFound(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"/nonexistent/uniq/file"}, &out)
+	if code != 1 { t.Errorf("expected exit 1, got %d", code) }
+}
+
+func TestCLI_BadFlag(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"--nonexistent"}, &out)
+	if code != 2 { t.Errorf("expected exit 2, got %d", code) }
 }

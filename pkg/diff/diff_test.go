@@ -242,3 +242,58 @@ func TestGenerateDiffMultiHunk(t *testing.T) {
 		t.Errorf("expected at least 1 hunk")
 	}
 }
+
+func TestCLI_BasicDiff(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a.txt")
+	b := filepath.Join(dir, "b.txt")
+	os.WriteFile(a, []byte("hello\n"), 0644)
+	os.WriteFile(b, []byte("world\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{a, b}, &out)
+	if code != 1 { t.Errorf("expected exit 1 for diff, got %d", code) }
+}
+
+func TestCLI_Identical(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a.txt")
+	b := filepath.Join(dir, "b.txt")
+	os.WriteFile(a, []byte("same\n"), 0644)
+	os.WriteFile(b, []byte("same\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{a, b}, &out)
+	if code != 0 { t.Errorf("expected exit 0 for same files, got %d", code) }
+}
+
+func TestCLI_ContextLines(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a.txt")
+	b := filepath.Join(dir, "b.txt")
+	os.WriteFile(a, []byte("line1\nline2\nline3\n"), 0644)
+	os.WriteFile(b, []byte("line1\nCHANGED\nline3\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-U", "1", a, b}, &out)
+	if code != 1 { t.Errorf("expected exit 1, got %d", code) }
+}
+
+func TestCLI_JSON(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a.txt")
+	os.WriteFile(a, []byte("hello\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"--json", a, a}, &out)
+	if code != 0 { t.Fatalf("exit %d", code) }
+	if out.Len() == 0 { t.Errorf("expected output, got empty") }
+}
+
+func TestCLI_MissingFile(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"/nonexistent/a", "/nonexistent/b"}, &out)
+	if code != 2 { t.Errorf("expected exit 2, got %d", code) }
+}
+
+func TestCLI_BadFlag(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"--nonexistent"}, &out)
+	if code != 2 { t.Errorf("expected exit 2, got %d", code) }
+}

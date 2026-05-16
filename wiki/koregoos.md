@@ -1,6 +1,10 @@
 # KoreGoOS — Bootable Linux Distro (powered by KoreGo)
 
-> **Status:** DESIGN | **Date:** 2026-05-16 | **Depends on:** KoreGo v1.0 (frozen userland)
+> ⚠️ **MOVED:** This document has been relocated to the [KoreGoOS repository](https://github.com/ramayac/koregoos).
+> The copy here is retained as a historical snapshot and will not be updated.
+> For the current version, see `docs/design.md` in the KoreGoOS repo.
+>
+> **Status:** MOVED | **Original Date:** 2026-05-16 | **Depends on:** KoreGo v1.0 (frozen userland)
 
 ---
 
@@ -343,13 +347,19 @@ github.com/ramayac/koregoos/
 
 ### Why use KoreGo's shell instead of bash?
 
-KoreGo's shell interpreter (`internal/shell`) already provides:
+KoreGo's shell interpreter (`internal/shell`, backed by `mvdan.cc/sh/v3`) already provides:
 - Resource limits (timeout, 128MB stdout/stderr cap)
 - Path confinement (SecurePath — no `../../../etc/passwd` escapes)
 - Session isolation (cwd, env per session)
 - Same binary — no additional dependency
 
 The `/etc/rc` script runs interpreted, not exec'd. This means resource limits are enforced during boot.
+
+> **Design observation (2026-05-16):** `internal/shell` is a library, not a registered CLI command.
+> KoreGo needs a `pkg/shell/` wrapper (see `wiki/prepare_to_goose.md` Change 1) so that
+> `koregoos shell /etc/rc` works. KoreGoOS cannot import `internal/` packages directly
+> (Go enforces module boundaries on `internal/`). The shell must be exposed as a dispatch-registered
+> command.
 
 ### Why devtmpfs instead of static /dev?
 
@@ -411,8 +421,57 @@ koregoos ping 127.0.0.1
 koregoos poweroff
 ```
 
+## Design Observations (2026-05-16)
+
+These observations were collected during the design review and are addressed in
+`wiki/prepare_to_goose.md`. They are preserved here for context when adapting this
+document for the KoreGoOS repo.
+
+### Shebang quirk
+
+The Linux kernel passes the entire shebang line after `#!` as a **single argument**
+with a leading space. `#!/bin/koregoos shell` becomes `exec("/bin/koregoos", " shell", "/etc/rc")`.
+The `" shell"` (with space) won't match the dispatch command `"shell"`.
+
+**Mitigations:**
+- Trim leading whitespace from argv in the shell command handler
+- Or avoid shebang entirely: have `init` invoke `koregoos shell /etc/rc` explicitly (recommended)
+
+### Init complexity is the real risk
+
+The PID 1 `init` handles more than the 7-step boot list suggests:
+- **Zombie reaping:** PID 1 inherits orphans. Must `waitpid(-1)` in a loop.
+- **Signal forwarding:** SIGINT/SIGTERM must trigger clean shutdown with correct
+  unmount ordering. Wrong order → stuck unmounts → kernel panic on reboot.
+- **getty respawn:** If getty exits (user logs out, terminal hangup), init must
+  respawn it. A single fork works since init IS PID 1.
+- **rc failure:** If `/etc/rc` fails (bad syntax, missing mount), init must not
+  hang. Log and either drop to emergency shell or continue degraded.
+
+BusyBox `init` is ~1000 lines of C. 200 lines of Go is achievable for a minimal
+init, but every edge case needs a test (see "init reaper test" in Test Strategy).
+
+### Shell interpreter dependency
+
+`internal/shell` uses `mvdan.cc/sh/v3` — an external Go module. This is acceptable
+(the AGENTS.md carve-out: "unless absolutely necessary, e.g., a complex shell
+interpreter later on") but worth noting since it breaks the zero-dependency invariant
+for the shell component specifically.
+
+### `--list-commands` and `WellKnownNames` already exist
+
+The public API surface KoreGoOS needs (`korego.WellKnownNames`, `korego.Main()`,
+`korego.Run()`, `--list-commands`) is already implemented in `korego.go`. No changes
+needed to the dispatch core.
+
+### Daemon works as-is
+
+`korego daemon` is registered and supports `--socket`, `--workers`, `--listen-addr`.
+KoreGoOS starts it with `koregoos daemon --socket /run/korego.sock &`. Zero changes needed.
+
 ## Related Documents
 
+- [prepare_to_goose.md](prepare_to_goose.md) — Changes needed in KoreGo to support KoreGoOS
 - [02_docker_ci.md](02_docker_ci.md) — KoreGo Docker pipeline (same FROM scratch philosophy)
 - [05_daemon_core.md](05_daemon_core.md) — JSON-RPC daemon (runs at boot in KoreGoOS)
 - [07_agent_features.md](07_agent_features.md) — Shell interpreter (powers /etc/rc)

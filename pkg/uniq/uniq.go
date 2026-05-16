@@ -147,7 +147,7 @@ func run(args []string, out io.Writer) int {
 	}
 
 	if !jsonMode {
-		out = os.Stdout
+		// out already passed as parameter; use output file if second positional
 		if len(flags.Positional) > 1 && flags.Positional[1] != "-" {
 			f, err := os.Create(flags.Positional[1])
 			if err != nil {
