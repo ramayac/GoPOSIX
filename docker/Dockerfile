@@ -17,7 +17,7 @@ RUN VERSION=${VERSION:-$(git describe --tags --always 2>/dev/null || echo "dev")
     TARGETARCH=${TARGETARCH:-amd64} && \
     CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
     go build \
-      -ldflags="-s -w -X 'github.com/ramayac/korego/pkg/common.Version=${VERSION}' -X 'main.Version=${VERSION}'" \
+      -ldflags="-s -w -X 'github.com/ramayac/korego/pkg/common.Version=${VERSION}' -X 'github.com/ramayac/korego.Version=${VERSION}'" \
       -o /korego ./cmd/korego/
 
 # Emit one command name per line for the symlink stage.

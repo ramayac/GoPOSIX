@@ -35,6 +35,8 @@
 
 ## Design
 
+- [koregoos.md](koregoos.md) | KoreGoOS — Bootable Linux Distro powered by KoreGo (separate project, imports KoreGo as library)
+
 ## Reference
 
 - [posix_coverage.md](posix_coverage.md) | POSIX Compliance Matrix (49 utilities)

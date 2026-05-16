@@ -97,10 +97,13 @@ func Run(r io.Reader, w io.Writer, numberAll, numberNonBlank, squeezeBlank bool)
 	return lines, scanner.Err()
 }
 
-func run(args []string, out io.Writer) int {
+// catRun is the injectable CLI entry point for cat. It mirrors the POSIX
+// cat command: it parses flags, opens files, reads stdin, and writes to out.
+// errOut receives error messages. stdin is the reader for "-" and default stdin.
+func catRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "cat: %v\n", err)
+		fmt.Fprintf(errOut, "cat: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("j")
@@ -118,28 +121,34 @@ func run(args []string, out io.Writer) int {
 	// when "-" is present (once from the implicit default, once
 	// from the explicit "-").
 	if len(flags.Positional) == 0 {
-		readers = append(readers, os.Stdin)
+		readers = append(readers, stdin)
 	}
+	var openedFiles []*os.File
 	for _, path := range flags.Positional {
 		if path == "-" {
-			readers = append(readers, os.Stdin)
+			readers = append(readers, stdin)
 			continue
 		}
 		f, err := os.Open(path)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "cat: %s: %v\n", path, err)
+			fmt.Fprintf(errOut, "cat: %s: %v\n", path, err)
 			return 1
 		}
-		defer f.Close()
+		openedFiles = append(openedFiles, f)
 		readers = append(readers, f)
 	}
+	defer func() {
+		for _, f := range openedFiles {
+			f.Close()
+		}
+	}()
 
 	if jsonMode {
 		var allLines []string
 		for _, r := range readers {
 			lines, err := Run(r, io.Discard, numberAll, numberNonBlank, squeezeBlank)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "cat: %v\n", err)
+				fmt.Fprintf(errOut, "cat: %v\n", err)
 				return 1
 			}
 			allLines = append(allLines, lines...)
@@ -150,8 +159,8 @@ func run(args []string, out io.Writer) int {
 
 	if !numberAll && !numberNonBlank && !squeezeBlank && !showNonPrinting && !showEnds {
 		for _, r := range readers {
-			if _, err := io.Copy(os.Stdout, r); err != nil {
-				fmt.Fprintf(os.Stderr, "cat: %v\n", err)
+			if _, err := io.Copy(out, r); err != nil {
+				fmt.Fprintf(errOut, "cat: %v\n", err)
 				return 1
 			}
 		}
@@ -160,20 +169,24 @@ func run(args []string, out io.Writer) int {
 
 	// cat -v / -e: per-character vis processing.
 	if showNonPrinting || showEnds {
-		return runVis(readers, showEnds || showNonPrinting, showEnds, jsonMode, out)
+		return catRunVis(readers, showEnds || showNonPrinting, showEnds, jsonMode, out, errOut)
 	}
 
 	for _, r := range readers {
-		if _, err := Run(r, os.Stdout, numberAll, numberNonBlank, squeezeBlank); err != nil {
-			fmt.Fprintf(os.Stderr, "cat: %v\n", err)
+		if _, err := Run(r, out, numberAll, numberNonBlank, squeezeBlank); err != nil {
+			fmt.Fprintf(errOut, "cat: %v\n", err)
 			return 1
 		}
 	}
 	return 0
 }
 
-// runVis handles cat -v and/or cat -e: per-line vis transformation.
-func runVis(readers []io.Reader, doVis, showEnds, jsonMode bool, out io.Writer) int {
+func run(args []string, out io.Writer) int {
+	return catRun(args, out, os.Stderr, os.Stdin)
+}
+
+// catRunVis handles cat -v and/or cat -e: per-line vis transformation.
+func catRunVis(readers []io.Reader, doVis, showEnds, jsonMode bool, out, errOut io.Writer) int {
 	var allLines []string
 	for _, r := range readers {
 		scanner := bufio.NewScanner(r)
@@ -188,7 +201,7 @@ func runVis(readers []io.Reader, doVis, showEnds, jsonMode bool, out io.Writer) 
 			allLines = append(allLines, line)
 		}
 		if err := scanner.Err(); err != nil {
-			fmt.Fprintf(os.Stderr, "cat: %v\n", err)
+			fmt.Fprintf(errOut, "cat: %v\n", err)
 			return 1
 		}
 	}

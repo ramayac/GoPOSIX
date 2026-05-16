@@ -2,6 +2,75 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-16] design | KoreGoOS — bootable distro design document
+
+Created `wiki/koregoos.md` — comprehensive design for a separate project
+that imports KoreGo as a Go module and builds a bootable Linux distro.
+Architecture: Linux kernel + initramfs containing a single multicall binary
+(korego 56 utilities + ~25 boot/system utilities). Boot process: PID 1 init
+→ /etc/rc (korego shell interpreter) → getty on /dev/console.
+
+Three tiers of new utilities: boot-critical (init, mount, umount, mknod,
+reboot, poweroff, halt, ~400 LOC), usable system (getty, login, passwd,
+ifconfig, route, dhclient, ping, dmesg, ~600 LOC), real distro (modprobe,
+syslogd, crond, fsck, mkfs, fdisk, ~800 LOC).
+
+Design decisions: separate repo (layer boundary, independent cadence,
+different test profiles), korego shell for /etc/rc (already has resource
+limits + path confinement), devtmpfs over static /dev, no package manager
+(build pipeline IS the update mechanism).
+
+Three milestones: M0 proof-of-concept (QEMU boots, 1-2 days), M1 usable
+system (multi-user + networking + BusyBox gate, 3-5 days), M2 real distro
+(persistent storage + fsck + releases, 1-2 weeks).
+
+Named KoreGoOS for the inevitable Goose mascot.
+
+Added to wiki/index.md Design section.
+
+## [2026-05-16] feature | Public multicall API — korego.Main() + korego.Run()
+
+Extracted the dispatch entry point from `cmd/korego/main.go` into a public
+`korego.go` at the module root (`package korego`). Downstream projects can now
+import KoreGo as a library and build custom multicall binaries:
+
+```go
+package main
+import (
+    "os"
+    "github.com/ramayac/korego"
+    _ "github.com/ramayac/korego/pkg/ls"
+    _ "github.com/ramayac/koreboot/pkg/init"  // custom utilities
+)
+func main() {
+    korego.WellKnownNames = append(korego.WellKnownNames, "koreboot")
+    os.Exit(korego.Main())
+}
+```
+
+API surface:
+- `korego.Version` — set via ldflags `-X github.com/ramayac/korego.Version=...`
+- `korego.WellKnownNames` — binary names that trigger subcommand dispatch
+- `korego.Main()` → `korego.Run(os.Args)` — dispatch entry point
+
+Updated `cmd/korego/main.go` (now 14 lines of logic + blank imports).
+Updated LDFLAGS in Makefile, docker/Dockerfile, docker/Dockerfile.debug,
+and .goreleaser.yml: `-X main.Version=...` → `-X github.com/ramayac/korego.Version=...`.
+Updated wiki/02_docker_ci.md LDFLAGS reference.
+
+## [2026-05-16] maintain | 02 — Docker docs refreshed to current state
+
+Updated `wiki/02_docker_ci.md` from original Phase 02 plan document to reflect
+current as-built state. Changes: Go version 1.22→1.26, LDFLAGS updated (two
+Version variables: pkg/common + main), `/out/bin/` staging directory doc,
+system tzdata source, multi-arch buildx docs, CI pipeline steps (coverage
+gate, Trivy scan, BusyBox baseline 409→477), release pipeline with supply
+chain security. Added design-decision rationale table. Marked as COMPLETED /
+MAINTAINED.
+
+Updated `AGENTS.md` section 5 BusyBox numbers: 479/1/10 (stale pre-12.4 fix)
+→ 477/3/10 (current). Noted all 3 failures are date-specific.
+
 ## [2026-05-15] fix | 14b + 14c — BusyBox regression fix + JSON-RPC coverage gap
 
 ### 14b — BusyBox Regression Fix

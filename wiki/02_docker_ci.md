@@ -1,207 +1,122 @@
 # Phase 02 — Docker Scratch Build + CI Pipeline
 
-> **Timeline:** Week 2 | **Depends on:** Phase 01 | **Blocks:** Phase 03 (integration tests need Docker)
+> **Status:** COMPLETED / MAINTAINED | **Last verified:** 2026-05-16
 
 ---
 
 ## Goal
 
-Package KoreGo into a `FROM scratch` Docker image with symlinks for every utility, and set up CI to prevent regressions.
+Package KoreGo into a `FROM scratch` Docker image with symlinks for every utility, and set up CI to prevent regressions. This phase was completed in Week 2 and has been continuously maintained through Phase 14.
 
 ---
 
-## Tasks
+## Docker Configuration (Current State)
 
-### 02.1 — Multi-Stage Dockerfile (`docker/Dockerfile`)
+### `docker/Dockerfile` — Production `FROM scratch` image
 
-```dockerfile
-# --- Stage 1: Builder ---
-FROM golang:1.22-alpine AS builder
+Three-stage build: **builder** → **symlinker** → **scratch**.
 
-RUN apk add --no-cache git
+**Key design decisions (as-built, post-Phase 02 evolution):**
 
-WORKDIR /src
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
+| Decision | Rationale |
+|----------|-----------|
+| `golang:1.26-alpine` base | ≥ go.mod `go 1.25.0`; newer compiler = better optimizations + security fixes |
+| `COPY go.mod ./` then `go mod download` (no go.sum) | Layer caching — `go mod download` only needs `go.mod`. `go.sum` arrives with `COPY . .` and is used by `go build` |
+| `ARG TARGETARCH` + `GOARCH=${TARGETARCH}` | Multi-arch support (amd64, arm64) via `docker buildx --platform` |
+| `/out/bin/` staging directory (not `/bin/`) | **Scratch Image Purity** — avoids pulling in Alpine's BusyBox binaries. Only KoreGo + symlinks land in the final image |
+| System tzdata (`/usr/share/zoneinfo`) from `apk add tzdata` | Alpine-native; more complete than Go's bundled `zoneinfo.zip` |
+| `-X pkg/common.Version=... -X github.com/.../korego.Version=...` | Two version variables: library-level (`output.go`) and module-root (`korego.go`, used by `--version`) |
+| `apk add ca-certificates` | HTTPS support for future utilities |
+| Non-root user `korego:1000:1000` with `/home/korego` | Security best practice for `FROM scratch` |
+| `ENTRYPOINT ["/bin/korego"]` | Multicall dispatch: `docker run korego ls -la` works directly |
 
-# Static binary, no CGO, stripped symbols
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -ldflags="-s -w -X main.version=$(git describe --tags --always)" \
-    -o /korego ./cmd/korego/
+**Symlink registry:** The builder stage runs `korego --list-commands` to emit one command name per line (55 utilities as of Phase 14c). The symlinker stage creates `/out/bin/<name> → /bin/korego` symlinks for each.
 
-# Generate symlinks list
-RUN /korego --list-commands > /commands.txt
+### `docker/Dockerfile.debug` — Alpine debug image
 
-# --- Stage 2: Symlink Generator ---
-FROM alpine:3.20 AS symlinker
-
-COPY --from=builder /korego /bin/korego
-COPY --from=builder /commands.txt /commands.txt
-
-# Create /bin symlinks for every command
-RUN while read cmd; do ln -s /bin/korego /bin/$cmd; done < /commands.txt
-
-# Create non-root user
-RUN echo "korego:x:1000:1000::/home/korego:/bin/false" >> /etc/passwd && \
-    echo "korego:x:1000:" >> /etc/group
-
-# --- Stage 3: Scratch ---
-FROM scratch
-
-# CA certs for any HTTPS needs
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-
-# Non-root user
-COPY --from=symlinker /etc/passwd /etc/passwd
-COPY --from=symlinker /etc/group /etc/group
-
-# Binary + all symlinks
-COPY --from=symlinker /bin/ /bin/
-
-# Timezone data (for date utility)
-COPY --from=builder /usr/local/go/lib/time/zoneinfo.zip /usr/local/go/lib/time/zoneinfo.zip
-ENV ZONEINFO=/usr/local/go/lib/time/zoneinfo.zip
-
-USER korego
-ENTRYPOINT ["/bin/korego"]
-```
-
-**Checklist:**
-- [x] Multi-stage: builder → symlinker → scratch
-- [x] Static binary with stripped symbols (`-s -w`)
-- [x] Version embedded via `-X main.version=...`
-- [x] All registered commands get `/bin/<name>` symlinks
-- [x] CA certificates included (for future HTTPS use)
-- [x] Non-root user created and used
-- [x] Timezone data included (for `date` utility)
-- [x] `--list-commands` subcommand added to dispatcher (outputs one command per line)
+| Decision | Rationale |
+|----------|-----------|
+| Same `golang:1.26-alpine` builder | Identical binary to production |
+| Final: `alpine:3.20` with `strace`, `file` | Full debug tooling |
+| `CMD ["/bin/sh"]` (not `ENTRYPOINT`) | Allows `docker run -it korego:debug sh` without passing sh as a subcommand argument |
+| Non-root user via `adduser` | Mirrors production UID/GID 1000:1000 |
+| Hardcoded `GOARCH=amd64` | Debug only — no multi-arch needed |
 
 ---
 
-### 02.2 — Debug Dockerfile (`docker/Dockerfile.debug`)
-
-```dockerfile
-FROM golang:1.22-alpine AS builder
-# ... same build steps ...
-
-FROM alpine:3.20
-COPY --from=builder /korego /bin/korego
-# ... same symlinks ...
-# Alpine provides shell, strace, etc. for debugging
-```
-
-- [x] Same binary, but on Alpine base for debugging
-- [x] Can `docker exec -it` and poke around
-
----
-
-### 02.3 — Makefile
+## Makefile Docker Targets (Current)
 
 ```makefile
-VERSION := $(shell git describe --tags --always 2>/dev/null || echo "dev")
-BINARY  := korego
-LDFLAGS := -s -w -X main.version=$(VERSION)
-
-.PHONY: build test docker docker-debug lint clean
-
-build:
-	CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o $(BINARY) ./cmd/korego/
-
-test:
-	CGO_ENABLED=0 go test -race -cover ./...
-
-lint:
-	go vet ./...
-	staticcheck ./...
-
-docker:
-	docker build -t korego:$(VERSION) -f docker/Dockerfile .
-
-docker-debug:
-	docker build -t korego:debug -f docker/Dockerfile.debug .
-
-clean:
-	rm -f $(BINARY)
-
-smoke: docker
-	docker run --rm korego:$(VERSION) true
-	docker run --rm korego:$(VERSION) false || true
-	docker run --rm korego:$(VERSION) echo "smoke test passed"
-	docker run --rm korego:$(VERSION) echo --json "smoke test passed"
-	@echo "=== ALL SMOKE TESTS PASSED ==="
+docker:        Build production scratch image (korego:$(VERSION))
+docker-debug:  Build Alpine debug image (korego:debug)
+docker-shell:  docker-debug + interactive shell in container
+docker-run:    docker + run a command (e.g., make docker-run CMD="ls -la")
+smoke-docker:  Run smoke tests inside the production scratch container
 ```
 
-- [x] `make build` — local binary
-- [x] `make test` — all unit tests
-- [x] `make lint` — vet + staticcheck
-- [x] `make docker` — production image
-- [x] `make docker-debug` — debug image
-- [x] `make smoke` — build + run basic smoke tests in container
+The `docker-run` target passes `$(CMD)` directly to the container, where the korego entrypoint dispatches it as a subcommand.
 
 ---
 
-### 02.4 — GitHub Actions CI (`.github/workflows/ci.yml`)
+## GitHub Actions CI (`.github/workflows/ci.yml`)
 
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-      - run: make lint
-      - run: make test
-      - run: make docker
-      - run: make smoke
-  
-  image-size:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
-      - run: make docker
-      - run: |
-          SIZE=$(docker image inspect korego:* --format '{{.Size}}')
-          echo "Image size: $((SIZE / 1024 / 1024)) MB"
-          if [ $SIZE -gt 20971520 ]; then
-            echo "FAIL: Image exceeds 20MB target"
-            exit 1
-          fi
-```
+**Current pipeline** (evolved from Phase 02 original through Phase 14):
 
-- [x] Runs on every push and PR
-- [x] Lint → Test → Docker build → Smoke test
-- [x] Image size gate: fail if > 20MB
+| Step | Detail |
+|------|--------|
+| Go version | `1.26` (matches Dockerfile) |
+| Vet | `make vet` |
+| Unit tests | `make test` across all `./pkg/...` and `./internal/...` |
+| Coverage gate | Hard-fail at <45% overall coverage |
+| Binary build | `make build` + `--list-commands` verification |
+| JSON schema validation | `make validate-schemas` |
+| Docker build | `make docker` (production scratch image) |
+| Smoke tests | `make smoke` in-container |
+| Trivy vulnerability scan | CRITICAL/HIGH CVEs fail the build (added Phase 12.1) |
+| BusyBox test suite | `make testsuite` — baseline: 477 passed, fail if < 409 |
+| Image size gate | Separate job: multi-arch buildx, fails if > 20 MB |
 
 ---
 
-## Milestone 02
+## Release Pipeline (`.github/workflows/release.yml`)
 
-- [x] `docker build` produces a working `scratch` image
-- [x] `docker run korego true` exits 0
-- [x] `docker run korego false` exits 1
-- [x] `docker run --entrypoint /bin/echo korego hello` works (symlink)
-- [x] `docker run korego --help` lists all commands
-- [x] Image size < 20MB  *(actual: 3.2 MB)*
-- [x] CI pipeline passes end-to-end
-- [x] `make smoke` passes all checks
+Tagged releases (`v*`) trigger GoReleaser, which uses `docker/Dockerfile` with buildx to produce:
 
-## How to Verify
+- Per-arch images: `ghcr.io/ramayac/korego:$(VERSION)-amd64`, `-arm64`
+- Multi-arch manifest: `ghcr.io/ramayac/korego:$(VERSION)`, `:latest`
+- SBOMs on archive and binary artifacts
+- Cosign keyless signing (OIDC)
+- SLSA Level 3 provenance attestation
+
+---
+
+## Milestone 02 (Verified Current)
+
+- [x] `docker build` produces a working `FROM scratch` image
+- [x] `docker run korego true` exits 0, `false` exits 1
+- [x] Symlink dispatch works: `docker run --entrypoint /bin/echo korego hello`
+- [x] `docker run korego --help` lists all 55 commands
+- [x] Image size < 20 MB (actual: ~15 MB with buildx, varying by arch)
+- [x] Multi-arch: linux/amd64 + linux/arm64
+- [x] CI pipeline: lint → test → docker → smoke → trivy → BusyBox
+- [x] `make smoke-docker` passes all checks
+- [x] Supply chain: SBOM + Cosign + SLSA Level 3 on releases
+
+## How to Verify (Current)
 
 ```bash
+# Local build + test
 make docker
-docker images korego  # check size
+make smoke-docker
 
-# Smoke tests
-docker run --rm korego:dev true ; echo $?
-docker run --rm korego:dev false ; echo $?
-docker run --rm korego:dev echo --json "works"
-docker run --rm --entrypoint /bin/whoami korego:dev
+# Run specific utility in production container
+make docker-run CMD="ls -la /bin"
+
+# Interactive debug shell
+make docker-shell
+
+# Full CI pipeline
+make ci
 
 # Image size
 docker image inspect korego:dev --format '{{.Size}}'

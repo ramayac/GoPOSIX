@@ -7,6 +7,10 @@
 > - Phase 14b (BusyBox regression fix — 79→3 failures) **COMPLETED** (2026-05-15). [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md)
 > - Phase 14c (JSON-RPC daemon coverage — 9/55→55/55 utilities, +46 tests) **COMPLETED** (2026-05-16). [14c_posix_json_gap.md](14c_posix_json_gap.md)
 >
+> **2026-05-16:** Stage 2 hardening underway on `feat/hardening-13-stage1-stage2`.
+>
+> **cat: 37.6% → 88.7%** ✅ (extracted `catRun()` injectable entry point, +18 CLI tests covering `-n`/`-b`/`-s`/`-e`/`-v`/`--json`/long flags/multi-file/stdin/file-not-found/empty input/bad flag)
+>
 > **2026-05-15:** Batch 1 (grep + head hardening) **COMPLETED** — overall 51.6% → **55.3%**.
 > grep: 16.5% → **85.3%** (+context flags `-A`/`-B`/`-C`, `-H`/`-h`, `-R`, +29 tests).
 > head: 29.0% → **94.1%** (3 bugs fixed, +22 tests). See commits on `feat/13-coverage`.
@@ -56,7 +60,7 @@ Post-Gold, work concentrates on five pillars:
 
 | Metric | Current | Target Stage 1 | Target Stage 2 | Target Stage 3 |
 |--------|---------|---------------|---------------|---------------|
-| Overall coverage | **57.9%** | 60% | 68% | 75% |
+| Overall coverage | **68.5%** | 60% | 68% | 75% |
 | Packages at 0% | 1 (`cmd/korego`) | 0 | 0 | 0 |
 | Packages at <10% | 1 (`pkg/daemon`) | 0 | 0 | 0 |
 | Packages at <30% | 4 (`tail`, `touch`, `chmod`, `internal/daemon`) | 2 | 0 | 0 |
@@ -138,7 +142,7 @@ func TestRunViaDispatch(t *testing.T) {
 |---------|---------|--------|-----------|
 | `grep` | ~~16.5%~~ **86.3%** ✅ | 45% | `-e`, `-f`, `-v`, `-r`, `-c`, `-l`/`-L`, `-i`, `-w`, `-x`, `-A`/`-B`/`-C`, `-H`/`-h`, `-R` |
 | `sed` | 49.1% | 65% | `s/foo/bar/`, `-n`, `d`, `-e`, `-f`, `-i`, address ranges, `y` |
-| `cat` | 37.6% | 55% | `-n`, `-b`, `-s`, `-v`, `-E`, `-A`, stdin `-` |
+| `cat` | ~~37.6%~~ **88.7%** ✅ | 55% | `-n`, `-b`, `-s`, `-v`, `-E`, `-A`, stdin `-` |
 | `find` | 50.0% | 65% | `-name`, `-type`, `-size`, `-exec`, `-print`, `-delete`, `-maxdepth` |
 | `tar` | 43.5% | 60% | `-c`, `-x`, `-t`, `-v`, `-f`, `-C` |
 | `sort` | 58.0% | 70% | `-n`, `-r`, `-u`, `-k`, `-o`, `-t` |
@@ -176,11 +180,11 @@ func TestRunViaDispatch(t *testing.T) {
 ### Stage 3 — Refactor & Harden (68% → 75%)
 
 - [x] **`pkg/grep/`**: Extract `run(args, stdout, stderr io.Writer, stdin io.Reader) int` ✅ `grepRun()`
-- [ ] **`pkg/tar/`**: Extract create/extract/list into testable functions
-- [ ] **`pkg/sed/`**: Extract `compileScripts()` and `runEngine()` from file I/O
-- [ ] **`pkg/find/`**: Extract `parsePredicates()` as pure function
-- [ ] **Tooling**: Add `make cover-pkg` target; CI gate at 60% hard-fail
-- [ ] **Docs**: Coverage policy in AGENTS.md
+- [x] **`pkg/tar/`**: Extract create/extract/list into testable functions ✅ `createArchiveStream()`, `extractArchiveStream()`, `listArchiveStream()`
+- [ ] **`pkg/sed/`**: Extract `compileScripts()` and `runEngine()` from file I/O ✅ `compileAst()` already extracted; engine is testable via temp files — refactoring deferred (low ROI, existing structure adequate)
+- [ ] **`pkg/find/`**: Extract `parsePredicates()` as pure function ✅ existing `getMaxDepth()`/`buildExecArgs()` are pure; `run()` parses inline — refactoring deferred (no testability gap)
+- [x] **Tooling**: Add `make cover-pkg` target; CI gate at 60% hard-fail ✅ `make cover-pkg` and `make cover-gate` added; `make ci` includes `cover-gate`
+- [x] **Docs**: Coverage policy in AGENTS.md ✅ Section 4a added
 
 ---
 
@@ -222,7 +226,7 @@ func TestRunViaDispatch(t *testing.T) {
 
 ```bash
 make cover-pct          # 57.9% (current); target ≥60% (Stage 1), ≥68% (Stage 2), ≥75% (Stage 3)
-make cover-pkg          # no package below 5% / 25% / 40% / 55%
+make cover-gate          # ≥70% (hard CI gate); make cover-pkg for per-package
 make ci                 # coverage gate hard-fails below threshold
 make testsuite          # 477 passed, 3 failed (date), 0 regressions
 make smoke-docker       # docker run korego ls -la works

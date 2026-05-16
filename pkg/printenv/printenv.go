@@ -64,7 +64,7 @@ func run(args []string, out io.Writer) int {
 
 	common.Render("printenv", result, jsonMode, out, func() {
 		for k, v := range result.Vars {
-			fmt.Printf("%s=%s\n", k, v)
+			fmt.Fprintf(out, "%s=%s\n", k, v)
 		}
 	})
 	return exitCode

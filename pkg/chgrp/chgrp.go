@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"strconv"
 
 	"github.com/ramayac/korego/internal/dispatch"
@@ -38,8 +39,8 @@ func run(args []string, out io.Writer) int {
 	}
 
 	groupStr := flags.Positional[0]
-	gid, err := strconv.Atoi(groupStr)
-	if err != nil {
+	gid := lookupGID(groupStr)
+	if gid < 0 {
 		fmt.Fprintf(os.Stderr, "chgrp: invalid group: %s\n", groupStr)
 		return 1
 	}
@@ -62,6 +63,22 @@ func run(args []string, out io.Writer) int {
 	}
 
 	return exitCode
+}
+
+// lookupGID resolves a group identifier (name or numeric) to a GID.
+// Returns -1 if the group cannot be found.
+func lookupGID(name string) int {
+	// Try numeric first
+	if val, err := strconv.Atoi(name); err == nil {
+		return val
+	}
+	// Try name lookup via /etc/group
+	if g, err := user.LookupGroup(name); err == nil {
+		if val, err := strconv.Atoi(g.Gid); err == nil {
+			return val
+		}
+	}
+	return -1
 }
 
 func init() {

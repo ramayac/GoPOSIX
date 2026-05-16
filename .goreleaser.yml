@@ -5,7 +5,7 @@ builds:
     env: [CGO_ENABLED=0]
     goos: [linux]
     goarch: [amd64, arm64]
-    ldflags: ["-s", "-w", "-X 'github.com/ramayac/korego/pkg/common.Version={{.Version}}' -X 'main.Version={{.Version}}'"]
+    ldflags: ["-s", "-w", "-X 'github.com/ramayac/korego/pkg/common.Version={{.Version}}' -X 'github.com/ramayac/korego.Version={{.Version}}'"]
 
 dockers:
   - image_templates: ["ghcr.io/ramayac/korego:{{.Version}}-amd64"]

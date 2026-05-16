@@ -175,3 +175,277 @@ func TestBusyBox_Cat_FileAndDashStdin(t *testing.T) {
 		t.Errorf("got %q, want %q", got, "FILE\nSTDIN\n")
 	}
 }
+
+// --- CLI-layer tests via catRun ---
+
+func simpleCat(args []string, stdin string) (int, string, string) {
+	var outBuf, errBuf bytes.Buffer
+	code := catRun(args, &outBuf, &errBuf, strings.NewReader(stdin))
+	return code, outBuf.String(), errBuf.String()
+}
+
+func TestCLI_BasicFile(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"testdata/cat_hello.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if out != "hello\n" {
+		t.Errorf("got %q, want %q", out, "hello\n")
+	}
+}
+
+func TestCLI_NumberAll(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"-n", "testdata/cat_lines.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("expected 3 lines, got %d in %q", len(lines), lines)
+	}
+	if !strings.HasPrefix(lines[0], "     1\ta") {
+		t.Errorf("line 1 missing number prefix: %q", lines[0])
+	}
+	if !strings.HasPrefix(lines[1], "     2\t") {
+		t.Errorf("line 2 missing number prefix: %q", lines[1])
+	}
+	if !strings.HasPrefix(lines[2], "     3\tb") {
+		t.Errorf("line 3 missing number prefix: %q", lines[2])
+	}
+}
+
+func TestCLI_NumberNonBlank(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"-b", "testdata/cat_lines.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	if !strings.HasPrefix(lines[0], "     1\ta") {
+		t.Errorf("first non-blank should be 1: %q", lines[0])
+	}
+	// Second line is blank, should NOT be numbered (no tab prefix)
+	if strings.Contains(lines[1], "\t") {
+		t.Errorf("blank line should not have number prefix: %q", lines[1])
+	}
+	if !strings.HasPrefix(lines[2], "     2\tb") {
+		t.Errorf("second non-blank should be 2: %q", lines[2])
+	}
+}
+
+func TestCLI_SqueezeBlank(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"-s", "testdata/cat_blank.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	// Input: a\n\n\n\nb\n\n\nc\n. Output should have at most 1 blank between non-blanks.
+	blankCount := 0
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			blankCount++
+		}
+	}
+	if blankCount > 2 {
+		t.Errorf("expected ≤2 blank lines with squeeze, got %d in %q", blankCount, lines)
+	}
+}
+
+func TestCLI_ShowEnds(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"-e", "testdata/cat_hello.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if out != "hello$\n" {
+		t.Errorf("got %q, want %q", out, "hello$\n")
+	}
+}
+
+func TestCLI_ShowNonPrinting(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"-v"}, string([]byte{0x01, '\n'}))
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if out != "^A\n" {
+		t.Errorf("got %q, want %q", out, "^A\n")
+	}
+}
+
+func TestCLI_ShowEndsAndNonPrinting(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"-e"}, string([]byte{0x01, '\n'}))
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	// -e implies -v, so SOH becomes ^A, and $ is appended at end
+	if out != "^A$\n" {
+		t.Errorf("got %q, want %q", out, "^A$\n")
+	}
+}
+
+func TestCLI_Json(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"-j", "testdata/cat_hello.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if !strings.Contains(out, "\"lines\"") || !strings.Contains(out, "hello") {
+		t.Errorf("expected JSON output containing 'lines' and 'hello', got: %s", out)
+	}
+	if !strings.Contains(out, "\"lineCount\":1") {
+		t.Errorf("expected lineCount 1 in JSON, got: %s", out)
+	}
+}
+
+func TestCLI_JsonFlagLong(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"--json", "testdata/cat_hello.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if !strings.Contains(out, "\"lines\"") {
+		t.Errorf("expected JSON output via --json, got: %s", out)
+	}
+}
+
+func TestCLI_NumberFlagLong(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"--number", "testdata/cat_hello.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if !strings.HasPrefix(out, "     1\t") {
+		t.Errorf("expected numbered line via --number, got: %q", out)
+	}
+}
+
+func TestCLI_NumberNonBlankFlagLong(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"--number-nonblank", "testdata/cat_lines.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if !strings.Contains(out, "     1\ta") {
+		t.Errorf("expected 1st non-blank numbered via --number-nonblank, got: %q", out)
+	}
+}
+
+func TestCLI_SqueezeBlankFlagLong(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"--squeeze-blank", "testdata/cat_blank.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	// Should not contain three consecutive blank lines
+	if strings.Contains(out, "\n\n\n") {
+		t.Errorf("expected squeezing of blanks, got: %q", out)
+	}
+}
+
+func TestCLI_ShowNonPrintingFlagLong(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"--show-nonprinting"}, string([]byte{0x02, '\n'}))
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if out != "^B\n" {
+		t.Errorf("got %q, want %q", out, "^B\n")
+	}
+}
+
+func TestCLI_FileNotFound(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"/nonexistent/file/zzz"}, "")
+	if code != 1 {
+		t.Errorf("expected exit code 1 for missing file, got %d", code)
+	}
+	if out != "" {
+		t.Errorf("expected no stdout for missing file, got: %q", out)
+	}
+	if !strings.Contains(errStr, "cat:") && !strings.Contains(errStr, "nonexistent") {
+		t.Errorf("expected error message, got: %q", errStr)
+	}
+}
+
+func TestCLI_StdinViaDash(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"-"}, "stdin_data\n")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if out != "stdin_data\n" {
+		t.Errorf("got %q, want %q", out, "stdin_data\n")
+	}
+}
+
+func TestCLI_StdinDefault(t *testing.T) {
+	code, out, errStr := simpleCat([]string{}, "default_stdin\n")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if out != "default_stdin\n" {
+		t.Errorf("got %q, want %q", out, "default_stdin\n")
+	}
+}
+
+func TestCLI_StdinWithDashFlagN(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"-n", "-"}, "numbered\n")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if !strings.HasPrefix(out, "     1\t") {
+		t.Errorf("expected numbered stdin via -n -, got: %q", out)
+	}
+}
+
+func TestCLI_MultiFile(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"testdata/cat_hello.txt", "testdata/cat_world.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if out != "hello\nworld\n" {
+		t.Errorf("got %q, want %q", out, "hello\nworld\n")
+	}
+}
+
+func TestCLI_FileAndStdinDash(t *testing.T) {
+	code, out, errStr := simpleCat([]string{"testdata/cat_hello.txt", "-"}, "STDIN\n")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if out != "hello\nSTDIN\n" {
+		t.Errorf("got %q, want %q", out, "hello\nSTDIN\n")
+	}
+}
+
+func TestCLI_VisWithFile(t *testing.T) {
+	// cat -v on a file with control chars
+	code, out, errStr := simpleCat([]string{"-v", "testdata/cat_ctrl.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if !strings.Contains(out, "^A") {
+		t.Errorf("expected ^A in -v output, got: %q", out)
+	}
+}
+
+func TestCLI_VisShowEnds(t *testing.T) {
+	// cat -ve on input with newlines should show $ at end
+	code, out, errStr := simpleCat([]string{"-ve", "testdata/cat_hello.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if !strings.Contains(out, "$") {
+		t.Errorf("expected $ in -ve output, got: %q", out)
+	}
+}
+
+func TestCLI_EmptyInputStream(t *testing.T) {
+	code, out, errStr := simpleCat([]string{}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if out != "" {
+		t.Errorf("expected empty output for empty stdin, got: %q", out)
+	}
+}
+
+func TestCLI_BadFlag(t *testing.T) {
+	code, _, errStr := simpleCat([]string{"--nonexistent"}, "")
+	if code != 2 {
+		t.Errorf("expected exit code 2 for bad flag, got %d", code)
+	}
+	if errStr == "" {
+		t.Error("expected error message for bad flag")
+	}
+}

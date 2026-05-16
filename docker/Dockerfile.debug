@@ -13,7 +13,7 @@ ARG VERSION
 RUN VERSION=${VERSION:-$(git describe --tags --always 2>/dev/null || echo "dev")} && \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build \
-      -ldflags="-s -w -X 'github.com/ramayac/korego/pkg/common.Version=${VERSION}' -X 'main.Version=${VERSION}'" \
+      -ldflags="-s -w -X 'github.com/ramayac/korego/pkg/common.Version=${VERSION}' -X 'github.com/ramayac/korego.Version=${VERSION}'" \
       -o /korego ./cmd/korego/
 
 RUN /korego --list-commands > /commands.txt

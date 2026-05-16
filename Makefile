@@ -7,11 +7,12 @@ CMD        := ./cmd/korego
 MODULE     := github.com/ramayac/korego
 VERSION    ?= $(shell git describe --tags --always 2>/dev/null || echo "dev")
 LDFLAGS    := -ldflags "-s -w -X '$(MODULE)/pkg/common.Version=$(VERSION)' \
-                              -X 'main.Version=$(VERSION)'"
+                              -X 'github.com/ramayac/korego.Version=$(VERSION)'"
 DOCKER_IMG := korego:$(VERSION)
 
 # Directories tested by the unit-test and coverage targets.
-PKG_DIRS   := ./pkg/common/... \
+PKG_DIRS   := . \
+              ./pkg/common/... \
               ./internal/dispatch/... \
               ./pkg/echo/... \
               ./pkg/truefalse/... \
@@ -151,6 +152,34 @@ cover:
 .PHONY: cover-pct
 cover-pct:
 	CGO_ENABLED=0 go test -cover $(PKG_DIRS)
+
+.PHONY: cover-pkg
+cover-pkg:
+	@echo "=== Per-package coverage (target: ≥70%) ==="
+	@CGO_ENABLED=0 go test -cover $(PKG_DIRS) 2>&1 | grep -E 'coverage:|FAIL' | while read line; do \
+		pct=$$(echo "$$line" | grep -oP '\d+\.\d+%' | head -1 | tr -d '%'); \
+		if [ -n "$$pct" ]; then \
+			status="OK"; \
+			if [ "$$(echo "$$pct < 5.0" | bc -l 2>/dev/null || echo 0)" = "1" ]; then status="CRITICAL"; fi; \
+			printf "  %-6s %s\n" "$$pct%" "$$line"; \
+		else \
+			echo "  ----   $$line"; \
+		fi; \
+	done
+
+# CI coverage gate: fails if overall coverage < threshold.
+COVERAGE_THRESHOLD := 70
+.PHONY: cover-gate
+cover-gate:
+	@echo "Checking coverage ≥ $(COVERAGE_THRESHOLD)%..."
+	@CGO_ENABLED=0 go test -coverprofile=/tmp/korego_ci_cover.out $(PKG_DIRS) > /dev/null 2>&1 || true
+	@total=$$(go tool cover -func=/tmp/korego_ci_cover.out 2>/dev/null | grep '^total:' | awk '{print $$NF}' | tr -d '%'); \
+	if [ -z "$$total" ]; then echo "FAIL: could not parse coverage"; exit 1; fi; \
+	if [ "$$(echo "$$total < $(COVERAGE_THRESHOLD)" | bc -l)" = "1" ]; then \
+		echo "FAIL: coverage $$total% < $(COVERAGE_THRESHOLD)% threshold"; exit 1; \
+	else \
+		echo "PASS: coverage $$total% ≥ $(COVERAGE_THRESHOLD)%"; \
+	fi
 
 # -------------------------------------------------------------------
 # Quality targets
@@ -316,5 +345,5 @@ bench:
 	go test -bench=. -benchmem ./test/benchmark/...
 
 .PHONY: ci
-ci: vet test build docker smoke-docker
-	@echo "ci: full pipeline complete"
+ci: vet test build docker smoke-docker cover-gate
+	@echo "ci: full pipeline complete (coverage ≥ $(COVERAGE_THRESHOLD)%)"

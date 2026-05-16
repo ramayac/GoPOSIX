@@ -1,8 +1,10 @@
 package touch
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -124,5 +126,140 @@ func TestBusyBox_Touch_NoCreateSkipsMissingTouchesExisting(t *testing.T) {
 	info, _ := os.Stat(bar)
 	if info.ModTime().Before(past.Add(1 * time.Hour)) {
 		t.Errorf("bar timestamp should be updated, got %v", info.ModTime())
+	}
+}
+
+// --- CLI tests via run() ---
+
+func TestCLI_Basic(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "test.txt")
+	var out bytes.Buffer
+	code := run([]string{f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if _, err := os.Stat(f); os.IsNotExist(err) {
+		t.Error("file was not created")
+	}
+}
+
+func TestCLI_NoCreate(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "nonexist.txt")
+	var out bytes.Buffer
+	code := run([]string{"-c", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if _, err := os.Stat(f); !os.IsNotExist(err) {
+		t.Error("-c should not create file")
+	}
+}
+
+func TestCLI_ReferenceFile(t *testing.T) {
+	dir := t.TempDir()
+	ref := filepath.Join(dir, "ref.txt")
+	os.WriteFile(ref, []byte("ref"), 0644)
+	refTime := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	os.Chtimes(ref, refTime, refTime)
+
+	target := filepath.Join(dir, "target.txt")
+	os.WriteFile(target, []byte("target"), 0644)
+
+	var out bytes.Buffer
+	code := run([]string{"-r", ref, target}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	info, _ := os.Stat(target)
+	delta := info.ModTime().Unix() - refTime.Unix()
+	if delta < -2 || delta > 2 {
+		t.Errorf("mtime should match reference, got %v", info.ModTime())
+	}
+}
+
+func TestCLI_DateString(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "dated.txt")
+	var out bytes.Buffer
+	code := run([]string{"-d", "2020-06-15 12:00:00", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	info, _ := os.Stat(f)
+	want := time.Date(2020, 6, 15, 12, 0, 0, 0, time.Local)
+	delta := info.ModTime().Unix() - want.Unix()
+	if delta < -2 || delta > 2 {
+		t.Errorf("mtime should be 2020-06-15, got %v", info.ModTime())
+	}
+}
+
+func TestCLI_TimeStamp(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "timestamped.txt")
+	var out bytes.Buffer
+	code := run([]string{"-t", "202006151200.00", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	info, _ := os.Stat(f)
+	want := time.Date(2020, 6, 15, 12, 0, 0, 0, time.Local)
+	delta := info.ModTime().Unix() - want.Unix()
+	if delta < -2 || delta > 2 {
+		t.Errorf("mtime should be 2020-06-15 12:00, got %v", info.ModTime())
+	}
+}
+
+func TestCLI_JSON(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "json.txt")
+	var out bytes.Buffer
+	code := run([]string{"-j", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if !strings.Contains(out.String(), "\"touched\"") {
+		t.Errorf("expected JSON output, got: %s", out.String())
+	}
+}
+
+func TestCLI_MissingFile(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{}, &out)
+	if code != 1 {
+		t.Errorf("expected exit 1 for missing file operand, got %d", code)
+	}
+}
+
+func TestCLI_BadFlag(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"--nonexistent"}, &out)
+	if code != 2 {
+		t.Errorf("expected exit 2 for bad flag, got %d", code)
+	}
+}
+
+func TestCLI_BadReference(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"-r", "/nonexistent/ref", "/tmp/x"}, &out)
+	if code != 1 {
+		t.Errorf("expected exit 1 for bad reference, got %d", code)
+	}
+}
+
+func TestCLI_BadDate(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "bad.txt")
+	var out bytes.Buffer
+	code := run([]string{"-d", "not-a-date", f}, &out)
+	if code != 1 {
+		t.Errorf("expected exit 1 for invalid date, got %d", code)
+	}
+}
+
+func TestCLI_LongFlags(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "long.txt")
+	var out bytes.Buffer
+	code := run([]string{"--no-create", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if _, err := os.Stat(f); !os.IsNotExist(err) {
+		t.Error("--no-create should not create file")
 	}
 }

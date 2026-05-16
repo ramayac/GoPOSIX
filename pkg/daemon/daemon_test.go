@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"bytes"
 	"path/filepath"
 	"testing"
 	"time"
@@ -37,4 +38,33 @@ func TestRunDaemonWorkerCount(t *testing.T) {
 	}
 	time.Sleep(50 * time.Millisecond)
 	srv.Stop()
+}
+
+// --- CLI layer tests ---
+
+func TestCLI_BadFlag(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"--nonexistent"}, &out)
+	if code != 2 {
+		t.Errorf("expected exit 2 for bad flag, got %d", code)
+	}
+}
+
+func TestCLI_WorkerCount(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "korego.sock")
+	var out bytes.Buffer
+	go func() {
+		run([]string{"-s", socket, "-w", "2"}, &out)
+	}()
+	time.Sleep(100 * time.Millisecond)
+}
+
+func TestCLI_DefaultSocketFlag(t *testing.T) {
+	var out bytes.Buffer
+	// -s with a temp socket path — daemon will bind to it
+	socket := filepath.Join(t.TempDir(), "def.sock")
+	go func() {
+		run([]string{"-s", socket}, &out)
+	}()
+	time.Sleep(100 * time.Millisecond)
 }

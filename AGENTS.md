@@ -47,10 +47,17 @@ When implementing a new utility or feature, follow this checklist:
    - Run `make ci` to run the full pipeline including Docker builds.
 7. **Documentation:** Update the corresponding Phase plan in the `wiki/` directory (e.g., check off the task list).
 
+## 4a. Coverage Policy
+
+- **Gate:** `make ci` enforces a hard coverage gate at **≥70%** overall (see `COVERAGE_THRESHOLD` in Makefile). PRs that drop coverage below this threshold fail CI.
+- **CLI Layer Testing:** The `run()` function (CLI glue) must be tested, not just the library-layer `Run()`. Extract an injectable entry point (e.g., `grepRun()`, `catRun()`) that accepts `io.Reader`/`io.Writer` instead of hardcoding `os.Stdin`/`os.Stdout`. See `pkg/cat/cat.go` for the canonical `catRun()` pattern.
+- **Per-package:** Use `make cover-pkg` to audit per-package coverage. No package should be below 5%.
+- **Before committing:** Always run `make testsuite` (BusyBox integration tests) in addition to `make test` (unit tests). The BusyBox suite catches cascading integration failures that unit tests miss.
+
 ## 5. Security & Safety
 
 - **Root Protection:** Utilities that perform destructive operations (like `rm`) must include guards against destroying the root filesystem (e.g., `rm -rf /` must be refused without `--no-preserve-root`).
-- **BusyBox Test Suite:** 479 passed, 1 failed, 10 skipped (97.9% effective). The single remaining failure is umask-dependent.
+- **BusyBox Test Suite:** 477 passed, 3 failed, 10 skipped (99.4% pass rate). The 3 remaining failures are all in the `date` utility (2 Go POSIX TZ limitations, 1 cosmetic error-format mismatch). Run `make testsuite` before every commit to prevent regressions.
 
 ## 6. Current State & Progression
 
@@ -81,5 +88,6 @@ While running and porting the BusyBox test suite to KoreGo, be aware of the foll
 - **Binary Data Parsing (`NUL` bytes):** The BusyBox test suite actively tests embedded `NUL` bytes (e.g., passing `he\0llo` to `sed` commands). Be careful when parsing text files or command arguments in Go. Do not use standard C-style `0` byte checks as an EOF marker or early-termination signal in parsers (like the `sed` AST builder), because literal `NUL` bytes are valid inputs.
 - **Harness Dependencies (`echo -e`):** The `testing.sh` harness often relies on `echo` to generate binary payloads. If `ECHO="korego echo"` is used, ensure `korego echo` fully implements octal (`\0NNN`) and hexadecimal (`\xNN`) escapes. Otherwise, the tests will generate literal backslashes, leading to cascading false-positive failures in downstream tools like `sed` and `grep`.
 - **Flag Pre-processing (`find`):** The custom `common.ParseFlags` expects double-dash long flags (`--name`). For tools that use single-dash long flags (like `find -name -exec {} \;`), an argument pre-processing step is required before passing arguments to the flag parser to ensure compatibility without breaking standard POSIX flag logic. `-exec` must be captured as a unit before the flag parser sees it to avoid treating it as bundled short flags (`-e -x -e -c`).
+- **Symlink collision (`sh`):** Never register a dispatch command named `sh` in a multicall binary. The test harness creates symlinks for every command via `--list-commands`, and a `sh -> korego` symlink shadows the system `/bin/sh`, causing the entire test suite to fail (the harness runs test cases via `sh -x -e`). The `shell` command is safe; KoreGoOS can manually create a `sh` symlink if needed.
 
 **Always read the active Phase document before writing code!**

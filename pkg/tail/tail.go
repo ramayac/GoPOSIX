@@ -161,9 +161,9 @@ func run(args []string, out io.Writer) int {
 			header := fmt.Sprintf("==> %s <==", name)
 			if !jsonMode {
 				if i > 0 {
-					fmt.Println()
+					fmt.Fprintln(out)
 				}
-				fmt.Println(header)
+				fmt.Fprintln(out, header)
 			}
 		}
 
@@ -180,9 +180,9 @@ func run(args []string, out io.Writer) int {
 			f = file
 		}
 
-		writer := os.Stdout
+		writer := out
 		if jsonMode {
-			writer = os.NewFile(uintptr(os.Stderr.Fd()), "/dev/null")
+			writer = io.Discard
 		}
 
 		var w io.Writer = writer

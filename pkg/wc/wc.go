@@ -200,7 +200,7 @@ func run(args []string, out io.Writer) int {
 		if jsonMode {
 			jsonResults[p] = res
 		} else {
-			printCount(res, p, showLines, showWords, showBytes, showChars, showMaxLine)
+			printCount(res, p, showLines, showWords, showBytes, showChars, showMaxLine, out)
 		}
 	}
 
@@ -208,7 +208,7 @@ func run(args []string, out io.Writer) int {
 		if jsonMode {
 			jsonResults["total"] = total
 		} else {
-			printCount(total, "total", showLines, showWords, showBytes, showChars, showMaxLine)
+			printCount(total, "total", showLines, showWords, showBytes, showChars, showMaxLine, out)
 		}
 	}
 
@@ -225,27 +225,27 @@ func run(args []string, out io.Writer) int {
 	return exitCode
 }
 
-func printCount(res WcResult, name string, showLines, showWords, showBytes, showChars, showMaxLine bool) {
-	out := ""
+func printCount(res WcResult, name string, showLines, showWords, showBytes, showChars, showMaxLine bool, out io.Writer) {
+	line := ""
 	if showMaxLine {
-		out += fmt.Sprintf(" %d", res.MaxLineLength)
+		line += fmt.Sprintf(" %d", res.MaxLineLength)
 	}
 	if showLines {
-		out += fmt.Sprintf(" %d", res.Lines)
+		line += fmt.Sprintf(" %d", res.Lines)
 	}
 	if showWords {
-		out += fmt.Sprintf(" %d", res.Words)
+		line += fmt.Sprintf(" %d", res.Words)
 	}
 	if showChars {
-		out += fmt.Sprintf(" %d", res.Chars)
+		line += fmt.Sprintf(" %d", res.Chars)
 	} else if showBytes {
-		out += fmt.Sprintf(" %d", res.Bytes)
+		line += fmt.Sprintf(" %d", res.Bytes)
 	}
 	if name != "-" {
-		out += fmt.Sprintf(" %s", name)
+		line += fmt.Sprintf(" %s", name)
 	}
-	if out != "" {
-		fmt.Println(out[1:]) // trim leading space
+	if line != "" {
+		fmt.Fprintln(out, line[1:]) // trim leading space
 	}
 }
 
