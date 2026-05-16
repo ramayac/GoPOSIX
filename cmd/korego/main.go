@@ -40,6 +40,7 @@ import (
 	_ "github.com/ramayac/korego/pkg/rm"
 	_ "github.com/ramayac/korego/pkg/rmdir"
 	_ "github.com/ramayac/korego/pkg/sed"
+	_ "github.com/ramayac/korego/pkg/shell"
 	_ "github.com/ramayac/korego/pkg/sha256sum"
 	_ "github.com/ramayac/korego/pkg/sleep"
 	_ "github.com/ramayac/korego/pkg/sort"

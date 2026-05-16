@@ -64,6 +64,7 @@ PKG_DIRS   := . \
               ./pkg/sha256sum/... \
               ./pkg/tar/... \
               ./internal/shell/... \
+              ./pkg/shell/... \
               ./pkg/printf/... \
               ./pkg/expr/... \
               ./pkg/testcmd/... \
