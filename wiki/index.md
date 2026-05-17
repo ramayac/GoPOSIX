@@ -45,6 +45,15 @@ All phases 00–11 are complete. These documents describe the as-built implement
 | [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md) | BusyBox Regression Fix — 79→3 failures |
 | [14c_posix_json_gap.md](14c_posix_json_gap.md) | JSON-RPC Coverage Gap — 55/55 utilities |
 
+## Active Plans (Post-MVP — Branch: `feat/post-mvp`)
+
+| File | Phase |
+|------|-------|
+| [15_post_mvp_tier1.md](15_post_mvp_tier1.md) | Phase 15 — Tier 1: `dd` + `od` (11 BusyBox tests) |
+| [16_post_mvp_tier2.md](16_post_mvp_tier2.md) | Phase 16 — Tier 2: 9 text/stream utilities (43 BusyBox tests) |
+| [17_post_mvp_tier3.md](17_post_mvp_tier3.md) | Phase 17 — Tier 3: 12 utilities without BusyBox coverage ✅ |
+| [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases |
+
 ## Deferred / Future
 
 - [07a_awk.md](07a_awk.md) | Awk Implementation Plan (canonical; Platinum gate)

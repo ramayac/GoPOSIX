@@ -3,6 +3,13 @@
 > **Last updated:** 2026-05-16 | **BusyBox pass rate:** 99.4% (477 passed, 3 failed, 10 skipped of 490 total)
 >
 > Updated after Phase 14c JSON-RPC gap fill and stale-doc cleanup. See [14c_posix_json_gap.md](14c_posix_json_gap.md).
+>
+> **Active planning (feat/post-mvp branch):** Phase 15–18 implement 23 missing utilities
+> and fix CI/coverage quality gaps.
+>
+> **Phase 17 COMPLETED (2026-05-16):** 12 no-BusyBox utilities implemented with unit
+> tests, daemon integration tests (test/posix-json/tier6_postmvp_test.go), and JSON
+> output. See [17_post_mvp_tier3.md](17_post_mvp_tier3.md).
 
 ## Final Summary
 
