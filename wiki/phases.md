@@ -1,8 +1,8 @@
 # GoPOSIX — Project Roadmap & State
 
-> **Version:** 5.3 | **Date:** 2026-05-17 | **Tier:** GOLD | **Branch:** `main`
+> **Version:** 5.4 | **Date:** 2026-05-17 | **Tier:** GOLD | **Branch:** `main`
 >
-> **Status:** 77 utilities | 547 BusyBox passes | ~72% coverage | 59/77 JSON-RPC
+> **Status:** 77 utilities | 548 BusyBox passes (99.3%) | ~72% coverage | 59/77 JSON-RPC
 >
 > ✅ Phase 15 COMPLETED — dd + od (2 I/O utilities, 10 BusyBox tests)
 > ✅ Phase 16 COMPLETED — 9 Tier 2 utilities
@@ -17,7 +17,7 @@ All build phases (00–10) and post-MVP cleanups (11–14c) are **COMPLETED**. T
 
 | Metric | Value |
 |--------|-------|
-| BusyBox pass rate | 547 passed / 5 failed / 10 skipped (99.1%) |
+| BusyBox pass rate | 548 passed / 4 failed / 10 skipped (99.3%) |
 | Overall test coverage | 70.4% |
 | Utilities implemented | 77 |
 | JSON-RPC daemon coverage | 59/77 utilities (77%) |

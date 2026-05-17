@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage Matrix
 
-> **Last updated:** 2026-05-17 | **BusyBox:** 547 pass / 5 fail / 10 skip | **Branch:** `main`
+> **Last updated:** 2026-05-17 | **BusyBox:** 548 pass / 4 fail / 10 skip | **Branch:** `main`
 >
 > Complete test coverage status for all 74 registered utilities across unit tests,
 > BusyBox integration tests, and JSON-RPC daemon tests.
@@ -90,7 +90,7 @@
 | `gzip` / `gunzip` | 63.5% | 4 | ✅ 4/4 | ✅ |
 | `sha256sum` | 69.4% | — | — | ✅ |
 | `md5sum` | 65.3% | 2 | ✅ 2/2 | ✅ |
-| `diff` | 57.1% | 20 | ✅ 20/20 | ✅ |
+| `diff` | 71.0% | 20 | ✅ 20/20 | ✅ |
 | `test` / `[` | 82.9% | — | — | ❌ |
 | `printf` | 65.6% | 26 | ✅ 26/26 | ✅ |
 | `expr` | 82.6% | 2 | ✅ 2/2 | ✅ |
@@ -105,8 +105,8 @@
 | `patch` | 74.2% | 11 | ✅ 11/11 | ❌ |
 | `unexpand` | 81.9% | 24 | ✅ 24/24 | ❌ |
 | `comm` | 70.1% | 9 | ✅ 9/9 | ❌ |
-| `paste` | 46.2% | 5 | ✅ 5/5 | ❌ |
-| `fold` | 78.6% | 5 | ⚠️ 3/5 (2 fail) | ❌ |
+| `paste` | 76.9% | 5 | ✅ 5/5 | ❌ |
+| `fold` | 55.8% | 5 | ⚠️ 4/5 (1 fail) | ❌ |
 | `sum` | — | 4 | ✅ 4/4 | ❌ |
 | `nl` | — | 4 | ✅ 4/4 | ❌ |
 | `expand` | — | 3 | ✅ 3/3 | ❌ |
@@ -118,7 +118,7 @@
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
 | `cksum` | 76.4% | — | — | ✅ |
-| `join` | 49.0% | — | — | ✅ |
+| `join` | 76.8% | — | — | ✅ |
 | `link` | 90.0% | — | — | ✅ |
 | `unlink` | 89.5% | — | — | ✅ |
 | `logger` | 61.5% | — | — | ✅ |
@@ -146,7 +146,8 @@
 | Total utilities | 77 | All registered |
 | Unit tests passing | 77/77 | 100% |
 | BusyBox tests total | 541 | — |
-| BusyBox passed | 547 | 99.1% |
+| BusyBox passed | 548 | 99.3% |
+| BusyBox failed | 4 | 3 date + 1 fold NUL |
 | Daemon internal coverage | 64.6% | +28.7% from Phase 18 |
 | BusyBox failed | 5 | 3 date + 2 fold |
 | BusyBox skipped | 10 | External deps |

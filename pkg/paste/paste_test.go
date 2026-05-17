@@ -2,6 +2,9 @@ package paste
 
 import (
 	"bufio"
+	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -133,4 +136,38 @@ func TestPaste_SingleFile(t *testing.T) {
 	if got != want {
 		t.Errorf("single:\n  got  %q\n  want %q", got, want)
 	}
+}
+
+func TestPasteCLI_Basic(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	f2 := filepath.Join(dir, "f2")
+	os.WriteFile(f1, []byte("a\nb\n"), 0644)
+	os.WriteFile(f2, []byte("1\n2\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{f1, f2}, &out)
+	if code != 0 { t.Errorf("exit %d, want 0", code) }
+	if out.String() != "a\t1\nb\t2\n" { t.Errorf("got %q", out.String()) }
+}
+
+func TestPasteCLI_Serialize(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	os.WriteFile(f1, []byte("a\nb\nc\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-s", f1}, &out)
+	if code != 0 { t.Errorf("exit %d, want 0", code) }
+	if out.String() != "a\tb\tc\n" { t.Errorf("got %q", out.String()) }
+}
+
+func TestPasteCLI_CustomDelimiter(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	f2 := filepath.Join(dir, "f2")
+	os.WriteFile(f1, []byte("a\nb\n"), 0644)
+	os.WriteFile(f2, []byte("1\n2\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-d:", f1, f2}, &out)
+	if code != 0 { t.Errorf("exit %d, want 0", code) }
+	if out.String() != "a:1\nb:2\n" { t.Errorf("got %q", out.String()) }
 }

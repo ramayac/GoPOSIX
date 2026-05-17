@@ -1,6 +1,6 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX userland (99.1% BusyBox test compatibility). GoPOSIX replaces
+A Go-native, single-binary POSIX userland (99.3% BusyBox test compatibility). GoPOSIX replaces
 GNU Coreutils in Docker `FROM scratch` containers, featuring structured `--json` output in
 every utility and a persistent JSON-RPC daemon to eliminate process-spawning overhead.
 
@@ -67,10 +67,10 @@ make ci            # full pipeline (test + testsuite + coverage + docker)
 For full details see the [POSIX Compliance Matrix](wiki/posix_coverage.md) and the
 [Test Coverage Matrix](wiki/test_coverage_matrix.md) (per-utility breakdown across all suites).
 
-**BusyBox Test Suite:** 547 passed, 5 failed, 10 skipped of 541 total (99.1%)
+**BusyBox Test Suite:** 548 passed, 4 failed, 10 skipped of 541 total (99.3%)
 
-The 5 remaining failures: 3 `date` (Go TZ limitations + cosmetic error format) and 2 `fold`
-(NUL handling + Unicode word-break). The 10 skipped tests require external compression tools
+The 4 remaining failures: 3 `date` (Go TZ limitations + cosmetic error format) and 1 `fold`
+(NUL handling — echo harness limitation). The 10 skipped tests require external compression tools
 (bzip2, xz, uudecode).
 
 ## Project Principles

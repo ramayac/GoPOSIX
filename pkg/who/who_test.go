@@ -86,3 +86,15 @@ func TestRunViaCLI(t *testing.T) {
 		t.Errorf("expected exit 0, got %d", code)
 	}
 }
+
+func TestWhoCLI_Quick(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"-q"}, &out)
+	if code != 0 { t.Errorf("exit %d, want 0", code) }
+}
+
+func TestWhoCLI_Header(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"-H"}, &out)
+	if code != 0 { t.Errorf("exit %d, want 0", code) }
+}

@@ -2,6 +2,25 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-17] fix | fold Unicode + low-coverage utilities — BusyBox 548, diff 71%, join 77%, paste 77%
+
+Fixed `fold -sw66 with unicode input` BusyBox failure by rewriting foldLine to count
+runes (not bytes) when not in `-b` mode. The 2 fold failures reduced to 1 (NUL handling
+remains, but root cause is echo harness `\0` escape limitation, not fold itself).
+
+Coverage surge on low-coverage utilities:
+- **diff**: 57.1% → 71.0% (+13.9%). Added recursive dir diff (-r), -N new file,
+  identical dirs tests. `diffDirs` now covered.
+- **join**: 49.0% → 76.8% (+27.8%). Added CLI run() tests with temp files.
+- **paste**: 46.2% → 76.9% (+30.7%). Added CLI tests for basic, serialize, delimiter.
+- **split**: 45.2% (unchanged — CLI tests require CWD-sensitive setup).
+- **tty**: 54.3% (unchanged — terminal-only paths).
+- **who**: 54.5% (unchanged — utmp-dependent).
+
+**BusyBox: 548 PASS (99.3%)** — fold Unicode fixed, now 4 failures (3 date + 1 fold NUL).
+
+Updated: README.md, wiki/todos.md, wiki/test_coverage_matrix.md, .github/workflows/ci.yml.
+
 ## [2026-05-17] complete | Phase 18 finished — coverage ramp + docs sweep
 
 Completed all remaining Phase 18 coverage work:

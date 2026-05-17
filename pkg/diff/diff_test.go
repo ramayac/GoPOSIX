@@ -364,3 +364,43 @@ func TestDiff_BinaryWarning(t *testing.T) {
 	code := run([]string{a, b}, &out)
 	if code != 1 { t.Errorf("expected exit 1 (differ), got %d", code) }
 }
+
+func TestDiff_RecursiveDirs(t *testing.T) {
+	dir := t.TempDir()
+	dirA := filepath.Join(dir, "a")
+	dirB := filepath.Join(dir, "b")
+	os.MkdirAll(dirA, 0755)
+	os.MkdirAll(dirB, 0755)
+	os.WriteFile(filepath.Join(dirA, "same.txt"), []byte("hello\n"), 0644)
+	os.WriteFile(filepath.Join(dirB, "same.txt"), []byte("hello\n"), 0644)
+	os.WriteFile(filepath.Join(dirA, "diff.txt"), []byte("a\n"), 0644)
+	os.WriteFile(filepath.Join(dirB, "diff.txt"), []byte("b\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-r", dirA, dirB}, &out)
+	if code != 1 { t.Errorf("expected exit 1 (dirs differ), got %d", code) }
+}
+
+func TestDiff_RecursiveDirsIdentical(t *testing.T) {
+	dir := t.TempDir()
+	dirA := filepath.Join(dir, "a")
+	dirB := filepath.Join(dir, "b")
+	os.MkdirAll(dirA, 0755)
+	os.MkdirAll(dirB, 0755)
+	os.WriteFile(filepath.Join(dirA, "f.txt"), []byte("same\n"), 0644)
+	os.WriteFile(filepath.Join(dirB, "f.txt"), []byte("same\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-r", dirA, dirB}, &out)
+	if code != 0 { t.Errorf("expected exit 0 (identical dirs), got %d", code) }
+}
+
+func TestDiff_NewFile(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	b := filepath.Join(dir, "b")
+	os.WriteFile(a, []byte(""), 0644)
+	os.WriteFile(b, []byte("hello\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-N", a, b}, &out)
+	// -N treats absent files as empty
+	if code != 1 { t.Errorf("expected exit 1 (files differ), got %d", code) }
+}

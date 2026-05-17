@@ -61,19 +61,24 @@ func foldLine(line string, width int, byteMode, spaceBreak bool) []byte {
 		return append([]byte(line), '\n')
 	}
 
+	// In byte mode, work with raw bytes. Otherwise, work with runes.
+	if byteMode {
+		return foldLineBytes(line, width, spaceBreak)
+	}
+	return foldLineRunes(line, width, spaceBreak)
+}
+
+// foldLineBytes wraps by byte count.
+func foldLineBytes(line string, width int, spaceBreak bool) []byte {
 	var result []byte
-	pos := 0   // current output line column/byte position
-	start := 0 // start of current segment
+	pos := 0
+	start := 0
 
 	for i := 0; i < len(line); i++ {
 		ch := line[i]
 		advance := 1
-		if ch == '\t' && !byteMode {
-			advance = 8 - (pos % 8)
-		}
 
 		if pos+advance > width && pos > 0 {
-			// Find break point.
 			breakAt := i
 			if spaceBreak {
 				for j := i - 1; j >= start; j-- {
@@ -90,7 +95,6 @@ func foldLine(line string, width int, byteMode, spaceBreak bool) []byte {
 				start++
 			}
 			pos = 0
-			// Re-scan from new start.
 			i = start - 1
 			continue
 		}
@@ -108,6 +112,51 @@ func foldLine(line string, width int, byteMode, spaceBreak bool) []byte {
 
 	if start < len(line) {
 		result = append(result, line[start:]...)
+	}
+	return result
+}
+
+// foldLineRunes wraps by character (rune) count with tab expansion.
+func foldLineRunes(line string, width int, spaceBreak bool) []byte {
+	runes := []rune(line)
+	var result []byte
+	pos := 0  // column position
+	start := 0 // rune index
+
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+		advance := 1
+		if r == '\t' {
+			advance = 8 - (pos % 8)
+		}
+
+		if pos+advance > width && pos > 0 {
+			// Find break point in runes.
+			breakAt := i
+			if spaceBreak {
+				for j := i - 1; j >= start; j-- {
+					if runes[j] == ' ' {
+						breakAt = j + 1
+						break
+					}
+				}
+			}
+			result = append(result, []byte(string(runes[start:breakAt]))...)
+			result = append(result, '\n')
+			start = breakAt
+			if spaceBreak && start < len(runes) && runes[start] == ' ' {
+				start++
+			}
+			pos = 0
+			i = start - 1
+			continue
+		}
+
+		pos += advance
+	}
+
+	if start < len(runes) {
+		result = append(result, []byte(string(runes[start:]))...)
 	}
 	return result
 }

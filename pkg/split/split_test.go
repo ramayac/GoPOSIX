@@ -124,3 +124,5 @@ func TestGenerateSuffix(t *testing.T) {
 		}
 	}
 }
+
+
