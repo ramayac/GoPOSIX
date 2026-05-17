@@ -1,10 +1,11 @@
 # GoPOSIX — Project Roadmap & State
 
-> **Version:** 5.0 | **Date:** 2026-05-16 | **Tier:** GOLD | **Branch:** `feat/post-mvp`
+> **Version:** 5.1 | **Date:** 2026-05-16 | **Tier:** GOLD | **Branch:** `feat/post-mvp`
 >
-> **Active phases:** 15–18 (planning — 11 remaining utilities + quality fixes)
+> **Status:** 74 utilities | 526 BusyBox passes | ~72% coverage | 59/74 JSON-RPC
 >
-> ✅ Phase 17 COMPLETED (2026-05-16) — 12 no-BusyBox utilities: split, join, tty, link, unlink, mkfifo, nice, nohup, logger, logname, who, cksum
+> ✅ Phase 16 COMPLETED — 9 Tier 2 utilities (unexpand, comm, paste, fold, sum, nl, expand, cmp, strings)
+> ✅ Phase 17 COMPLETED — 12 Tier 3 utility stubs (split, join, tty, link, unlink, mkfifo, nice, nohup, logger, logname, who, cksum)
 
 ---
 

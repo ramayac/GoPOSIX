@@ -25,6 +25,39 @@ var nlSpec = common.FlagSpec{
 	},
 }
 
+// NumberLines is the library-layer entry point for line numbering.
+// Returns formatted lines and a structured result.
+func NumberLines(r io.Reader, bodyType string, startNum, width int) ([]string, NlResult) {
+	var lines []string
+	var result NlResult
+	sc := bufio.NewScanner(r)
+	num := startNum
+	for sc.Scan() {
+		line := sc.Text()
+		nl := NlLine{Text: line}
+		var formatted string
+		switch bodyType {
+		case "a":
+			nl.Number = num
+			formatted = fmt.Sprintf("%*d\t%s", width, num, line)
+			num++
+		case "t":
+			if strings.TrimSpace(line) != "" {
+				nl.Number = num
+				formatted = fmt.Sprintf("%*d\t%s", width, num, line)
+				num++
+			} else {
+				formatted = fmt.Sprintf("%*s%s", width+1, "", line)
+			}
+		case "n":
+			formatted = fmt.Sprintf("%*s%s", width+1, "", line)
+		}
+		lines = append(lines, formatted)
+		result.Lines = append(result.Lines, nl)
+	}
+	return lines, result
+}
+
 func nlRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, nlSpec)
 	if err != nil {

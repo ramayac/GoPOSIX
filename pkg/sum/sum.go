@@ -26,28 +26,38 @@ var spec = common.FlagSpec{
 }
 
 func sumBSD(data []byte) (int, int) {
+	if len(data) == 0 {
+		return 0, 0
+	}
 	var sum int
 	for _, b := range data {
 		sum = (sum >> 1) + ((sum & 1) << 15) + int(b)
 		sum &= 0xFFFF
 	}
 	blocks := (len(data) + 1023) / 1024
-	if blocks == 0 {
-		blocks = 1
-	}
 	return sum, blocks
 }
 
 func sumSysV(data []byte) (int, int) {
+	if len(data) == 0 {
+		return 0, 0
+	}
 	var sum uint32
 	for _, b := range data {
 		sum += uint32(b)
 	}
 	blocks := (len(data) + 511) / 512
-	if blocks == 0 {
-		blocks = 1
-	}
 	return int((sum & 0xFFFFFFFF) % 0x10000), blocks
+}
+
+// Run computes a checksum of the data. sysv selects SysV algorithm;
+// otherwise BSD is used. Returns checksum and block count.
+func Run(r io.Reader, sysv bool) (int, int) {
+	data, _ := io.ReadAll(r)
+	if sysv {
+		return sumSysV(data)
+	}
+	return sumBSD(data)
 }
 
 func sumRun(args []string, out, errOut io.Writer, stdin io.Reader) int {

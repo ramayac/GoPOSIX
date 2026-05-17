@@ -10,7 +10,7 @@
 
 ## Current State
 
-- [phases.md](phases.md) | **Start here** — current metrics, active work, and phase status
+- [test_coverage_matrix.md](test_coverage_matrix.md) | **Start here** — complete test status for all 74 utilities
 - [todos.md](todos.md) | Open TODOs, remaining BusyBox failures, and session insights
 - [12_road_to_gold.md](12_road_to_gold.md) | Gold certification — gap analysis and resolution log (COMPLETED)
 - [13_coverage_and_hardening.md](13_coverage_and_hardening.md) | Coverage audit, hardening plan, speed targets (COMPLETED — 70.5%)

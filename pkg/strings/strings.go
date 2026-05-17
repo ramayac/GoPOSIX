@@ -28,7 +28,48 @@ var strSpec = common.FlagSpec{
 }
 
 func isPrintable(b byte) bool {
-	return b >= 0x20 && b <= 0x7E
+	return (b >= 0x20 && b <= 0x7E) || b == '\t'
+}
+
+// FormatOffset formats an offset in the specified radix for output.
+func FormatOffset(offset int64, radix byte) string {
+	switch radix {
+	case 'x':
+		return strconv.FormatInt(offset, 16)
+	case 'o':
+		return strconv.FormatInt(offset, 8)
+	default:
+		return strconv.FormatInt(offset, 10)
+	}
+}
+
+// Scan extracts printable strings of at least minLen from the reader.
+func Scan(r io.Reader, minLen int) ([]StringEntry, error) {
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	var entries []StringEntry
+	var run []byte
+	runStart := -1
+	for i, b := range data {
+		if isPrintable(b) || b == '\t' {
+			if runStart < 0 {
+				runStart = i
+			}
+			run = append(run, b)
+		} else {
+			if len(run) >= minLen {
+				entries = append(entries, StringEntry{Offset: runStart, Value: string(run)})
+			}
+			run = nil
+			runStart = -1
+		}
+	}
+	if len(run) >= minLen {
+		entries = append(entries, StringEntry{Offset: runStart, Value: string(run)})
+	}
+	return entries, nil
 }
 
 func stringsRun(args []string, out, errOut io.Writer, stdin io.Reader) int {

@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/ramayac/goposix/internal/dispatch"
 	"github.com/ramayac/goposix/pkg/common"
@@ -25,23 +26,42 @@ var expSpec = common.FlagSpec{
 func expandLine(line string, tabWidth int, initialOnly bool) string {
 	var result strings.Builder
 	col := 0
-	for i := 0; i < len(line); i++ {
-		ch := line[i]
-		if ch == '\t' {
+	for i := 0; i < len(line); {
+		r, size := utf8.DecodeRuneInString(line[i:])
+		if r == utf8.RuneError && size == 1 {
+			result.WriteByte(line[i])
+			col++
+			i++
+			continue
+		}
+		if r == '\t' {
 			spaces := tabWidth - (col % tabWidth)
 			result.WriteString(strings.Repeat(" ", spaces))
 			col += spaces
+			i += size
 		} else {
-			result.WriteByte(ch)
+			result.WriteString(line[i : i+size])
 			col++
-			if initialOnly && ch != ' ' {
-				// After first non-space, stop converting tabs.
-				result.WriteString(line[i+1:])
+			i += size
+			if initialOnly && r != ' ' {
+				result.WriteString(line[i:])
 				return result.String()
 			}
 		}
 	}
 	return result.String()
+}
+
+// Transform applies expandLine to each line of the input text.
+func Transform(input string, tabWidth int, initialOnly bool) string {
+	if input == "" {
+		return ""
+	}
+	lines := strings.Split(input, "\n")
+	for i, line := range lines {
+		lines[i] = expandLine(line, tabWidth, initialOnly)
+	}
+	return strings.Join(lines, "\n")
 }
 
 func expandRun(args []string, out, errOut io.Writer, stdin io.Reader) int {

@@ -28,6 +28,48 @@ var cmpSpec = common.FlagSpec{
 	},
 }
 
+// DiffEntry represents a single byte difference.
+type DiffEntry struct {
+	Byte int
+	Line int
+}
+
+// Compare reads two files byte by byte and returns differences.
+// limit caps the number of bytes compared; 0 means no limit.
+// verbose: if true, all diffs are collected; if false, only first diff.
+func Compare(r1, r2 io.Reader, limit int, verbose bool) ([]DiffEntry, bool) {
+	d1, _ := io.ReadAll(r1)
+	d2, _ := io.ReadAll(r2)
+	if limit > 0 {
+		if limit < len(d1) {
+			d1 = d1[:limit]
+		}
+		if limit < len(d2) {
+			d2 = d2[:limit]
+		}
+	}
+	var diffs []DiffEntry
+	bytePos := 0
+	lineNum := 1
+	for bytePos < len(d1) && bytePos < len(d2) {
+		if d1[bytePos] == '\n' {
+			lineNum++
+		}
+		if d1[bytePos] != d2[bytePos] {
+			diffs = append(diffs, DiffEntry{Byte: bytePos + 1, Line: lineNum})
+			if !verbose {
+				return diffs, false
+			}
+		}
+		bytePos++
+	}
+	if len(d1) != len(d2) {
+		diffs = append(diffs, DiffEntry{Byte: bytePos + 1, Line: lineNum})
+		return diffs, false
+	}
+	return diffs, len(diffs) == 0
+}
+
 func cmpRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, cmpSpec)
 	if err != nil {
@@ -51,9 +93,30 @@ func cmpRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 		return 2
 	}
 
+	// If both files are "-", cache stdin so both reads see the same data.
+	var stdinCache []byte
+	stdinCount := 0
+	for _, f := range files {
+		if f == "-" {
+			stdinCount++
+		}
+	}
+	if stdinCount > 1 {
+		stdinCache, _ = io.ReadAll(stdin)
+	}
+	stdinUsed := false
+
 	readFile := func(path string) ([]byte, error) {
 		if path == "-" {
-			return io.ReadAll(stdin)
+			if stdinCount > 1 {
+				return stdinCache, nil
+			}
+			if !stdinUsed {
+				stdinUsed = true
+				return io.ReadAll(stdin)
+			}
+			// Second "-" with count==1 shouldn't happen, but handle gracefully.
+			return nil, nil
 		}
 		return os.ReadFile(path)
 	}
