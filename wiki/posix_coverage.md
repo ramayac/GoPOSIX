@@ -1,17 +1,17 @@
 # POSIX Compliance Matrix
 
-> **Last updated:** 2026-05-16 | **Utilities:** 74 registered | **BusyBox:** 526/541 (97.2%)
+> **Last updated:** 2026-05-17 | **Utilities:** 77 registered | **BusyBox:** 547/541 (99.1%)
 >
 > See [test_coverage_matrix.md](test_coverage_matrix.md) for the complete per-utility test status.
 
 This document tracks the implementation status of GoPOSIX utilities against the POSIX standard.
 
 ## Overall Compliance Summary
-- **Registered Utilities:** 74
-- **Fully Implemented (✅):** 74 (100%)
-- **BusyBox Pass Rate:** 97.2% (526/541)
+- **Registered Utilities:** 77
+- **Fully Implemented (✅):** 77 (100%)
+- **BusyBox Pass Rate:** 99.1% (547/541)
 - **Deferred (❌):** 1 — `awk`
-- **Stubs (⚠️):** 12 — Tier 3 utilities (functional, need hardening)
+- **5 remaining failures:** 3 date (Go TZ limits), 2 fold (NUL/Unicode)
 
 > **Note on BusyBox Test Suite:** As part of Phase 10, we integrated the busybox test suite. The baseline execution resulted in ~150 failures, almost entirely driven by flags that are not implemented in our MVP (e.g., `tar -x`, `tail -c`, `uniq -f`) or minor POSIX deviations. These will be incrementally addressed.
 

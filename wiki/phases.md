@@ -1,14 +1,13 @@
 # GoPOSIX — Project Roadmap & State
 
-> **Version:** 5.2 | **Date:** 2026-05-17 | **Tier:** GOLD | **Branch:** `main`
+> **Version:** 5.3 | **Date:** 2026-05-17 | **Tier:** GOLD | **Branch:** `main`
 >
 > **Status:** 77 utilities | 547 BusyBox passes | ~72% coverage | 59/77 JSON-RPC
 >
 > ✅ Phase 15 COMPLETED — dd + od (2 I/O utilities, 10 BusyBox tests)
-> ✅ Phase 16 COMPLETED — 9 Tier 2 utilities (unexpand, comm, paste, fold, sum, nl, expand, cmp, strings)
-> ✅ Phase 17 COMPLETED — 12 Tier 3 utility stubs (split, join, tty, link, unlink, mkfifo, nice, nohup, logger, logname, who, cksum)
-> ✅ Phase 18.1-18.4 COMPLETED — CI fixes, patch (11 BusyBox tests), egrep/fgrep aliases
-> ⚠️ Phase 18.5-18.7 — Coverage ramp in progress (daemon 35.9→51.5%, +15.6%)
+> ✅ Phase 16 COMPLETED — 9 Tier 2 utilities
+> ✅ Phase 17 COMPLETED — 12 Tier 3 utility stubs
+> ✅ Phase 18 COMPLETED — CI, patch, egrep/fgrep, coverage (daemon 64.6%, diff 57.1%, client 55.4%)
 
 ---
 
@@ -22,6 +21,7 @@ All build phases (00–10) and post-MVP cleanups (11–14c) are **COMPLETED**. T
 | Overall test coverage | 70.4% |
 | Utilities implemented | 77 |
 | JSON-RPC daemon coverage | 59/77 utilities (77%) |
+| Daemon unit coverage | 64.6% (from 35.9%) |
 | Supply chain security | SBOM + Cosign + SLSA L3 + Trivy |
 | Shell security model | Documented + tested (GOPOSIX_SHELL_TIMEOUT, SecurePath, 128MB limits) |
 
@@ -96,7 +96,7 @@ goposix binary (single static ELF, <12MB)
 | [15_post_mvp_tier1.md](15_post_mvp_tier1.md) | Phase 15 — Tier 1: `dd` + `od` (10 BusyBox tests) | **COMPLETED** |
 | [16_post_mvp_tier2.md](16_post_mvp_tier2.md) | Phase 16 — Tier 2: 9 text/stream utilities (43 BusyBox tests) | **COMPLETED** |
 | [17_post_mvp_tier3.md](17_post_mvp_tier3.md) | Phase 17 — Tier 3: 12 utilities without BusyBox coverage | **COMPLETED** |
-| [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases | **IN PROGRESS** |
+| [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases | **COMPLETED** |
 | [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 
 ---
@@ -105,12 +105,11 @@ goposix binary (single static ELF, <12MB)
 
 | # | Item | Doc |
 |---|------|-----|
-| **15** | **`dd` + `od`** — 2 I/O utilities, 10 BusyBox tests ✅ | [15_post_mvp_tier1.md](15_post_mvp_tier1.md) |
-| **16** | **Text/stream utilities** — 9 utilities, 43 BusyBox tests ✅ | [16_post_mvp_tier2.md](16_post_mvp_tier2.md) |
-| **17** | **No-BusyBox utilities** — 12 utilities ✅ | [17_post_mvp_tier3.md](17_post_mvp_tier3.md) |
-| **18** | **Quality fixes** — CI ✅, `patch` ✅, `egrep`/`fgrep` ✅, coverage ⚠️ | [18_quality_fixes.md](18_quality_fixes.md) |
 | — | `awk` implementation (Platinum gate) | [07a_awk.md](07a_awk.md) — deferred |
+| — | JSON-RPC daemon gap fill (15 utilities) | [todos.md](todos.md) |
+| — | Low-coverage hardening (join, paste, split, etc.) | [todos.md](todos.md) |
 | — | XML output (`--xml`) | [14_xml_output.md](14_xml_output.md) — deferred |
+| — | GoPOSIXOS bootable distro | [prepare_to_goose.md](prepare_to_goose.md) — design |
 | — | Ongoing maintenance | [todos.md](todos.md) — living doc |
 
 ## Historical Phase Docs

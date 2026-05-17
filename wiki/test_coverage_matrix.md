@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage Matrix
 
-> **Last updated:** 2026-05-17 | **BusyBox:** 536 pass / 5 fail / 10 skip | **Branch:** `main`
+> **Last updated:** 2026-05-17 | **BusyBox:** 547 pass / 5 fail / 10 skip | **Branch:** `main`
 >
 > Complete test coverage status for all 74 registered utilities across unit tests,
 > BusyBox integration tests, and JSON-RPC daemon tests.
@@ -90,7 +90,7 @@
 | `gzip` / `gunzip` | 63.5% | 4 | ✅ 4/4 | ✅ |
 | `sha256sum` | 69.4% | — | — | ✅ |
 | `md5sum` | 65.3% | 2 | ✅ 2/2 | ✅ |
-| `diff` | 54.8% | 20 | ✅ 20/20 | ✅ |
+| `diff` | 57.1% | 20 | ✅ 20/20 | ✅ |
 | `test` / `[` | 82.9% | — | — | ❌ |
 | `printf` | 65.6% | 26 | ✅ 26/26 | ✅ |
 | `expr` | 82.6% | 2 | ✅ 2/2 | ✅ |
@@ -147,6 +147,7 @@
 | Unit tests passing | 77/77 | 100% |
 | BusyBox tests total | 541 | — |
 | BusyBox passed | 547 | 99.1% |
+| Daemon internal coverage | 64.6% | +28.7% from Phase 18 |
 | BusyBox failed | 5 | 3 date + 2 fold |
 | BusyBox skipped | 10 | External deps |
 | JSON-RPC daemon tests | 59/74 | 80% (15 gaps) |

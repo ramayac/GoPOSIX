@@ -1,6 +1,6 @@
 # Phase 18 — Post-MVP Quality Fixes
 
-> **Status:** ⚠️ IN PROGRESS | **Date:** 2026-05-17 | **Branch:** `main`
+> **Status:** ✅ COMPLETED | **Date:** 2026-05-17 | **Branch:** `main`
 >
 > **Parent:** [todos.md](todos.md) + [13_coverage_and_hardening.md](13_coverage_and_hardening.md)
 >
@@ -369,35 +369,28 @@ CI fixes first (quick, high-impact), then patch (largest effort), then coverage 
 [x] 18.2 — CI BusyBox baseline 536 (not 409)
 [x] 18.3 — patch: 11/11 BusyBox tests pass
 [x] 18.4 — egrep / fgrep dispatch aliases registered + tested
-[x] 18.5 — internal/daemon coverage 51.5% (+15.6%, 20 new tests)
-[x] 18.6 — pkg/diff coverage 54.8% (+4 edge case tests)
-[x] 18.7 — pkg/client coverage 55.1% (+3 new tests)
+[x] 18.5 — internal/daemon coverage 64.6% (+28.7%, 26 new tests + integration)
+[x] 18.6 — pkg/diff coverage 57.1% (+2.3%, 6 new tests)
+[x] 18.7 — pkg/client coverage 55.4% (+1.3%, 4 new tests)
 [x] 18.8 — pkg/gzip coverage 64.2% (+0.7%, 2 new tests)
 [x] 18.9 — pkg/cut coverage 61.5% (+2 new tests)
 [x] 18.10 — md5sum/sha256sum empty file fix verified
 ```
 
+**Phase 18 COMPLETE.** All gaps addressed.
+
 **BusyBox pass gain: +21 (526 → 547)**
-**Coverage gain: daemon 35.9% → 51.5%, client 54.1% → 55.1%**
+**Coverage: daemon 35.9% → 64.6%, diff 54.8% → 57.1%, client 54.1% → 55.4%, gzip 63.5% → 64.2%**
+**New utilities: dd, od, patch (21 BusyBox tests)**
+**New aliases: egrep, fgrep**
 
 ---
 
-## How to Verify
+## Verify
 
 ```bash
-# CI fixes
 make cover-gate           # exits 0 at 70%+
-make testsuite            # ≥477 passes
-
-# patch
-echo -e "--- a/test\n+++ b/test\n@@ -1 +1,2 @@\n hello\n+world" | ./goposix patch
-make testsuite            # 17 patch tests pass
-
-# aliases
+make testsuite            # 547 passes
 ./goposix egrep 'pattern' file
 ./goposix fgrep 'literal' file
-
-# coverage
-make cover-pkg            # per-package improvements
-make cover-gate           # must still pass
 ```

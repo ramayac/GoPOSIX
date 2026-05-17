@@ -562,3 +562,11 @@ func TestHelper_Stat(t *testing.T) {
 		t.Error("/tmp should be a directory")
 	}
 }
+
+func TestRpcError_Error(t *testing.T) {
+	e := &rpcError{Code: -32600, Message: "Invalid Request"}
+	s := e.Error()
+	if s != "RPC error -32600: Invalid Request" {
+		t.Errorf("Error() = %q, want 'RPC error -32600: Invalid Request'", s)
+	}
+}

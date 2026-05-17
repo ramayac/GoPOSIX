@@ -328,8 +328,19 @@ func TestDiff_IgnoreWhitespace(t *testing.T) {
 	os.WriteFile(a, []byte("hello   world\n"), 0644)
 	os.WriteFile(b, []byte("hello world\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-b", a, b}, &out)
-	if code != 0 { t.Errorf("expected exit 0 with -b, got %d", code) }
+	code := run([]string{"-w", a, b}, &out)
+	if code != 0 { t.Errorf("expected exit 0 with -w, got %d", code) }
+}
+
+func TestDiff_IgnoreBlankLines(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	b := filepath.Join(dir, "b")
+	os.WriteFile(a, []byte("hello\n\nworld\n"), 0644)
+	os.WriteFile(b, []byte("hello\nworld\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-B", a, b}, &out)
+	if code != 0 { t.Errorf("expected exit 0 with -B, got %d", code) }
 }
 
 func TestDiff_CrLfLineEndings(t *testing.T) {

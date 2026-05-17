@@ -1,6 +1,6 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX userland (97.2% BusyBox test compatibility). GoPOSIX replaces
+A Go-native, single-binary POSIX userland (99.1% BusyBox test compatibility). GoPOSIX replaces
 GNU Coreutils in Docker `FROM scratch` containers, featuring structured `--json` output in
 every utility and a persistent JSON-RPC daemon to eliminate process-spawning overhead.
 

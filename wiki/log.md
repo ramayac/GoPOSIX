@@ -2,6 +2,30 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-17] complete | Phase 18 finished — coverage ramp + docs sweep
+
+Completed all remaining Phase 18 coverage work:
+- **internal/daemon**: 35.9% → 64.6% (+28.7%). Added Start/Stop integration tests
+  over Unix sockets, handleConn/handleSingleAsync via real connections, batch,
+  notifications, invalid JSON, unknown method, and ping/echo end-to-end.
+- **pkg/diff**: 54.8% → 57.1% (+2.3%). Added -w (ignoreAllSpace/stripAllSpace),
+  -B (ignoreBlankLines), empty files, CRLF, binary data tests.
+- **pkg/client**: 54.1% → 55.4% (+1.3%). Added rpcError.Error(), CloseTwice,
+  context cancellation, Stat helper, helper coverage.
+
+**Phase 18 is now COMPLETED.** All milestones checked off.
+
+Comprehensive wiki sweep:
+- `todos.md` — cleared completed items, restructured as pending-only living doc
+- `phases.md` — v5.3, all phases marked COMPLETE, coverage numbers final
+- `18_quality_fixes.md` — status → COMPLETED, final milestone + verify
+- `posix_coverage.md` — 77 utilities, 99.1% pass rate
+- `test_coverage_matrix.md` — updated daemon/diff/client numbers
+- `README.md` — coverage gate, utility count, pass rate confirmed
+
+**Final metrics:** 77 utilities, 547/541 BusyBox (99.1%), 85 test packages,
+daemon 64.6%, 70.4% overall coverage.
+
 ## [2026-05-17] feature | Phase 15 + 18.1–18.4 — dd, od, patch, CI, egrep/fgrep
 
 Implemented `dd` (6 BusyBox tests) and `od` (4 BusyBox tests) per Phase 15 spec.

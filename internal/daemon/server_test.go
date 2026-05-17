@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"net"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -461,5 +463,201 @@ func TestRateLimiter_MaxBurst(t *testing.T) {
 	}
 	if count != 5 {
 		t.Errorf("expected max 5 allows, got %d", count)
+	}
+}
+
+// =============================================================================
+// Integration: Start/Stop + real request over Unix socket
+// =============================================================================
+
+func TestServerStartStop(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "startstop.sock")
+	s := NewServer(socket, 2, "")
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	time.Sleep(20 * time.Millisecond)
+	s.Stop()
+	// Socket should be cleaned up
+	if _, err := os.Stat(socket); !os.IsNotExist(err) {
+		t.Error("socket should be cleaned up after Stop")
+	}
+}
+
+func TestServerPingOverSocket(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "ping.sock")
+	s := NewServer(socket, 2, "")
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(20 * time.Millisecond)
+
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer conn.Close()
+
+	// Send ping request
+	enc := json.NewEncoder(conn)
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.ping", ID: "1"})
+
+	var resp Response
+	dec := json.NewDecoder(conn)
+	if err := dec.Decode(&resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if resp.Error != nil {
+		t.Fatalf("ping error: %v", resp.Error)
+	}
+}
+
+func TestServerEchoOverSocket(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "echo.sock")
+	s := NewServer(socket, 2, "")
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(20 * time.Millisecond)
+
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer conn.Close()
+
+	params, _ := json.Marshal(GoposixParams{Text: "hello"})
+	enc := json.NewEncoder(conn)
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.echo", Params: params, ID: "1"})
+
+	var resp Response
+	dec := json.NewDecoder(conn)
+	if err := dec.Decode(&resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if resp.Error != nil {
+		t.Fatalf("echo error: %v", resp.Error)
+	}
+	if resp.Result == nil {
+		t.Error("expected result")
+	}
+}
+
+func TestServerInvalidJSONOverSocket(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "invalid.sock")
+	s := NewServer(socket, 2, "")
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(20 * time.Millisecond)
+
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer conn.Close()
+
+	// Send invalid JSON
+	conn.Write([]byte("not json\n"))
+
+	var resp Response
+	dec := json.NewDecoder(conn)
+	if err := dec.Decode(&resp); err != nil {
+		t.Fatalf("decode error response: %v", err)
+	}
+	if resp.Error == nil {
+		t.Fatal("expected error response for invalid JSON")
+	}
+}
+
+func TestServerUnknownMethodOverSocket(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "unknown.sock")
+	s := NewServer(socket, 2, "")
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(20 * time.Millisecond)
+
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer conn.Close()
+
+	enc := json.NewEncoder(conn)
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.nonexistent_xyz", ID: "1"})
+
+	var resp Response
+	dec := json.NewDecoder(conn)
+	if err := dec.Decode(&resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if resp.Error == nil || resp.Error.Code != -32601 {
+		t.Fatalf("expected -32601 Method not found, got %+v", resp.Error)
+	}
+}
+
+func TestServerBatchOverSocket(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "batch.sock")
+	s := NewServer(socket, 2, "")
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(20 * time.Millisecond)
+
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer conn.Close()
+
+	batch := []Request{
+		{JSONRPC: "2.0", Method: "goposix.ping", ID: "1"},
+		{JSONRPC: "2.0", Method: "goposix.ping", ID: "2"},
+	}
+	enc := json.NewEncoder(conn)
+	enc.Encode(batch)
+
+	var responses []Response
+	dec := json.NewDecoder(conn)
+	if err := dec.Decode(&responses); err != nil {
+		t.Fatalf("decode batch: %v", err)
+	}
+	if len(responses) != 2 {
+		t.Fatalf("expected 2 responses, got %d", len(responses))
+	}
+}
+
+func TestServerNotificationsOverSocket(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "notif.sock")
+	s := NewServer(socket, 2, "")
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(20 * time.Millisecond)
+
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer conn.Close()
+
+	// Notification: no ID
+	params, _ := json.Marshal(GoposixParams{Text: "test"})
+	enc := json.NewEncoder(conn)
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.echo", Params: params})
+
+	// No response should come — set a short read deadline and expect timeout/EOF
+	conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+	var resp Response
+	dec := json.NewDecoder(conn)
+	if err := dec.Decode(&resp); err == nil {
+		t.Error("expected no response for notification")
 	}
 }
