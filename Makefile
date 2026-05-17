@@ -21,6 +21,8 @@ PKG_DIRS   := . \
               ./pkg/uname/... \
               ./pkg/pwd/... \
               ./pkg/printenv/... \
+              ./pkg/paste/... \
+              ./pkg/nl/... \
               ./pkg/env/... \
               ./pkg/yes/... \
               ./pkg/ls/... \
@@ -29,6 +31,7 @@ PKG_DIRS   := . \
               ./pkg/rmdir/... \
               ./pkg/rm/... \
               ./pkg/cp/... \
+              ./pkg/comm/... \
               ./pkg/mv/... \
               ./pkg/touch/... \
               ./pkg/ln/... \
@@ -44,7 +47,9 @@ PKG_DIRS   := . \
               ./pkg/tr/... \
               ./pkg/sort/... \
               ./pkg/uniq/... \
+              ./pkg/unexpand/... \
               ./pkg/grep/... \
+              ./pkg/fold/... \
               ./pkg/sed/... \
               ./internal/daemon/... \
               ./pkg/daemon/... \
@@ -52,6 +57,7 @@ PKG_DIRS   := . \
               ./pkg/sleep/... \
               ./pkg/date/... \
               ./pkg/id/... \
+              ./pkg/join/... \
               ./pkg/kill/... \
               ./pkg/df/... \
               ./pkg/du/... \
@@ -67,10 +73,25 @@ PKG_DIRS   := . \
               ./pkg/shell/... \
               ./pkg/printf/... \
               ./pkg/expr/... \
+              ./pkg/expand/... \
               ./pkg/testcmd/... \
               ./pkg/md5sum/... \
               ./pkg/gzip/... \
               ./pkg/diff/... \
+              ./pkg/cksum/... \
+              ./pkg/cmp/... \
+              ./pkg/strings/... \
+              ./pkg/sum/... \
+              ./pkg/link/... \
+              ./pkg/logger/... \
+              ./pkg/logname/... \
+              ./pkg/mkfifo/... \
+              ./pkg/nice/... \
+              ./pkg/nohup/... \
+              ./pkg/split/... \
+              ./pkg/tty/... \
+              ./pkg/unlink/... \
+              ./pkg/who/... \
               ./test/posix-json/...
 
 .DEFAULT_GOAL := help

@@ -1,13 +1,14 @@
 # Phase 13 — Coverage & Hardening (Audit → Action)
 
-> **Status:** COMPLETED (70.5% coverage, 70% CI gate enforced) | **Date:** 2026-05-16 | **Supersedes:** 13_code_audit.md, 15_coverage_ramp.md
+> **Status:** MAINTAINED | **Date:** 2026-05-16 | **Overall coverage:** ~72% | **CI gate:** ≥70%
 >
-> **This is the canonical coverage policy page.** All other documents should link here rather than duplicate coverage numbers.
+> **This is the canonical coverage policy page.** See [test_coverage_matrix.md](test_coverage_matrix.md) for per-utility status.
 >
-> **Recent progress:**
-> - Phase 14c (JSON-RPC daemon coverage — 55/55 utilities) **COMPLETED** (2026-05-16)
-> - cat: 37.6% → 88.7% | head: 29.0% → 94.1% | grep: 16.5% → 86.3%
-> - Overall: 41.6% → 70.5% (exceeds 60% Gold target, exceeds 70% CI gate)
+> **Recent progress (2026-05-16):**
+> - Phase 16: 9 new Tier 2 utilities (unexpand, comm, paste, fold, sum, nl, expand, cmp, strings)
+> - Phase 17: 12 Tier 3 utility stubs (cksum, join, link, unlink, logger, logname, mkfifo, nice, nohup, split, tty, who)
+> - BusyBox: 477 → 526 (+49) | JSON-RPC daemon: 55/55 → 59/74
+> - Fixed: expand Unicode (rune-based counting), sum empty data, cmp double-stdin, broken subagent tests
 
 ---
 

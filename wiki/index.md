@@ -4,13 +4,14 @@
 
 - [README.md](README.md) | Purpose, rules, and shell-first navigation.
 - [schema.md](schema.md) | Required structure and maintenance contract.
-- [phases.md](phases.md) | Project roadmap, current state, and phase index.
+- [phases.md](phases.md) | Project roadmap, current state, and phase index
+- [test_coverage_matrix.md](test_coverage_matrix.md) | Per-utility test status for all 74 utilities.
 - [repo-map.md](repo-map.md) | Current repo architecture and exclusions.
 - [log.md](log.md) | Append-only timeline of wiki maintenance.
 
 ## Current State
 
-- [phases.md](phases.md) | **Start here** — current metrics, active work, and phase status
+- [test_coverage_matrix.md](test_coverage_matrix.md) | **Start here** — complete test status for all 74 utilities
 - [todos.md](todos.md) | Open TODOs, remaining BusyBox failures, and session insights
 - [12_road_to_gold.md](12_road_to_gold.md) | Gold certification — gap analysis and resolution log (COMPLETED)
 - [13_coverage_and_hardening.md](13_coverage_and_hardening.md) | Coverage audit, hardening plan, speed targets (COMPLETED — 70.5%)
@@ -44,6 +45,15 @@ All phases 00–11 are complete. These documents describe the as-built implement
 | [14a_json_gap_fill.md](14a_json_gap_fill.md) | JSON Gap Fill — 8 utilities added `--json` |
 | [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md) | BusyBox Regression Fix — 79→3 failures |
 | [14c_posix_json_gap.md](14c_posix_json_gap.md) | JSON-RPC Coverage Gap — 55/55 utilities |
+
+## Active Plans (Post-MVP — Branch: `feat/post-mvp`)
+
+| File | Phase |
+|------|-------|
+| [15_post_mvp_tier1.md](15_post_mvp_tier1.md) | Phase 15 — Tier 1: `dd` + `od` (11 BusyBox tests) |
+| [16_post_mvp_tier2.md](16_post_mvp_tier2.md) | Phase 16 — Tier 2: 9 text/stream utilities (43 BusyBox tests) |
+| [17_post_mvp_tier3.md](17_post_mvp_tier3.md) | Phase 17 — Tier 3: 12 utilities without BusyBox coverage ✅ |
+| [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases |
 
 ## Deferred / Future
 
