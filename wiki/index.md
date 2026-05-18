@@ -59,11 +59,10 @@ All phases 00–11 are complete. These documents describe the as-built implement
 
 - [07a_awk.md](07a_awk.md) | Awk Implementation Plan (canonical; Platinum gate)
 - [14_xml_output.md](14_xml_output.md) | XML Output Support design (not implemented)
-- [prepare_to_goose.md](prepare_to_goose.md) | GoPOSIXOS prep — changes needed in GoPOSIX for the bootable distro
-
+- [19_performance_benchmarking.md](19_performance_benchmarking.md) | Performance Benchmarking — GoPOSIX vs BusyBox (PLANNING)
 ## Design
 
-- [goposixos.md](goposixos.md) | GoPOSIXOS design — historical snapshot (moved to separate repo)
+- [goposixos.md](goposixos.md) | GoPOSIXOS design — historical snapshot (moved to separate repo); all GoPOSIX-side prep work is complete
 
 ## Reference
 

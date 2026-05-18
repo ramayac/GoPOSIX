@@ -130,6 +130,22 @@ The test daemon only registers utilities that are explicitly imported. When new 
 
 **Lesson:** Go's `init()` registration pattern means tests must import every utility they exercise. A missing import produces a runtime error, not a compile error. When adding new helper tests, always check the import list.
 
+### 9. Never register `sh` in the multicall binary
+
+**Root cause:** The BusyBox test harness (`testing.sh`) auto-generates symlinks for every command returned by `--list-commands`. If `sh` is registered, a `sh -> goposix` symlink is created, shadowing the system `/bin/sh`. Since the harness runs every test case via `sh -x -e testcase`, this causes **all** tests to fail — not just shell tests.
+
+**Symptom:** Every single BusyBox test fails with shell-related errors, regardless of which utility is being tested.
+
+**Rule:** Only register `shell`. GoPOSIXOS can manually create a `sh` symlink if needed. The `pkg/shell/shell.go` file explicitly documents this in its `init()` function:
+```go
+// NOTE: "sh" is intentionally NOT registered.
+// Registering "sh" would cause --list-commands to generate a sh -> goposix
+// symlink, shadowing the system /bin/sh and breaking the BusyBox test
+// harness (which runs test cases via "sh -x -e testcase").
+```
+
+**Lesson:** Multicall binaries that coexist with POSIX test frameworks must be conservative about which names they claim. The `--list-commands` output is not just informational — it's consumed by tooling that creates real filesystem symlinks. A single bad registration can cascade into hundreds of test failures.
+
 ---
 
 ## Design Decisions & Rationale

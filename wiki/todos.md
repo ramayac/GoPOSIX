@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-17 | **BusyBox:** 548 pass / 4 fail / 10 skip | **Coverage:** 75.1% | **Branch:** `main`
+> **Last updated:** 2026-05-18 | **BusyBox:** 548 pass / 4 fail / 10 skip | **Coverage:** 75.1% | **Branch:** `main`
 
 ## Current State
 
@@ -34,18 +34,22 @@ All 18 planned phases are complete. 77 utilities, 548/541 BusyBox tests, 85 test
 
 ### Low Unit Coverage (< 60%)
 
-| Utility | Coverage | Notes |
-|---------|:--------:|-------|
-| `split` | 60.3% | CLI `run()` untested (needs CWD-sensitive test setup) |
-| `tty` | 54.3% | Terminal-only paths untestable in CI |
+All packages now exceed 60%. The floor was raised on 2026-05-18:
+
+| Utility | Before | After | Notes |
+|---------|:------:|:-----:|-------|
+| `split` | 60.3% | **86.3%** | CLI `run()` now tested with CWD-sensitive setup |
+| `tty` | 54.3% | **60.0%** | Added `Run()` and combined flag tests; `ttyname()` remains CI-untestable |
 
 ### JSON-RPC Daemon Gaps
 
-4 utilities lack daemon integration tests in `test/posix-json/`:
+2 utilities lack explicit daemon integration tests in `test/posix-json/`:
 
-`daemon` `tee` `testcmd` `truefalse`
+`tee` `tr`
 
-(`patch` skipped — requires special daemon file I/O; tested via BusyBox)
+(`testcmd` and `truefalse` are tested in `runner_test.go`; `daemon` is the daemon itself;
+`patch` is tested via BusyBox. `tee` and `tr` are registered and dispatchable but
+lack dedicated JSON-RPC sub-tests for their stdin-dependent success paths.)
 
 ### Deferred
 
@@ -53,6 +57,5 @@ All 18 planned phases are complete. 77 utilities, 548/541 BusyBox tests, 85 test
 |------|-----|
 | `awk` implementation (Platinum gate) | [07a_awk.md](07a_awk.md) |
 | XML output (`--xml`) | [14_xml_output.md](14_xml_output.md) |
-| GoPOSIXOS bootable distro | [prepare_to_goose.md](prepare_to_goose.md) |
 | `date` TZ parsing | Go `time` package limitations |
 | `fold` NUL handling | Echo harness limitation |

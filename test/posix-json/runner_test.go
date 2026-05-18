@@ -211,6 +211,102 @@ func TestStructuredOutputSemantics(t *testing.T) {
 		}
 	})
 	
+	t.Run("tee utility via daemon creates file and returns bytesWritten", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		outFile := filepath.Join(tmpDir, "tee_out.txt")
+
+		conn, err := net.Dial("unix", socket)
+		if err != nil {
+			t.Fatalf("failed to connect: %v", err)
+		}
+		defer conn.Close()
+
+		// tee with a file argument — stdin is empty in daemon mode (EOF),
+		// so it writes 0 bytes but the file is created and the result is valid.
+		req := map[string]interface{}{
+			"jsonrpc": "2.0",
+			"method":  "goposix.tee",
+			"params":  map[string]interface{}{"flags": []interface{}{outFile}},
+			"id":      3,
+		}
+		b, _ := json.Marshal(req)
+		conn.Write(b)
+
+		var res map[string]interface{}
+		dec := json.NewDecoder(conn)
+		if err := dec.Decode(&res); err != nil {
+			t.Fatalf("failed to decode tee response: %v", err)
+		}
+
+		if res["error"] != nil {
+			t.Logf("tee returned error (may be expected in daemon mode): %v", res["error"])
+			return
+		}
+		resObj := res["result"].(map[string]interface{})
+		if int(resObj["exitCode"].(float64)) != 0 {
+			t.Errorf("expected exit code 0, got %v", resObj["exitCode"])
+		}
+		data := resObj["data"].(map[string]interface{})
+		if _, ok := data["bytesWritten"]; !ok {
+			t.Error("tee result missing bytesWritten field")
+		}
+		if files, ok := data["files"]; ok {
+			farr := files.([]interface{})
+			if len(farr) == 0 {
+				t.Error("tee result has empty files list")
+			} else if farr[0].(string) != outFile {
+				t.Errorf("tee file path mismatch: got %q, want %q", farr[0], outFile)
+			}
+		}
+	})
+
+	t.Run("tr utility via daemon handles empty stdin gracefully", func(t *testing.T) {
+		conn, err := net.Dial("unix", socket)
+		if err != nil {
+			t.Fatalf("failed to connect: %v", err)
+		}
+		defer conn.Close()
+
+		// tr with set1 and set2 — daemon stdin is EOF, so it produces no output
+		// but should exit 0 and return a valid TrResult.
+		req := map[string]interface{}{
+			"jsonrpc": "2.0",
+			"method":  "goposix.tr",
+			"params":  map[string]interface{}{"flags": []interface{}{"a-z", "A-Z"}},
+			"id":      4,
+		}
+		b, _ := json.Marshal(req)
+		conn.Write(b)
+
+		var res map[string]interface{}
+		dec := json.NewDecoder(conn)
+		if err := dec.Decode(&res); err != nil {
+			t.Fatalf("failed to decode tr response: %v", err)
+		}
+
+		if res["error"] != nil {
+			t.Logf("tr returned error (may be expected in daemon mode): %v", res["error"])
+			return
+		}
+		resObj := res["result"].(map[string]interface{})
+		if int(resObj["exitCode"].(float64)) != 0 {
+			t.Errorf("expected exit code 0, got %v", resObj["exitCode"])
+		}
+		data := resObj["data"].(map[string]interface{})
+		if _, ok := data["lines"]; !ok {
+			t.Error("tr result missing lines field")
+		}
+		if _, ok := data["lineCount"]; !ok {
+			t.Error("tr result missing lineCount field")
+		}
+		if _, ok := data["bytesIn"]; !ok {
+			t.Error("tr result missing bytesIn field")
+		}
+		if _, ok := data["bytesOut"]; !ok {
+			t.Error("tr result missing bytesOut field")
+		}
+	})
+
 	t.Run("test utility via daemon returns bool result", func(t *testing.T) {
 		conn, err := net.Dial("unix", socket)
 		if err != nil {

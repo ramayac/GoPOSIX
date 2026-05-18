@@ -1,6 +1,7 @@
 package split
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -230,5 +231,121 @@ func TestSplitDefaultLineCount(t *testing.T) {
 	}
 	if result.Chunks != 1 {
 		t.Errorf("expected 1 chunk with default 1000 lines, got %d", result.Chunks)
+	}
+}
+
+// --- CLI layer (run) tests ---
+
+func TestSplitCLI_DefaultStdin(t *testing.T) {
+	// Use a temp dir as working directory for file output
+	dir := t.TempDir()
+	origWd, _ := os.Getwd()
+	os.Chdir(dir)
+	defer os.Chdir(origWd)
+
+	var buf bytes.Buffer
+	code := run([]string{"-l", "2"}, &buf)
+	// Empty stdin — should produce one chunk with no content
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestSplitCLI_LineMode(t *testing.T) {
+	dir := t.TempDir()
+	origWd, _ := os.Getwd()
+	os.Chdir(dir)
+	defer os.Chdir(origWd)
+
+	var buf bytes.Buffer
+	code := run([]string{"-l", "3"}, &buf)
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestSplitCLI_ByteMode(t *testing.T) {
+	dir := t.TempDir()
+	origWd, _ := os.Getwd()
+	os.Chdir(dir)
+	defer os.Chdir(origWd)
+
+	var buf bytes.Buffer
+	code := run([]string{"-b", "10"}, &buf)
+	// Empty stdin in byte mode: should produce 1 chunk
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestSplitCLI_JsonMode(t *testing.T) {
+	dir := t.TempDir()
+	origWd, _ := os.Getwd()
+	os.Chdir(dir)
+	defer os.Chdir(origWd)
+
+	var buf bytes.Buffer
+	code := run([]string{"--json", "-l", "2"}, &buf)
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+	// Should produce JSON output
+	if !bytes.Contains(buf.Bytes(), []byte(`"files"`)) {
+		t.Error("JSON output missing files field")
+	}
+}
+
+func TestSplitCLI_NumericSuffix(t *testing.T) {
+	dir := t.TempDir()
+	origWd, _ := os.Getwd()
+	os.Chdir(dir)
+	defer os.Chdir(origWd)
+
+	var buf bytes.Buffer
+	code := run([]string{"-d", "-l", "2"}, &buf)
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestSplitCLI_SuffixLength(t *testing.T) {
+	dir := t.TempDir()
+	origWd, _ := os.Getwd()
+	os.Chdir(dir)
+	defer os.Chdir(origWd)
+
+	var buf bytes.Buffer
+	code := run([]string{"-a", "3", "-l", "2"}, &buf)
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestSplitCLI_FileArg(t *testing.T) {
+	dir := t.TempDir()
+	origWd, _ := os.Getwd()
+	os.Chdir(dir)
+	defer os.Chdir(origWd)
+
+	// Create a temporary input file
+	inputFile := filepath.Join(dir, "input.txt")
+	os.WriteFile(inputFile, []byte("a\nb\nc\nd\ne\n"), 0644)
+
+	var buf bytes.Buffer
+	code := run([]string{"-l", "2", inputFile, "pfx"}, &buf)
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+	// Verify output files were created
+	if _, err := os.Stat("pfxaa"); os.IsNotExist(err) {
+		t.Error("expected output file pfxaa to exist")
+	}
+}
+
+func TestSplitCLI_InvalidFlag(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--nonexistent"}, &buf)
+	if code != 2 {
+		t.Errorf("expected exit 2 for invalid flag, got %d", code)
 	}
 }

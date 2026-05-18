@@ -1,11 +1,17 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX userland (99.3% BusyBox test compatibility). GoPOSIX replaces
-GNU Coreutils in Docker `FROM scratch` containers, featuring structured `--json` output in
-every utility and a persistent JSON-RPC daemon to eliminate process-spawning overhead.
+A Go-native, single-binary POSIX userland. GoPOSIX replaces GNU Coreutils in Docker
+`FROM scratch` containers, featuring structured `--json` output in every utility and a
+persistent JSON-RPC daemon to eliminate process-spawning overhead.
+
+[![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ramayac/goposix)](https://goreportcard.com/report/github.com/ramayac/goposix)
+[![Go Version](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go)](https://go.dev)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/image-%3C10MB-blue?logo=docker)](https://github.com/ramayac/goposix/pkgs/container/goposix)
 
 **Status: Gold.** All five Gold gaps resolved ([Phase 12](wiki/12_road_to_gold.md)). `awk` is the
-Platinum gate ([Phase 07a](wiki/07a_awk.md)). 77 utilities, 547/541 BusyBox tests passing (99.1%).
+Platinum gate ([Phase 07a](wiki/07a_awk.md)). 77 utilities, 548/541 BusyBox tests passing (99.3%).
 
 Key Features:
 - **Machine-Readable by Default:** Every utility supports `--json` for structured output
@@ -14,8 +20,8 @@ Key Features:
   ([RPC API](docs/RPC_API.md)).
 - **Portable Scripting:** Sandboxed shell interpreter via `mvdan.cc/sh` with configurable timeout
   and resource limits ([Security Model](docs/SECURITY.md)).
-- **High Compatibility:** 99.1% BusyBox test pass rate (547/541 tests).
-- **CI Gate:** ≥70% overall code coverage enforced on every push (actual: ~72%).
+- **High Compatibility:** 99.3% BusyBox test pass rate (548/541 tests).
+- **CI Gate:** ≥70% overall code coverage enforced on every push (actual: 75.1%).
 
 ## Quickstart
 

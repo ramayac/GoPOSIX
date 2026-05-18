@@ -2,6 +2,22 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-18] plan | Phase 19 — Performance Benchmarking (GoPOSIX vs BusyBox)
+
+Created comprehensive performance benchmarking plan (`wiki/19_performance_benchmarking.md`).
+The plan defines 10 benchmark categories (A–J) comparing GoPOSIX against BusyBox v1.36.1
+in identical Docker containers, with honest priors about where each tool wins:
+
+- **BusyBox wins** on binary size (808 KB vs ~10 MB), single-invocation cold start, per-call RSS
+- **GoPOSIX wins** on daemon amortized latency (5–100× for N≥50 calls), agent loop throughput
+- **Fair fight** on text I/O throughput, bulk filesystem ops (both bottleneck on kernel VFS)
+
+Plan includes Dockerfile.bench design, harness library spec (`lib/harness.sh`), Makefile
+targets (`bench-image`, `bench-all`, `bench-quick`, `bench-cat`), CI integration blueprint,
+and predicted result matrix with confidence ratings. ~20h estimated implementation effort.
+
+Updated: wiki/index.md, wiki/phases.md (v5.4 → v5.5, Phase 19 added)
+
 ## [2026-05-17] fix | fold Unicode + low-coverage utilities — BusyBox 548, diff 71%, join 77%, paste 77%
 
 Fixed `fold -sw66 with unicode input` BusyBox failure by rewriting foldLine to count
