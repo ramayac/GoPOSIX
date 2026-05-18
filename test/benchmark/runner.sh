@@ -109,12 +109,41 @@ case "${1:-}" in
     MODE="cat"
     CAT_NAME="${2:-}"
     if [ -z "$CAT_NAME" ]; then
-      echo "ERROR: --cat requires a category name (e.g., startup)" >&2
+      echo "ERROR: --cat requires a category script name (e.g., cat_a_startup)" >&2
+      echo "  Available: $(ls /bench/cat_*.sh 2>/dev/null | sed 's|/bench/||;s|\.sh||' | tr '\n' ' ')" >&2
       exit 1
     fi
+    # Accept both short names (a, b, ...) and full names (cat_a_startup).
+    case "$CAT_NAME" in
+      cat_*) ;;  # already full name
+      a) CAT_NAME="cat_a_startup" ;;
+      b) CAT_NAME="cat_b_bulk_create" ;;
+      c) CAT_NAME="cat_c_bulk_ls" ;;
+      d) CAT_NAME="cat_d_bulk_move" ;;
+      e) CAT_NAME="cat_e_text_throughput" ;;
+      f) CAT_NAME="cat_f_daemon_vs_process" ;;
+      g) CAT_NAME="cat_g_memory" ;;
+      h) CAT_NAME="cat_h_sizes" ;;
+      i) CAT_NAME="cat_i_concurrent" ;;
+      j) CAT_NAME="cat_j_agent_loop" ;;
+      startup) CAT_NAME="cat_a_startup" ;;
+      bulk_create) CAT_NAME="cat_b_bulk_create" ;;
+      bulk_ls) CAT_NAME="cat_c_bulk_ls" ;;
+      bulk_move) CAT_NAME="cat_d_bulk_move" ;;
+      text) CAT_NAME="cat_e_text_throughput" ;;
+      daemon) CAT_NAME="cat_f_daemon_vs_process" ;;
+      memory) CAT_NAME="cat_g_memory" ;;
+      sizes) CAT_NAME="cat_h_sizes" ;;
+      concurrent) CAT_NAME="cat_i_concurrent" ;;
+      agent) CAT_NAME="cat_j_agent_loop" ;;
+      *) echo "ERROR: unknown category '$CAT_NAME'" >&2; exit 1 ;;
+    esac
     ;;
   *)
     echo "Usage: $0 [--all | --quick | --cat <name>]" >&2
+    echo "  Short names: a, b, c, d, e, f, g, h, i, j" >&2
+    echo "  Full names:  cat_a_startup, cat_b_bulk_create, ..." >&2
+    echo "  Friendly:    startup, bulk_create, bulk_ls, bulk_move, text, daemon, memory, sizes, concurrent, agent" >&2
     echo "  BENCH_SCALE=5.0 $0 --all" >&2
     exit 1
     ;;
@@ -144,7 +173,7 @@ case "$MODE" in
     done
     ;;
   cat)
-    run_category "cat_${CAT_NAME}"
+    run_category "$CAT_NAME"
     ;;
 esac
 
