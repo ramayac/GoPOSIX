@@ -2,6 +2,14 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-18] doc | Performance Quick Reference (`wiki/performance.md`)
+
+Created a standalone quick-reference page for the performance benchmarking system.
+Covers: all commands, scale factor tiers with numeric mappings, category key with
+short/full/friendly names, expected results (priors), output file layout, architecture
+diagram in ASCII, adding-new-category guide, and troubleshooting table. Linked from
+index.md and phases.md.
+
 ## [2026-05-18] implement | Phase 19 — Benchmark infrastructure (branch: `feat/performance`)
 
 Implemented all benchmark infrastructure per `wiki/19_performance_benchmarking.md`:
