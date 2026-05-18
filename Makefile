@@ -135,6 +135,15 @@ help:
 	@echo "    smoke        Build + run manual integration smoke tests (local)"
 	@echo "    symlink-test Test symlink dispatch (ln -s goposix echo)"
 	@echo ""
+	@echo "  Performance"
+	@echo "    bench-image   Build benchmark Docker image"
+	@echo "    bench-quick   Quick benchmark (Cat A+H, SCALE=0.1 for CI)"
+	@echo "    bench-all     Full benchmark suite (SCALE=1.0)"
+	@echo "    bench-smoke   CI smoke (SCALE=0.1, ~30s)"
+	@echo "    bench-pub     Publication quality (SCALE=5.0, ~40min)"
+	@echo "    bench-stress  Stress test (SCALE=25.0, ~3h)"
+	@echo "    bench-shell   Interactive shell in bench container"
+	@echo ""
 	@echo "  Housekeeping"
 	@echo "    clean        Remove build artifacts and Docker image"
 	@echo "    tidy         go mod tidy"
@@ -368,6 +377,71 @@ example-agent: build
 bench:
 	@echo "--- Running benchmarks ---"
 	go test -bench=. -benchmem ./test/benchmark/...
+
+# =============================================================================
+# Performance Benchmarking (GoPOSIX vs BusyBox) — see wiki/19_performance_benchmarking.md
+# =============================================================================
+SCALE ?= 1.0
+
+.PHONY: bench-image
+bench-image:
+	docker build -t goposix:bench -f test/benchmark/Dockerfile.bench .
+
+.PHONY: bench-all
+bench-all: bench-image
+	docker run --rm --privileged \
+	  -e BENCH_SCALE=$(SCALE) \
+	  -v goposix-bench-data:/data \
+	  goposix:bench --all
+
+.PHONY: bench-cat
+bench-cat: bench-image
+	docker run --rm --privileged \
+	  -e BENCH_SCALE=$(SCALE) \
+	  -v goposix-bench-data:/data \
+	  goposix:bench --cat $(CAT)
+
+.PHONY: bench-quick
+bench-quick: bench-image
+	docker run --rm --privileged \
+	  -e BENCH_SCALE=$(SCALE) \
+	  -v goposix-bench-data:/data \
+	  goposix:bench --quick
+
+.PHONY: bench-smoke bench-pub bench-stress
+bench-smoke: SCALE=0.1
+bench-smoke: bench-all
+bench-pub: SCALE=5.0
+bench-pub: bench-all
+bench-stress: SCALE=25.0
+bench-stress: bench-all
+
+.PHONY: bench-report
+bench-report:
+	@latest=$$(ls -t test/benchmark/results/ 2>/dev/null | grep -v latest | head -1); \
+	if [ -n "$$latest" ]; then \
+		test/benchmark/lib/report.sh test/benchmark/results/$$latest; \
+	else \
+		echo "No results found in test/benchmark/results/."; \
+		echo "Results are stored in Docker volume 'goposix-bench-data'."; \
+		echo "Use 'make bench-fetch' to copy the latest results locally."; \
+	fi
+
+.PHONY: bench-fetch
+bench-fetch:
+	@mkdir -p test/benchmark/results
+	@cid=$$(docker create goposix:bench true 2>/dev/null); \
+	docker cp $$cid:/data/results/. test/benchmark/results/ 2>/dev/null || true; \
+	docker rm $$cid >/dev/null 2>&1 || true; \
+	echo "Results fetched to test/benchmark/results/"
+
+.PHONY: bench-shell
+bench-shell: bench-image
+	docker run --rm -it --privileged \
+	  -e BENCH_SCALE=$(SCALE) \
+	  -v goposix-bench-data:/data \
+	  --entrypoint /bin/sh \
+	  goposix:bench
 
 .PHONY: ci
 ci: vet test build docker smoke-docker cover-gate

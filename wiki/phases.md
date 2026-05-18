@@ -8,7 +8,7 @@
 > ✅ Phase 16 COMPLETED — 9 Tier 2 utilities
 > ✅ Phase 17 COMPLETED — 12 Tier 3 utility stubs
 > ✅ Phase 18 COMPLETED — CI, patch, egrep/fgrep, coverage (daemon 64.6%, diff 57.1%, client 55.4%)
-> 📋 Phase 19 PLANNING — Performance Benchmarking (GoPOSIX vs BusyBox)
+> 📋 Phase 19 IMPLEMENTING — Performance Benchmarking (GoPOSIX vs BusyBox)
 
 ---
 
@@ -98,7 +98,7 @@ goposix binary (single static ELF, <12MB)
 | [16_post_mvp_tier2.md](16_post_mvp_tier2.md) | Phase 16 — Tier 2: 9 text/stream utilities (43 BusyBox tests) | **COMPLETED** |
 | [17_post_mvp_tier3.md](17_post_mvp_tier3.md) | Phase 17 — Tier 3: 12 utilities without BusyBox coverage | **COMPLETED** |
 | [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases | **COMPLETED** |
-| [19_performance_benchmarking.md](19_performance_benchmarking.md) | Phase 19 — Performance Benchmarking (GoPOSIX vs BusyBox) | **PLANNING** |
+| [19_performance_benchmarking.md](19_performance_benchmarking.md) | Phase 19 — Performance Benchmarking (GoPOSIX vs BusyBox) | **IMPLEMENTING** |
 | [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 
 ---
@@ -107,7 +107,7 @@ goposix binary (single static ELF, <12MB)
 
 | # | Item | Doc |
 |---|------|-----|
-| — | Performance benchmarking vs BusyBox | [19_performance_benchmarking.md](19_performance_benchmarking.md) — planning |
+| — | Performance benchmarking vs BusyBox | [19_performance_benchmarking.md](19_performance_benchmarking.md) — implementing (`feat/performance`) |
 | — | `awk` implementation (Platinum gate) | [07a_awk.md](07a_awk.md) — deferred |
 | — | Low-coverage hardening (split, tty — all >60% now) | [todos.md](todos.md) |
 | — | XML output (`--xml`) | [14_xml_output.md](14_xml_output.md) — deferred |

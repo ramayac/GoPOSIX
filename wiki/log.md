@@ -2,6 +2,20 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-18] implement | Phase 19 — Benchmark infrastructure (branch: `feat/performance`)
+
+Implemented all benchmark infrastructure per `wiki/19_performance_benchmarking.md`:
+- `test/benchmark/lib/harness.sh` — shared timing, stats, `scaled()` helper, markdown tables
+- `test/benchmark/lib/report.sh` — `summary.md` + `narrative.md` report generator
+- `test/benchmark/runner.sh` — master orchestrator (--all, --quick, --cat)
+- `test/benchmark/Dockerfile.bench` — benchmark image (Alpine + GoPOSIX + BusyBox + tooling)
+- 10 category scripts: cat_a_startup.sh through cat_j_agent_loop.sh
+- Makefile: `bench-image`, `bench-all`, `bench-cat`, `bench-quick`, `bench-smoke/pu/stress`,
+  `bench-report`, `bench-shell` targets + `SCALE` variable
+- All 13 scripts pass `sh -n` syntax check
+
+Updated: wiki/19_performance_benchmarking.md → IMPLEMENTING, wiki/phases.md → IMPLEMENTING
+
 ## [2026-05-18] plan | Phase 19 — Performance Benchmarking (GoPOSIX vs BusyBox)
 
 Created comprehensive performance benchmarking plan (`wiki/19_performance_benchmarking.md`).
