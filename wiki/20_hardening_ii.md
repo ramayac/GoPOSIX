@@ -472,44 +472,49 @@ This is *technically* true in the narrow sense, but `go.mod` lists 3 external de
 
 #### 🟡 20.13 — Per-package unit coverage gaps (16 packages below 70%)
 
-**Severity:** MEDIUM | **Source:** `wiki/test_coverage_matrix.md` (updated 2026-05-17)
+**Severity:** MEDIUM | **Source:** `wiki/test_coverage_matrix.md` (stale — verified 2026-05-18)
 
-While the overall coverage gate (≥70%) passes, **16 packages** fall below the 70% threshold
-individually. The gate checks aggregate coverage, so these slip through. Cross-referenced
-against the test_coverage_matrix:
+> ⚠️ **test_coverage_matrix.md is stale.** Numbers below are verified via `go test -cover`
+> on 2026-05-18. The matrix claims `split`=60.3% (actual: 86.3%), `nl`=62.2% (actual: 73.5%),
+> `dd`=86.4% (actual: 81.4%), `tty`=54.3% (actual: 60.0%), and omits `client` (55.4%) entirely.
+> The matrix needs regeneration (see 20.6).
 
-| Package | Coverage | Tier | Risk |
-|---------|:--------:|------|------|
-| `tty` | 54.3% | Tier 7 | **Lowest in project** — only a stub, but still below 60% |
-| `split` | 60.3% | Tier 7 | Second lowest |
-| `shell` | 60.8% | Tier 5 | Shell is user-facing — should be ≥70% |
-| `logger` | 61.5% | Tier 7 | Stub, low priority |
-| `cmp` | 61.5% | Tier 6 | Basic comparison — easy to cover |
-| `cut` | 61.5% | Tier 3 | **Core text utility** with 25 BusyBox tests passing — unit coverage should be higher |
-| `nl` | 62.2% | Tier 6 | Line numbering — straightforward |
-| `gzip` | 63.5% | Tier 5 | Compression utility |
-| `tar` | 65.3% | Tier 5 | **Heaviest utility** (775 LOC) — 65.3% on 775 lines is concerning |
-| `md5sum` | 65.3% | Tier 5 | Checksum — algorithmic, easy to cover |
-| `printf` | 65.6% | Tier 5 | **Core utility** (802 LOC) with 26 BusyBox tests — should be ≥75% |
-| `sed` | 67.0% | Tier 3 | **Core text utility** (1177 LOC) with 103 BusyBox tests — the engine/parser are the most complex code in the project |
-| `whoami` | 68.4% | Tier 1 | Trivial utility — trivial to get to 100% |
-| `chmod` | 68.3% | Tier 4 | Filesystem permission utility |
-| `nohup` | 68.2% | Tier 7 | Process utility |
-| `sha256sum` | 69.4% | Tier 5 | Barely under threshold |
+While the overall coverage gate (≥70%) passes, **17 packages** fall below the 70% threshold
+individually. The gate checks aggregate coverage, so these slip through.
 
-**Note:** My initial audit guessed wrong about which packages were under-tested based on
-line-count ratios. The actual numbers show `kill` (73.1%), `id` (87.1%), `df` (79.2%),
-`chown` (71.8%), `chgrp` (70.0%), and `diff` (71.0%) all pass the 70% gate. Line-count
-ratios are a misleading proxy for coverage.
+| Package | Coverage | LOC | Tier | Risk |
+|---------|:--------:|:---:|------|------|
+| `client` | **55.4%** | 1,341 | SDK | **Not in matrix!** Go SDK for agents — 1,341 LOC, should be ≥70% |
+| `tty` | 60.0% | 94 | Tier 7 | Lowest stub — still below 60% but +5.7pts since matrix |
+| `shell` | 60.8% | 180 | Tier 5 | User-facing shell — timeout/error paths untested |
+| `cmp` | 61.5% | 191 | Tier 6 | Basic comparison — easy to cover |
+| `cut` | 61.5% | 258 | Tier 3 | **Core text utility** with 25 BusyBox tests — unit coverage should be higher |
+| `logger` | 61.5% | 206 | Tier 7 | Stub |
+| `gzip` | 64.2% | 298 | Tier 5 | Compression (+0.7pts since matrix) |
+| `md5sum` | 65.3% | 198 | Tier 5 | Checksum — algorithmic, easy |
+| `tar` | 65.3% | 775 | Tier 5 | **Heaviest utility** (775 LOC) — concerning at this coverage |
+| `xargs` | 65.3% | 206 | Tier 4 | Argument builder |
+| `printf` | 65.6% | 802 | Tier 5 | **Core utility** (802 LOC) with 26 BusyBox tests — should be ≥75% |
+| `sed` | 67.0% | 1,177 | Tier 3 | **Most complex code** (1,177 LOC) — 103 BusyBox tests provide vectors |
+| `nohup` | 68.2% | 114 | Tier 7 | Process utility |
+| `chmod` | 68.3% | 164 | Tier 4 | Permission utility |
+| `whoami` | 68.4% | 64 | Tier 1 | Trivial — 2% gap to 70% |
+| `sha256sum` | 69.4% | 201 | Tier 5 | Algorithmic — 0.6% gap |
+
+**Borderline (exactly at 70%):** `chgrp` (70.0%), `logname` (70.0%), `comm` (70.1%), `mkdir` (70.6%)
+— these should get a safety margin.
+
+**Already fixed since matrix:** `nl` (73.5% — was 62.2%), `split` (86.3% — was 60.3%).
 
 **Remediation priority order:**
-1. `whoami` (68.4%) — 54 LOC source, trivial to get to 100%
-2. `sha256sum` (69.4%) — 1% gap, algorithmic coverage is easy
-3. `cut` (61.5%) — core text utility, 25 BusyBox tests provide test vectors
-4. `shell` (60.8%) — user-facing, needs edge-case tests
-5. `tty` (54.3%) — lowest in project, baseline stub hardening
-6. `sed` (67.0%) — most complex, highest impact per test added
-7. Remaining packages in ascending coverage order
+1. `whoami` (68.4%) → 100% — 64 LOC, two basic test cases
+2. `sha256sum` (69.4%) → 80%+ — algorithmic, 0.6% gap
+3. `client` (55.4%) → 70% — 1,341 LOC SDK, most uncovered code by volume (~600 lines)
+4. `cut` (61.5%) → 75% — core text utility, 25 BusyBox test vectors available
+5. `shell` (60.8%) → 70% — user-facing, timeout/env/error paths
+6. `printf` (65.6%) → 75% — core utility, 26 BusyBox test vectors
+7. `sed` (67.0%) → 75% — highest complexity, highest impact per test
+8. Remaining packages in ascending coverage order
 
 ---
 
