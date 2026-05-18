@@ -28,7 +28,7 @@ func TestRunCLI(t *testing.T) {
 
 func TestRunCLIJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"-j"}, &buf)
+	code := run([]string{"--json"}, &buf)
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}

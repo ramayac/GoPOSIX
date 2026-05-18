@@ -89,7 +89,7 @@ func TestRunCLIJSON(t *testing.T) {
 	os.WriteFile(f2, []byte("a\nx\nc\n"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"-j", f1, f2}, &buf)
+	code := run([]string{"--json", f1, f2}, &buf)
 	if code != 1 {
 		t.Errorf("exit code %d, want 1", code)
 	}

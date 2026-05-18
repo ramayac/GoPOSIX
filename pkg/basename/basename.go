@@ -19,7 +19,7 @@ type BasenameResult struct {
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -44,7 +44,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintln(os.Stderr, "basename: missing operand")
 		return 1
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	path := flags.Positional[0]
 	suffix := ""
 	if len(flags.Positional) >= 2 {

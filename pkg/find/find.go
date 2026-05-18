@@ -17,7 +17,7 @@ import (
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 		{Short: "n", Long: "name", Type: common.FlagValue},
 		{Short: "t", Long: "type", Type: common.FlagValue},
 		{Short: "d", Long: "maxdepth", Type: common.FlagValue},
@@ -171,7 +171,7 @@ func run(args []string, out io.Writer) int {
 		return runExec(results, execCmd, execPlus)
 	}
 
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 
 	common.Render("find", results, jsonMode, out, func() {
 		for _, r := range results {

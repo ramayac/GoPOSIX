@@ -24,7 +24,7 @@ var spec = common.FlagSpec{
 		{Short: "s", Long: "short", Type: common.FlagBool},
 		{Short: "d", Long: "domain", Type: common.FlagBool},
 		{Short: "f", Long: "fqdn", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 

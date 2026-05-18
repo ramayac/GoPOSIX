@@ -454,7 +454,7 @@ func TestSedJSONShortFlag(t *testing.T) {
 	f.Close()
 
 	var out bytes.Buffer
-	code := run([]string{"-j", "s/a/b/", f.Name()}, &out)
+	code := run([]string{"--json", "s/a/b/", f.Name()}, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}

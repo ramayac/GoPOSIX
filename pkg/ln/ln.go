@@ -22,7 +22,7 @@ var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "s", Long: "symbolic", Type: common.FlagBool},
 		{Short: "f", Long: "force", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -36,7 +36,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintln(os.Stderr, "ln: missing file operand")
 		return 1
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	symbolic := flags.Has("s")
 	force := flags.Has("f")
 

@@ -48,7 +48,7 @@ var spec = common.FlagSpec{
 		{Short: "B", Long: "before-context", Type: common.FlagValue},
 		{Short: "C", Long: "context", Type: common.FlagValue},
 		{Short: "a", Long: "text", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -145,7 +145,7 @@ func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 		return 2
 	}
 
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	invert := flags.Has("v")
 	ignoreCase := flags.Has("i")
 	countMode := flags.Has("c")

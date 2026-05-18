@@ -33,7 +33,7 @@ var spec = common.FlagSpec{
 		{Short: "z", Long: "zero-terminated", Type: common.FlagBool},
 		{Short: "h", Long: "human-numeric-sort", Type: common.FlagBool},
 		{Short: "M", Long: "month-sort", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -493,7 +493,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "sort: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	reverse := flags.Has("r")
 	numeric := flags.Has("n")
 	unique := flags.Has("u")

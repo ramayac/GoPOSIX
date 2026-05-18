@@ -20,7 +20,7 @@ var spec = common.FlagSpec{
 		{Short: "k", Type: common.FlagBool},
 		{Short: "m", Type: common.FlagBool},
 		{Short: "l", Long: "count-links", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -46,7 +46,7 @@ func run(args []string, out io.Writer) int {
 	_ = flags.Has("k")
 	useM := flags.Has("m")
 	useL := flags.Has("l")
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	summarize := flags.Has("s")
 
 	// Default block size: 1024 bytes (1K, matching BusyBox/Linux default).

@@ -51,7 +51,7 @@ func TestSleepJSON(t *testing.T) {
 
 func TestSleepJSONShortFlag(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"-j", "1ms"}, &out)
+	rc := run([]string{"--json", "1ms"}, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}

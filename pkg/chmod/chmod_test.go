@@ -20,7 +20,7 @@ func TestChmodJSON(t *testing.T) {
 	f, _ := os.CreateTemp("", "chmod")
 	defer os.Remove(f.Name())
 
-	rc := run([]string{"-j", "0755", f.Name()}, &out)
+	rc := run([]string{"--json", "0755", f.Name()}, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}

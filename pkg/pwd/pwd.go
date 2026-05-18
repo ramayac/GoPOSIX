@@ -19,7 +19,7 @@ type PwdResult struct {
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "P", Long: "physical", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 

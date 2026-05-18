@@ -332,7 +332,7 @@ func TestRunTestCLIJSON(t *testing.T) {
 
 func TestRunTestCLIJSONShort(t *testing.T) {
 	var buf bytes.Buffer
-	code := runTest([]string{"-j", "hello", "=", "hello"}, &buf)
+	code := runTest([]string{"--json", "hello", "=", "hello"}, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}

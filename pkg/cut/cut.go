@@ -33,7 +33,7 @@ var spec = common.FlagSpec{
 		{Short: "s", Long: "only-delimited", Type: common.FlagBool},
 		{Short: "D", Long: "no-suppress", Type: common.FlagBool},
 		{Short: "F", Long: "whitespace-fields", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -191,7 +191,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "cut: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	fields := flags.Get("f")
 	delimiter := flags.Get("d")
 	chars := flags.Get("c")

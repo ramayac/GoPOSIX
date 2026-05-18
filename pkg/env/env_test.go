@@ -59,7 +59,7 @@ func TestCLI_JSON(t *testing.T) {
 	os.Setenv("J_VAR", "val")
 	defer os.Unsetenv("J_VAR")
 	var out bytes.Buffer
-	code := run([]string{"-j", "J_VAR"}, &out)
+	code := run([]string{"--json", "J_VAR"}, &out)
 	if code != 0 { t.Fatalf("exit %d", code) }
 	if !strings.Contains(out.String(), "\"vars\"") { t.Errorf("expected JSON, got: %s", out.String()) }
 }

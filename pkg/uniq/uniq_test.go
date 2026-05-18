@@ -191,7 +191,7 @@ func TestCLI_IgnoreCase(t *testing.T) {
 func TestCLI_JSON(t *testing.T) {
 	f := uniqTempFile(t, "a\na\nb\n")
 	var out bytes.Buffer
-	code := run([]string{"-j", f}, &out)
+	code := run([]string{"--json", f}, &out)
 	if code != 0 { t.Fatalf("exit %d", code) }
 	if out.Len() == 0 { t.Error("expected JSON output") }
 }

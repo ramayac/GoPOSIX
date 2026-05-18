@@ -27,7 +27,7 @@ var spec = common.FlagSpec{
 		{Short: "f", Long: "skip-fields", Type: common.FlagValue},
 		{Short: "s", Long: "skip-chars", Type: common.FlagValue},
 		{Short: "w", Long: "check-chars", Type: common.FlagValue},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -117,7 +117,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "uniq: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	countMode := flags.Has("c")
 	duplicatesOnly := flags.Has("d")
 	uniqueOnly := flags.Has("u")

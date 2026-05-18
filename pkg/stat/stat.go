@@ -30,7 +30,7 @@ type StatResult struct {
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -40,7 +40,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "stat: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	if len(flags.Positional) == 0 {
 		fmt.Fprintln(os.Stderr, "stat: missing file operand")
 		return 1

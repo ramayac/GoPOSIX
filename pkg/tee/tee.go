@@ -19,7 +19,7 @@ type TeeResult struct {
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "a", Long: "append", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 

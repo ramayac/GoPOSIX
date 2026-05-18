@@ -22,7 +22,7 @@ var spec = common.FlagSpec{
 		{Short: "r", Long: "recursive", Type: common.FlagBool},
 		{Short: "f", Long: "force", Type: common.FlagBool},
 		{Short: "v", Long: "verbose", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -93,7 +93,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "rm: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	recursive := flags.Has("r")
 	force := flags.Has("f")
 	verbose := flags.Has("v")

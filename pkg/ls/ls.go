@@ -55,7 +55,7 @@ var spec = common.FlagSpec{
 		{Short: "d", Long: "directory", Type: common.FlagBool},
 		{Short: "i", Long: "inode", Type: common.FlagBool},
 		{Short: "s", Long: "size", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -243,7 +243,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "ls: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	showAll := flags.Has("a")
 	almostAll := flags.Has("A")
 	longFmt := flags.Has("l")

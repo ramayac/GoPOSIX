@@ -136,7 +136,7 @@ func TestTarJSON(t *testing.T) {
 
 	archiveFile := filepath.Join(tmpDir, "archive.tar")
 	var buf bytes.Buffer
-	code := run([]string{"-j", "-c", "-f", archiveFile, "-C", tmpDir, "src"}, &buf)
+	code := run([]string{"--json", "-c", "-f", archiveFile, "-C", tmpDir, "src"}, &buf)
 	if code != 0 {
 		t.Fatalf("create exit code %d", code)
 	}

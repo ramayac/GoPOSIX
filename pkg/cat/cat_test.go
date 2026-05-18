@@ -282,7 +282,7 @@ func TestCLI_ShowEndsAndNonPrinting(t *testing.T) {
 }
 
 func TestCLI_Json(t *testing.T) {
-	code, out, errStr := simpleCat([]string{"-j", "testdata/cat_hello.txt"}, "")
+	code, out, errStr := simpleCat([]string{"--json", "testdata/cat_hello.txt"}, "")
 	if code != 0 {
 		t.Fatalf("exit code %d: %s", code, errStr)
 	}

@@ -40,7 +40,7 @@ var spec = common.FlagSpec{
 		{Short: "q", Long: "brief", Type: common.FlagBool},
 		{Short: "r", Long: "recursive", Type: common.FlagBool},
 		{Short: "N", Long: "new-file", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 

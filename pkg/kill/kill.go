@@ -13,7 +13,7 @@ import (
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 		{Short: "9", Long: "kill", Type: common.FlagBool}, // cheat a bit for short flags
 	},
 }
@@ -66,7 +66,7 @@ func run(args []string, out io.Writer) int {
 		}
 	}
 
-	if flags.Has("j") {
+	if flags.Has("json") {
 		common.Render("kill", KillResp{Signaled: res}, true, out, func() {})
 	}
 

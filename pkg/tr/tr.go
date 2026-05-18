@@ -27,7 +27,7 @@ var spec = common.FlagSpec{
 		{Short: "d", Long: "delete", Type: common.FlagBool},
 		{Short: "s", Long: "squeeze-repeats", Type: common.FlagBool},
 		{Short: "c", Long: "complement", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 

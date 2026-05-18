@@ -28,7 +28,7 @@ var spec = common.FlagSpec{
 		{Short: "r", Long: "kernel-release", Type: common.FlagBool},
 		{Short: "v", Long: "kernel-version", Type: common.FlagBool},
 		{Short: "m", Long: "machine", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 

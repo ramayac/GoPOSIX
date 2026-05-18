@@ -47,7 +47,7 @@ var spec = common.FlagSpec{
 		{Short: "P", Long: "no-dereference-p", Type: common.FlagBool},
 		{Short: "L", Long: "dereference", Type: common.FlagBool},
 		{Short: "H", Long: "dereference-command-line", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 		{Long: "parents", Type: common.FlagBool},
 	},
 }
@@ -201,7 +201,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "cp: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 
 	// -a (archive) = -dR --preserve
 	archive := flags.Has("a")

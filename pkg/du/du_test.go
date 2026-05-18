@@ -19,7 +19,7 @@ func TestDuRun(t *testing.T) {
 
 func TestDuJSON(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"-j", "."}, &out)
+	rc := run([]string{"--json", "."}, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}

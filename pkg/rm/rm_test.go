@@ -111,7 +111,7 @@ func TestCLI_JSON(t *testing.T) {
 	f := filepath.Join(dir, "j.json")
 	os.WriteFile(f, []byte("x"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-j", f}, &out)
+	code := run([]string{"--json", f}, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}

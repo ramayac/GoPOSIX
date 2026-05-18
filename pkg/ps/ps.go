@@ -12,7 +12,7 @@ import (
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "e", Long: "all", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -43,7 +43,7 @@ func run(args []string, out io.Writer) int {
 		Mem:  "0.1%",
 	})
 
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 
 	common.Render("ps", results, jsonMode, out, func() {
 		fmt.Fprintf(out, "  PID TTY          TIME CMD\n")

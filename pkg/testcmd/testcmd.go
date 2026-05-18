@@ -318,7 +318,7 @@ func evalBinary(left, op, right string) (bool, error) {
 // spec for test command -- only the json flag (expression args are passthrough)
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -331,7 +331,7 @@ func runTest(args []string, out io.Writer) int {
 	cleanArgs := make([]string, 0, len(args))
 	for _, a := range args {
 		switch a {
-		case "--json", "-j":
+		case "--json":
 			jsonMode = true
 		default:
 			cleanArgs = append(cleanArgs, a)
@@ -364,7 +364,7 @@ func runBracket(args []string, out io.Writer) int {
 	cleanArgs := make([]string, 0, len(args))
 	for _, a := range args {
 		switch a {
-		case "--json", "-j":
+		case "--json":
 			jsonMode = true
 		default:
 			cleanArgs = append(cleanArgs, a)

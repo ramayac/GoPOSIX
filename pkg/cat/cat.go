@@ -25,7 +25,7 @@ var spec = common.FlagSpec{
 		{Short: "s", Long: "squeeze-blank", Type: common.FlagBool},
 		{Short: "e", Type: common.FlagBool},
 		{Short: "v", Long: "show-nonprinting", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -106,7 +106,7 @@ func catRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 		fmt.Fprintf(errOut, "cat: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	numberAll := flags.Has("n")
 	numberNonBlank := flags.Has("b")
 	squeezeBlank := flags.Has("s")
