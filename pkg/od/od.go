@@ -21,7 +21,7 @@ var spec = common.FlagSpec{
 		{Short: "t", Long: "", Type: common.FlagValue},
 		{Short: "N", Long: "", Type: common.FlagValue},
 		{Short: "A", Long: "", Type: common.FlagValue},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 		{Long: "traditional", Type: common.FlagBool},
 	},
 }
@@ -58,7 +58,7 @@ func Run(args []string, r io.Reader, w io.Writer) int {
 		}
 	}
 
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 
 	// Determine output format. -t takes precedence if present.
 	if t := flags.Get("t"); t != "" {

@@ -41,6 +41,11 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 		cmdName := args[0]
 		cmd, ok := dispatch.Lookup(cmdName)
 		if !ok {
+			// Fall back to system exec for commands not registered in dispatch.
+			// In production (FROM scratch), there are no system binaries, so this
+			// is a no-op. In testing/debug environments, it allows standard Unix
+			// commands to work. SecurePath confinement in openHandler prevents
+			// path traversal.
 			return interp.DefaultExecHandler(0)(ctx, args)
 		}
 		

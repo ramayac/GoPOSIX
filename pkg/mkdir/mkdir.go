@@ -21,7 +21,7 @@ var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "p", Long: "parents", Type: common.FlagBool},
 		{Short: "m", Long: "mode", Type: common.FlagValue},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -49,7 +49,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "mkdir: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	parents := flags.Has("p")
 	mode := fs.FileMode(0755)
 	if mStr := flags.Get("m"); mStr != "" {

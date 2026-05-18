@@ -13,7 +13,7 @@ func TestRunBasic(t *testing.T) {
 	f := filepath.Join(dir, "todelete.txt")
 	os.WriteFile(f, []byte("x"), 0644)
 
-	result, err := Run([]string{f}, false, false, false)
+	result, err := Run([]string{f}, false, false, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +31,7 @@ func TestRunRecursive(t *testing.T) {
 	os.MkdirAll(sub, 0755)
 	os.WriteFile(filepath.Join(sub, "f"), []byte("x"), 0644)
 
-	_, err := Run([]string{sub}, true, false, false)
+	_, err := Run([]string{sub}, true, false, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,18 +41,21 @@ func TestRunRecursive(t *testing.T) {
 }
 
 func TestRunRefusesRoot(t *testing.T) {
-	_, err := Run([]string{"/"}, true, false, false)
+	_, err := Run([]string{"/"}, true, false, false, false)
 	if err == nil {
 		t.Error("expected error when trying to rm /")
 	}
 }
 
 func TestIsSafeToRemove(t *testing.T) {
-	if isSafeToRemove("/") {
+	if isSafeToRemove("/", false) {
 		t.Error("/ should not be safe to remove")
 	}
-	if !isSafeToRemove("/tmp") {
+	if !isSafeToRemove("/tmp", false) {
 		t.Error("/tmp should be safe to remove")
+	}
+	if !isSafeToRemove("/", true) {
+		t.Error("/ should be safe to remove with no-preserve-root")
 	}
 }
 
@@ -111,7 +114,7 @@ func TestCLI_JSON(t *testing.T) {
 	f := filepath.Join(dir, "j.json")
 	os.WriteFile(f, []byte("x"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-j", f}, &out)
+	code := run([]string{"--json", f}, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}

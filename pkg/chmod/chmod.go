@@ -14,7 +14,7 @@ import (
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "R", Long: "recursive", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -129,7 +129,7 @@ func run(args []string, out io.Writer) int {
 				res = append(res, ChmodResult{Path: path, Mode: fmt.Sprintf("%04o", newMode.Perm())})
 			}
 		}
-		if flags.Has("j") {
+		if flags.Has("json") {
 			common.Render("chmod", ChmodResp{Changed: res}, true, out, func() {})
 		}
 		return exitCode
@@ -153,7 +153,7 @@ func run(args []string, out io.Writer) int {
 			res = append(res, ChmodResult{Path: path, Mode: fmt.Sprintf("%04o", mode)})
 		}
 	}
-	if flags.Has("j") {
+	if flags.Has("json") {
 		common.Render("chmod", ChmodResp{Changed: res}, true, out, func() {})
 	}
 	return exitCode

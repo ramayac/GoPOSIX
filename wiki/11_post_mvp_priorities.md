@@ -8,7 +8,7 @@
 
 ## Context
 
-GoPOSIX MVP is complete: 49 utilities implemented, 97.9% BusyBox pass rate, daemon functional. This phase addresses the gaps that matter most for the stated goals — AI agent tooling and minimal container deployments. Items are ordered by impact on adoption.
+GoPOSIX MVP is complete: 49 utilities implemented, 97.9% BusyBox pass rate, daemon functional. This phase addresses the gaps that matter most for the stated goals — programmatic tooling and minimal container deployments. Items are ordered by impact on adoption.
 
 ---
 
@@ -34,24 +34,24 @@ GoPOSIX MVP is complete: 49 utilities implemented, 97.9% BusyBox pass rate, daem
 
 ## 11.2 — End-to-End Agent Integration Example
 
-**Why it matters:** The agent use case is the whole pitch, but there is no demonstration of it. A working example is both the best documentation and the best test.
+**Why it matters:** The programmatic use case is the primary differentiation, but there is no demonstration of it. A working example is both the best documentation and the best test.
 
 ### Tasks
 
-- [x] Create `examples/agent/` directory with a self-contained example (`examples/agent/main.go`)
-- [x] Implement a Go agent that:
+- [x] Create `examples/rpc_client/` directory with a self-contained example (`examples/rpc_client/main.go`)
+- [x] Implement a Go RPC client that:
   - Starts the GoPOSIX daemon
   - Creates a session via `goposix.session.create`
   - Executes a multi-step task (ls, wc, shell.exec, cat)
   - Cleans up the session
-- [x] Provide the example in Go (`examples/agent/main.go`)
+- [x] Provide the example in Go (`examples/rpc_client/main.go`)
 - [x] Document the example in `docs/AGENT_INTEGRATION.md` with annotated walkthrough
-- [x] Add `make example-agent` target that runs the Go version as a smoke test
+- [x] Add `make example-rpc` target that runs the Go version as a smoke test
 
 ### Acceptance
 
 ```bash
-make example-agent   # runs Go example against a live daemon, exits 0
+make example-rpc   # runs Go example against a live daemon, exits 0
 ```
 
 ---
@@ -95,7 +95,7 @@ fmt.Println(result.Files[0].Name)
 ## Milestone 11
 
 - [x] Every utility's `--json` output validates against a published JSON schema
-- [x] A working agent example (Go) runs end-to-end against the daemon (`make example-agent`)
+- [x] A working RPC example (Go) runs end-to-end against the daemon (`make example-rpc`)
 - [x] `pkg/client` supports connection pooling and typed helper methods (42 utilities)
 - [ ] `awk` implemented (see [07a_awk.md](07a_awk.md)) — passes BusyBox awk tests, listed as complete in `posix_coverage.md`
 
@@ -113,7 +113,7 @@ fmt.Println(result.Files[0].Name)
 make validate-schemas
 
 # Agent example
-make example-agent
+make example-rpc
 
 # Client library
 go test ./pkg/client/... -v

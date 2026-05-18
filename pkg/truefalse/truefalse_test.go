@@ -41,7 +41,7 @@ func TestTrueJSON(t *testing.T) {
 
 func TestFalseJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := runFalse([]string{"-j"}, &buf)
+	code := runFalse([]string{"--json"}, &buf)
 	if code != 1 {
 		t.Fatalf("exit code %d, want 1", code)
 	}

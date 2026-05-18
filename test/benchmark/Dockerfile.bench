@@ -1,0 +1,53 @@
+# =============================================================================
+# Stage 1: Build GoPOSIX for benchmarking (optimized, stripped).
+# =============================================================================
+FROM golang:1.26-alpine AS builder
+
+RUN apk add --no-cache git ca-certificates tzdata
+
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+
+ARG VERSION
+RUN VERSION=${VERSION:-$(git describe --tags --always 2>/dev/null || echo "dev")} && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build \
+      -ldflags="-s -w -X 'github.com/ramayac/goposix/pkg/common.Version=${VERSION}'" \
+      -o /goposix ./cmd/goposix/
+
+RUN /goposix --list-commands > /commands.txt
+
+# Build the Go SDK benchmark client (persistent connection, no socat).
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -ldflags="-s -w" -o /bench-sdk-client ./test/benchmark/bench_client/
+
+# =============================================================================
+# Stage 2: Benchmark image (Alpine + GoPOSIX + BusyBox + tooling).
+# =============================================================================
+FROM alpine:3.20
+
+RUN apk add --no-cache strace bc coreutils procps findutils grep socat
+
+# Install GoPOSIX and create symlinks.
+COPY --from=builder /goposix /bin/goposix
+COPY --from=builder /commands.txt /commands.txt
+RUN while IFS= read -r cmd; do ln -s /bin/goposix "/bin/${cmd}"; done < /commands.txt
+
+# Install benchmark scripts.
+COPY --from=builder /bench-sdk-client /bench/bench-sdk-client
+
+# Install benchmark scripts.
+COPY test/benchmark/ /bench/
+RUN chmod +x /bench/*.sh /bench/lib/*.sh
+
+# Non-root user.
+RUN addgroup -g 1000 goposix && adduser -u 1000 -G goposix -s /bin/sh -D goposix
+RUN mkdir -p /data/results && chown -R goposix:goposix /data
+
+USER goposix
+
+WORKDIR /data
+ENTRYPOINT ["/bench/runner.sh"]
+CMD ["--all"]

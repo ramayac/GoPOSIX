@@ -33,7 +33,7 @@ type ExprResult struct {
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -420,7 +420,7 @@ func run(args []string, out io.Writer) int {
 	jsonMode := false
 	posArgs := make([]string, 0, len(args))
 	for _, a := range args {
-		if a == "--json" || a == "-j" {
+		if a == "--json" {
 			jsonMode = true
 		} else {
 			posArgs = append(posArgs, a)

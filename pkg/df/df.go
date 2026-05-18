@@ -13,7 +13,7 @@ import (
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "h", Long: "human-readable", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -56,7 +56,7 @@ func run(args []string, out io.Writer) int {
 	}
 
 	human := flags.Has("h")
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 
 	common.Render("df", []FSInfo{info}, jsonMode, out, func() {
 		fmt.Fprintf(out, "Filesystem\tSize\tUsed\tAvail\tMounted on\n")

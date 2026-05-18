@@ -13,7 +13,7 @@ import (
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -57,7 +57,7 @@ func run(args []string, out io.Writer) int {
 		Groups: gids,
 	}
 
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 
 	common.Render("id", info, jsonMode, out, func() {
 		fmt.Fprintf(out, "uid=%d(%s) gid=%d(%s)", uid, u.Username, gid, groupName)

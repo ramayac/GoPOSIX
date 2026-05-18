@@ -2,7 +2,7 @@
 
 GoPOSIX is a POSIX-compliant userland implemented as a single, statically-linked Go binary.
 It functions as both a traditional CLI tool (multicall binary) and as a persistent
-JSON-RPC 2.0 daemon for AI agent backends.
+JSON-RPC 2.0 daemon for programmatic consumers.
 
 **Version:** v1.0.0 (Gold) | **Go:** 1.26 | **Binary:** ~10 MB fully static
 
@@ -20,7 +20,7 @@ JSON-RPC 2.0 daemon for AI agent backends.
 
 ```
                   ┌──────────────────────────────────┐
-                  │          AI Agent / User          │
+                  │  Programmatic Consumer / CLI User │
                   └──────┬───────────────┬───────────┘
                          │               │
                    Unix Socket     CLI invocation
@@ -77,9 +77,9 @@ GoPOSIX/
 │   └── <utility>/       40+ POSIX utility implementations (ls, cat, grep, sed, ...)
 ├── docker/              Dockerfiles (scratch production, alpine debug)
 ├── test/                Integration tests
-│   └── busybox_testsuite/  Ported BusyBox test suite (490 tests)
+│   └── busybox_testsuite/  Ported BusyBox test suite (552 tests)
 ├── testdata/            Shared test fixtures
-├── docs/                Architecture, SECURITY, RPC_API, JSON_SCHEMA, AGENT_INTEGRATION
+├── wiki/                Architecture, security, RPC API, JSON schema, deploy guides
 ├── wiki/                Phase plans, checklists, lessons learned
 └── examples/            Agent integration examples
 ```
@@ -93,7 +93,7 @@ GoPOSIX/
 | `internal/daemon` | JSON-RPC 2.0 server over Unix socket. Dispatches to registered commands. |
 | `internal/shell` | Sandbox for `shell.exec` RPC. Configurable timeout, output limits, path confinement. |
 | `pkg/common` | Shared: POSIX flag parser (`ParseFlags`), JSON envelope output (`Render`/`RenderError`), path security guards. |
-| `pkg/client` | Go SDK for agents. Connection pooling, batch requests, exponential backoff, typed wrappers for every utility. |
+| `pkg/client` | Go SDK for JSON-RPC clients. Connection pooling, batch requests, exponential backoff, typed wrappers for every utility. |
 | `pkg/<util>` | One package per POSIX utility. Library layer (testable `Run()`) + CLI layer (`run()`) wired via `init()` → dispatch. |
 
 ## Utilities Implemented (40+)
@@ -106,8 +106,8 @@ GoPOSIX/
 
 ## BusyBox Test Suite
 
-**477 passed, 3 failed, 10 skipped** (99.4% pass rate). The 3 remaining failures are all in the
-`date` utility — 2 Go POSIX timezone limitations and 1 cosmetic error-format mismatch.
+**548 passed, 4 failed, 10 skipped** (99.3% pass rate, 552 total tested).
+Failures: 3 in `date` (Go POSIX timezone limitations), 1 in `fold` (NUL handling via echo harness).
 Run `make testsuite` before every commit to prevent regressions.
 
 ## Phase History
@@ -126,13 +126,15 @@ Run `make testsuite` before every commit to prevent regressions.
 | 10 | POSIX test framework + BusyBox suite | ✅ |
 | 11 | Post-MVP cleanup, lessons learned | ✅ |
 | 12 | Road to Gold — supply chain, macOS, coverage, BusyBox parity | ✅ |
-| 13 | Coverage & hardening (70.5% coverage reached) | ✅ |
-| 14a-c | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage (55/55) | ✅ |
+| 13 | Coverage & hardening (75.7% coverage reached) | ✅ |
+| 14a-c | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage | ✅ |
+| 15–19 | Post-MVP tiers 1–3, quality fixes, performance benchmarks | ✅ |
+| 20 | Hardening II — flag audit, code cleanup, doc fixes, coverage | 🔄 |
 | — | `awk` (Platinum gate) | ⬜ |
 
 ## Related Documentation
 
-- [SECURITY.md](SECURITY.md) — Security model, shell sandbox, deployment posture
-- [RPC_API.md](RPC_API.md) — JSON-RPC client API reference (`pkg/client`)
-- [JSON_SCHEMA.md](JSON_SCHEMA.md) — `--json` output envelope and per-utility schemas
-- [AGENT_INTEGRATION.md](AGENT_INTEGRATION.md) — How to use GoPOSIX as an AI agent backend
+- [security.md](security.md) — Security model, shell sandbox, deployment posture
+- [rpc_api.md](rpc_api.md) — JSON-RPC client API reference (`pkg/client`)
+- [json_schema.md](json_schema.md) — `--json` output envelope and per-utility schemas
+- [rpc_quickstart.md](rpc_quickstart.md) — How to use GoPOSIX programmatically via JSON-RPC

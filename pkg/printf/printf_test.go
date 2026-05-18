@@ -425,3 +425,55 @@ func TestRunCLI_ArgStartingWithDash(t *testing.T) {
 		t.Errorf("got %q, want %q", buf.String(), "-5\n")
 	}
 }
+
+func TestFormat_OctalEscapeLiteral(t *testing.T) {
+	// \0101 = 'A'
+	got := fmtStr("\\0101", nil)
+	if got != "A" {
+		t.Errorf("got %q, want A", got)
+	}
+}
+
+func TestFormatBoolSpec(t *testing.T) {
+	got := fmtStr("test", []string{})
+	if got != "test" {
+		t.Errorf("got %q, want test", got)
+	}
+}
+
+func TestFormatExplicitWidth(t *testing.T) {
+	got := fmtStr("%5s", []string{"hi"})
+	if got != "   hi" {
+		t.Errorf("got %q, want '   hi'", got)
+	}
+}
+
+func TestFormat_B_Specifier(t *testing.T) {
+	// %b interprets backslash escapes in the argument
+	got := fmtStr("%b", []string{"hello\\\\nworld"})
+	if !strings.Contains(got, "hello") {
+		t.Errorf("got %q", got)
+	}
+}
+
+func TestFormat_B_SpecifierOctal(t *testing.T) {
+	got := fmtStr("%b", []string{"\\0101"})
+	if got != "A" {
+		t.Errorf("got %q, want A", got)
+	}
+}
+
+func TestFormat_Uint(t *testing.T) {
+	// %u prints as unsigned decimal — just verify it doesn't crash
+	got := fmtStr("%u", []string{"42"})
+	if len(got) == 0 {
+		t.Error("expected non-empty output")
+	}
+}
+
+func TestFormat_Float(t *testing.T) {
+	got := fmtStr("%f", []string{"3.14"})
+	if got != "3.140000" {
+		t.Errorf("got %q, want 3.140000", got)
+	}
+}

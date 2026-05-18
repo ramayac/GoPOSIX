@@ -90,3 +90,79 @@ func TestFormatSyslogMessage(t *testing.T) {
 		t.Errorf("expected message body, got %q", msg)
 	}
 }
+
+func TestParsePriorityDefaultEmpty(t *testing.T) {
+	pri, err := parsePriority("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pri != 1*8+5 {
+		t.Errorf("expected user.notice (13), got %d", pri)
+	}
+}
+
+func TestParsePriority_ShortForm(t *testing.T) {
+	// Short form: just "info" — only one part, treated as facility lookup
+	// "info" is not a facility, so this should error
+	_, err := parsePriority("info")
+	if err == nil {
+		t.Error("expected error for 'info' as facility-only")
+	}
+}
+
+func TestCLI_BadFlag(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--bad-flag"}, &buf)
+	if code != 2 {
+		t.Errorf("expected exit 2 for bad flag, got %d", code)
+	}
+}
+
+func TestParsePriority_ShortSeverity(t *testing.T) {
+	// Single word without dot tries facility lookup — "debug" is not a facility
+	_, err := parsePriority("debug")
+	if err == nil {
+		t.Error("expected error for 'debug' as facility-only")
+	}
+}
+
+func TestParsePriority_UnknownSeverity(t *testing.T) {
+	_, err := parsePriority("user.bogus")
+	if err == nil {
+		t.Error("expected error for unknown severity")
+	}
+}
+
+func TestParsePriority_LocalFacility(t *testing.T) {
+	pri, err := parsePriority("local4.warning")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pri != 20*8+4 {
+		t.Errorf("expected local4.warning (164), got %d", pri)
+	}
+}
+
+func TestRun_DifferentFacilities(t *testing.T) {
+	// Test with daemon facility — likely fails in test env but shouldn't crash
+	result, err := Run("test", "daemon", "daemon.info", false)
+	if err != nil {
+		t.Logf("syslog unavailable: %v", err)
+		return
+	}
+	if result.Priority != "daemon.info" {
+		t.Errorf("expected daemon.info, got %s", result.Priority)
+	}
+}
+
+func TestRun_StderrFlag(t *testing.T) {
+	// Test with stderr flag
+	result, err := Run("stderr test", "mytag", "user.notice", true)
+	if err != nil {
+		t.Logf("syslog unavailable: %v", err)
+		return
+	}
+	if result.Tag != "mytag" {
+		t.Errorf("expected mytag, got %s", result.Tag)
+	}
+}

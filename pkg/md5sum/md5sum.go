@@ -30,7 +30,7 @@ type CheckResult struct {
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "c", Long: "check", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 

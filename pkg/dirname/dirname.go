@@ -18,7 +18,7 @@ type DirnameResult struct {
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -37,10 +37,10 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintln(os.Stderr, "dirname: missing operand")
 		return 1
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	result := Run(flags.Positional[0])
 	common.Render("dirname", result, jsonMode, out, func() {
-		fmt.Println(result.Result)
+		fmt.Fprintln(out, result.Result)
 	})
 	return 0
 }

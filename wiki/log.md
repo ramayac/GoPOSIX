@@ -1,6 +1,30 @@
 # Wiki Log
 
+> **Note:** References to "agent," "agentic," or "AI agent" in historical entries below predate the Phase 21 honest-takes audit (2026-05-18). The project's positioning has been corrected to "programmatic consumer" / "JSON-RPC client." See `wiki/21_honest_takes.md` for the full audit.
+
 Append-only timeline of wiki maintenance activity.
+
+## [2026-05-18] doc | Performance Quick Reference (`wiki/performance.md`)
+
+Created a standalone quick-reference page for the performance benchmarking system.
+Covers: all commands, scale factor tiers with numeric mappings, category key with
+short/full/friendly names, expected results (priors), output file layout, architecture
+diagram in ASCII, adding-new-category guide, and troubleshooting table. Linked from
+index.md and phases.md.
+
+## [2026-05-18] implement | Phase 19 — Benchmark infrastructure (branch: `feat/performance`)
+
+Implemented all benchmark infrastructure per `wiki/19_performance_benchmarking.md`:
+- `test/benchmark/lib/harness.sh` — shared timing, stats, `scaled()` helper, markdown tables
+- `test/benchmark/lib/report.sh` — `summary.md` + `narrative.md` report generator
+- `test/benchmark/runner.sh` — master orchestrator (--all, --quick, --cat)
+- `test/benchmark/Dockerfile.bench` — benchmark image (Alpine + GoPOSIX + BusyBox + tooling)
+- 10 category scripts: cat_a_startup.sh through cat_j_rpc_loop.sh
+- Makefile: `bench-image`, `bench-all`, `bench-cat`, `bench-quick`, `bench-smoke/pu/stress`,
+  `bench-report`, `bench-shell` targets + `SCALE` variable
+- All 13 scripts pass `sh -n` syntax check
+
+Updated: wiki/19_performance_benchmarking.md → IMPLEMENTING, wiki/phases.md → IMPLEMENTING
 
 ## [2026-05-18] plan | Phase 19 — Performance Benchmarking (GoPOSIX vs BusyBox)
 
@@ -9,7 +33,7 @@ The plan defines 10 benchmark categories (A–J) comparing GoPOSIX against BusyB
 in identical Docker containers, with honest priors about where each tool wins:
 
 - **BusyBox wins** on binary size (808 KB vs ~10 MB), single-invocation cold start, per-call RSS
-- **GoPOSIX wins** on daemon amortized latency (5–100× for N≥50 calls), agent loop throughput
+- **GoPOSIX wins** on daemon amortized latency (5–100× for N≥50 calls), RPC task loop throughput
 - **Fair fight** on text I/O throughput, bulk filesystem ops (both bottleneck on kernel VFS)
 
 Plan includes Dockerfile.bench design, harness library spec (`lib/harness.sh`), Makefile
@@ -96,7 +120,7 @@ Comprehensive wiki+docs cleanup post-v1.0 Gold release:
 **Historical markers added to completed phase docs (00-10):**
 - Added "HISTORICAL — COMPLETED" banner to: 00_foundation_libs, 01_multicall_tier1,
   03_filesystem_utils, 04_text_processing, 05_daemon_core, 06_system_utils,
-  07_agent_features, 08_hardening, 09_release_docs, 10_posix_framework, 10a_sed
+  07_rpc_features, 08_hardening, 09_release_docs, 10_posix_framework, 10a_sed
 
 **Status lines corrected:**
 - `12_road_to_gold.md`: "Planning" → "COMPLETED — Gold Achieved"

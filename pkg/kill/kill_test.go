@@ -16,7 +16,7 @@ func TestKillMissingArgs(t *testing.T) {
 
 func TestKillJSON(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"-j", "9999999"}, &out)
+	rc := run([]string{"--json", "9999999"}, &out)
 	if rc != 1 {
 		t.Errorf("expected 1, got %d", rc)
 	}

@@ -22,7 +22,7 @@ type YesResult struct {
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 		{Short: "n", Long: "count", Type: common.FlagValue},
 	},
 }

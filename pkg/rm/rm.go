@@ -22,7 +22,7 @@ var spec = common.FlagSpec{
 		{Short: "r", Long: "recursive", Type: common.FlagBool},
 		{Short: "f", Long: "force", Type: common.FlagBool},
 		{Short: "v", Long: "verbose", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -36,7 +36,12 @@ var preservedRoots = map[string]bool{
 }
 
 // isSafeToRemove returns false for root-equivalent paths.
-func isSafeToRemove(path string) bool {
+// isSafeToRemove returns false for root-equivalent paths unless
+// noPreserveRoot is true.
+func isSafeToRemove(path string, noPreserveRoot bool) bool {
+	if noPreserveRoot {
+		return true
+	}
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return false
@@ -44,11 +49,11 @@ func isSafeToRemove(path string) bool {
 	return !preservedRoots[abs]
 }
 
-// Run removes files/directories. Refuses to remove root.
-func Run(paths []string, recursive, force, verbose bool) (RmResult, error) {
+// Run removes files/directories. Refuses to remove root unless noPreserveRoot.
+func Run(paths []string, recursive, force, verbose, noPreserveRoot bool) (RmResult, error) {
 	var result RmResult
 	for _, p := range paths {
-		if !isSafeToRemove(p) {
+		if !isSafeToRemove(p, noPreserveRoot) {
 			msg := fmt.Sprintf("rm: refusing to remove %q: use --no-preserve-root to override", p)
 			result.Errors = append(result.Errors, msg)
 			if !force {
@@ -93,10 +98,11 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "rm: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	recursive := flags.Has("r")
 	force := flags.Has("f")
 	verbose := flags.Has("v")
+	noPreserveRoot := flags.Has("no-preserve-root")
 
 	if len(flags.Positional) == 0 {
 		if !force {
@@ -109,7 +115,7 @@ func run(args []string, out io.Writer) int {
 	var result RmResult
 	exitCode := 0
 	for _, p := range flags.Positional {
-		if !isSafeToRemove(p) {
+		if !isSafeToRemove(p, noPreserveRoot) {
 			msg := fmt.Sprintf("refusing to remove %q: use --no-preserve-root to override", p)
 			fmt.Fprintf(os.Stderr, "rm: %s\n", msg)
 			result.Errors = append(result.Errors, msg)

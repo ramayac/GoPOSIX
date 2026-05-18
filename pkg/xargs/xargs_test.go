@@ -9,7 +9,7 @@ import (
 
 func TestXargsJSON(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"-j", "true"}, &out)
+	rc := run([]string{"--json", "true"}, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}

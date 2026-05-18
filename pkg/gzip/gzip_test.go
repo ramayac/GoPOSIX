@@ -117,7 +117,7 @@ func TestGzipJSON(t *testing.T) {
 	os.WriteFile(file, []byte(strings.Repeat("a", 100)), 0644)
 
 	var buf bytes.Buffer
-	code := runGzip([]string{"-j", file}, &buf)
+	code := runGzip([]string{"--json", file}, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -240,7 +240,7 @@ func captureStderr(fn func()) string {
 }
 func TestCLI_Compress(t *testing.T) { dir := t.TempDir(); f := filepath.Join(dir, "test.txt"); os.WriteFile(f, []byte("hello"), 0644); var out bytes.Buffer; code := runGzip([]string{"-c", f}, &out); if code != 0 { t.Fatalf("exit %d", code) }; if out.Len() == 0 { t.Error("expected compressed output") } }
 func TestCLI_Decompress(t *testing.T) { dir := t.TempDir(); f := filepath.Join(dir, "test.gz"); var buf bytes.Buffer; gzw := gzip.NewWriter(&buf); gzw.Write([]byte("hello")); gzw.Close(); os.WriteFile(f, buf.Bytes(), 0644); var out bytes.Buffer; code := runGzip([]string{"-d", "-c", f}, &out); if code != 0 { t.Fatalf("exit %d", code) }; if out.String() != "hello" { t.Errorf("got %q, want 'hello'", out.String()) } }
-func TestCLI_JSON(t *testing.T) { dir := t.TempDir(); f := filepath.Join(dir, "j.txt"); os.WriteFile(f, []byte("json"), 0644); var out bytes.Buffer; code := runGzip([]string{"-j", f}, &out); if code != 0 { t.Fatalf("exit %d", code) }; if out.Len() == 0 { t.Error("expected output") } }
+func TestCLI_JSON(t *testing.T) { dir := t.TempDir(); f := filepath.Join(dir, "j.txt"); os.WriteFile(f, []byte("json"), 0644); var out bytes.Buffer; code := runGzip([]string{"--json", f}, &out); if code != 0 { t.Fatalf("exit %d", code) }; if out.Len() == 0 { t.Error("expected output") } }
 func TestCLI_Stdout(t *testing.T) { dir := t.TempDir(); f := filepath.Join(dir, "s.txt"); os.WriteFile(f, []byte("stdout"), 0644); var out bytes.Buffer; code := runGzip([]string{"-c", "--stdout", f}, &out); if code != 0 { t.Fatalf("exit %d", code) } }
 func TestCLI_MissingFile(t *testing.T) { var out bytes.Buffer; code := runGzip([]string{"/nonexistent/gzip/file"}, &out); if code != 1 { t.Errorf("exit %d, want 1", code) } }
 func TestCLI_BadFlag(t *testing.T) { var out bytes.Buffer; code := runGzip([]string{"--nonexistent"}, &out); if code == 0 { t.Errorf("exit %d, want non-zero for bad flag", code) } }

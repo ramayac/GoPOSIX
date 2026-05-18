@@ -16,7 +16,7 @@ var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "u", Long: "utc", Type: common.FlagBool},
 		{Short: "d", Long: "date", Type: common.FlagValue},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -192,7 +192,7 @@ func run(args []string, out io.Writer) int {
 	}
 
 	utcMode := flags.Has("u")
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	dateStr := flags.Get("d")
 
 	// POSIX: reject unexpected positional arguments

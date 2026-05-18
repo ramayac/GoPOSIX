@@ -19,7 +19,7 @@ type RmdirResult struct {
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "p", Long: "parents", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -49,7 +49,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "rmdir: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	if len(flags.Positional) == 0 {
 		fmt.Fprintln(os.Stderr, "rmdir: missing operand")
 		return 1

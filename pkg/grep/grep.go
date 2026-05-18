@@ -48,12 +48,13 @@ var spec = common.FlagSpec{
 		{Short: "B", Long: "before-context", Type: common.FlagValue},
 		{Short: "C", Long: "context", Type: common.FlagValue},
 		{Short: "a", Long: "text", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
 func Run(r io.Reader, filename string, re *regexp.Regexp, fixedPatterns []string, invert, fixed, lineRegexp bool) ([]GrepMatch, error) {
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 1024*1024), 10*1024*1024)
 	var matches []GrepMatch
 	lineNum := 0
 
@@ -145,7 +146,7 @@ func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 		return 2
 	}
 
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	invert := flags.Has("v")
 	ignoreCase := flags.Has("i")
 	countMode := flags.Has("c")
@@ -332,6 +333,9 @@ func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 			fname = path
 		}
 
+		// 256MB total input cap to prevent OOM on large files
+		r = io.LimitReader(r, 256*1024*1024)
+
 		// Context mode: scan with context instead of using Run().
 		if hasContext && !countMode && !filesWithMatches && !filesWithoutMatch && !onlyMatching {
 			ctxMatches := scanWithContext(r, re, fixedPatterns, invert, fixed, lineRegexp, beforeCtx, afterCtx)
@@ -479,6 +483,7 @@ type ctxLine struct {
 // Groups of matches separated by more than (afterCtx+beforeCtx) lines get a "--" separator.
 func scanWithContext(r io.Reader, re *regexp.Regexp, fixedPatterns []string, invert, fixed, lineRegexp bool, beforeCtx, afterCtx int) []ctxLine {
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 1024*1024), 10*1024*1024)
 	var allLines []string
 	for scanner.Scan() {
 		allLines = append(allLines, scanner.Text())

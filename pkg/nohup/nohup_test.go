@@ -53,3 +53,26 @@ func TestNohupJson(t *testing.T) {
 		t.Error("JSON output missing command field")
 	}
 }
+
+func TestNohup_BadFlag(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--bad-flag"}, &buf)
+	if code != 2 {
+		t.Errorf("expected exit 2 for bad flag, got %d", code)
+	}
+}
+
+func TestRun_EmptyCommand(t *testing.T) {
+	_, err := Run([]string{})
+	if err == nil {
+		t.Error("expected error for empty command")
+	}
+}
+
+func TestNohup_JSON_MissingCommand(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--json"}, &buf)
+	if code != 1 {
+		t.Errorf("expected exit 1 for missing command, got %d", code)
+	}
+}

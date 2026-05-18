@@ -1,4 +1,4 @@
-# Phase 07 — Agent-Ready Features + Tier 5
+# Phase 07 — RPC Features + Tier 5
 
 > **HISTORICAL — COMPLETED.** This phase is done. Document retained for reference.
 >
@@ -14,7 +14,7 @@ Add stateful RPC sessions, embedded shell interpreter, and the final tier of adv
 
 ### 07.1 — Stateful Sessions (`internal/daemon/session.go`)
 
-Each agent connection can create a session that remembers state across RPC calls.
+Each RPC client connection can create a session that remembers state across RPC calls.
 
 ```json
 // Create session

@@ -2,6 +2,7 @@ package cmp
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
 )
@@ -165,17 +166,73 @@ func TestCmpRun_SilentMode(t *testing.T) {
 }
 
 func TestCmpRun_DifferSilent(t *testing.T) {
+	tmpDir := t.TempDir()
+	f1 := tmpDir + "/a.txt"
+	f2 := tmpDir + "/b.txt"
+	os.WriteFile(f1, []byte("hello"), 0644)
+	os.WriteFile(f2, []byte("hallo"), 0644)
 	var outBuf, errBuf bytes.Buffer
-	// Two "-" both read same stdin - only works if we handle it...
-	// This needs two different readers on the CLI level, which we test via Compare()
-	_ = outBuf
-	_ = errBuf
+	rc := cmpRun([]string{"-s", f1, f2}, &outBuf, &errBuf, nil)
+	if rc != 1 {
+		t.Errorf("silent differ: got rc=%d, want 1", rc)
+	}
+	if outBuf.Len() != 0 {
+		t.Errorf("silent mode should produce no output, got %q", outBuf.String())
+	}
 }
 
 func TestCmpRun_JsonFlag(t *testing.T) {
-	t.Skip("requires temp files — tested via BusyBox suite")
+	tmpDir := t.TempDir()
+	f1 := tmpDir + "/a.txt"
+	f2 := tmpDir + "/b.txt"
+	os.WriteFile(f1, []byte("hello"), 0644)
+	os.WriteFile(f2, []byte("hello"), 0644)
+	var outBuf, errBuf bytes.Buffer
+	rc := cmpRun([]string{"--json", f1, f2}, &outBuf, &errBuf, nil)
+	if rc != 0 {
+		t.Fatalf("json identical: got rc=%d", rc)
+	}
+	if !bytes.Contains(outBuf.Bytes(), []byte("\"equal\"")) {
+		t.Error("JSON output missing equal field")
+	}
 }
 
 func TestCmpRun_JsonDiffer(t *testing.T) {
-	t.Skip("requires two different temp files")
+	tmpDir := t.TempDir()
+	f1 := tmpDir + "/a.txt"
+	f2 := tmpDir + "/b.txt"
+	os.WriteFile(f1, []byte("hello"), 0644)
+	os.WriteFile(f2, []byte("hallo"), 0644)
+	var outBuf, errBuf bytes.Buffer
+	rc := cmpRun([]string{"--json", f1, f2}, &outBuf, &errBuf, nil)
+	if rc != 1 {
+		t.Fatalf("json differ: got rc=%d, want 1", rc)
+	}
+	if !bytes.Contains(outBuf.Bytes(), []byte("\"equal\"")) {
+		t.Error("JSON output missing equal field")
+	}
+}
+
+func TestCmpRun_MissingFile(t *testing.T) {
+	var outBuf, errBuf bytes.Buffer
+	rc := cmpRun([]string{"/nonexistent_12345", "/nonexistent_67890"}, &outBuf, &errBuf, nil)
+	if rc != 2 {
+		t.Errorf("missing file: got rc=%d, want 2", rc)
+	}
+}
+
+func TestCmpRun_BadFlag(t *testing.T) {
+	var outBuf, errBuf bytes.Buffer
+	rc := cmpRun([]string{"--bad-flag"}, &outBuf, &errBuf, nil)
+	if rc != 2 {
+		t.Errorf("bad flag: got rc=%d, want 2", rc)
+	}
+}
+
+func TestCmpRun_MissingOperand(t *testing.T) {
+	var outBuf, errBuf bytes.Buffer
+	rc := cmpRun([]string{}, &outBuf, &errBuf, nil)
+	if rc != 2 {
+		t.Errorf("missing operand: got rc=%d, want 2", rc)
+	}
 }

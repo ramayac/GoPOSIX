@@ -14,7 +14,7 @@ import (
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "R", Long: "recursive", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -58,7 +58,7 @@ func run(args []string, out io.Writer) int {
 		}
 	}
 
-	if flags.Has("j") {
+	if flags.Has("json") {
 		common.Render("chgrp", ChgrpResp{Changed: res}, true, out, func() {})
 	}
 

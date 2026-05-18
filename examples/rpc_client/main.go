@@ -1,10 +1,10 @@
-// Agent example: demonstrates a minimal AI-agent integration with the goposix daemon.
+// RPC client example: demonstrates using the GoPOSIX daemon via JSON-RPC.
 //
 // This program starts a goposix daemon, creates a session, executes a multi-step
 // file-inspection task using the JSON-RPC API, then cleans up.
 //
-// Build: go build -o agent ./examples/agent
-// Run:   ./agent
+// Build: go build -o rpc_client ./examples/rpc_client
+// Run:   ./rpc_client
 package main
 
 import (
@@ -56,10 +56,10 @@ type sessionInfo struct {
 
 func main() {
 	log.SetFlags(log.Ltime)
-	log.Println("=== GoPOSIX Agent Example ===")
+	log.Println("=== GoPOSIX RPC Client Example ===")
 	log.Println()
 
-	tmpDir, err := os.MkdirTemp("", "goposix-agent-*")
+	tmpDir, err := os.MkdirTemp("", "goposix-rpc-*")
 	if err != nil {
 		log.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -165,7 +165,7 @@ func main() {
 	id++
 	result = call(conn, id, "goposix.shell.exec", map[string]interface{}{
 		"sessionId": session.SessionID,
-		"script":    "echo hello from agent",
+		"script":    "echo hello from goposix",
 	})
 	var execResult struct {
 		Stdout   string `json:"stdout"`
@@ -208,7 +208,7 @@ func main() {
 	daemon.Process.Signal(os.Interrupt)
 	daemon.Wait()
 	log.Println()
-	log.Println("=== Agent example complete ===")
+	log.Println("=== RPC client example complete ===")
 }
 
 func firstLine(lines []string) string {

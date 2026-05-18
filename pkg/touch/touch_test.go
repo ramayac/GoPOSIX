@@ -210,7 +210,7 @@ func TestCLI_TimeStamp(t *testing.T) {
 func TestCLI_JSON(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "json.txt")
 	var out bytes.Buffer
-	code := run([]string{"-j", f}, &out)
+	code := run([]string{"--json", f}, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}

@@ -1,10 +1,10 @@
-# Agent Integration Guide
+# JSON-RPC Quickstart
 
-How to use GoPOSIX as a tool-execution backend for AI agents.
+How to interact with GoPOSIX programmatically via JSON-RPC.
 
 ## Overview
 
-GoPOSIX exposes a Unix socket-based JSON-RPC 2.0 API that lets an AI agent:
+GoPOSIX exposes a Unix socket-based JSON-RPC 2.0 API that lets any program:
 
 1. Start a GoPOSIX daemon (lightweight, ~8 MB container image)
 2. Create isolated sessions with per-session working directories
@@ -15,24 +15,24 @@ GoPOSIX exposes a Unix socket-based JSON-RPC 2.0 API that lets an AI agent:
 ## Quick Start
 
 ```bash
-make example-agent
+make example-rpc
 ```
 
-This runs `examples/agent/main.go` — a self-contained Go program that demonstrates the full lifecycle.
+This runs `examples/rpc_client/main.go` — a self-contained Go program that demonstrates the full lifecycle.
 
 ## Architecture
 
 ```
-┌──────────────┐    Unix socket     ┌─────────────────┐
-│  AI Agent    │ ◄──── JSON-RPC ───► │  GoPOSIX Daemon  │
-│  (your code) │                    │  (goposix daemon) │
-└──────────────┘                    └────────┬────────┘
-                                             │
-                                    ┌────────▼────────┐
-                                    │  POSIX Utilities │
-                                    │  ls, cat, grep,  │
-                                    │  find, wc, ...   │
-                                    └─────────────────┘
+┌─────────────────────┐    Unix socket     ┌─────────────────┐
+│  Programmatic       │ ◄──── JSON-RPC ───► │  GoPOSIX Daemon  │
+│  Consumer           │                    │  (goposix daemon) │
+│  (your code)        │                    └────────┬────────┘
+└─────────────────────┘                             │
+                                           ┌────────▼────────┐
+                                           │  POSIX Utilities │
+                                           │  ls, cat, grep,  │
+                                           │  find, wc, ...   │
+                                           └─────────────────┘
 ```
 
 ## Lifecycle
@@ -83,7 +83,7 @@ Paths are validated to prevent traversal outside the session CWD. The default CW
 
 ### 6. Execute Utilities
 
-All 42 JSON-enabled utilities are available as `goposix.<name>` methods:
+All JSON-enabled utilities are available as `goposix.<name>` methods:
 
 ```json
 → {"jsonrpc":"2.0", "method":"goposix.ls", "params":{"sessionId":"a1b2c3d4"}, "id":4}
@@ -100,11 +100,11 @@ Standard params: `sessionId` (string), `path` (string), `flags` ([]string), `tex
 ### 7. Execute Shell Scripts
 
 ```json
-→ {"jsonrpc":"2.0", "method":"goposix.shell.exec", "params":{"sessionId":"a1b2c3d4", "script":"echo hello from agent"}, "id":6}
-← {"jsonrpc":"2.0", "result":{"stdout":"hello from agent\n", "stderr":"", "exitCode":0}, "id":6}
+→ {"jsonrpc":"2.0", "method":"goposix.shell.exec", "params":{"sessionId":"a1b2c3d4", "script":"echo hello from goposix"}, "id":6}
+← {"jsonrpc":"2.0", "result":{"stdout":"hello from goposix\n", "stderr":"", "exitCode":0}, "id":6}
 ```
 
-The shell interpreter runs with a 30-second timeout and 128 MB memory limit per stream.
+The shell interpreter runs with a configurable timeout (default 30s, via `GOPOSIX_SHELL_TIMEOUT`) and 128 MB memory limit per stream.
 
 ### 8. Destroy the Session
 
@@ -150,9 +150,9 @@ Requests without an `id` field are treated as JSON-RPC notifications — no resp
 
 The response envelope includes `exitCode` for utility errors (non-zero = failure) and `data` is `null` on error.
 
-## Example: Multi-Step Agent Task
+## Example: Multi-Step RPC Task
 
-The full example at `examples/agent/main.go` demonstrates:
+The full example at `examples/rpc_client/main.go` demonstrates:
 
 1. Start daemon
 2. Ping
@@ -166,9 +166,9 @@ The full example at `examples/agent/main.go` demonstrates:
 10. Stop daemon
 
 ```bash
-go run ./examples/agent/main.go
+go run ./examples/rpc_client/main.go
 ```
 
-## Programmatic Client
+## Go Client SDK
 
-For production use, import `pkg/client/` for connection pooling, retry, and typed helper methods. See `docs/RPC_API.md`.
+For production use, import `pkg/client/` for connection pooling, retry, and typed helper methods. See `wiki/rpc_api.md`.

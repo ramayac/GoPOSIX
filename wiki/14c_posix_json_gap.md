@@ -30,7 +30,7 @@ Each utility should have at least one JSON-RPC integration test that:
 ### Tier 1 — Filesystem (highest risk, most dependencies)
 ls, cp, mv, rm, mkdir, rmdir, touch, ln, readlink, stat, chmod, chown, chgrp
 
-### Tier 2 — Text/Stream (heavily used in agent pipelines)
+### Tier 2 — Text/Stream (heavily used in RPC pipelines)
 grep, find, sort, uniq, wc, head, tail, cut, tr, diff, printf
 
 ### Tier 3 — System/Info

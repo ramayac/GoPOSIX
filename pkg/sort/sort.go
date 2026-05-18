@@ -33,7 +33,7 @@ var spec = common.FlagSpec{
 		{Short: "z", Long: "zero-terminated", Type: common.FlagBool},
 		{Short: "h", Long: "human-numeric-sort", Type: common.FlagBool},
 		{Short: "M", Long: "month-sort", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -304,8 +304,11 @@ func parseFieldChar(s string) (field, char int) {
 }
 
 func parseLines(r io.Reader, keySpecs []keySpec, delimiter string, zeroTerminated bool) ([]lineItem, error) {
+	// 256MB total input cap to prevent OOM (sort reads entire input into memory)
+	r = io.LimitReader(r, 256*1024*1024)
 	var items []lineItem
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 1024*1024), 10*1024*1024)
 	if zeroTerminated {
 		scanner.Split(scanNUL)
 	}
@@ -493,7 +496,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "sort: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	reverse := flags.Has("r")
 	numeric := flags.Has("n")
 	unique := flags.Has("u")

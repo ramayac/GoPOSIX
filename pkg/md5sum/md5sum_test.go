@@ -134,3 +134,57 @@ func TestRunMultipleFiles(t *testing.T) {
 		t.Errorf("expected 2 lines, got %d", len(lines))
 	}
 }
+
+func TestRunCheckEmptyFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	checksumFile := filepath.Join(tmpDir, "empty.txt")
+	os.WriteFile(checksumFile, []byte("# comment\n"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-c", checksumFile}, &buf)
+	if code != 1 {
+		t.Errorf("exit code %d, want 1 for empty checksum file", code)
+	}
+}
+
+func TestRunCheckBadFormat(t *testing.T) {
+	tmpDir := t.TempDir()
+	checksumFile := filepath.Join(tmpDir, "bad.txt")
+	os.WriteFile(checksumFile, []byte("nospaces\n"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-c", checksumFile}, &buf)
+	if code != 1 {
+		t.Errorf("exit code %d, want 1 for bad format", code)
+	}
+}
+
+func TestRunCheckJSON(t *testing.T) {
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "data.txt")
+	os.WriteFile(testFile, []byte("hello\n"), 0644)
+	checksumFile := filepath.Join(tmpDir, "checksums.txt")
+	os.WriteFile(checksumFile, []byte("b1946ac92492d2347c6235b4d2611184  "+testFile+"\n"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-c", "--json", checksumFile}, &buf)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	if !bytes.Contains(buf.Bytes(), []byte("\"status\"")) {
+		t.Error("JSON output missing status field")
+	}
+}
+
+func TestRunHashUnknownFlag(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--bad-flag"}, &buf)
+	if code != 1 {
+		t.Errorf("exit code %d, want 1 for unknown flag", code)
+	}
+}
+
+func TestRunCheckNoFile(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-c"}, &buf)
+	if code != 1 {
+		t.Errorf("exit code %d, want 1 for missing checksum file", code)
+	}
+}

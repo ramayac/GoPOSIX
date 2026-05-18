@@ -32,7 +32,7 @@ var spec = common.FlagSpec{
 		{Short: "v", Long: "verbose", Type: common.FlagBool},
 		{Short: "O", Long: "to-stdout", Type: common.FlagBool},
 		{Short: "overwrite", Long: "overwrite", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 		{Short: "f", Long: "file", Type: common.FlagValue},
 		{Short: "C", Long: "directory", Type: common.FlagValue},
 		{Short: "X", Long: "exclude-from", Type: common.FlagValue},

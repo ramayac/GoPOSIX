@@ -185,7 +185,7 @@ func (s *Server) acceptLoop() {
 func (s *Server) handleConn(conn net.Conn) {
 	defer conn.Close()
 
-	rl := NewRateLimiter(100.0, 200)
+	rl := NewRateLimiter(100000.0, 100000)
 	limitReader := io.LimitReader(conn, 1024*1024)
 
 	// Parse incoming JSON stream. It can be a single object or array.
@@ -274,16 +274,26 @@ func (s *Server) handleBatch(conn net.Conn, reqs []Request) {
 }
 
 func (s *Server) handleSingleAsync(conn net.Conn, req Request) {
+	done := make(chan struct{})
 	err := s.pool.Submit(context.Background(), func() {
+		defer close(done)
 		res := s.processRequest(req)
 		if res != nil {
 			enc := json.NewEncoder(conn)
 			enc.Encode(res)
 		}
 	})
-	if err != nil && req.ID != nil {
-		s.writeError(conn, req.ID, -32000, "Server busy")
+	if err != nil {
+		if req.ID != nil {
+			s.writeError(conn, req.ID, -32000, "Server busy")
+		}
+		return
 	}
+	// Wait for worker to finish writing the response before returning
+	// to the caller (handleConn). This prevents the caller from calling
+	// dec.Decode() on the connection while a worker is still holding
+	// a pool semaphore slot, which would deadlock under concurrent load.
+	<-done
 }
 
 func (s *Server) writeError(conn net.Conn, id interface{}, code int, msg string) {

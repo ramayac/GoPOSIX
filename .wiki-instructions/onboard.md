@@ -24,13 +24,13 @@ wiki-engine candidates
 If candidates returns no output, fall back to surveying the repo manually:
 - List top-level directories.
 - Read the root `README.md`, `Makefile`, and any `package.json` / `go.mod` / `pyproject.toml`.
-- Check for existing docs in common locations: `docs/`, `AGENTS.md`, `CONTRIBUTING.md`, `ARCHITECTURE.md`, `ADR/`, `notes/`.
+- Check for existing docs in common locations: `wiki/`, `AGENTS.md`, `CONTRIBUTING.md`, `ARCHITECTURE.md`, `ADR/`, `notes/`.
 
 ### 2. Check for external knowledge to migrate
 
 Before creating new pages, scan for files that already contain durable knowledge outside `wiki/`:
 
-- `docs/` or `doc/` — planning docs, design decisions, lessons learned
+- `wiki/` or `doc/` — planning docs, design decisions, lessons learned
 - `AGENTS.md` — AI agent SOPs and architectural rules
 - `CONTRIBUTING.md` — developer workflow rules
 - `ARCHITECTURE.md`, `DESIGN.md`, or similar top-level docs

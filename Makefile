@@ -135,6 +135,15 @@ help:
 	@echo "    smoke        Build + run manual integration smoke tests (local)"
 	@echo "    symlink-test Test symlink dispatch (ln -s goposix echo)"
 	@echo ""
+	@echo "  Performance"
+	@echo "    bench-image   Build benchmark Docker image"
+	@echo "    bench-quick   Quick benchmark (Cat A+H, SCALE=0.1 for CI)"
+	@echo "    bench-all     Full benchmark suite (SCALE=1.0)"
+	@echo "    bench-smoke   CI smoke (SCALE=0.1, ~30s)"
+	@echo "    bench-pub     Publication quality (SCALE=5.0, ~40min)"
+	@echo "    bench-stress  Stress test (SCALE=25.0, ~3h)"
+	@echo "    bench-shell   Interactive shell in bench container"
+	@echo ""
 	@echo "  Housekeeping"
 	@echo "    clean        Remove build artifacts and Docker image"
 	@echo "    tidy         go mod tidy"
@@ -197,8 +206,10 @@ COVERAGE_THRESHOLD := 70
 .PHONY: cover-gate
 cover-gate:
 	@echo "Checking coverage ≥ $(COVERAGE_THRESHOLD)%..."
-	@CGO_ENABLED=0 go test -coverprofile=/tmp/goposix_ci_cover.out $(PKG_DIRS) > /dev/null 2>&1 || true
-	@total=$$(go tool cover -func=/tmp/goposix_ci_cover.out 2>/dev/null | grep '^total:' | awk '{print $$NF}' | tr -d '%'); \
+	@tmp=$$(mktemp /tmp/goposix_ci_cover.XXXXXX.out); \
+	CGO_ENABLED=0 go test -coverprofile=$$tmp $(PKG_DIRS) > /dev/null 2>&1 || true; \
+	total=$$(go tool cover -func=$$tmp 2>/dev/null | grep '^total:' | awk '{print $$NF}' | tr -d '%'); \
+	rm -f $$tmp; \
 	if [ -z "$$total" ]; then echo "FAIL: could not parse coverage"; exit 1; fi; \
 	if [ "$$(echo "$$total < $(COVERAGE_THRESHOLD)" | bc -l)" = "1" ]; then \
 		echo "FAIL: coverage $$total% < $(COVERAGE_THRESHOLD)% threshold"; exit 1; \
@@ -359,15 +370,97 @@ validate-schemas: build
 	@echo "--- Validate JSON output against schemas ---"
 	bash test/validate_schemas.sh
 
-.PHONY: example-agent
-example-agent: build
-	@echo "--- Running agent integration example ---"
-	go run ./examples/agent/main.go
+.PHONY: example-rpc
+example-rpc: build
+	@echo "--- Running RPC integration example ---"
+	go run ./examples/rpc_client/main.go
 
 .PHONY: bench
 bench:
 	@echo "--- Running benchmarks ---"
 	go test -bench=. -benchmem ./test/benchmark/...
+
+# =============================================================================
+# Performance Benchmarking (GoPOSIX vs BusyBox) — see wiki/19_performance_benchmarking.md
+# =============================================================================
+SCALE ?= 1.0
+
+.PHONY: bench-image
+bench-image:
+	docker build -t goposix:bench -f test/benchmark/Dockerfile.bench .
+
+.PHONY: daemon-image
+daemon-image:
+	docker build -t goposix:daemon -f docker/Dockerfile.daemon .
+
+.PHONY: bench-daemon
+bench-daemon: daemon-image
+	@echo "Starting daemon container..."
+	@docker rm -f goposix-bench-daemon 2>/dev/null || true
+	docker run -d --name goposix-bench-daemon --privileged \
+	  -v goposix-bench-data:/data \
+	  goposix:daemon
+	@sleep 2
+	@echo "Daemon running. Socket: /var/run/goposix.sock (inside container)"
+	@echo "Test: docker exec goposix-bench-daemon /bin/goposix echo hello"
+	@echo "Bench: docker exec goposix-bench-daemon /bench/bench_client -op echo 1000"
+	@echo "Stop:  docker rm -f goposix-bench-daemon"
+
+.PHONY: bench-all
+bench-all: bench-image
+	docker run --rm --privileged \
+	  -e BENCH_SCALE=$(SCALE) \
+	  -v goposix-bench-data:/data \
+	  goposix:bench --all
+
+.PHONY: bench-cat
+bench-cat: bench-image
+	docker run --rm --privileged \
+	  -e BENCH_SCALE=$(SCALE) \
+	  -v goposix-bench-data:/data \
+	  goposix:bench --cat $(CAT)
+
+.PHONY: bench-quick
+bench-quick: bench-image
+	docker run --rm --privileged \
+	  -e BENCH_SCALE=$(SCALE) \
+	  -v goposix-bench-data:/data \
+	  goposix:bench --quick
+
+.PHONY: bench-smoke bench-pub bench-stress
+bench-smoke: SCALE=0.1
+bench-smoke: bench-all
+bench-pub: SCALE=5.0
+bench-pub: bench-all
+bench-stress: SCALE=25.0
+bench-stress: bench-all
+
+.PHONY: bench-report
+bench-report:
+	@latest=$$(ls -t test/benchmark/results/ 2>/dev/null | grep -v latest | head -1); \
+	if [ -n "$$latest" ]; then \
+		test/benchmark/lib/report.sh test/benchmark/results/$$latest; \
+	else \
+		echo "No results found in test/benchmark/results/."; \
+		echo "Results are stored in Docker volume 'goposix-bench-data'."; \
+		echo "Use 'make bench-fetch' to copy the latest results locally."; \
+	fi
+
+.PHONY: bench-fetch
+bench-fetch:
+	@mkdir -p test/benchmark/results
+	@cid=$$(docker create goposix:bench true 2>/dev/null); \
+	docker cp $$cid:/data/results/. test/benchmark/results/ 2>/dev/null || true; \
+	docker rm $$cid >/dev/null 2>&1 || true; \
+	echo "Results fetched to test/benchmark/results/"
+
+.PHONY: bench-shell
+bench-shell: bench-image
+	docker run --rm -it --privileged \
+	  -e BENCH_SCALE=$(SCALE) \
+	  -v goposix-bench-data:/data \
+	  --entrypoint /bin/sh \
+	  goposix:bench
 
 .PHONY: ci
 ci: vet test build docker smoke-docker cover-gate

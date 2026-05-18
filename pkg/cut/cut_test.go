@@ -1,6 +1,8 @@
 package cut
 
 import (
+	"bytes"
+	"os"
 	"strings"
 	"testing"
 )
@@ -151,5 +153,67 @@ func TestCutEmptyFields(t *testing.T) {
 	// Output: fields 1,2,3 joined with delimiter
 	if lines[0].Fields[0] != "a::c" {
 		t.Errorf("got %q, want %q", lines[0].Fields[0], "a::c")
+	}
+}
+
+// --- CLI layer tests ---
+
+func TestCLI_Fields(t *testing.T) {
+	var outBuf bytes.Buffer
+	code := run([]string{"-f", "1", "-d", ":"}, &outBuf)
+	// stdin not piped in test — should error or handle gracefully
+	_ = code
+}
+
+func TestCLI_BadFlag(t *testing.T) {
+	var outBuf bytes.Buffer
+	code := run([]string{"--bad-flag"}, &outBuf)
+	if code != 2 {
+		t.Errorf("expected exit 2 for bad flag, got %d", code)
+	}
+}
+
+func TestCLI_MissingList(t *testing.T) {
+	var outBuf bytes.Buffer
+	code := run([]string{}, &outBuf)
+	if code != 1 {
+		t.Errorf("expected exit 1 for missing list, got %d", code)
+	}
+}
+
+func TestCLI_NoxistentFile(t *testing.T) {
+	var outBuf bytes.Buffer
+	code := run([]string{"-f", "1", "/nonexistent_12345"}, &outBuf)
+	if code != 1 {
+		t.Errorf("expected exit 1 for nonexistent file, got %d", code)
+	}
+}
+
+func TestCLI_WithFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	f := tmpDir + "/test.txt"
+	os.WriteFile(f, []byte("a:b:c\n1:2:3\n"), 0644)
+	var outBuf bytes.Buffer
+	code := run([]string{"-f", "1", "-d", ":", f}, &outBuf)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	output := outBuf.String()
+	if !strings.Contains(output, "a") || !strings.Contains(output, "1") {
+		t.Errorf("unexpected output: %q", output)
+	}
+}
+
+func TestCLI_JSON(t *testing.T) {
+	tmpDir := t.TempDir()
+	f := tmpDir + "/test.txt"
+	os.WriteFile(f, []byte("a:b\n"), 0644)
+	var outBuf bytes.Buffer
+	code := run([]string{"-f", "1", "-d", ":", "--json", f}, &outBuf)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if !bytes.Contains(outBuf.Bytes(), []byte("\"lines\"")) {
+		t.Error("JSON missing lines field")
 	}
 }

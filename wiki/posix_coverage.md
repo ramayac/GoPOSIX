@@ -15,7 +15,7 @@ This document tracks the implementation status of GoPOSIX utilities against the 
 
 > **Note on BusyBox Test Suite:** As part of Phase 10, we integrated the busybox test suite. The baseline execution resulted in ~150 failures, almost entirely driven by flags that are not implemented in our MVP (e.g., `tar -x`, `tail -c`, `uniq -f`) or minor POSIX deviations. These will be incrementally addressed.
 
-> **Note on `awk`:** We have decided **not** to implement `awk` for this MVP. Building a full POSIX-compliant `awk` parser and interpreter is a massive undertaking that would delay the core goal of providing an agent-ready userland. We will revisit `awk` in a future phase. Complex text processing should be handled by `grep`, `sed`, or the agent directly via JSON structured output.
+> **Note on `awk`:** We have decided **not** to implement `awk` for this MVP. Building a full POSIX-compliant `awk` parser and interpreter is a massive undertaking that would delay the core goal of providing a programmatic POSIX userland. We will revisit `awk` in a future phase. Complex text processing should be handled by `grep`, `sed`, or the client directly via JSON structured output.
 
 ### Phase 00 & 01: Core & Env
 | Utility    | Status | Flags Implemented | Notes |
@@ -88,4 +88,4 @@ This document tracks the implementation status of GoPOSIX utilities against the 
 ### Not Implemented
 | Utility    | Status | Reason                      | Notes |
 |------------|--------|-----------------------------|-------|
-| `awk`      | ❌     | Deferred for MVP            | Too complex for initial scope, use agent capabilities or `grep`/`sed` |
+| `awk`      | ❌     | Deferred for MVP            | Too complex for initial scope, use `grep`/`sed` or JSON structured output |

@@ -20,7 +20,7 @@ func TestFindRun(t *testing.T) {
 
 func TestFindJSON(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"-j", "."}, &out)
+	rc := run([]string{"--json", "."}, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -184,7 +184,7 @@ func TestFind_JSON(t *testing.T) {
 func TestFind_JSONShortFlag(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
-	code := run([]string{dir, "-j"}, &out)
+	code := run([]string{dir, "--json"}, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}

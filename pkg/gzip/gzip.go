@@ -26,7 +26,7 @@ var spec = common.FlagSpec{
 		{Short: "c", Long: "stdout", Type: common.FlagBool},
 		{Short: "k", Long: "keep", Type: common.FlagBool},
 		{Short: "f", Long: "force", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 		// Numeric compression levels -1 through -9 (boolean-like for presence detection).
 		{Short: "1", Long: "", Type: common.FlagBool},
 		{Short: "2", Long: "", Type: common.FlagBool},

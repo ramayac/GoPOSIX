@@ -20,7 +20,7 @@ var spec = common.FlagSpec{
 		{Short: "n", Long: "max-args", Type: common.FlagValue},
 		{Short: "I", Long: "replace", Type: common.FlagValue},
 		{Short: "t", Long: "verbose", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 		{Short: "0", Long: "null", Type: common.FlagBool},
 	},
 }
@@ -181,7 +181,7 @@ func run(args []string, out io.Writer) int {
 		}
 	}
 
-	if flags.Has("j") {
+	if flags.Has("json") {
 		common.Render("xargs", results, true, out, func() {})
 	}
 

@@ -27,7 +27,7 @@ var spec = common.FlagSpec{
 		{Short: "f", Long: "force", Type: common.FlagBool},
 		{Short: "i", Long: "interactive", Type: common.FlagBool},
 		{Short: "t", Long: "target-directory", Type: common.FlagValue},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -80,7 +80,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "mv: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	targetDir := flags.Get("t")
 
 	var srcs []string

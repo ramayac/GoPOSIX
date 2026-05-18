@@ -109,7 +109,7 @@ func TestYesJSONWithCount(t *testing.T) {
 
 func TestYesJSONWithString(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"-j", "hello"}, &out)
+	code := run([]string{"--json", "hello"}, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}

@@ -30,7 +30,7 @@ var spec = common.FlagSpec{
 		{Short: "c", Long: "bytes", Type: common.FlagBool},
 		{Short: "m", Long: "chars", Type: common.FlagBool},
 		{Short: "L", Long: "max-line-length", Type: common.FlagBool},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -145,7 +145,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "wc: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 
 	showLines := flags.Has("l")
 	showWords := flags.Has("w")

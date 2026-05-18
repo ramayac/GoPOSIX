@@ -17,7 +17,7 @@ var spec = common.FlagSpec{
 		{Short: "t", Long: "time", Type: common.FlagValue},
 		{Short: "r", Long: "reference", Type: common.FlagValue},
 		{Short: "d", Long: "date", Type: common.FlagValue},
-		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -69,7 +69,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintf(os.Stderr, "touch: %v\n", err)
 		return 2
 	}
-	jsonMode := flags.Has("j")
+	jsonMode := flags.Has("json")
 	ts := time.Now()
 
 	if ref := flags.Get("r"); ref != "" {

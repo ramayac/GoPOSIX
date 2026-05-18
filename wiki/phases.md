@@ -8,7 +8,7 @@
 > ✅ Phase 16 COMPLETED — 9 Tier 2 utilities
 > ✅ Phase 17 COMPLETED — 12 Tier 3 utility stubs
 > ✅ Phase 18 COMPLETED — CI, patch, egrep/fgrep, coverage (daemon 64.6%, diff 57.1%, client 55.4%)
-> 📋 Phase 19 PLANNING — Performance Benchmarking (GoPOSIX vs BusyBox)
+> 📋 Phase 19 IMPLEMENTING — Performance Benchmarking (GoPOSIX vs BusyBox)
 
 ---
 
@@ -77,7 +77,7 @@ goposix binary (single static ELF, <12MB)
 | [04_text_processing.md](04_text_processing.md) | Tier 3 — Text Processing Utilities | **COMPLETED** |
 | [05_daemon_core.md](05_daemon_core.md) | JSON-RPC Daemon — Core Server | **COMPLETED** |
 | [06_system_utils.md](06_system_utils.md) | Tier 4 — System & Process Utilities | **COMPLETED** |
-| [07_agent_features.md](07_agent_features.md) | Agent-Ready Features (sessions, shell, Tier 5) | **COMPLETED** |
+| [07_rpc_features.md](07_rpc_features.md) | RPC Features (sessions, shell, Tier 5) | **COMPLETED** |
 | [08_hardening.md](08_hardening.md) | Production Hardening & Security | **COMPLETED** |
 | [09_release_docs.md](09_release_docs.md) | Release Automation & Documentation | **COMPLETED** |
 | [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | **COMPLETED** |
@@ -98,7 +98,10 @@ goposix binary (single static ELF, <12MB)
 | [16_post_mvp_tier2.md](16_post_mvp_tier2.md) | Phase 16 — Tier 2: 9 text/stream utilities (43 BusyBox tests) | **COMPLETED** |
 | [17_post_mvp_tier3.md](17_post_mvp_tier3.md) | Phase 17 — Tier 3: 12 utilities without BusyBox coverage | **COMPLETED** |
 | [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases | **COMPLETED** |
-| [19_performance_benchmarking.md](19_performance_benchmarking.md) | Phase 19 — Performance Benchmarking (GoPOSIX vs BusyBox) | **PLANNING** |
+| [19_performance_benchmarking.md](19_performance_benchmarking.md) | Phase 19 — Performance Benchmarking Plan (GoPOSIX vs BusyBox) | **DONE** |
+| [20_hardening_ii.md](20_hardening_ii.md) | Phase 20 — Hardening II (flag audit, code cleanup, coverage, input safety) | **COMPLETED** |
+| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III (Daemon-First Pivot) | **PLANNING** |
+| [performance.md](performance.md) | Performance Quick Reference — commands, scale, categories | **LIVING** |
 | [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 
 ---
@@ -107,7 +110,7 @@ goposix binary (single static ELF, <12MB)
 
 | # | Item | Doc |
 |---|------|-----|
-| — | Performance benchmarking vs BusyBox | [19_performance_benchmarking.md](19_performance_benchmarking.md) — planning |
+| — | Daemon-first pivot (SDK as default interface) | [22_hardening_iii.md](22_hardening_iii.md) — planning |
 | — | `awk` implementation (Platinum gate) | [07a_awk.md](07a_awk.md) — deferred |
 | — | Low-coverage hardening (split, tty — all >60% now) | [todos.md](todos.md) |
 | — | XML output (`--xml`) | [14_xml_output.md](14_xml_output.md) — deferred |
@@ -126,7 +129,7 @@ These phase-plan documents describe completed work and are retained for referenc
 | [04_text_processing.md](04_text_processing.md) | Phase 04 — Text Processing |
 | [05_daemon_core.md](05_daemon_core.md) | Phase 05 — Daemon Core |
 | [06_system_utils.md](06_system_utils.md) | Phase 06 — System Utils |
-| [07_agent_features.md](07_agent_features.md) | Phase 07 — Agent Features |
+| [07_rpc_features.md](07_rpc_features.md) | Phase 07 — RPC Features |
 | [08_hardening.md](08_hardening.md) | Phase 08 — Hardening |
 | [09_release_docs.md](09_release_docs.md) | Phase 09 — Release (maintained as living doc) |
 | [10_posix_framework.md](10_posix_framework.md) | Phase 10 — POSIX Framework |
@@ -134,6 +137,7 @@ These phase-plan documents describe completed work and are retained for referenc
 | [11_post_mvp_priorities.md](11_post_mvp_priorities.md) | Phase 11 — Post-MVP Priorities |
 | [11a_lower_priority.md](11a_lower_priority.md) | Phase 11a — Lower Priority |
 | [11_lessons_learned.md](11_lessons_learned.md) | Phase 11 — Lessons Learned |
+| [20_hardening_ii.md](20_hardening_ii.md) | Phase 20 — Hardening II |
 
 ## Risk Register
 

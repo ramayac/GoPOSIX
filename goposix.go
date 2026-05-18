@@ -29,6 +29,7 @@ package goposix
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,6 +60,13 @@ func Main() int {
 }
 
 // Run dispatches to a registered command based on argv.
+// Uses os.Stdout as the output writer. See RunWithWriter for injection.
+func Run(argv []string) int {
+	return RunWithWriter(argv, os.Stdout)
+}
+
+// RunWithWriter is the injectable variant of Run for testing and daemon use.
+// It dispatches to a registered command based on argv.
 //
 // Dispatch modes:
 //   - Subcommand mode: if filepath.Base(argv[0]) appears in WellKnownNames,
@@ -73,7 +81,7 @@ func Main() int {
 //
 // Returns a POSIX exit code (0 for success, 127 for unknown command, or the
 // command's own exit code).
-func Run(argv []string) int {
+func RunWithWriter(argv []string, out io.Writer) int {
 	binName := filepath.Base(argv[0])
 	cmdName := binName
 
@@ -103,7 +111,7 @@ func Run(argv []string) int {
 		return 127
 	}
 
-	return cmd.Run(argv[1:], os.Stdout)
+	return cmd.Run(argv[1:], out)
 }
 
 func isWellKnown(name string) bool {
