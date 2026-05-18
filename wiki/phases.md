@@ -98,7 +98,9 @@ goposix binary (single static ELF, <12MB)
 | [16_post_mvp_tier2.md](16_post_mvp_tier2.md) | Phase 16 — Tier 2: 9 text/stream utilities (43 BusyBox tests) | **COMPLETED** |
 | [17_post_mvp_tier3.md](17_post_mvp_tier3.md) | Phase 17 — Tier 3: 12 utilities without BusyBox coverage | **COMPLETED** |
 | [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases | **COMPLETED** |
-| [19_performance_benchmarking.md](19_performance_benchmarking.md) | Phase 19 — Performance Benchmarking Plan (GoPOSIX vs BusyBox) | **IMPLEMENTING** |
+| [19_performance_benchmarking.md](19_performance_benchmarking.md) | Phase 19 — Performance Benchmarking Plan (GoPOSIX vs BusyBox) | **DONE** |
+| [20_hardening_ii.md](20_hardening_ii.md) | Phase 20 — Hardening II (flag audit, code cleanup, coverage, input safety) | **COMPLETED** |
+| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III (Daemon-First Pivot) | **PLANNING** |
 | [performance.md](performance.md) | Performance Quick Reference — commands, scale, categories | **LIVING** |
 | [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 
@@ -108,7 +110,7 @@ goposix binary (single static ELF, <12MB)
 
 | # | Item | Doc |
 |---|------|-----|
-| — | Performance benchmarking vs BusyBox | [19_performance_benchmarking.md](19_performance_benchmarking.md) — implementing (`feat/performance`) |
+| — | Daemon-first pivot (SDK as default interface) | [22_hardening_iii.md](22_hardening_iii.md) — planning |
 | — | `awk` implementation (Platinum gate) | [07a_awk.md](07a_awk.md) — deferred |
 | — | Low-coverage hardening (split, tty — all >60% now) | [todos.md](todos.md) |
 | — | XML output (`--xml`) | [14_xml_output.md](14_xml_output.md) — deferred |
@@ -135,6 +137,7 @@ These phase-plan documents describe completed work and are retained for referenc
 | [11_post_mvp_priorities.md](11_post_mvp_priorities.md) | Phase 11 — Post-MVP Priorities |
 | [11a_lower_priority.md](11a_lower_priority.md) | Phase 11a — Lower Priority |
 | [11_lessons_learned.md](11_lessons_learned.md) | Phase 11 — Lessons Learned |
+| [20_hardening_ii.md](20_hardening_ii.md) | Phase 20 — Hardening II |
 
 ## Risk Register
 
