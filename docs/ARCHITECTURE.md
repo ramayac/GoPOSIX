@@ -106,8 +106,8 @@ GoPOSIX/
 
 ## BusyBox Test Suite
 
-**477 passed, 3 failed, 10 skipped** (99.4% pass rate). The 3 remaining failures are all in the
-`date` utility — 2 Go POSIX timezone limitations and 1 cosmetic error-format mismatch.
+**548 passed, 4 failed, 10 skipped** (99.3% pass rate, 552 total tested).
+Failures: 3 in `date` (Go POSIX timezone limitations), 1 in `fold` (NUL handling via echo harness).
 Run `make testsuite` before every commit to prevent regressions.
 
 ## Phase History
