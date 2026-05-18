@@ -37,7 +37,6 @@ This is a test project for benchmarking.
 - DONE: CI pipeline
 README_EOF
 
-  # Create some .go files.
   for i in $(seq 50); do
     cat > "$WORKDIR/workspace/module_${i}.go" << GO_EOF
 package main
@@ -56,54 +55,38 @@ fi
 # CSV header.
 echo "category,test,sample,wall_sec,user_sec,sys_sec,rss_kb"
 
-# RPC loop script — a single invocation of this sequence.
-RPC_SCRIPT='
-cd /tmp/bench/rpc_bench/workspace || exit 1
-$LS -la . >/dev/null
-$CAT README.md >/dev/null
-$GREP "TODO" README.md >/dev/null
-$WC -l README.md >/dev/null
-$FIND . -name "*.go" >/dev/null
-'
+# Accumulate for stats.
+ACCUM=$(mktemp)
+
+# RPC task loop as a function-like command string (no eval complexity).
+RPC_CMDS="cd /tmp/bench/rpc_bench/workspace && ls -la . >/dev/null && cat README.md >/dev/null && grep TODO README.md >/dev/null && wc -l README.md >/dev/null && find . -name '*.go' >/dev/null"
 
 # === BusyBox process-per-command ===
 echo "# BusyBox RPC task loop ($ITERATIONS iterations)" >&2
 bench_run "rpc_loop_${ITERATIONS}_busybox" "$SAMPLES" \
   "( for _i in \$(seq $ITERATIONS); do
-      LS=/bin/busybox
-      CAT=/bin/busybox
-      GREP=/bin/busybox
-      WC=/bin/busybox
-      FIND=/bin/busybox
-      eval \"$RPC_SCRIPT\"
-    done )"
+      PATH=/bin $RPC_CMDS
+    done )" | tee -a "$ACCUM"
 
 # === GoPOSIX Daemon ===
 SOCKET="$BENCH_TMPDIR/goposix-bench-j.sock"
 echo "# Starting GoPOSIX daemon for RPC task loop..." >&2
 rm -f "$SOCKET"
-/bin/goposix daemon --socket "$SOCKET" &
+/bin/goposix daemon --socket "$SOCKET" 2>/dev/null &
 DAEMON_PID=$!
 sleep 1
 
 if kill -0 "$DAEMON_PID" 2>/dev/null; then
   echo "# GoPOSIX daemon RPC task loop ($ITERATIONS iterations)" >&2
 
-  # JSON-RPC payloads.
-  LS_REQ='{"jsonrpc":"2.0","method":"goposix.ls","params":{"path":"/tmp/bench/rpc_bench/workspace","flags":"-la"},"id":1}'
-  CAT_REQ='{"jsonrpc":"2.0","method":"goposix.cat","params":{"path":"/tmp/bench/rpc_bench/workspace/README.md"},"id":2}'
-  GREP_REQ='{"jsonrpc":"2.0","method":"goposix.grep","params":{"pattern":"TODO","path":"/tmp/bench/rpc_bench/workspace/README.md"},"id":3}'
-  WC_REQ='{"jsonrpc":"2.0","method":"goposix.wc","params":{"path":"/tmp/bench/rpc_bench/workspace/README.md","flags":"-l"},"id":4}'
-  FIND_REQ='{"jsonrpc":"2.0","method":"goposix.find","params":{"path":"/tmp/bench/rpc_bench/workspace","flags":"-name=*.go"},"id":5}'
-
   bench_run "rpc_loop_${ITERATIONS}_goposix" "$SAMPLES" \
     "( for _i in \$(seq $ITERATIONS); do
-        echo '$LS_REQ' | socat -T2 - UNIX-CONNECT:$SOCKET >/dev/null 2>&1
-        echo '$CAT_REQ' | socat -T2 - UNIX-CONNECT:$SOCKET >/dev/null 2>&1
-        echo '$GREP_REQ' | socat -T2 - UNIX-CONNECT:$SOCKET >/dev/null 2>&1
-        echo '$WC_REQ' | socat -T2 - UNIX-CONNECT:$SOCKET >/dev/null 2>&1
-        echo '$FIND_REQ' | socat -T2 - UNIX-CONNECT:$SOCKET >/dev/null 2>&1
-      done )"
+        echo '{\"jsonrpc\":\"2.0\",\"method\":\"goposix.ls\",\"params\":{\"path\":\"/tmp/bench/rpc_bench/workspace\",\"flags\":\"-la\"},\"id\":1}' | socat -T2 - UNIX-CONNECT:$SOCKET >/dev/null 2>&1
+        echo '{\"jsonrpc\":\"2.0\",\"method\":\"goposix.cat\",\"params\":{\"path\":\"/tmp/bench/rpc_bench/workspace/README.md\"},\"id\":2}' | socat -T2 - UNIX-CONNECT:$SOCKET >/dev/null 2>&1
+        echo '{\"jsonrpc\":\"2.0\",\"method\":\"goposix.grep\",\"params\":{\"pattern\":\"TODO\",\"path\":\"/tmp/bench/rpc_bench/workspace/README.md\"},\"id\":3}' | socat -T2 - UNIX-CONNECT:$SOCKET >/dev/null 2>&1
+        echo '{\"jsonrpc\":\"2.0\",\"method\":\"goposix.wc\",\"params\":{\"path\":\"/tmp/bench/rpc_bench/workspace/README.md\",\"flags\":\"-l\"},\"id\":4}' | socat -T2 - UNIX-CONNECT:$SOCKET >/dev/null 2>&1
+        echo '{\"jsonrpc\":\"2.0\",\"method\":\"goposix.find\",\"params\":{\"path\":\"/tmp/bench/rpc_bench/workspace\",\"flags\":\"-name=*.go\"},\"id\":5}' | socat -T2 - UNIX-CONNECT:$SOCKET >/dev/null 2>&1
+      done )" | tee -a "$ACCUM"
 
   kill "$DAEMON_PID" 2>/dev/null || true
   wait "$DAEMON_PID" 2>/dev/null || true
@@ -112,6 +95,47 @@ else
 fi
 rm -f "$SOCKET"
 
+# ===========================================================================
+# Log: compute medians.
+# ===========================================================================
+GPX_MED=$(grep "rpc_loop_${ITERATIONS}_goposix" "$ACCUM" | cut -d, -f3 | bench_median)
+BBX_MED=$(grep "rpc_loop_${ITERATIONS}_busybox" "$ACCUM" | cut -d, -f3 | bench_median)
+
+GPX_MED=${GPX_MED:-0}
+BBX_MED=${BBX_MED:-0}
+
+{
+  echo ""
+  echo "## Cat J — RPC Task Loop ($ITERATIONS iterations, median of $SAMPLES)"
+  echo ""
+  echo "| Mode | Time (s) | Per-Iteration (ms) |"
+  echo "|------|:--------:|:------------------:|"
+} >&2
+
+if [ "$(echo "$GPX_MED > 0" | bc -l 2>/dev/null)" = "1" ]; then
+  gpx_per=$(awk "BEGIN { printf \"%.2f\", ($GPX_MED / $ITERATIONS) * 1000 }" 2>/dev/null || echo "0")
+  echo "| GoPOSIX Daemon | ${GPX_MED} | ${gpx_per} |" >&2
+else
+  echo "| GoPOSIX Daemon | — | — |" >&2
+fi
+
+if [ "$(echo "$BBX_MED > 0" | bc -l 2>/dev/null)" = "1" ]; then
+  bbx_per=$(awk "BEGIN { printf \"%.2f\", ($BBX_MED / $ITERATIONS) * 1000 }" 2>/dev/null || echo "0")
+  echo "| BusyBox Process | ${BBX_MED} | ${bbx_per} |" >&2
+else
+  echo "| BusyBox Process | — | — |" >&2
+fi
+
 echo "" >&2
-echo "# FINDING: RPC task loop at $ITERATIONS iterations (scale=${BENCH_SCALE}×). GoPOSIX daemon expected to win 10–50×." >&2
-echo "# FINDING: This benchmark measures sustained RPC throughput — the key metric for programmatic consumers." >&2
+
+if [ "$(echo "$BBX_MED > 0" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$GPX_MED > 0" | bc -l 2>/dev/null)" = "1" ]; then
+  ratio=$(awk "BEGIN { printf \"%.1f\", $GPX_MED / $BBX_MED }" 2>/dev/null || echo "-")
+  if [ "$(echo "$GPX_MED < $BBX_MED" | bc -l 2>/dev/null)" = "1" ]; then
+    echo "# FINDING: RPC task loop at $ITERATIONS iterations: GoPOSIX daemon wins (${GPX_MED}s vs ${BBX_MED}s, ${ratio}× faster)." >&2
+  else
+    echo "# FINDING: RPC task loop at $ITERATIONS iterations: BusyBox wins (${BBX_MED}s vs ${GPX_MED}s, ${ratio}× slower for GoPOSIX)." >&2
+  fi
+fi
+echo "# FINDING: Per-iteration cost: GoPOSIX daemon ${gpx_per:-?}ms vs BusyBox ${bbx_per:-?}ms. This benchmark measures sustained RPC throughput." >&2
+
+rm -f "$ACCUM"

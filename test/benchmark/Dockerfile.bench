@@ -19,6 +19,10 @@ RUN VERSION=${VERSION:-$(git describe --tags --always 2>/dev/null || echo "dev")
 
 RUN /goposix --list-commands > /commands.txt
 
+# Build the Go SDK benchmark client (persistent connection, no socat).
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -ldflags="-s -w" -o /bench-sdk-client ./test/benchmark/bench_client/
+
 # =============================================================================
 # Stage 2: Benchmark image (Alpine + GoPOSIX + BusyBox + tooling).
 # =============================================================================
@@ -30,6 +34,9 @@ RUN apk add --no-cache strace bc coreutils procps findutils grep socat
 COPY --from=builder /goposix /bin/goposix
 COPY --from=builder /commands.txt /commands.txt
 RUN while IFS= read -r cmd; do ln -s /bin/goposix "/bin/${cmd}"; done < /commands.txt
+
+# Install benchmark scripts.
+COPY --from=builder /bench-sdk-client /bench/bench-sdk-client
 
 # Install benchmark scripts.
 COPY test/benchmark/ /bench/

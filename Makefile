@@ -389,6 +389,23 @@ SCALE ?= 1.0
 bench-image:
 	docker build -t goposix:bench -f test/benchmark/Dockerfile.bench .
 
+.PHONY: daemon-image
+daemon-image:
+	docker build -t goposix:daemon -f docker/Dockerfile.daemon .
+
+.PHONY: bench-daemon
+bench-daemon: daemon-image
+	@echo "Starting daemon container..."
+	@docker rm -f goposix-bench-daemon 2>/dev/null || true
+	docker run -d --name goposix-bench-daemon --privileged \
+	  -v goposix-bench-data:/data \
+	  goposix:daemon
+	@sleep 2
+	@echo "Daemon running. Socket: /var/run/goposix.sock (inside container)"
+	@echo "Test: docker exec goposix-bench-daemon /bin/goposix echo hello"
+	@echo "Bench: docker exec goposix-bench-daemon /bench/bench_client -op echo 1000"
+	@echo "Stop:  docker rm -f goposix-bench-daemon"
+
 .PHONY: bench-all
 bench-all: bench-image
 	docker run --rm --privileged \

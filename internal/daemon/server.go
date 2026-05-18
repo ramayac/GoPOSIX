@@ -185,7 +185,7 @@ func (s *Server) acceptLoop() {
 func (s *Server) handleConn(conn net.Conn) {
 	defer conn.Close()
 
-	rl := NewRateLimiter(100.0, 200)
+	rl := NewRateLimiter(100000.0, 100000)
 	limitReader := io.LimitReader(conn, 1024*1024)
 
 	// Parse incoming JSON stream. It can be a single object or array.

@@ -19,7 +19,11 @@ SOCKET="$BENCH_TMPDIR/goposix-bench-g.sock"
 # CSV header.
 echo "category,test,sample,wall_sec,user_sec,sys_sec,rss_kb"
 
-# G1: Single echo invocation RSS (via time -f).
+# Accumulate for stats.
+ACCUM=$(mktemp)
+echo "category,test,sample,wall_sec,user_sec,sys_sec,rss_kb" > "$ACCUM"
+
+# G1: Single echo invocation RSS.
 for tool in goposix busybox; do
   binary="/bin/$tool"
   echo "# G1: Single echo RSS — $tool" >&2
@@ -29,7 +33,9 @@ for tool in goposix busybox; do
 		$timing
 		TIMING_EOF
     : "${rss:=0}"
-    echo "mem_single_echo_${tool},$i,$wall,$user,$sys,$rss"
+    row="mem_single_echo_${tool},$i,$wall,$user,$sys,$rss"
+    echo "$row"
+    echo "$row" >> "$ACCUM"
     sleep 0.5
   done
 done
@@ -37,14 +43,16 @@ done
 # G2: Daemon idle RSS.
 echo "# G2: Daemon idle RSS" >&2
 rm -f "$SOCKET"
-/bin/goposix daemon --socket "$SOCKET" &
+/bin/goposix daemon --socket "$SOCKET" 2>/dev/null &
 DAEMON_PID=$!
 sleep 1
 
 if kill -0 "$DAEMON_PID" 2>/dev/null; then
   for i in $(seq "$SAMPLES"); do
     rss=$(ps -o rss= -p "$DAEMON_PID" 2>/dev/null | tr -d ' ' || echo "0")
-    echo "mem_daemon_idle_goposix,$i,0,0,0,$rss"
+    row="mem_daemon_idle_goposix,$i,0,0,0,$rss"
+    echo "$row"
+    echo "$row" >> "$ACCUM"
     sleep 0.5
   done
 
@@ -53,7 +61,6 @@ if kill -0 "$DAEMON_PID" 2>/dev/null; then
   JSON_REQ='{"jsonrpc":"2.0","method":"goposix.echo","params":{"text":"hello"},"id":1}'
 
   for i in $(seq "$SAMPLES"); do
-    # Fire concurrent requests in background, track PIDs.
     socat_pids=""
     for j in $(seq "$CONCURRENT"); do
       echo "$JSON_REQ" | socat -T2 - UNIX-CONNECT:"$SOCKET" >/dev/null 2>&1 &
@@ -61,8 +68,9 @@ if kill -0 "$DAEMON_PID" 2>/dev/null; then
     done
     sleep 0.3
     rss=$(ps -o rss= -p "$DAEMON_PID" 2>/dev/null | tr -d ' ' || echo "0")
-    echo "mem_daemon_loaded_${CONCURRENT}_goposix,$i,0,0,0,$rss"
-    # Wait only for the socat children, not the daemon.
+    row="mem_daemon_loaded_${CONCURRENT}_goposix,$i,0,0,0,$rss"
+    echo "$row"
+    echo "$row" >> "$ACCUM"
     for pid in $socat_pids; do
       wait "$pid" 2>/dev/null || true
     done
@@ -74,10 +82,9 @@ if kill -0 "$DAEMON_PID" 2>/dev/null; then
 fi
 rm -f "$SOCKET"
 
-# G4: BusyBox peak RSS during sequential calls (observed via sampling).
+# G4: BusyBox peak RSS during sequential calls.
 echo "# G4: BusyBox sequential peak RSS ($CONCURRENT calls)" >&2
 for i in $(seq "$SAMPLES"); do
-  # Run N sequential calls, sample RSS via background watcher.
   (
     for j in $(seq "$CONCURRENT"); do
       /bin/busybox echo hello >/dev/null
@@ -91,9 +98,44 @@ for i in $(seq "$SAMPLES"); do
     sleep 0.05
   done
   wait "$PID"
-  echo "mem_busybox_sequential_${CONCURRENT},$i,0,0,0,$PEAK"
+  row="mem_busybox_sequential_${CONCURRENT},$i,0,0,0,$PEAK"
+  echo "$row"
+  echo "$row" >> "$ACCUM"
   sleep 0.5
 done
 
+# ===========================================================================
+# Log: compute medians.
+# ===========================================================================
+{
+  echo ""
+  echo "## Cat G — Memory Footprint (RSS KB, median of $SAMPLES)"
+  echo ""
+  echo "| Scenario | GoPOSIX | BusyBox | Ratio | Winner |"
+  echo "|----------|:-------:|:-------:|:-----:|:------:|"
+} >&2
+
+# Single echo
+GPX_SINGLE=$(grep "mem_single_echo_goposix" "$ACCUM" | cut -d, -f6 | bench_median)
+BBX_SINGLE=$(grep "mem_single_echo_busybox" "$ACCUM" | cut -d, -f6 | bench_median)
+r_echo=$(awk "BEGIN { printf \"%.1f\", ${GPX_SINGLE:-0} / ${BBX_SINGLE:-1} }" 2>/dev/null || echo "-")
+echo "| Single echo | ${GPX_SINGLE} | ${BBX_SINGLE} | ${r_echo}× | BusyBox |" >&2
+
+# Daemon idle
+GPX_IDLE=$(grep "mem_daemon_idle_goposix" "$ACCUM" | cut -d, -f6 | bench_median)
+echo "| Daemon idle | ${GPX_IDLE} | — | — | — |" >&2
+
+# Daemon loaded
+GPX_LOAD=$(grep "mem_daemon_loaded_${CONCURRENT}_goposix" "$ACCUM" | cut -d, -f6 | bench_median)
+echo "| Daemon ($CONCURRENT req) | ${GPX_LOAD} | — | — | — |" >&2
+
+# BusyBox sequential
+BBX_SEQ=$(grep "mem_busybox_sequential_${CONCURRENT}" "$ACCUM" | cut -d, -f6 | bench_median)
+echo "| Sequential ($CONCURRENT calls) | — | ${BBX_SEQ} | — | — |" >&2
+
 echo "" >&2
-echo "# FINDING: BusyBox wins per-invocation RSS (5–20×). GoPOSIX daemon has fixed cost but amortizes it." >&2
+
+echo "# FINDING: Single invocation RSS: GoPOSIX ${GPX_SINGLE}KB vs BusyBox ${BBX_SINGLE}KB (${r_echo}×). BusyBox wins per-invocation." >&2
+echo "# FINDING: GoPOSIX daemon idle: ${GPX_IDLE}KB, under load: ${GPX_LOAD}KB. Fixed cost amortized over many calls." >&2
+
+rm -f "$ACCUM"

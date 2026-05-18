@@ -39,16 +39,16 @@ SCALE=$(detect_scale)
 # Category descriptions (used for narrative).
 cat_desc() {
   case "$1" in
-    cat_a) echo "Single-invocation startup latency" ;;
-    cat_b) echo "Bulk file creation (touch)" ;;
-    cat_c) echo "Bulk directory listing (ls)" ;;
-    cat_d) echo "Bulk file move/remove (mv, rm)" ;;
-    cat_e) echo "Text processing throughput (cat, grep, wc, sort)" ;;
-    cat_f) echo "Daemon vs process-per-call latency" ;;
-    cat_g) echo "Memory footprint (RSS)" ;;
-    cat_h) echo "Binary & image size" ;;
-    cat_i) echo "Concurrent operations" ;;
-    cat_j) echo "End-to-end RPC task loop" ;;
+    a_startup) echo "Single-invocation startup latency" ;;
+    b_bulk_create) echo "Bulk file creation (touch)" ;;
+    c_bulk_ls) echo "Bulk directory listing (ls)" ;;
+    d_bulk_move) echo "Bulk file move/remove (mv, rm)" ;;
+    e_text_throughput) echo "Text processing throughput (cat, grep, wc, sort)" ;;
+    f_daemon_vs_process) echo "Daemon vs process-per-call latency" ;;
+    g_memory) echo "Memory footprint (RSS)" ;;
+    h_sizes) echo "Binary & image size" ;;
+    i_concurrent) echo "Concurrent operations" ;;
+    j_rpc_loop) echo "End-to-end RPC task loop" ;;
     *)     echo "$1" ;;
   esac
 }
@@ -65,7 +65,9 @@ cat_desc() {
   echo ""
   echo "| Category | Description | Key Finding |"
   echo "|----------|-------------|-------------|"
-  for cat_log in "$RESULTS_DIR"/cat_*.log; do
+  # Logs are in cat/ subdirectory (stderr from each category script).
+  CAT_LOG_DIR="$RESULTS_DIR/cat"
+  for cat_log in "$CAT_LOG_DIR"/*.log; do
     [ -f "$cat_log" ] || continue
     cat_name=$(basename "$cat_log" .log)
     desc=$(cat_desc "$cat_name")
@@ -89,24 +91,24 @@ cat_desc() {
   fi
 
   # Cat H sizes are quick to include here
-  if [ -f "$RESULTS_DIR/cat_h.log" ]; then
+  if [ -f "$CAT_LOG_DIR/h_sizes.log" ]; then
     echo ""
     echo "## Quick Stats — Size (Cat H)"
     echo ""
-    grep -A20 'Binary & Image Size' "$RESULTS_DIR/cat_h.log" 2>/dev/null || true
+    grep -A20 'Binary Size' "$CAT_LOG_DIR/h_sizes.log" 2>/dev/null || true
   fi
 
   # Daemon amortization curve (from Cat F log)
-  if [ -f "$RESULTS_DIR/cat_f.log" ]; then
+  if [ -f "$CAT_LOG_DIR/f_daemon_vs_process.log" ]; then
     echo ""
     echo "## Daemon Amortization Curve (Cat F)"
     echo ""
-    grep -B1 -A10 'Amortization' "$RESULTS_DIR/cat_f.log" 2>/dev/null || true
+    grep -A15 'Cat F — Daemon Amortization' "$CAT_LOG_DIR/f_daemon_vs_process.log" 2>/dev/null | grep -v '^# FINDING:' || true
   fi
 
   echo ""
   echo "---"
-  echo "*Full per-category logs are in $(basename "$RESULTS_DIR")/cat_*.log*"
+  echo "*Full per-category logs are in $(basename "$RESULTS_DIR")/cat/*.log*"
 } > "$SUMMARY"
 
 # ===========================================================================
@@ -150,10 +152,10 @@ cat_desc() {
     echo ""
 
     # Extract daemon amortization if available
-    if [ -f "$RESULTS_DIR/cat_f.log" ]; then
+    if [ -f "$CAT_LOG_DIR/f_daemon_vs_process.log" ]; then
       echo "## Cat F — Daemon Amortization Detail"
       echo ""
-      grep -A30 'Amortization' "$RESULTS_DIR/cat_f.log" 2>/dev/null || echo "(raw data in cat_f.log)"
+      grep -A15 'Cat F — Daemon Amortization' "$CAT_LOG_DIR/f_daemon_vs_process.log" 2>/dev/null | grep -v '^# FINDING:' || echo "(raw data in f_daemon_vs_process.log)"
       echo ""
     fi
   fi
@@ -169,7 +171,7 @@ cat_desc() {
   echo "## Raw Data"
   echo ""
   echo "Full CSV: \`$(basename "$RESULTS_DIR")/raw.csv\`"
-  echo "Per-category logs: \`$(basename "$RESULTS_DIR")/cat_*.log\`"
+  echo "Per-category logs: \`$(basename "$RESULTS_DIR")/cat/*.log\`"
 } > "$NARRATIVE"
 
 echo "Report generated: $SUMMARY"

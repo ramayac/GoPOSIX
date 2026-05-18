@@ -106,6 +106,30 @@ bench_median() {
 }
 
 # ---------------------------------------------------------------------------
+# High-precision timing using date +%s%N (nanosecond → microsecond resolution).
+# For commands that complete in <10ms where BusyBox 'time -f' rounds to 0.00.
+# Does NOT measure user/sys/RSS — only wall time. Use bench_run for those.
+# Output format: label,sample,wall_sec,0,0,0
+# ---------------------------------------------------------------------------
+bench_run_fine() {
+  local label="$1"
+  local samples="$2"
+  local binary="$3"
+  shift 3
+  local args="$*"
+
+  local i t0 t1 elapsed
+  for i in $(seq "$samples"); do
+    t0=$(date +%s%N 2>/dev/null || echo 0)
+    "$binary" $args >/dev/null 2>&1
+    t1=$(date +%s%N 2>/dev/null || echo 0)
+    elapsed=$(awk "BEGIN { printf \"%.6f\", ($t1 - $t0) / 1000000000 }" 2>/dev/null || echo "0.000000")
+    echo "$label,$i,$elapsed,0,0,0"
+    sleep 1
+  done
+}
+
+# ---------------------------------------------------------------------------
 # Compute min, median, p95, max from CSV column.
 # Input: CSV with the target column as field $col.
 # Output: min median p95 max

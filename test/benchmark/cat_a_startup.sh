@@ -2,23 +2,23 @@
 # =============================================================================
 # Cat A — Single-Invocation Latency (cold start overhead).
 # Measures pure startup cost of GoPOSIX vs BusyBox.
-# Scale has minimal effect here — always 10 samples per command.
+# Uses nanosecond-resolution timing (date +%s%N) because these commands
+# complete in <20ms where BusyBox 'time -f' rounds to 0.00.
 # =============================================================================
 
 set -u
 . "$(dirname "$0")/lib/harness.sh"
 
 SAMPLES=10
-CMDS="true echo_hello pwd whoami"
 
 echo "# Cat A — Single-Invocation Cold-Start Latency" >&2
-echo "# scale=$BENCH_SCALE samples=$SAMPLES" >&2
+echo "# scale=$BENCH_SCALE samples=$SAMPLES (nanosecond wall-clock, no RSS)" >&2
 echo "" >&2
 
 # CSV header.
 echo "category,test,sample,wall_sec,user_sec,sys_sec,rss_kb"
 
-# Temp file to accumulate all CSV rows for stats computation.
+# Accumulate all CSV rows for stats computation.
 ACCUM=$(mktemp)
 echo "category,test,sample,wall_sec,user_sec,sys_sec,rss_kb" > "$ACCUM"
 
@@ -26,36 +26,47 @@ for cmd_raw in "true true" "echo hello echo_hello" "pwd pwd" "whoami whoami"; do
   cmd=$(echo "$cmd_raw" | awk '{print $1}')
   label=$(echo "$cmd_raw" | awk '{print $2}')
 
-  # GoPOSIX
-  bench_run "startup_${label}_goposix" "$SAMPLES" "/bin/goposix $cmd" | tee -a "$ACCUM"
-  # BusyBox
-  bench_run "startup_${label}_busybox" "$SAMPLES" "/bin/busybox $cmd" | tee -a "$ACCUM"
+  # GoPOSIX — nanosecond wall clock.
+  bench_run_fine "startup_${label}_goposix" "$SAMPLES" "/bin/goposix" "$cmd" | tee -a "$ACCUM"
+  # BusyBox — nanosecond wall clock.
+  bench_run_fine "startup_${label}_busybox" "$SAMPLES" "/bin/busybox" "$cmd" | tee -a "$ACCUM"
 done
 
 # ===========================================================================
-# Log: compute medians and emit findings to stderr.
+# Log: compute medians from accumulated data, emit findings + table.
 # ===========================================================================
 {
-  echo "# FINDING: See median table below."
   echo ""
-  echo "## Cat A — Single-Invocation Latency (seconds, median of $SAMPLES)"
+  echo "## Cat A — Single-Invocation Latency (ms, median of $SAMPLES)"
   echo ""
-  echo "| Test | GoPOSIX | BusyBox | Ratio | Winner |"
-  echo "|------|:-------:|:-------:|:-----:|:------:|"
+  echo "| Test | GoPOSIX (ms) | BusyBox (ms) | Ratio | Winner |"
+  echo "|------|:------------:|:------------:|:-----:|:------:|"
 } >&2
 
 for cmd_raw in "true true" "echo hello echo_hello" "pwd pwd" "whoami whoami"; do
   cmd=$(echo "$cmd_raw" | awk '{print $1}')
   label=$(echo "$cmd_raw" | awk '{print $2}')
 
-  gpx_med=$(grep "startup_${label}_goposix" "$ACCUM" | cut -d, -f3 | bench_median)
-  bbx_med=$(grep "startup_${label}_busybox" "$ACCUM" | cut -d, -f3 | bench_median)
+  # Compute median wall time in seconds, convert to ms.
+  gpx_secs=$(grep "startup_${label}_goposix" "$ACCUM" | cut -d, -f3 | bench_median)
+  bbx_secs=$(grep "startup_${label}_busybox" "$ACCUM" | cut -d, -f3 | bench_median)
 
-  if [ "$(echo "$bbx_med > 0" | bc -l 2>/dev/null)" = "1" ]; then
-    ratio=$(awk "BEGIN { printf \"%.1f\", $gpx_med / $bbx_med }")
-    echo "| $cmd | ${gpx_med}s | ${bbx_med}s | ${ratio}× | BusyBox |" >&2
+  gpx_ms=$(awk "BEGIN { printf \"%.2f\", ${gpx_secs:-0} * 1000 }" 2>/dev/null || echo "0.00")
+  bbx_ms=$(awk "BEGIN { printf \"%.2f\", ${bbx_secs:-0} * 1000 }" 2>/dev/null || echo "0.00")
+
+  if [ "$(echo "$bbx_secs > 0" | bc -l 2>/dev/null)" = "1" ]; then
+    ratio=$(awk "BEGIN { printf \"%.1f\", $gpx_secs / $bbx_secs }" 2>/dev/null || echo "-")
+    if [ "$(echo "$gpx_secs < $bbx_secs" | bc -l 2>/dev/null)" = "1" ]; then
+      winner="**GoPOSIX**"
+      echo "# FINDING: GoPOSIX $cmd wins (${gpx_ms}ms vs ${bbx_ms}ms, ${ratio}× faster)" >&2
+    else
+      winner="BusyBox"
+      echo "# FINDING: BusyBox $cmd wins (${bbx_ms}ms vs ${gpx_ms}ms, ${ratio}× faster)" >&2
+    fi
+    echo "| $cmd | ${gpx_ms} | ${bbx_ms} | ${ratio}× | $winner |" >&2
   else
-    echo "| $cmd | ${gpx_med}s | ${bbx_med}s | — | — |" >&2
+    echo "# FINDING: $cmd: GoPOSIX ${gpx_ms}ms vs BusyBox ${bbx_ms}ms (times too fast to ratio)" >&2
+    echo "| $cmd | ${gpx_ms} | ${bbx_ms} | — | — |" >&2
   fi
 done
 echo "" >&2
