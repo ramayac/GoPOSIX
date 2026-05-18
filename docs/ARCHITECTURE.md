@@ -2,7 +2,7 @@
 
 GoPOSIX is a POSIX-compliant userland implemented as a single, statically-linked Go binary.
 It functions as both a traditional CLI tool (multicall binary) and as a persistent
-JSON-RPC 2.0 daemon for AI agent backends.
+JSON-RPC 2.0 daemon for programmatic consumers.
 
 **Version:** v1.0.0 (Gold) | **Go:** 1.26 | **Binary:** ~10 MB fully static
 
@@ -20,7 +20,7 @@ JSON-RPC 2.0 daemon for AI agent backends.
 
 ```
                   ┌──────────────────────────────────┐
-                  │          AI Agent / User          │
+                  │  Programmatic Consumer / CLI User │
                   └──────┬───────────────┬───────────┘
                          │               │
                    Unix Socket     CLI invocation
@@ -93,7 +93,7 @@ GoPOSIX/
 | `internal/daemon` | JSON-RPC 2.0 server over Unix socket. Dispatches to registered commands. |
 | `internal/shell` | Sandbox for `shell.exec` RPC. Configurable timeout, output limits, path confinement. |
 | `pkg/common` | Shared: POSIX flag parser (`ParseFlags`), JSON envelope output (`Render`/`RenderError`), path security guards. |
-| `pkg/client` | Go SDK for agents. Connection pooling, batch requests, exponential backoff, typed wrappers for every utility. |
+| `pkg/client` | Go SDK for JSON-RPC clients. Connection pooling, batch requests, exponential backoff, typed wrappers for every utility. |
 | `pkg/<util>` | One package per POSIX utility. Library layer (testable `Run()`) + CLI layer (`run()`) wired via `init()` → dispatch. |
 
 ## Utilities Implemented (40+)
@@ -137,4 +137,4 @@ Run `make testsuite` before every commit to prevent regressions.
 - [SECURITY.md](SECURITY.md) — Security model, shell sandbox, deployment posture
 - [RPC_API.md](RPC_API.md) — JSON-RPC client API reference (`pkg/client`)
 - [JSON_SCHEMA.md](JSON_SCHEMA.md) — `--json` output envelope and per-utility schemas
-- [AGENT_INTEGRATION.md](AGENT_INTEGRATION.md) — How to use GoPOSIX as an AI agent backend
+- [RPC_QUICKSTART.md](RPC_QUICKSTART.md) — How to use GoPOSIX programmatically via JSON-RPC

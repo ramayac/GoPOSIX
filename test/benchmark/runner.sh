@@ -125,7 +125,7 @@ case "${1:-}" in
       g) CAT_NAME="cat_g_memory" ;;
       h) CAT_NAME="cat_h_sizes" ;;
       i) CAT_NAME="cat_i_concurrent" ;;
-      j) CAT_NAME="cat_j_agent_loop" ;;
+      j) CAT_NAME="cat_j_rpc_loop" ;;
       startup) CAT_NAME="cat_a_startup" ;;
       bulk_create) CAT_NAME="cat_b_bulk_create" ;;
       bulk_ls) CAT_NAME="cat_c_bulk_ls" ;;
@@ -135,7 +135,7 @@ case "${1:-}" in
       memory) CAT_NAME="cat_g_memory" ;;
       sizes) CAT_NAME="cat_h_sizes" ;;
       concurrent) CAT_NAME="cat_i_concurrent" ;;
-      agent) CAT_NAME="cat_j_agent_loop" ;;
+      rpc) CAT_NAME="cat_j_rpc_loop" ;;
       *) echo "ERROR: unknown category '$CAT_NAME'" >&2; exit 1 ;;
     esac
     ;;
@@ -143,7 +143,7 @@ case "${1:-}" in
     echo "Usage: $0 [--all | --quick | --cat <name>]" >&2
     echo "  Short names: a, b, c, d, e, f, g, h, i, j" >&2
     echo "  Full names:  cat_a_startup, cat_b_bulk_create, ..." >&2
-    echo "  Friendly:    startup, bulk_create, bulk_ls, bulk_move, text, daemon, memory, sizes, concurrent, agent" >&2
+    echo "  Friendly:    startup, bulk_create, bulk_ls, bulk_move, text, daemon, memory, sizes, concurrent, rpc" >&2
     echo "  BENCH_SCALE=5.0 $0 --all" >&2
     exit 1
     ;;
@@ -155,7 +155,7 @@ echo ""
 # ---------------------------------------------------------------------------
 # Category list (order matters — create deps before consumers).
 # ---------------------------------------------------------------------------
-ALL_CATEGORIES="cat_h_sizes cat_a_startup cat_b_bulk_create cat_c_bulk_ls cat_d_bulk_move cat_e_text_throughput cat_f_daemon_vs_process cat_g_memory cat_j_agent_loop cat_i_concurrent"
+ALL_CATEGORIES="cat_h_sizes cat_a_startup cat_b_bulk_create cat_c_bulk_ls cat_d_bulk_move cat_e_text_throughput cat_f_daemon_vs_process cat_g_memory cat_j_rpc_loop cat_i_concurrent"
 QUICK_CATEGORIES="cat_h_sizes cat_a_startup"
 
 # ---------------------------------------------------------------------------

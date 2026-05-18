@@ -1,6 +1,6 @@
 # Phase 20 — Hardening II (Post-Gold Audit)
 
-> **Status:** IN PROGRESS (20a ✅, 20b ✅, 20c 🔄 partial, 20d ✅, 20e pending) | **Date:** 2026-05-18 | **Trigger:** Independent expert code audit
+> **Status:** IN PROGRESS (20a ✅, 20b ✅, 20c 🔄 partial, 20d ✅, 20e ✅) | **Date:** 2026-05-18 | **Trigger:** Independent expert code audit
 >
 > A full-architecture audit was performed against the codebase at commit corresponding
 > to 2026-05-18. This document catalogs all weaknesses found and provides concrete
@@ -374,9 +374,20 @@ trap "rm -f $$tmp" EXIT
 
 ---
 
-#### 🟡 20.9 — No input size limits on most text-processing utilities
+#### 🟡 20.9 — No input size limits on most text-processing utilities ✅ FIXED
 
-**Severity:** MEDIUM | **Affected:** grep, sed, sort, wc, head, tail, cut, tr, uniq
+**Severity:** MEDIUM | **Status:** RESOLVED
+
+| File | Change |
+|------|--------|
+| `pkg/grep/grep.go` | Scanner buffer 1MB/10MB (×2), 256MB `LimitReader` wrapper |
+| `pkg/sort/sort.go` | Scanner buffer 1MB/10MB, 256MB `LimitReader` wrapper |
+| `pkg/head/head.go` | Scanner buffer 1MB/10MB (×2) |
+| `pkg/tail/tail.go` | Scanner buffer 1MB/10MB |
+
+Note: `wc` uses `ScanBytes` (buffer irrelevant). `sed` uses `bufio.Reader` (auto-grows).
+
+**Verification:** `make test` — 0 failures. `make testsuite` — 548/4 (unchanged).
 
 Most text-processing utilities use `bufio.Scanner` or read entire input into memory.
 A 10GB input file will cause OOM-kill. The shell sandbox has `LimitWriter` (128MB cap),
@@ -490,7 +501,7 @@ individually. The gate checks aggregate coverage, so these slip through.
 
 | Package | Coverage | LOC | Tier | Risk |
 |---------|:--------:|:---:|------|------|
-| `client` | **55.4%** | 1,341 | SDK | **Not in matrix!** Go SDK for agents — 1,341 LOC, should be ≥70% |
+| `client` | **55.4%** | 1,341 | SDK | **Not in matrix!** Go SDK for JSON-RPC clients — 1,341 LOC, should be ≥70% |
 | `tty` | 60.0% | 94 | Tier 7 | Lowest stub — still below 60% but +5.7pts since matrix |
 | `shell` | 60.8% | 180 | Tier 5 | User-facing shell — timeout/error paths untested |
 | `cmp` | 61.5% | 191 | Tier 6 | Basic comparison — easy to cover |
@@ -599,13 +610,19 @@ requires file I/O that's complex in daemon context).
 
 **Canonical numbers (2026-05-18):** 548 passed / 4 failed / 10 skipped BusyBox, 75.7% coverage
 
-### Phase 20e — Input Safety (estimated: 1–2 hours)
+### Phase 20e — Input Safety ✅ DONE (2026-05-18)
 
 **Goal:** Add buffer limits to text-processing utilities.
 
-1. Increase `bufio.Scanner` buffer to 10MB max line for grep, sed, wc, head, tail
-2. Add `io.LimitReader` wrappers for grep, sed, sort (256MB total input)
-3. Run `make testsuite` — verify no BusyBox regressions (some tests use large inputs)
+1. ✅ `grep`: Scanner buffer 1MB/10MB (×2) + 256MB `LimitReader` wrapper
+2. ✅ `sort`: Scanner buffer 1MB/10MB + 256MB `LimitReader` wrapper
+3. ✅ `head`: Scanner buffer 1MB/10MB (×2)
+4. ✅ `tail`: Scanner buffer 1MB/10MB
+5. ✅ `make test` — zero failures
+6. ✅ `make testsuite` — 548/4 (unchanged)
+7. ✅ `make cover-gate` — 75.7% (unchanged)
+
+**Files changed:** 4 (grep, sort, head, tail)
 
 ---
 

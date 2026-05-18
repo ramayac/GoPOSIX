@@ -1,5 +1,7 @@
 # Wiki Log
 
+> **Note:** References to "agent," "agentic," or "AI agent" in historical entries below predate the Phase 21 honest-takes audit (2026-05-18). The project's positioning has been corrected to "programmatic consumer" / "JSON-RPC client." See `wiki/21_honest_takes.md` for the full audit.
+
 Append-only timeline of wiki maintenance activity.
 
 ## [2026-05-18] doc | Performance Quick Reference (`wiki/performance.md`)

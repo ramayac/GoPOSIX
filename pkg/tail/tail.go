@@ -55,6 +55,7 @@ func Run(r io.Reader, w io.Writer, linesCount int, bytesCount int, fromStart boo
 	}
 
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 1024*1024), 10*1024*1024)
 	var lines []string
 
 	if fromStart {

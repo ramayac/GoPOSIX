@@ -175,5 +175,5 @@
 - **BusyBox skipped (10):** All tar tests requiring bzip2/xz/uudecode (external deps)
 - **Coverage gate:** CI enforces ≥70% overall (run `make cover-gate` for current; target ≥75% per Phase 20)
 - **Tier 7 stubs:** Implemented as functional stubs; need hardening and BusyBox-style compliance tests
-- **Client SDK** (`pkg/client`): 1,341 LOC Go SDK for agent JSON-RPC clients. Not a utility itself but included in coverage tracking. 55.4% coverage — Phase 20c targets ≥70%.
+- **Client SDK** (`pkg/client`): 1,341 LOC Go SDK for JSON-RPC clients. Not a utility itself but included in coverage tracking. 55.4% coverage — Phase 20c targets ≥70%.
 - **Stale number warning:** Prior version had stale entries for `split` (was 60.3% → now 86.3%), `nl` (was 62.2% → now 73.5%), `dd` (was 86.4% → now 81.4%), `tty` (was 54.3% → now 60.0%). Run `make cover-pkg` before updating this matrix.

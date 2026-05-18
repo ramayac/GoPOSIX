@@ -8,7 +8,7 @@
 
 ## Goal
 
-Implement the 10 text processing utilities. These are critical for agentic pipelines.
+Implement the 10 text processing utilities. These are critical for programmatic pipelines.
 
 ## Utilities
 

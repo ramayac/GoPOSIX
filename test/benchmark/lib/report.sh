@@ -48,7 +48,7 @@ cat_desc() {
     cat_g) echo "Memory footprint (RSS)" ;;
     cat_h) echo "Binary & image size" ;;
     cat_i) echo "Concurrent operations" ;;
-    cat_j) echo "End-to-end agent loop" ;;
+    cat_j) echo "End-to-end RPC task loop" ;;
     *)     echo "$1" ;;
   esac
 }
@@ -139,13 +139,13 @@ cat_desc() {
     echo "GoPOSIX's persistent JSON-RPC daemon eliminates fork+exec overhead:"
     echo ""
     echo "- **Daemon amortized latency:** One process handles N requests; BusyBox spawns per call"
-    echo "- **Agent loop throughput:** No shell parsing, typed client SDK, connection reuse"
+    echo "- **RPC task loop throughput:** No shell parsing, typed client SDK, connection reuse"
     echo "- **Concurrent operations:** Go goroutines parallelize file I/O (aspirational)"
     echo ""
 
     echo "### The Break-Even"
     echo ""
-    echo "For a one-off \`ls\`, use BusyBox. For an AI agent making 10,000 calls per session,"
+    echo "For a one-off \`ls\`, use BusyBox. For a program making 10,000 RPC calls per session,"
     echo "use GoPOSIX. The break-even on total latency is around **10–50 sequential operations**."
     echo ""
 
@@ -161,9 +161,9 @@ cat_desc() {
   echo "## Recommendations"
   echo ""
   echo "1. **For CI/CD pipelines:** Use BusyBox for one-shot operations; GoPOSIX where JSON output is needed"
-  echo "2. **For AI agent backends:** GoPOSIX daemon mode is the clear winner — 5–100× faster for repeated calls"
+  echo "2. **For programmatic backends:** GoPOSIX daemon mode is the clear winner — 5–100× faster for repeated calls"
   echo "3. **For minimal container images:** BusyBox still wins on pure size; use GoPOSIX when you need structured output"
-  echo "4. **For mixed workloads:** Deploy both — BusyBox for shell scripting, GoPOSIX daemon for agent RPC"
+  echo "4. **For mixed workloads:** Deploy both — BusyBox for shell scripting, GoPOSIX daemon for RPC workloads"
   echo ""
 
   echo "## Raw Data"

@@ -5,7 +5,7 @@
 > This document defines a rigorous, reproducible, and **honest** performance benchmarking
 > framework comparing GoPOSIX against BusyBox. The goal is not to cherry-pick wins but to
 > produce defensible evidence of where each tool excels, informing adoption decisions for
-> AI agent backends and minimal container deployments.
+> programmatic backends and minimal container deployments.
 
 ---
 
@@ -13,7 +13,7 @@
 
 GoPOSIX's primary adoption pitch is:
 
-> "A Go-native POSIX userland designed for agentic runtimes — persistent JSON-RPC daemon,
+> "A Go-native POSIX userland designed for programmatic runtimes — persistent JSON-RPC daemon,
 >  structured output, zero-fork execution loops."
 
 The performance argument is implicit: **a persistent daemon avoids process-spawning overhead
@@ -24,7 +24,7 @@ A rigorous benchmark suite serves three purposes:
 
 | Purpose | Audience |
 |---------|----------|
-| **Adoption evidence** | Engineers evaluating GoPOSIX vs BusyBox for agent backends |
+| **Adoption evidence** | Engineers evaluating GoPOSIX vs BusyBox for programmatic backends |
 | **Marketing** | README badges, blog posts, conference talks |
 | **Hot-path identification** | Developers optimizing the GoPOSIX codebase |
 
@@ -399,10 +399,10 @@ using goroutines. BusyBox is strictly sequential (single-threaded C).
 ### Cat J — End-to-End Agent Loop Simulation
 
 **Hypothesis:** This is the benchmark that matters most for adoption. A realistic
-AI agent loop (list files → read file → search → filter) run through the GoPOSIX
+RPC task loop (list files → read file → search → filter) run through the GoPOSIX
 daemon vs BusyBox via shell spawns.
 
-**Method:** Simulate a typical agent task flow:
+**Method:** Simulate a typical RPC task flow:
 
 ```
 1. ls -la /workspace
@@ -423,7 +423,7 @@ Run this sequence `ITERATIONS` times, timed end-to-end.
 with `BENCH_SCALE`). GoPOSIX daemon should win decisively here.
 
 > **Scaling:** `ITERATIONS = int(10 × BENCH_SCALE)`, capped at 1,000.
-> At `SCALE=5`, the agent loop runs 50 iterations — this is where the gap
+> At `SCALE=5`, the RPC task loop runs 50 iterations — this is where the gap
 > between persistent daemon and process-per-command becomes a crater.
 
 ---
@@ -449,7 +449,7 @@ test/benchmark/
 ├── cat_g_memory.sh
 ├── cat_h_sizes.sh
 ├── cat_i_concurrent.sh
-├── cat_j_agent_loop.sh
+├── cat_j_rpc_loop.sh
 └── results/                    # Timestamped benchmark results
     └── 2026-05-18T000000/
         ├── summary.md
@@ -600,9 +600,9 @@ methodology is wrong.
 ### The Narrative
 
 > **BusyBox wins on resource economy (size, memory, single-shot latency).**
-> **GoPOSIX wins on sustained throughput for repeated operations (daemon mode, agent loops).**
+> **GoPOSIX wins on sustained throughput for repeated operations (daemon mode, RPC task loops).**
 >
-> For a one-off `ls`, use BusyBox. For an AI agent making 10,000 `ls` calls per session,
+> For a one-off `ls`, use BusyBox. For a program making 10,000 `ls` calls per session,
 > use GoPOSIX. The break-even on total cost is around **10–50 sequential operations**
 > for latency and **30–100 operations** for total CPU, depending on the utility.
 

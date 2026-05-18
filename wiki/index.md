@@ -29,7 +29,7 @@ All phases 00–11 are complete. These documents describe the as-built implement
 | [04_text_processing.md](04_text_processing.md) | Text Processing |
 | [05_daemon_core.md](05_daemon_core.md) | Daemon Core |
 | [06_system_utils.md](06_system_utils.md) | System Utils |
-| [07_agent_features.md](07_agent_features.md) | Agent Features |
+| [07_rpc_features.md](07_rpc_features.md) | RPC Features |
 | [08_hardening.md](08_hardening.md) | Hardening |
 | [09_release_docs.md](09_release_docs.md) | Release (maintained as living doc) |
 | [10_posix_framework.md](10_posix_framework.md) | POSIX Framework |

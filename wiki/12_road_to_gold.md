@@ -30,7 +30,7 @@ to close them, ordered by impact. Completing items 12.0–12.4 achieves Gold. It
 |---|-----|------|--------|
 | 12.0 | macOS build broken (`uname`, `stat`, `client`) | High — blocks local development on macOS | Dev velocity |
 | 12.1 | No supply chain security (SBOM, Cosign, SLSA, scanning) | High — infra tooling supply chain attacks are common | Release trust |
-| 12.2 | Shell security model undocumented, timeout hardcoded | High — tool explicitly targets AI agents with untrusted input | Adoption blocker |
+| 12.2 | Shell security model undocumented, timeout hardcoded | High — tool accepts untrusted programmatic input | Adoption blocker |
 | 12.3 | Coverage gate is informational (warns at 50%, never fails); actual coverage 41.6% | Medium — a patch can drop coverage to 0% and pass CI | Code quality |
 | 12.4 | CI/local BusyBox test discrepancy | Medium — old-style tests pass via system BusyBox on CI, not GoPOSIX | Test reliability |
 | 12.5 | `awk` not implemented | Low (MVP scope excluded it) — qualifies the "100% POSIX" claim | Compliance claim |
@@ -94,7 +94,7 @@ docker buildx imagetools inspect ghcr.io/ramayac/goposix:latest --format '{{ jso
 ## 12.2 — Shell Security Model
 
 **Why it matters:** `goposix.shell.exec` is the highest-risk surface in the entire codebase.
-The daemon is explicitly positioned for AI agent use — agents may pass partially
+The daemon is designed for programmatic consumption — agents may pass partially
 untrusted or model-generated shell scripts. Without a documented and tested security
 contract, operators cannot safely expose the daemon.
 

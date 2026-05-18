@@ -7,11 +7,11 @@ import (
 	"testing"
 )
 
-// TestAgentWorkflow simulates a real agentic workflow via RPC.
-func TestAgentWorkflow(t *testing.T) {
+// TestRPCWorkflow simulates a multi-step RPC workflow.
+func TestRPCWorkflow(t *testing.T) {
 	conn, err := net.Dial("unix", "/tmp/goposix.sock")
 	if err != nil {
-		t.Skipf("daemon not running at /tmp/goposix.sock, skipping agent test: %v", err)
+		t.Skipf("daemon not running at /tmp/goposix.sock, skipping RPC test: %v", err)
 		return
 	}
 	defer conn.Close()
@@ -47,7 +47,7 @@ func TestAgentWorkflow(t *testing.T) {
 	sessionId := sessionData["sessionId"].(string)
 
 	// 2. Create temp directory on host to test with
-	tmpDir, err := os.MkdirTemp("", "goposix-agent-test")
+	tmpDir, err := os.MkdirTemp("", "goposix-rpc-test")
 	if err != nil {
 		t.Fatal(err)
 	}

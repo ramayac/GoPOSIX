@@ -370,10 +370,10 @@ validate-schemas: build
 	@echo "--- Validate JSON output against schemas ---"
 	bash test/validate_schemas.sh
 
-.PHONY: example-agent
-example-agent: build
-	@echo "--- Running agent integration example ---"
-	go run ./examples/agent/main.go
+.PHONY: example-rpc
+example-rpc: build
+	@echo "--- Running RPC integration example ---"
+	go run ./examples/rpc_client/main.go
 
 .PHONY: bench
 bench:

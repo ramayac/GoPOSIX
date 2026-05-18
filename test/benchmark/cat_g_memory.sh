@@ -55,7 +55,7 @@ if kill -0 "$DAEMON_PID" 2>/dev/null; then
   for i in $(seq "$SAMPLES"); do
     # Fire concurrent requests in background.
     for j in $(seq "$CONCURRENT"); do
-      echo "$JSON_REQ" | nc -w 2 -U "$SOCKET" >/dev/null 2>&1 &
+      echo "$JSON_REQ" | socat -T2 - UNIX-CONNECT:"$SOCKET" >/dev/null 2>&1 &
     done
     sleep 0.3
     rss=$(ps -o rss= -p "$DAEMON_PID" 2>/dev/null | tr -d ' ' || echo "0")

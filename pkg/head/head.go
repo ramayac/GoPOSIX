@@ -31,6 +31,7 @@ var spec = common.FlagSpec{
 // Returns the read lines for JSON mode.
 func Run(r io.Reader, w io.Writer, linesCount int) ([]string, error) {
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 1024*1024), 10*1024*1024)
 	var lines []string
 	count := 0
 
@@ -163,6 +164,7 @@ func run(args []string, out io.Writer) int {
 // runNegative prints all lines except the last skipLast lines.
 func runNegative(r io.Reader, w io.Writer, skipLast int) ([]string, error) {
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 1024*1024), 10*1024*1024)
 	var all []string
 	for scanner.Scan() {
 		all = append(all, scanner.Text())

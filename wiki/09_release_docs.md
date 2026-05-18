@@ -95,7 +95,7 @@ See [docs/SECURITY.md](../docs/SECURITY.md) for verification instructions.
 
 ### 09.4 — End-to-End Agent Test
 
-Simulate a real agentic workflow as a single integration test:
+Simulate a real multi-step RPC workflow as a single integration test:
 
 ```go
 func TestAgentWorkflow(t *testing.T) {
@@ -138,7 +138,7 @@ Docker image size:         14.8 MB
 - [x] Multi-arch images published to GHCR
 - [x] GoReleaser pipeline produces tagged releases
 - [x] All 7 documentation deliverables complete
-- [x] E2E agent test passes
+- [x] E2E RPC test passes
 - [x] Binary < 15MB, image < 20MB
 - [x] README has quickstart that works in < 2 minutes
 - [x] POSIX compliance >= 80% across all implemented utilities
@@ -172,7 +172,7 @@ docker run --rm ghcr.io/org/goposix:latest uname --json
 - [x] **50+ POSIX utilities** implemented in pure Go
 - [x] **`--json` flag** on every utility with consistent envelope
 - [x] **JSON-RPC 2.0 daemon** over Unix socket
-- [x] **Stateful sessions** for agentic workflows
+- [x] **Stateful sessions** for multi-step RPC workflows
 - [x] **Shell interpreter** via mvdan/sh
 - [x] **FROM scratch** Docker image < 20MB
 - [x] **Multi-arch** (amd64 + arm64)

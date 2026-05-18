@@ -87,7 +87,7 @@ the environment (env var is documented but not wired). No tests, no `docs/SECURI
 - [x] Add `make bench` target wired to `test/benchmark/` — already added during Phase 11
 - [x] Fix `make cover` — `make cover-pct` already added during Phase 11 (prints per-package coverage %)
 - [x] Add `make validate-schemas` target — already added during Phase 11
-- [x] Add `make example-agent` target — already added during Phase 11
+- [x] Add `make example-rpc` target — already added during Phase 11
 - [x] Document all targets in a `make help` target — already present with categorized target listing
 
 ---
@@ -136,7 +136,7 @@ the environment (env var is documented but not wired). No tests, no `docs/SECURI
 - [x] 6 missing unit test files added (cp, mv, ln, rmdir, yes, daemon); overall coverage 70.5% with CI hard-fail at 70% ([coverage policy](13_coverage_and_hardening.md))
 - [x] Shell interpreter security model documented (11a.3 — completed via [12.2](12_road_to_gold.md): GOPOSIX_SHELL_TIMEOUT wired, interpreter_test.go with 10 tests, docs/SECURITY.md)
 - [x] BusyBox baseline enforced; image size gate hard failure; coverage hard-fails at 70% ([coverage policy](13_coverage_and_hardening.md))
-- [x] `make help`, `make bench`, `make validate-schemas`, `make example-agent`, `make cover-pct` all work (11a.5)
+- [x] `make help`, `make bench`, `make validate-schemas`, `make example-rpc`, `make cover-pct` all work (11a.5)
 - [x] Three deployment patterns documented with a working docker-compose example (11a.6)
 - [x] Release pipeline hardened (11a.7 — completed via [12.1](12_road_to_gold.md): SBOM + Cosign + SLSA + Trivy)
 - [x] `scratch.go` deleted (11a.8)

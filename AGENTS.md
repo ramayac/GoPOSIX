@@ -6,9 +6,9 @@
 
 GoPOSIX is a 100% Go-native, POSIX-compliant userland designed to run inside a Docker `FROM scratch` container. It serves as a modern replacement for GNU Coreutils CLI tools by compiling down to a single multicall binary (like BusyBox).
 
-Crucially, GoPOSIX is designed for **Agentic Runtimes**:
+GoPOSIX is designed for **programmatic consumption** in containerized environments:
 1. Every utility supports structured machine-readable output via a `--json` flag.
-2. It will eventually feature a persistent JSON-RPC daemon to avoid continuous process-spawning overhead.
+2. It features a persistent JSON-RPC 2.0 daemon to avoid continuous process-spawning overhead for repeated operations.
 
 ## 2. Strict Architectural Invariants
 

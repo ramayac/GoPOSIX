@@ -47,7 +47,7 @@ for N in "$N1" "$N2" "$N3"; do
 
   echo "# GoPOSIX daemon — $N echo calls" >&2
   bench_run "daemon_echo_${N}_goposix" "$SAMPLES" \
-    "( for i in \$(seq $N); do echo '$JSON_REQ' | nc -w 2 -U $SOCKET >/dev/null 2>&1; done )"
+    "( for i in \$(seq $N); do echo '$JSON_REQ' | socat -T2 - UNIX-CONNECT:$SOCKET >/dev/null 2>&1; done )"
 
   # Kill daemon.
   kill "$DAEMON_PID" 2>/dev/null || true
@@ -61,7 +61,7 @@ for N in "$N1" "$N2" "$N3"; do
     "( for i in \$(seq $N); do /bin/busybox echo hello >/dev/null; done )"
 
   # Quick measurement for log (1 sample, much cheaper).
-  gpx_log=$(bench_time "( for i in \$(seq $N); do echo '$JSON_REQ' | nc -w 2 -U /tmp/gpx_fake 2>/dev/null; done )" || echo "0")
+  gpx_log=$(bench_time "( for i in \$(seq $N); do echo '$JSON_REQ' | socat -T2 - UNIX-CONNECT:/tmp/gpx_fake 2>/dev/null; done )" || echo "0")
   # Actually, we can't do this without the daemon running. Just note it.
 done
 

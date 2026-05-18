@@ -111,7 +111,7 @@ Absolutely. And that's a perfectly valid engineering choice. The real question i
 | Run Docker entrypoint / init scripts    | Usually no  |
 | Run CI/CD pipeline scripts              | Often yes   |
 | Pass the Open Group certification       | **Yes**     |
-| Provide a useful agentic runtime        | Depends     |
+| Provide a useful programmatic runtime   | Depends     |
 
 ---
 
@@ -151,11 +151,11 @@ ways. Think Plan 9 from Bell Labs, or Toybox in some edge cases.
 
 ## What Does GoPOSIX Need to Claim?
 
-GoPOSIX doesn't need to be certified POSIX. Its target audience is **agentic
-runtimes in containers**, not general-purpose Unix workstations. The practical
+GoPOSIX doesn't need to be certified POSIX. Its target audience is **programmatic
+consumers in containers**, not general-purpose Unix workstations. The practical
 goals are:
 
-1. **Run standard shell scripts** that agents and CI systems generate.
+1. **Run standard shell scripts** that automation and CI systems generate.
 2. **Provide structured output** (`--json`) that goes beyond what POSIX requires.
 3. **Be a self-contained runtime** in a `FROM scratch` Docker image.
 
@@ -177,7 +177,7 @@ This means:
 ## The POSIX Utility Tiers for GoPOSIX
 
 Here's how the full POSIX utility set breaks down by practical importance for
-a container/agentic runtime:
+a container/programmatic runtime:
 
 ### Tier: Critical (Must Have)
 These are non-negotiable for running real-world scripts:
@@ -197,7 +197,7 @@ These appear frequently in non-trivial scripts:
 `strings`, `patch`, `more`/`less`
 
 ### Tier: Niche (Nice to Have)
-Rarely needed in container/agentic contexts:
+Rarely needed in containerized automation contexts:
 
 `ed`, `pax`, `m4`, `mailx`, `lp`, `man`, `write`, `mesg`, `newgrp`,
 `tabs`, `tput`, `pr`, `localedef`, `gencat`, `iconv`, `tsort`,

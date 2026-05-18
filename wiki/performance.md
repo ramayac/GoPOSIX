@@ -64,7 +64,7 @@ All workload sizes multiply by `SCALE`. Default is `1.0`.
 | 25.0  | stress | 25,000 | 2.5 GB | 2,500 | Find cliffs |
 | 100.0 | extreme | 100,000 | 10 GB | 10,000 | Prove ceiling |
 
-Hard caps: 500K files, 10 GB text, 100K daemon requests, 1K agent loops.
+Hard caps: 500K files, 10 GB text, 100K daemon requests, 1K RPC task loops.
 
 ---
 
@@ -81,7 +81,7 @@ Hard caps: 500K files, 10 GB text, 100K daemon requests, 1K agent loops.
 | `g` | `cat_g_memory` | `memory` | RSS: single, idle daemon, loaded daemon, BusyBox |
 | `h` | `cat_h_sizes` | `sizes` | Binary size, symlink count (no runtime) |
 | `i` | `cat_i_concurrent` | `concurrent` | Concurrent grep/du [GOROUTINE-TODO] |
-| `j` | `cat_j_agent_loop` | `agent` | Agent loop: ls→cat→grep→wc→find, N iterations |
+| `j` | `cat_j_rpc_loop` | `agent` | RPC task loop: ls→cat→grep→wc→find, N iterations |
 
 ```bash
 # Any of these work:
@@ -107,7 +107,7 @@ make bench-cat CAT=cat_f_daemon_vs_process
 | Metric | Expected Margin | Why |
 |--------|:--------------:|-----|
 | Daemon 1,000 sequential calls | **5–100×** | No fork+exec per call |
-| Agent loop 50 iterations | **10–50×** | Connection reuse, no shell parsing |
+| RPC task loop 50 iterations | **10–50×** | Connection reuse, no shell parsing |
 | Concurrent file traversal | **2–8×** (aspirational) | Go goroutines |
 
 ### Break-even
@@ -131,7 +131,7 @@ After a run, results land in the Docker volume `goposix-bench-data`:
 ├── cat_a_startup_data.csv
 ├── cat_a_startup.log    ← Category log with medians & findings
 ├── ...
-└── cat_j_agent_loop.log
+└── cat_j_rpc_loop.log
 ```
 
 **To get them locally:**

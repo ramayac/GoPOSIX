@@ -15,7 +15,7 @@
 |---|-----|--------|------------|
 | 18.1 | CI coverage threshold stale (45% vs Makefile 70%) | High — silent coverage regression possible | Trivial |
 | 18.2 | CI BusyBox baseline stale (409 vs actual 477) | Medium — CI won't catch new regressions below 477 | Trivial |
-| 18.3 | `patch` utility not implemented (17 BusyBox tests) | Medium — gap in agent-ready toolbelt | High (~700 LOC) |
+| 18.3 | `patch` utility not implemented (17 BusyBox tests) | Medium — gap in POSIX coverage | High (~700 LOC) |
 | 18.4 | `egrep` / `fgrep` dispatch aliases missing | Low — posix_coverage.md claims they exist | Trivial |
 | 18.5 | Coverage: `internal/daemon` at 35.9% | Medium — 613 LOC, backbone of daemon mode | Medium (~300 test LOC) |
 | 18.6 | Coverage: `pkg/diff` at 54.8% | Low — already functional, just under-tested | Low |
@@ -98,7 +98,7 @@ in a future iteration. For now, the inline check is sufficient.
 
 ## 18.3 — Implement `patch`
 
-**Purpose:** Apply unified diffs to files. Critical for agent workflows that
+**Purpose:** Apply unified diffs to files. Critical for automated workflows that
 need to apply model-generated patches to code.
 
 **BusyBox tests:** `test/busybox_testsuite/patch.tests` (17 new-style cases)

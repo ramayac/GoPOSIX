@@ -11,7 +11,7 @@ Phase 11 implemented three post-MVP deliverables on branch `feat/post-mvp` (3 co
 | Step | Deliverable | Commit |
 |------|-------------|--------|
 | 11.1 | JSON output schemas (draft-07) for all 42 JSON-enabled utilities | `dfc60b5` |
-| 11.2 | End-to-end agent integration example (Go) | `07a7d83` |
+| 11.2 | End-to-end RPC integration example (Go) | `07a7d83` |
 | 11.3 | RPC client library with connection pooling, typed helpers | `1547097` |
 
 ---
@@ -84,7 +84,7 @@ Four of 46 golden fixtures failed on first validation:
 
 **Symptom:** Agent example's `cat` call on `/etc/hosts` failed with "Path traversal detected".
 
-**Fix:** Changed the agent example's session CWD to `/etc` and used relative paths (`hosts` instead of `/etc/hosts`).
+**Fix:** Changed the RPC example's session CWD to `/etc` and used relative paths (`hosts` instead of `/etc/hosts`).
 
 **Implication:** This is a deliberate security feature, not a bug. Session-based access restricts all file operations to the session's working directory. Absolute paths are only permitted when they resolve within the session root. The agent example now documents this behavior.
 
@@ -94,7 +94,7 @@ Four of 46 golden fixtures failed on first validation:
 
 **Root cause:** The shell interpreter (`mvdan.cc/sh`) includes the command name as `args[0]` when dispatching to GoPOSIX utilities, causing argument misalignment. This is a pre-existing bug in `internal/shell/` — not introduced by Phase 11.
 
-**Decision:** Left unfixed (out of scope). Simplified the example shell command to `echo hello from agent`.
+**Decision:** Left unfixed (out of scope). Simplified the example shell command to `echo hello from goposix`.
 
 **Lesson:** When an example exposes a pre-existing bug, note it but don't expand scope to fix it. The example can work around it.
 

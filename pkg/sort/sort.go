@@ -304,8 +304,11 @@ func parseFieldChar(s string) (field, char int) {
 }
 
 func parseLines(r io.Reader, keySpecs []keySpec, delimiter string, zeroTerminated bool) ([]lineItem, error) {
+	// 256MB total input cap to prevent OOM (sort reads entire input into memory)
+	r = io.LimitReader(r, 256*1024*1024)
 	var items []lineItem
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 1024*1024), 10*1024*1024)
 	if zeroTerminated {
 		scanner.Split(scanNUL)
 	}

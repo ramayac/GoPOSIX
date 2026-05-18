@@ -24,7 +24,7 @@ RUN /goposix --list-commands > /commands.txt
 # =============================================================================
 FROM alpine:3.20
 
-RUN apk add --no-cache strace bc coreutils procps findutils grep
+RUN apk add --no-cache strace bc coreutils procps findutils grep socat
 
 # Install GoPOSIX and create symlinks.
 COPY --from=builder /goposix /bin/goposix
