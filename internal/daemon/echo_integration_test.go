@@ -7,6 +7,8 @@ import (
 
 	// Register utilities so dispatch.Lookup works.
 	_ "github.com/ramayac/goposix/pkg/echo"
+	_ "github.com/ramayac/goposix/pkg/tee"
+	_ "github.com/ramayac/goposix/pkg/testcmd"
 	_ "github.com/ramayac/goposix/pkg/truefalse"
 )
 
@@ -238,4 +240,60 @@ func TestSessionManager_Cleanup(t *testing.T) {
 	time.Sleep(2 * time.Second)
 	_, ok := sm.Get(s.ID)
 	_ = ok
+}
+
+// --- Daemon tests for utilities that were missing coverage ---
+
+func TestProcessRequest_True(t *testing.T) {
+	srv := &Server{sm: NewSessionManager(30)}
+	req := Request{JSONRPC: "2.0", Method: "goposix.true", Params: nil, ID: 1}
+	resp := srv.processRequest(req)
+	if resp == nil { t.Fatal("expected response") }
+	if resp.Error != nil { t.Fatalf("unexpected error: %v", resp.Error) }
+	resultMap, _ := resp.Result.(map[string]interface{})
+	if code, _ := resultMap["exitCode"].(float64); int(code) != 0 {
+		t.Errorf("expected exitCode 0, got %v", code)
+	}
+}
+
+func TestProcessRequest_False(t *testing.T) {
+	srv := &Server{sm: NewSessionManager(30)}
+	req := Request{JSONRPC: "2.0", Method: "goposix.false", Params: nil, ID: 2}
+	resp := srv.processRequest(req)
+	if resp == nil { t.Fatal("expected response") }
+	// false utility returns non-zero exit, daemon wraps it in Result
+	if resp.Error != nil { t.Fatalf("unexpected error: %v", resp.Error) }
+	if resp.Result == nil { t.Error("expected result in response") }
+}
+
+func TestProcessRequest_Tee(t *testing.T) {
+	srv := &Server{sm: NewSessionManager(30)}
+	params, _ := json.Marshal(GoposixParams{Text: "tee test\n", Flags: nil})
+	req := Request{JSONRPC: "2.0", Method: "goposix.tee", Params: json.RawMessage(params), ID: 3}
+	resp := srv.processRequest(req)
+	if resp == nil { t.Fatal("expected response") }
+	if resp.Error != nil { t.Fatalf("unexpected error: %v", resp.Error) }
+	resultMap, _ := resp.Result.(map[string]interface{})
+	if code, _ := resultMap["exitCode"].(float64); int(code) != 0 {
+		t.Errorf("expected exitCode 0, got %v", code)
+	}
+	// tee returns text output as data string
+	data, ok := resultMap["data"]
+	if !ok {
+		t.Error("expected data in response")
+	}
+	_ = data
+}
+
+func TestProcessRequest_Testcmd(t *testing.T) {
+	srv := &Server{sm: NewSessionManager(30)}
+	params, _ := json.Marshal(GoposixParams{Text: "-n hello", Flags: nil})
+	req := Request{JSONRPC: "2.0", Method: "goposix.test", Params: json.RawMessage(params), ID: 4}
+	resp := srv.processRequest(req)
+	if resp == nil { t.Fatal("expected response") }
+	if resp.Error != nil { t.Fatalf("unexpected error: %v", resp.Error) }
+	resultMap, _ := resp.Result.(map[string]interface{})
+	if code, _ := resultMap["exitCode"].(float64); int(code) != 0 {
+		t.Errorf("expected exitCode 0 for 'test -n hello', got %v", code)
+	}
 }

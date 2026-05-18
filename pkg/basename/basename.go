@@ -52,7 +52,7 @@ func run(args []string, out io.Writer) int {
 	}
 	result := Run(path, suffix)
 	common.Render("basename", result, jsonMode, out, func() {
-		fmt.Println(result.Result)
+		fmt.Fprintln(out, result.Result)
 	})
 	return 0
 }

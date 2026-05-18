@@ -77,7 +77,7 @@ GoPOSIX/
 │   └── <utility>/       40+ POSIX utility implementations (ls, cat, grep, sed, ...)
 ├── docker/              Dockerfiles (scratch production, alpine debug)
 ├── test/                Integration tests
-│   └── busybox_testsuite/  Ported BusyBox test suite (490 tests)
+│   └── busybox_testsuite/  Ported BusyBox test suite (552 tests)
 ├── testdata/            Shared test fixtures
 ├── docs/                Architecture, SECURITY, RPC_API, JSON_SCHEMA, AGENT_INTEGRATION
 ├── wiki/                Phase plans, checklists, lessons learned
@@ -126,8 +126,10 @@ Run `make testsuite` before every commit to prevent regressions.
 | 10 | POSIX test framework + BusyBox suite | ✅ |
 | 11 | Post-MVP cleanup, lessons learned | ✅ |
 | 12 | Road to Gold — supply chain, macOS, coverage, BusyBox parity | ✅ |
-| 13 | Coverage & hardening (70.5% coverage reached) | ✅ |
-| 14a-c | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage (55/55) | ✅ |
+| 13 | Coverage & hardening (75.7% coverage reached) | ✅ |
+| 14a-c | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage | ✅ |
+| 15–19 | Post-MVP tiers 1–3, quality fixes, performance benchmarks | ✅ |
+| 20 | Hardening II — flag audit, code cleanup, doc fixes, coverage | 🔄 |
 | — | `awk` (Platinum gate) | ⬜ |
 
 ## Related Documentation

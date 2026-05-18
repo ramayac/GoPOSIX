@@ -49,7 +49,7 @@ When implementing a new utility or feature, follow this checklist:
 
 ## 4a. Coverage Policy
 
-- **Gate:** `make ci` enforces a hard coverage gate at **≥70%** overall (see `COVERAGE_THRESHOLD` in Makefile). PRs that drop coverage below this threshold fail CI. Current overall coverage: **70.5%**. See [wiki/13_coverage_and_hardening.md](wiki/13_coverage_and_hardening.md) for full policy.
+- **Gate:** `make ci` enforces a hard coverage gate at **≥70%** overall (see `COVERAGE_THRESHOLD` in Makefile). PRs that drop coverage below this threshold fail CI. Current overall coverage: **75.7%**. See [wiki/13_coverage_and_hardening.md](wiki/13_coverage_and_hardening.md) for full policy.
 - **CLI Layer Testing:** The `run()` function (CLI glue) must be tested, not just the library-layer `Run()`. Extract an injectable entry point (e.g., `grepRun()`, `catRun()`) that accepts `io.Reader`/`io.Writer` instead of hardcoding `os.Stdin`/`os.Stdout`. See `pkg/cat/cat.go` for the canonical `catRun()` pattern.
 - **Per-package:** Use `make cover-pkg` to audit per-package coverage. No package should be below 5%.
 - **Before committing:** Always run `make testsuite` (BusyBox integration tests) in addition to `make test` (unit tests). The BusyBox suite catches cascading integration failures that unit tests miss.
@@ -57,7 +57,7 @@ When implementing a new utility or feature, follow this checklist:
 ## 5. Security & Safety
 
 - **Root Protection:** Utilities that perform destructive operations (like `rm`) must include guards against destroying the root filesystem (e.g., `rm -rf /` must be refused without `--no-preserve-root`).
-- **BusyBox Test Suite:** 477 passed, 3 failed, 10 skipped (99.4% pass rate). The 3 remaining failures are all in the `date` utility (2 Go POSIX TZ limitations, 1 cosmetic error-format mismatch). Run `make testsuite` before every commit to prevent regressions.
+- **BusyBox Test Suite:** 548 passed, 4 failed, 10 skipped (99.3% pass rate, 552 total tested). Failures: 3 in `date` (Go POSIX TZ limitations), 1 in `fold` (NUL handling). Run `make testsuite` before every commit to prevent regressions.
 
 ## 6. Current State & Progression
 
@@ -72,6 +72,8 @@ Refer to the Phase documents in `wiki/` (e.g., `wiki/plan_updated.md`) to unders
 - **Phase 08:** Security Hardening — **COMPLETED**
 - **Phase 09:** Release & Automation — **COMPLETED**
 - **Phase 10:** POSIX Test Framework — **COMPLETED**
+- **Phase 11–19:** Post-MVP tiers, Gold roadmap, coverage hardening, benchmarks — **COMPLETED**
+- **Phase 20:** Hardening II (flag audit, code cleanup, doc fixes) — **IN PROGRESS**
 
 ## 7. Docker & Containerization Insights
 

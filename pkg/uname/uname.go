@@ -88,7 +88,7 @@ func run(args []string, out io.Writer) int {
 		if m {
 			parts = append(parts, result.Machine)
 		}
-		fmt.Println(strings.Join(parts, " "))
+		fmt.Fprintln(out, strings.Join(parts, " "))
 	})
 	return 0
 }

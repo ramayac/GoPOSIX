@@ -93,13 +93,6 @@ func run(args []string, out io.Writer) int {
 		return 1
 	}
 
-	if strings.Contains(expr, "| three") {
-		fmt.Fprintf(os.Stderr, "DEBUG EXPR: %q\n", expr)
-		for i, inst := range insts {
-			fmt.Fprintf(os.Stderr, "Inst %d: Cmd=%c Addr1=%v Text=%q\n", i, inst.Cmd, inst.Addr1, inst.Text)
-		}
-	}
-
 	if jsonMode {
 		var buf bytes.Buffer
 		exitCode := runEngine(insts, flags.Positional, suppressDefault, inPlace, &buf)

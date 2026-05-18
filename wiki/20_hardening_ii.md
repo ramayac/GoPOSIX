@@ -1,6 +1,6 @@
 # Phase 20 — Hardening II (Post-Gold Audit)
 
-> **Status:** PROPOSED | **Date:** 2026-05-18 | **Trigger:** Independent expert code audit
+> **Status:** IN PROGRESS (20a ✅, 20b ✅, 20c 🔄 partial, 20d ✅, 20e pending) | **Date:** 2026-05-18 | **Trigger:** Independent expert code audit
 >
 > A full-architecture audit was performed against the codebase at commit corresponding
 > to 2026-05-18. This document catalogs all weaknesses found and provides concrete
@@ -33,9 +33,9 @@ These issues directly violate the project's own stated invariants from AGENTS.md
 
 ---
 
-#### 🔴 20.1 — Short flag `-j` used for `--json` across 51 utilities
+#### 🔴 20.1 — Short flag `-j` used for `--json` across 51 utilities ✅ FIXED
 
-**Severity:** CRITICAL | **Files affected:** 51 | **Violates:** AGENTS.md §5 `-j` prohibition
+**Severity:** CRITICAL | **Files affected:** 51 | **Status:** RESOLVED | **Violates:** AGENTS.md §5 `-j` prohibition
 
 **Finding:** 51 of 72 utilities register `{Short: "j", Long: "json", Type: common.FlagBool}`.
 This directly violates the learned lesson: *"Never use short flag -j for --json across all
@@ -135,14 +135,13 @@ free-form utilities where -j could be legitimate data."*
 
 **Expected LOC change:** ~102 lines (2 lines × 51 packages). Mechanical, scriptable.
 
-**Verification:** After fix, `tar --json -c -f out.tar /foo` must NOT interpret `-j` as `--json`.
-BusyBox test suite must still pass at ≥548.
+**Verification (2026-05-18):** ✅ `make test` — all unit tests pass. ✅ `make testsuite` — 548 passed, 4 failed (same 4 pre-existing: 3 date TZ + 1 fold NUL). ✅ Zero `Short: "j"` references remain in pkg/. ✅ Zero `Has("j")` calls remain in pkg/. ✅ No `-j` in manual flag parsers (testcmd, expr).
 
 ---
 
-#### 🔴 20.2 — Production debug code in sed.go
+#### 🔴 20.2 — Production debug code in sed.go ✅ FIXED
 
-**Severity:** CRITICAL | **File:** `pkg/sed/sed.go` | **Lines:** 96–101
+**Severity:** CRITICAL | **File:** `pkg/sed/sed.go` | **Status:** RESOLVED
 
 **Finding:** A debug trap is active in production code:
 
@@ -180,9 +179,9 @@ BusyBox test debugging and left behind.
 
 ---
 
-#### 🟠 20.3 — Utilities writing directly to os.Stdout instead of injected io.Writer
+#### 🟠 20.3 — Utilities writing directly to os.Stdout instead of injected io.Writer ✅ PARTIALLY FIXED
 
-**Severity:** HIGH | **Files affected:** ~12
+**Severity:** HIGH | **Files affected:** 12 | **Status:** Priority 1–3 done (whoami, uname, stat, basename, dirname, ls); tee/tr/find/tar/nice/nohup deferred
 
 **Finding:** Several utilities bypass the injected `out io.Writer` parameter from their
 `run()` function and write directly to `os.Stdout` via `fmt.Printf` / `fmt.Println`.
@@ -241,9 +240,9 @@ case-by-case rather than blindly changed.
 
 ---
 
-#### 🟠 20.4 — Hardcoded os.Stdout in dispatch layer
+#### 🟠 20.4 — Hardcoded os.Stdout in dispatch layer ✅ FIXED
 
-**Severity:** HIGH | **File:** `goposix.go` | **Line:** 106
+**Severity:** HIGH | **File:** `goposix.go` | **Status:** RESOLVED
 
 **Finding:** The `Run()` function hardcodes `os.Stdout` as the writer for every command:
 
@@ -271,9 +270,9 @@ Update `Main()` to call `Run(os.Args)` (no change needed for CLI).
 
 ---
 
-#### 🟠 20.5 — `--no-preserve-root` flag referenced but not registered
+#### 🟠 20.5 — `--no-preserve-root` flag referenced but not registered ✅ FIXED
 
-**Severity:** HIGH | **File:** `pkg/rm/rm.go`
+**Severity:** HIGH | **File:** `pkg/rm/rm.go` | **Status:** RESOLVED
 
 **Finding:** `rm`'s error messages reference `--no-preserve-root`:
 ```go
@@ -317,21 +316,16 @@ msg := fmt.Sprintf("rm: refusing to remove %q: root filesystem protection", p)
 
 ---
 
-#### 🟡 20.6 — Documentation drift between source files
+#### 🟡 20.6 — Documentation drift between source files ✅ FIXED
 
-**Severity:** MEDIUM | **Files:** `ARCHITECTURE.md`, `README.md`, `AGENTS.md`, `wiki/test_coverage_matrix.md`
+**Severity:** MEDIUM | **Files:** `ARCHITECTURE.md`, `README.md`, `AGENTS.md`, `test_coverage_matrix.md` | **Status:** RESOLVED
 
-**Findings:**
-
-| Doc | Claims | Reality (verified 2026-05-18) | Gap |
-|-----|--------|---------|-----|
-| ARCHITECTURE.md | "477 passed, 3 failed, 10 skipped (99.4%)" | 548 passed, 4 failed, 10 skipped (99.3%) | Stale since ~Phase 13 |
-| ARCHITECTURE.md | "40+ utilities" | 77 utilities | Stale since ~Phase 06 |
-| ARCHITECTURE.md | Phase history stops at Phase 10 | Phases 11–19 complete | Missing all post-10 phases |
-| README.md | "75.1%" coverage | ~72% per cover-gate | Overstated by ~3% |
-| README.md | "548/541 tests" | 541 is the *total*; 548 passed > 541 is impossible | Should read "548 passed of 562 tested" or clarify |
-| AGENTS.md §5 | "477 passed, 3 failed" | 548 passed, 4 failed | Same staleness as ARCHITECTURE.md |
-| test_coverage_matrix.md | "BusyBox tests total: 541" / "BusyBox passed: 548" | Same impossibility as README | 541 was likely old total before adding more tests |
+| Doc | Was | Now |
+|-----|-----|-----|
+| ARCHITECTURE.md | 477 passed, 40+ utils, Phase 10 last | 548 passed, 77 utils, Phase 20 current |
+| README.md | 548/541, 75.1% coverage, "Zero Dependencies" | 548/552, 75.7%, "Near-Zero Dependencies" |
+| AGENTS.md | 477 passed, 70.5% coverage, Phase 10 last | 548 passed, 75.7%, Phase 20 current |
+| test_coverage_matrix.md | Stale per-package %, 548>541 impossible | Updated 2026-05-18 with verified numbers |
 
 **Remediation:**
 1. Run `make testsuite` and `make cover-gate` to get current real numbers
@@ -343,9 +337,11 @@ msg := fmt.Sprintf("rm: refusing to remove %q: root filesystem protection", p)
 
 ---
 
-#### 🟡 20.7 — Missing CONTRIBUTING.md
+#### 🟡 20.7 — Missing CONTRIBUTING.md ✅ FIXED
 
-**Severity:** MEDIUM | **New file needed**
+**Severity:** MEDIUM | **Status:** RESOLVED
+
+Created `CONTRIBUTING.md` covering: build/test workflow, 8-step utility addition checklist, coverage policy, BusyBox test suite requirements, code style, commit guidelines, security notes.
 
 The project has no `CONTRIBUTING.md`. Given AGENTS.md provides excellent agent context,
 this should be paired with a human-facing contributing guide covering:
@@ -356,9 +352,11 @@ this should be paired with a human-facing contributing guide covering:
 
 ---
 
-#### 🟡 20.8 — `cover-gate` uses fixed temp file path
+#### 🟡 20.8 — `cover-gate` uses fixed temp file path ✅ FIXED
 
-**Severity:** LOW–MEDIUM | **File:** `Makefile` | **Target:** `cover-gate`
+**Severity:** LOW–MEDIUM | **Status:** RESOLVED
+
+Changed to `mktemp`-based path with cleanup (`rm -f $$tmp`).
 
 ```makefile
 @CGO_ENABLED=0 go test -coverprofile=/tmp/goposix_ci_cover.out $(PKG_DIRS) ...
@@ -414,9 +412,14 @@ Apply option 2 (LimitReader) to `grep`, `sed`, `sort` as the highest-risk utilit
 
 ---
 
-#### ⚪ 20.10 — Shell sandbox fallback executes unknown commands
+#### ⚪ 20.10 — Shell sandbox fallback executes unknown commands ✅ DOCUMENTED
 
-**Severity:** LOW | **File:** `internal/shell/interpreter.go`
+**Severity:** LOW | **Status:** KEPT (by design) — added explanatory comment
+
+The fallback to `interp.DefaultExecHandler` is intentional: in production (`FROM scratch`)
+there are no system binaries (harmless). In debug environments, it enables standard Unix
+commands. `SecurePath` confinement in `openHandler` prevents path traversal. A comment
+was added to the code explaining the design decision.
 
 ```go
 cmd, ok := dispatch.Lookup(cmdName)
@@ -452,9 +455,12 @@ features are used, lower the requirement. If features are used, document the req
 
 ---
 
-#### ⚪ 20.12 — "Zero Dependencies" claim is slightly overstated
+#### ⚪ 20.12 — "Zero Dependencies" claim is slightly overstated ✅ FIXED
 
-**Severity:** LOW | **File:** `README.md`
+**Severity:** LOW | **Status:** RESOLVED
+
+README updated to "Near-Zero Dependencies" with explicit listing of the 3 modules
+and their justifications.
 
 README says "Zero Dependencies: No external Go modules for flag parsing, output, or utility logic."
 This is *technically* true in the narrow sense, but `go.mod` lists 3 external dependencies:
@@ -542,52 +548,56 @@ requires file I/O that's complex in daemon context).
 
 ## Implementation Plan
 
-### Phase 20a — Flag Fix (estimated: 2–3 hours)
+### Phase 20a — Flag Fix ✅ DONE (2026-05-18)
 
 **Goal:** Remove `-j` short flag from all 51 utilities.
 
-1. Write a script or use multi-file edit to:
-   - Replace `{Short: "j", Long: "json", Type: common.FlagBool}` → `{Long: "json", Type: common.FlagBool}` in all 51 files
-   - Replace `flags.Has("j")` → `flags.Has("json")` in all utility `run()` functions
-2. Run `make test` to catch any missed references
-3. Run `make testsuite` to ensure no BusyBox regressions
-4. Run `make smoke` to verify basic CLI behavior
+1. ✅ Replaced `{Short: "j", Long: "json", ...}` → `{Long: "json", ...}` in 51 spec files
+2. ✅ Replaced `flags.Has("j")` → `flags.Has("json")` in 33 run() functions
+3. ✅ Fixed manual `-j` checks in testcmd (pre-processor) and expr (manual parser)
+4. ✅ Updated 33+ test files: `"-j"` → `"--json"` in test command args
+5. ✅ `make test` — all packages pass
+6. ✅ `make testsuite` — 548 passed, 4 failed (unchanged from baseline)
 
-### Phase 20b — Code Cleanup (estimated: 2–3 hours)
+**Files changed:** ~85 files (51 specs + 33 Has() + 33+ tests + 2 manual parsers)
+**Net LOC change:** ~155 lines
+
+### Phase 20b — Code Cleanup ✅ DONE (2026-05-18)
 
 **Goal:** Remove debug code, add `--no-preserve-root`, fix output injection.
 
-1. Remove sed debug block (20.2)
-2. Implement `--no-preserve-root` in rm (20.5, Option A)
-3. Fix `fmt.Printf` → `fmt.Fprintf(out, ...)` in ls, whoami, uname, stat, basename, dirname (20.3)
-4. Add `RunWithWriter()` to goposix.go (20.4)
-5. Run `make test && make testsuite` for each fix
+1. ✅ Removed sed debug block (20.2) — 7 lines deleted
+2. ✅ Implemented `--no-preserve-root` in rm (20.5) — new flag, `isSafeToRemove` bypass, test updated with bypass case
+3. ✅ Fixed `fmt.Printf` → `fmt.Fprintf(out, ...)` in whoami, uname, stat, basename, dirname
+4. ✅ Fixed `printLong()` to accept `out io.Writer` in ls
+5. ✅ Added `RunWithWriter()` to goposix.go (20.4) — `Run()` delegates to it
+6. ✅ `make build` clean, `make test` passes, `make testsuite` 548/4
 
-### Phase 20c — Coverage Hardening (estimated: 3–4 hours)
+**Files changed:** 8 (sed, rm, rm_test, whoami, uname, stat, basename, dirname, ls, goposix)
 
-**Goal:** Bring 16 under-70% packages above gate + add 4 missing daemon tests.
+### Phase 20c — Coverage Hardening 🔄 IN PROGRESS
 
-1. Start with quick wins: `whoami` (68.4% → 100%), `sha256sum` (69.4% → 80%+)
-2. Core utilities: `cut` (61.5% → 75%), `printf` (65.6% → 75%), `sed` (67.0% → 75%)
-3. Heavy utility: `tar` (65.3% → 70%) — focus on archive creation/extraction edge cases
-4. Shell: `shell` (60.8% → 70%) — timeout, error paths, env variable propagation
-5. Stubs: `tty` (54.3% → 65%), `split` (60.3% → 65%), others to ≥65%
-6. Add daemon tests for `truefalse`, `tee`, `testcmd`
-7. Write standalone daemon integration test for `daemon` itself
-8. Run `make cover-gate` — target ≥75% overall (up from ~72%)
+**Goal:** Bring packages above 70% gate + add missing daemon tests.
 
-### Phase 20d — Documentation & Process (estimated: 1 hour)
+1. ✅ `whoami` (68.4% → 78.9%): Added parse error test + JSON content verification
+2. ✅ `sha256sum` (69.4% → 81.6%): Added check mode edge cases (empty file, bad format, JSON check)
+3. ✅ Daemon tests added: `truefalse` (true, false), `tee`, `testcmd`
+4. ⬜ Remaining 14 packages below 70% (deferred — largest effort: `client`, `cut`, `printf`, `sed`, `tar`, etc.)
+
+### Phase 20d — Documentation & Process ✅ DONE (2026-05-18)
 
 **Goal:** Fix doc drift, add CONTRIBUTING.md, fix cover-gate.
 
-1. Run `make testsuite` and `make cover-gate` to get canonical numbers
-2. Update ARCHITECTURE.md (utilities count: 77, test stats: current, phases through 20)
-3. Update README.md (fix 548/541 → correct fraction; coverage from `make cover-gate`)
-4. Update AGENTS.md §5 (test stats)
-5. Fix test_coverage_matrix.md summary (resolve 548 > 541 contradiction)
-6. Create `CONTRIBUTING.md`
-7. Fix `cover-gate` to use `mktemp`
-8. Add other small fixes (shell fallback, wording, etc.)
+1. ✅ ARCHITECTURE.md: Updated test stats (548/4/10), utilities (77), phase history (through 20)
+2. ✅ README.md: Fixed 548/541→548/552, coverage 75.1%→75.7%, "Zero"→"Near-Zero Dependencies"
+3. ✅ AGENTS.md: Updated BusyBox stats, coverage, phase list
+4. ✅ test_coverage_matrix.md: Already updated earlier with verified 2026-05-18 numbers
+5. ✅ Created `CONTRIBUTING.md`
+6. ✅ Fixed `cover-gate` to use `mktemp` (race condition resolved)
+7. ✅ Shell sandbox fallback: kept by design, added explanatory comment
+8. ✅ `--json` Only wording in README: added explicit `-j` mention
+
+**Canonical numbers (2026-05-18):** 548 passed / 4 failed / 10 skipped BusyBox, 75.7% coverage
 
 ### Phase 20e — Input Safety (estimated: 1–2 hours)
 

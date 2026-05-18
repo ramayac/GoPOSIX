@@ -40,7 +40,7 @@ func run(args []string, out io.Writer) int {
 	jsonMode := flags.Has("json")
 	result := Run(flags.Positional[0])
 	common.Render("dirname", result, jsonMode, out, func() {
-		fmt.Println(result.Result)
+		fmt.Fprintln(out, result.Result)
 	})
 	return 0
 }

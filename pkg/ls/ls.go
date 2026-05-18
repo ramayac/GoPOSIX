@@ -216,7 +216,7 @@ func sortFiles(files []FileInfo, byTime, bySize, reverse bool) []FileInfo {
 	return files
 }
 
-func printLong(fi FileInfo, showInode, showBlocks, humanReadable bool) {
+func printLong(out io.Writer, fi FileInfo, showInode, showBlocks, humanReadable bool) {
 	prefix := ""
 	if showInode {
 		prefix = fmt.Sprintf("%7d ", fi.Inode)
@@ -232,7 +232,7 @@ func printLong(fi FileInfo, showInode, showBlocks, humanReadable bool) {
 	if fi.Target != "" {
 		name = fmt.Sprintf("%s -> %s", fi.Name, fi.Target)
 	}
-	fmt.Printf("%s%s %3d %-8s %-8s %s %s %s\n",
+	fmt.Fprintf(out, "%s%s %3d %-8s %-8s %s %s %s\n",
 		prefix, fi.Mode, fi.Links, fi.Owner, fi.Group,
 		sizeStr, fi.ModTime.Format("Jan _2 15:04"), name)
 }
@@ -306,7 +306,7 @@ func run(args []string, out io.Writer) int {
 
 			switch {
 			case longFmt:
-				printLong(fi, showInode, showBlocks, humanReadable)
+				printLong(out, fi, showInode, showBlocks, humanReadable)
 			case onePer:
 				if showInode {
 					fmt.Fprintf(out, "%7d ", fi.Inode)
@@ -329,7 +329,7 @@ func run(args []string, out io.Writer) int {
 			}
 		}
 		if showHeader {
-			fmt.Println()
+			fmt.Fprintln(out)
 		}
 	}
 	return 0

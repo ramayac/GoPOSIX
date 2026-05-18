@@ -50,7 +50,7 @@ func run(args []string, out io.Writer) int {
 	}
 
 	common.Render("whoami", result, jsonMode, out, func() {
-		fmt.Println(result.User)
+		fmt.Fprintln(out, result.User)
 	})
 	return 0
 }

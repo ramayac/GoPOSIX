@@ -206,8 +206,10 @@ COVERAGE_THRESHOLD := 70
 .PHONY: cover-gate
 cover-gate:
 	@echo "Checking coverage ≥ $(COVERAGE_THRESHOLD)%..."
-	@CGO_ENABLED=0 go test -coverprofile=/tmp/goposix_ci_cover.out $(PKG_DIRS) > /dev/null 2>&1 || true
-	@total=$$(go tool cover -func=/tmp/goposix_ci_cover.out 2>/dev/null | grep '^total:' | awk '{print $$NF}' | tr -d '%'); \
+	@tmp=$$(mktemp /tmp/goposix_ci_cover.XXXXXX.out); \
+	CGO_ENABLED=0 go test -coverprofile=$$tmp $(PKG_DIRS) > /dev/null 2>&1 || true; \
+	total=$$(go tool cover -func=$$tmp 2>/dev/null | grep '^total:' | awk '{print $$NF}' | tr -d '%'); \
+	rm -f $$tmp; \
 	if [ -z "$$total" ]; then echo "FAIL: could not parse coverage"; exit 1; fi; \
 	if [ "$$(echo "$$total < $(COVERAGE_THRESHOLD)" | bc -l)" = "1" ]; then \
 		echo "FAIL: coverage $$total% < $(COVERAGE_THRESHOLD)% threshold"; exit 1; \

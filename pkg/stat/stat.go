@@ -55,13 +55,13 @@ func run(args []string, out io.Writer) int {
 			continue
 		}
 		common.Render("stat", result, jsonMode, out, func() {
-			fmt.Printf("  File: %s\n", result.Path)
-			fmt.Printf("  Size: %-15d Blocks: %-10d  %s\n", result.Size, result.Blocks, result.Mode)
-			fmt.Printf("  Inode: %-14d Links: %d\n", result.Inode, result.Links)
-			fmt.Printf("  Uid: %-4d  Gid: %-4d\n", result.UID, result.GID)
-			fmt.Printf("  Access: %s\n", result.Atime.Format("2006-01-02 15:04:05"))
-			fmt.Printf("  Modify: %s\n", result.Mtime.Format("2006-01-02 15:04:05"))
-			fmt.Printf("  Change: %s\n", result.Ctime.Format("2006-01-02 15:04:05"))
+			fmt.Fprintf(out, "  File: %s\n", result.Path)
+			fmt.Fprintf(out, "  Size: %-15d Blocks: %-10d  %s\n", result.Size, result.Blocks, result.Mode)
+			fmt.Fprintf(out, "  Inode: %-14d Links: %d\n", result.Inode, result.Links)
+			fmt.Fprintf(out, "  Uid: %-4d  Gid: %-4d\n", result.UID, result.GID)
+			fmt.Fprintf(out, "  Access: %s\n", result.Atime.Format("2006-01-02 15:04:05"))
+			fmt.Fprintf(out, "  Modify: %s\n", result.Mtime.Format("2006-01-02 15:04:05"))
+			fmt.Fprintf(out, "  Change: %s\n", result.Ctime.Format("2006-01-02 15:04:05"))
 		})
 	}
 	return exitCode
