@@ -3,4 +3,4 @@
 /korego
 test/busybox_testsuite/runtest-tempdir-links/
 test/busybox_testsuite/.tmpdir.*/
-test/busybox_testsuite/grep.testdir/
+test/busybox_testsuite/grep.testdir//runtest-tempdir-links/
