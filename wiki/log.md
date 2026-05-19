@@ -4,6 +4,37 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-19] ingest | Self-upgrade, Docker image shrink, Phase 23 deferred, Phase 24 planned, examples removed (branch: `feat/upgrade`)
+
+Self-upgrade implemented:
+- `goposix --version` (prints injected version), `goposix --upgrade` (GitHub releases API,
+  tar.gz extraction, atomic binary replacement) — `upgrade.go`, `upgrade_test.go`
+- Zero external dependencies, stdlib only (`net/http`, `archive/tar`, `compress/gzip`)
+- Wired into dispatcher in `goposix.go` alongside `--help`, `--version`, `--list-commands`
+
+Docker image size fix (28 MB → 9.7 MB):
+- Switched daemon Dockerfile from `FROM alpine:3.20` + `strace file` to `FROM scratch`
+- Added `# syntax=docker/dockerfile:1` + `COPY --chown=1000:1000` for directory ownership
+- Daemon server now calls `os.MkdirAll(filepath.Dir(socketPath), 0700)` before binding
+- Socket path: `/home/goposix/goposix.sock` (writable scratch directory via `--chown`)
+- Removed `docker/Dockerfile.daemon` (Dockerfile IS the daemon now)
+- Created `docker/Dockerfile.cli` for CLI-only image
+- Updated `Makefile` daemon-image target, bench-daemon socket path
+
+Phase restructuring:
+- Phase 23 (Multi-Tenant Sandbox): DEFERRED — workspace isolation breaks shared-repo multi-agent model
+- Phase 24 (Multi-Agent Observability): PLANNING — agent-aware sessions, audit trail, per-agent metrics
+- Both documented with rationale in `wiki/23_multi_tenant_sandbox.md`, `wiki/24_multi_agent_observability.md`
+
+Examples removed — `examples/docker-compose.yml` (broken: scratch has no sh/nc, stale socket path),
+`examples/rpc_client/main.go` (stale, doesn't use Go SDK). Replaced by `wiki/usage.md`:
+- CLI mode, daemon mode, Docker Compose, Go SDK, raw JSON-RPC, smart forwarding, recipes
+
+Updated: upgrade.go, upgrade_test.go, goposix.go, internal/daemon/server.go,
+docker/Dockerfile, docker/Dockerfile.cli, docker/Dockerfile.goreleaser, Makefile,
+wiki/23_multi_tenant_sandbox.md, wiki/24_multi_agent_observability.md,
+wiki/self_upgrade.md, wiki/usage.md, wiki/architecture.md, wiki/index.md, wiki/log.md
+
 ## [2026-05-19] doc | Filled `wiki/repo-map.md`
 
 Populated the repo-map template with: top-level file roles, high-signal directory

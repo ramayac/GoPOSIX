@@ -423,7 +423,7 @@ bench-image:
 
 .PHONY: daemon-image
 daemon-image:
-	docker build -t goposix:daemon -f docker/Dockerfile.daemon .
+	docker build -t goposix:daemon -f docker/Dockerfile .
 
 .PHONY: bench-daemon
 bench-daemon: daemon-image
@@ -433,7 +433,7 @@ bench-daemon: daemon-image
 	  -v goposix-bench-data:/data \
 	  goposix:daemon
 	@sleep 2
-	@echo "Daemon running. Socket: /var/run/goposix.sock (inside container)"
+	@echo "Daemon running. Socket: /home/goposix/goposix.sock (inside container)"
 	@echo "Test: docker exec goposix-bench-daemon /bin/goposix echo hello"
 	@echo "Bench: docker exec goposix-bench-daemon /bench/bench_client -op echo 1000"
 	@echo "Stop:  docker rm -f goposix-bench-daemon"

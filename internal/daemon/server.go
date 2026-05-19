@@ -12,6 +12,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -115,6 +116,11 @@ func NewServer(socketPath string, workers int, httpAddr string) *Server {
 
 // Start begins listening on the unix socket.
 func (s *Server) Start() error {
+	// Ensure the parent directory exists.
+	if err := os.MkdirAll(filepath.Dir(s.socketPath), 0700); err != nil {
+		return err
+	}
+
 	// Remove stale socket
 	os.Remove(s.socketPath)
 

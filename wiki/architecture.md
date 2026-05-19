@@ -81,7 +81,7 @@ GoPOSIX/
 ├── cmd/goposix/          Main entry point: multicall dispatch + symlink handling
 ├── internal/
 │   ├── dispatch/        Command registry (init() auto-registration)
-│   ├── daemon/          JSON-RPC 2.0 persistent server (Unix socket)
+│   ├── daemon/          JSON-RPC 2.0 persistent server (Unix socket, self-healing)
 │   └── shell/           Sandboxed shell execution (mvdan.cc/sh, timeout, limits)
 ├── pkg/
 │   ├── common/          Foundation: flags.go, output.go, security.go, json.go
@@ -89,14 +89,30 @@ GoPOSIX/
 │   ├── daemon/          Daemon bootstrap + CLI entry point
 │   ├── shell/           Shell CLI wrapper
 │   └── <utility>/       40+ POSIX utility implementations (ls, cat, grep, sed, ...)
-├── docker/              Dockerfiles (scratch production, alpine debug)
+├── docker/              Dockerfiles
+│   ├── Dockerfile       Default: daemon (FROM scratch, ~10 MB)
+│   ├── Dockerfile.cli   CLI-only (FROM scratch, ~10 MB)
+│   └── Dockerfile.debug Alpine + shell + strace for debugging
+├── upgrade.go           Self-upgrade: GitHub release fetching, tar.gz extraction, atomic binary replacement
+├── forwarder.go         Smart forwarding: CLI → daemon when socket available
 ├── test/                Integration tests
+│   ├── benchmark/       GoPOSIX vs BusyBox performance benchmarks
 │   └── busybox_testsuite/  Ported BusyBox test suite (552 tests)
 ├── testdata/            Shared test fixtures
 ├── wiki/                Architecture, security, RPC API, JSON schema, deploy guides
-├── wiki/                Phase plans, checklists, lessons learned
-└── examples/            Agent integration examples
 ```
+
+## Docker Images
+
+| Image | Base | Size | Use case |
+|-------|------|:---:|----------|
+| `goposix:latest` | `FROM scratch` | ~10 MB | Default: daemon with JSON-RPC + HTTP metrics |
+| `goposix:cli` | `FROM scratch` | ~10 MB | One-shot CLI invocations (`docker run --rm goposix:cli ls -la /`) |
+| `goposix:debug` | `alpine:3.20` | ~28 MB | Shell, strace, file — interactive debugging |
+
+Both production images use `# syntax=docker/dockerfile:1` + `COPY --chown=1000:1000`
+to preserve directory ownership in `FROM scratch`. The daemon socket lives at
+`/home/goposix/goposix.sock` (the only writable directory).
 
 ## Key Packages
 
@@ -151,4 +167,6 @@ Run `make testsuite` before every commit to prevent regressions.
 - [security.md](security.md) — Security model, shell sandbox, deployment posture
 - [rpc_api.md](rpc_api.md) — JSON-RPC client API reference (`pkg/client`)
 - [json_schema.md](json_schema.md) — `--json` output envelope and per-utility schemas
-- [rpc_quickstart.md](rpc_quickstart.md) — How to use GoPOSIX programmatically via JSON-RPC
+- [usage.md](usage.md) — Usage guide: CLI, daemon, Docker Compose, Go SDK, recipes
+- [self_upgrade.md](self_upgrade.md) — Self-upgrade (`--version`, `--upgrade`)
+- [24_multi_agent_observability.md](24_multi_agent_observability.md) — Multi-agent observability (PLANNING)
