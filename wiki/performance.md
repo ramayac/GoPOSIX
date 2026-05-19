@@ -220,4 +220,4 @@ make bench-report
 
 - [Full Benchmark Plan](19_performance_benchmarking.md) — 10 categories in detail, methodology, CI integration
 - [Architecture](../docs/ARCHITECTURE.md) — GoPOSIX component layout
-- [Phase 13 — Speed Targets](13_coverage_and_hardening.md) — `<1ms daemon latency, <15MB binary, <100ms CLI startup`
+- Speed Targets: `<1ms daemon latency, <15MB binary, <100ms CLI startup` (see [phases.md](phases.md))

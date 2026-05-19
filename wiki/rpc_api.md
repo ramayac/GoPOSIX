@@ -183,7 +183,7 @@ c.ShellExec(ctx, sessionID, "echo hello && ls -la")
 The `sessionID` parameter is optional — pass `""` for stateless one-off commands. When provided,
 the shell inherits the session's working directory and environment. All executions are subject to
 the timeout configured by `GOPOSIX_SHELL_TIMEOUT` (default `30s`, accepts Go duration strings like
-`"60s"`, `"5m"`). See [Security Model](SECURITY.md) for the full sandbox and resource limit details.
+`"60s"`, `"5m"`). See [Security Model](security.md) for the full sandbox and resource limit details.
 
 ### Ping
 

@@ -1,10 +1,10 @@
-# GoPOSIX — Test Coverage Matrix
+# GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-18 (✅ verified via `go test -cover` on all packages) | **BusyBox:** 548 pass / 4 fail / 10 skip | **Branch:** `main`
+> **Last updated:** 2026-05-19 | **BusyBox:** 548 pass / 4 fail / 10 skip | **Branch:** `main`
 >
-> Complete test coverage status for all 78 registered packages across unit tests,
-> BusyBox integration tests, and JSON-RPC daemon tests. Coverage % are live-verified,
-> not stale estimates.
+> Canonical per-utility test status for all 77 utilities. Covers unit coverage,
+> BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
+> `posix_coverage.md` — this is now the single source of truth.
 
 ---
 
@@ -158,7 +158,7 @@
 | BusyBox skipped | 10 | External deps (bzip2, xz, uudecode) |
 | Daemon internal coverage | 64.6% | +28.7% from Phase 18 |
 | JSON-RPC daemon tests | 73/77 | 95% (4 gaps: daemon, tee, testcmd, truefalse; patch skipped) |
-| Packages below 70% unit coverage | 9 | See [20_hardening_ii.md](20_hardening_ii.md) §20.13 |
+| Packages below 70% unit coverage | 8 | See [20_hardening_ii.md](20_hardening_ii.md) §20.13 for details |
 
 ## Remaining Gaps
 
@@ -175,4 +175,4 @@
 - **BusyBox skipped (10):** All tar tests requiring bzip2/xz/uudecode (external deps)
 - **Coverage gate:** CI enforces ≥70% overall (run `make cover-gate` for current; target ≥75% per Phase 20)
 - **Tier 7 stubs:** Implemented as functional stubs; need hardening and BusyBox-style compliance tests
-- **Phase 20 progress:** 7 of 17 under-70% packages brought above gate. Overall coverage 75.7% → 76.7%. 9 packages remain below 70% (hard-to-test paths: net.Dial, terminal I/O, complex parsers).
+- **Phase 20 progress:** 9 of 17 under-70% packages brought above gate. Overall coverage 75.7% → 76.7%. 8 packages remain below 70% (hard-to-test paths: net.Dial, terminal I/O, complex parsers).

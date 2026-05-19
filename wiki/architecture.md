@@ -142,31 +142,15 @@ Run `make testsuite` before every commit to prevent regressions.
 
 ## Phase History
 
-| Phase | Scope | Status |
-|-------|-------|--------|
-| 00–01 | Foundation + Tier 1 utilities | ✅ |
-| 02 | Docker CI & `scratch` pipeline | ✅ |
-| 03 | Filesystem utils (ls, cat, rm, cp, mv, ...) | ✅ |
-| 04 | Text utils (grep, sed, sort, wc, ...) | ✅ |
-| 05 | JSON-RPC daemon core | ✅ |
-| 06 | System & process utils (ps, find, df, du, ...) | ✅ |
-| 07 | Agent-ready features (diff, tar, shell) | ✅ |
-| 08 | Security hardening | ✅ |
-| 09 | Release & automation | ✅ |
-| 10 | POSIX test framework + BusyBox suite | ✅ |
-| 11 | Post-MVP cleanup, lessons learned | ✅ |
-| 12 | Road to Gold — supply chain, macOS, coverage, BusyBox parity | ✅ |
-| 13 | Coverage & hardening (75.7% coverage reached) | ✅ |
-| 14a-c | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage | ✅ |
-| 15–19 | Post-MVP tiers 1–3, quality fixes, performance benchmarks | ✅ |
-| 20 | Hardening II — flag audit, code cleanup, doc fixes, coverage | 🔄 |
-| — | `awk` (Platinum gate) | ⬜ |
+All build phases (00–20, 22) are complete. See [phases.md](phases.md) for the full phase index.
 
 ## Related Documentation
 
+- [phases.md](phases.md) — Project roadmap, current state, and phase index
 - [security.md](security.md) — Security model, shell sandbox, deployment posture
 - [rpc_api.md](rpc_api.md) — JSON-RPC client API reference (`pkg/client`)
 - [json_schema.md](json_schema.md) — `--json` output envelope and per-utility schemas
 - [usage.md](usage.md) — Usage guide: CLI, daemon, Docker Compose, Go SDK, recipes
 - [self_upgrade.md](self_upgrade.md) — Self-upgrade (`--version`, `--upgrade`)
-- [24_multi_agent_observability.md](24_multi_agent_observability.md) — Multi-agent observability (PLANNING)
+- [deferred.md](deferred.md) — Deferred and planned future work
+- [todos.md](todos.md) — Open TODOs and remaining BusyBox failures
