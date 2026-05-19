@@ -50,6 +50,11 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 		}
 		
 		hc := interp.HandlerCtx(ctx)
+		// Sync the shell's working directory to the host process so dispatch
+		// commands (ls, pwd, etc.) see the same directory as cd set.
+		if hc.Dir != "" {
+			os.Chdir(hc.Dir)
+		}
 		exitCode := cmd.Run(args[1:], hc.Stdout)
 		if exitCode != 0 {
 			return interp.NewExitStatus(uint8(exitCode))
@@ -102,7 +107,14 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 	defer cancel()
 
 	err = runner.Run(ctx, prog)
-	
+
+	// Apply any cd changes back to the host process so subsequent
+	// Exec calls (e.g., in an interactive REPL) start from the
+	// correct working directory. mvdan/sh only updates runner.Dir.
+	if runner.Dir != "" {
+		os.Chdir(runner.Dir)
+	}
+
 	exitCode := uint8(0)
 	if err != nil {
 		if exit, ok := interp.IsExitStatus(err); ok {
