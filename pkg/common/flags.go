@@ -1,10 +1,7 @@
 // Package common provides shared utilities for goposix utilities.
 package common
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 // FlagType enumerates the kinds of values a flag can hold.
 type FlagType int
@@ -19,12 +16,15 @@ const (
 type FlagDef struct {
 	Short string   // single character, e.g. "l"
 	Long  string   // long name without --, e.g. "all"
-	Type  FlagType // Bool or Value
+	Type  FlagType // Bool, Value, or OptionalValue
 }
 
 // FlagSpec is the set of accepted flags for a command.
 type FlagSpec struct {
-	Defs []FlagDef
+	Defs               []FlagDef
+	StopAtFirstNonFlag bool // if true, stop parsing at first non-flag argument (echo, printf)
+
+	compiled *compiledSpec // lazily built on first call
 }
 
 // FlagError is returned when flag parsing fails.
@@ -37,18 +37,12 @@ func (e *FlagError) Error() string { return e.Msg }
 
 // ParseResult holds the parsed flags and positional arguments.
 type ParseResult struct {
-	// Bools tracks bool flags that were set, keyed by short OR long name.
-	Bools map[string]bool
-	// Values holds key=value style flags (last value seen).
-	Values map[string]string
-	// ValuesList holds all key=value style flags (all values seen).
+	Bools      map[string]bool
+	Values     map[string]string
 	ValuesList map[string][]string
-	// Count tracks how many times a flag was repeated (for -vvv style).
-	Count map[string]int
-	// Positional holds non-flag arguments.
+	Count      map[string]int
 	Positional []string
-	// Stdin is true if bare "-" was present.
-	Stdin bool
+	Stdin      bool
 }
 
 func newParseResult() *ParseResult {
@@ -65,7 +59,7 @@ func (r *ParseResult) Has(name string) bool {
 	return r.Bools[name]
 }
 
-// Get returns the value for a value-type flag.
+// Get returns the value for a value-type flag (last value seen).
 func (r *ParseResult) Get(name string) string {
 	return r.Values[name]
 }
@@ -75,29 +69,29 @@ func (r *ParseResult) GetAll(name string) []string {
 	return r.ValuesList[name]
 }
 
+func errf(code int, format string, args ...interface{}) *FlagError {
+	return &FlagError{ExitCode: code, Msg: fmt.Sprintf(format, args...)}
+}
+
 // ParseFlags parses args according to spec.
 // Unknown flags return *FlagError with ExitCode 2.
 func ParseFlags(args []string, spec FlagSpec) (*ParseResult, error) {
-	// Build lookup maps for quick validation.
-	shortDef := make(map[string]FlagDef)
-	longDef := make(map[string]FlagDef)
-	for _, d := range spec.Defs {
-		if d.Short != "" {
-			shortDef[d.Short] = d
-		}
-		if d.Long != "" {
-			longDef[d.Long] = d
-		}
-	}
-
+	cs := spec.getOrCompile()
 	res := newParseResult()
+	argsLen := len(args)
+	res.Positional = make([]string, 0, argsLen)
+
 	i := 0
-	for i < len(args) {
+	for i < argsLen {
 		arg := args[i]
 
 		// End of flags marker.
 		if arg == "--" {
-			res.Positional = append(res.Positional, args[i+1:]...)
+			i++
+			for i < argsLen {
+				res.Positional = append(res.Positional, args[i])
+				i++
+			}
 			break
 		}
 
@@ -109,115 +103,166 @@ func ParseFlags(args []string, spec FlagSpec) (*ParseResult, error) {
 			continue
 		}
 
+		// Not a flag → positional.
+		if len(arg) < 2 || arg[0] != '-' {
+			if cs.stopAtFirst {
+				for i < argsLen {
+					res.Positional = append(res.Positional, args[i])
+					i++
+				}
+				break
+			}
+			res.Positional = append(res.Positional, arg)
+			i++
+			continue
+		}
+
 		// Long flag: --name or --name=value.
-		if strings.HasPrefix(arg, "--") {
-			name := arg[2:]
-			var value string
-			hasEq := false
-			if idx := strings.IndexByte(name, '='); idx != -1 {
-				value = name[idx+1:]
-				name = name[:idx]
-				hasEq = true
+		if arg[1] == '-' {
+			ni, err := cs.parseLong(args, i, res)
+			if err != nil {
+				return nil, err
 			}
-			def, ok := longDef[name]
-			if !ok {
-				return nil, &FlagError{ExitCode: 2, Msg: fmt.Sprintf("unknown flag: --%s", name)}
-			}
-			// Canonicalise: store under both short and long.
-			if def.Type == FlagValue || def.Type == FlagOptionalValue {
-				if !hasEq {
-					if def.Type == FlagOptionalValue {
-						value = ""
-					} else {
-						// --key value form: consume next arg.
-						if i+1 >= len(args) {
-							return nil, &FlagError{ExitCode: 2, Msg: fmt.Sprintf("flag --%s requires a value", name)}
-						}
-						i++
-						value = args[i]
-					}
-				}
-				if def.Short != "" {
-					res.Values[def.Short] = value
-					res.ValuesList[def.Short] = append(res.ValuesList[def.Short], value)
-					res.Bools[def.Short] = true
-				}
-				res.Values[name] = value
-				res.ValuesList[name] = append(res.ValuesList[name], value)
-				res.Bools[name] = true
-			} else {
-				if def.Short != "" {
-					res.Bools[def.Short] = true
-					res.Count[def.Short]++
-				}
-				res.Bools[name] = true
-				res.Count[name]++
-			}
-			i++
+			i = ni
 			continue
 		}
 
-		// Short flag(s): -laR or -v (may repeat).
-		if strings.HasPrefix(arg, "-") && len(arg) > 1 {
-			chars := arg[1:]
-			for ci, ch := range chars {
-				key := string(ch)
-				def, ok := shortDef[key]
-				if !ok {
-					return nil, &FlagError{ExitCode: 2, Msg: fmt.Sprintf("unknown flag: -%s", key)}
-				}
-				if def.Type == FlagValue || def.Type == FlagOptionalValue {
-					// Remainder of the cluster is the value, or next arg.
-					remainder := chars[ci+1:]
-					if remainder != "" {
-						res.Values[key] = remainder
-						res.ValuesList[key] = append(res.ValuesList[key], remainder)
-						if def.Long != "" {
-							res.Values[def.Long] = remainder
-							res.ValuesList[def.Long] = append(res.ValuesList[def.Long], remainder)
-						}
-					} else {
-						if def.Type == FlagOptionalValue {
-							res.Values[key] = ""
-							res.ValuesList[key] = append(res.ValuesList[key], "")
-							if def.Long != "" {
-								res.Values[def.Long] = ""
-								res.ValuesList[def.Long] = append(res.ValuesList[def.Long], "")
-							}
-						} else {
-							if i+1 >= len(args) {
-								return nil, &FlagError{ExitCode: 2, Msg: fmt.Sprintf("flag -%s requires a value", key)}
-							}
-							i++
-							res.Values[key] = args[i]
-							res.ValuesList[key] = append(res.ValuesList[key], args[i])
-							if def.Long != "" {
-								res.Values[def.Long] = args[i]
-								res.ValuesList[def.Long] = append(res.ValuesList[def.Long], args[i])
-							}
-						}
-					}
-					res.Bools[key] = true
-					if def.Long != "" {
-						res.Bools[def.Long] = true
-					}
-					break // value flags always consume the rest of the cluster.
-				}
-				res.Bools[key] = true
-				res.Count[key]++
-				if def.Long != "" {
-					res.Bools[def.Long] = true
-					res.Count[def.Long]++
-				}
-			}
-			i++
-			continue
+		// Short flag(s): -laR or -ofile.
+		ni, err := cs.parseShort(args, i, res)
+		if err != nil {
+			return nil, err
 		}
-
-		// Positional argument.
-		res.Positional = append(res.Positional, arg)
-		i++
+		i = ni
 	}
 
 	return res, nil
+}
+
+// parseLong handles --name or --name=value at position i.
+func (cs *compiledSpec) parseLong(args []string, i int, res *ParseResult) (int, error) {
+	arg := args[i]
+	name := arg[2:]
+	var value string
+	hasEq := false
+
+	// Scan for '=' inline.
+	for j := 0; j < len(name); j++ {
+		if name[j] == '=' {
+			value = name[j+1:]
+			name = name[:j]
+			hasEq = true
+			break
+		}
+	}
+
+	cf := cs.lookupLong(name)
+	if cf == nil {
+		return 0, errf(2, "unknown flag: --%s", name)
+	}
+
+	if cf.Type == FlagBool {
+		res.Bools[cf.Short] = true
+		res.Count[cf.Short]++
+		if cf.Long != "" {
+			res.Bools[cf.Long] = true
+			res.Count[cf.Long]++
+		}
+		return i + 1, nil
+	}
+
+	// Value or OptionalValue flag.
+	if !hasEq {
+		if cf.Type == FlagOptionalValue {
+			value = ""
+		} else {
+			if i+1 >= len(args) {
+				return 0, errf(2, "flag --%s requires a value", name)
+			}
+			i++
+			value = args[i]
+		}
+	}
+
+	if cf.Short != "" {
+		res.Values[cf.Short] = value
+		res.ValuesList[cf.Short] = append(res.ValuesList[cf.Short], value)
+		res.Bools[cf.Short] = true
+	}
+	res.Values[cf.Long] = value
+	res.ValuesList[cf.Long] = append(res.ValuesList[cf.Long], value)
+	res.Bools[cf.Long] = true
+
+	return i + 1, nil
+}
+
+// parseShort handles -abc or -ovalue at position i.
+func (cs *compiledSpec) parseShort(args []string, i int, res *ParseResult) (int, error) {
+	arg := args[i]
+	chars := arg[1:]
+
+	for ci := 0; ci < len(chars); ci++ {
+		b := chars[ci]
+		cf := cs.lookupShort(b)
+		if cf == nil {
+			return 0, errf(2, "unknown flag: -%c", b)
+		}
+
+		if cf.Type == FlagBool {
+			res.Bools[cf.Short] = true
+			res.Count[cf.Short]++
+			if cf.Long != "" {
+				res.Bools[cf.Long] = true
+				res.Count[cf.Long]++
+			}
+			continue
+		}
+
+		remainder := chars[ci+1:]
+		if remainder != "" {
+			if cf.Short != "" {
+				res.Values[cf.Short] = remainder
+				res.ValuesList[cf.Short] = append(res.ValuesList[cf.Short], remainder)
+				res.Bools[cf.Short] = true
+			}
+			if cf.Long != "" {
+				res.Values[cf.Long] = remainder
+				res.ValuesList[cf.Long] = append(res.ValuesList[cf.Long], remainder)
+				res.Bools[cf.Long] = true
+			}
+			return i + 1, nil
+		}
+
+		if cf.Type == FlagOptionalValue {
+			if cf.Short != "" {
+				res.Values[cf.Short] = ""
+				res.ValuesList[cf.Short] = append(res.ValuesList[cf.Short], "")
+				res.Bools[cf.Short] = true
+			}
+			if cf.Long != "" {
+				res.Values[cf.Long] = ""
+				res.ValuesList[cf.Long] = append(res.ValuesList[cf.Long], "")
+				res.Bools[cf.Long] = true
+			}
+			return i + 1, nil
+		}
+
+		if i+1 >= len(args) {
+			return 0, errf(2, "flag -%s requires a value", cf.Short)
+		}
+		i++
+		value := args[i]
+		if cf.Short != "" {
+			res.Values[cf.Short] = value
+			res.ValuesList[cf.Short] = append(res.ValuesList[cf.Short], value)
+			res.Bools[cf.Short] = true
+		}
+		if cf.Long != "" {
+			res.Values[cf.Long] = value
+			res.ValuesList[cf.Long] = append(res.ValuesList[cf.Long], value)
+			res.Bools[cf.Long] = true
+		}
+		return i + 1, nil
+	}
+
+	return i + 1, nil
 }

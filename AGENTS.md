@@ -64,20 +64,8 @@ When implementing a new utility or feature, follow this checklist:
 
 ## 6. Current State & Progression
 
-Refer to the Phase documents in `wiki/` (e.g., `wiki/plan_updated.md`) to understand the current task.
-- **Phase 00 & 01:** Foundation & Tier 1 (echo, true, false, env, pwd, etc.) — **COMPLETED**
-- **Phase 02:** Docker CI & Scratch pipeline — **COMPLETED**
-- **Phase 03:** Filesystem Utils (ls, cat, rm, cp, mv, etc.) — **COMPLETED**
-- **Phase 04:** Text Utils (grep, sed, sort, wc, etc.) — **COMPLETED**
-- **Phase 05:** JSON-RPC Daemon Core — **COMPLETED**
-- **Phase 06:** System & Process Utils (ps, find, df, du, etc.) — **COMPLETED**
-- **Phase 07:** Agent-Ready Features (diff, tar, shell) — **COMPLETED**
-- **Phase 08:** Security Hardening — **COMPLETED**
-- **Phase 09:** Release & Automation — **COMPLETED**
-- **Phase 10:** POSIX Test Framework — **COMPLETED**
-- **Phase 11–19:** Post-MVP tiers, Gold roadmap, coverage hardening, benchmarks — **COMPLETED**
-- **Phase 20:** Hardening II (flag audit, code cleanup, doc fixes) — **COMPLETED**
-- **Phase 22:** Hardening III (daemon-first pivot, Go SDK) — **IN PROGRESS**
+For current status, remaining failures, deferred work, and active priorities, see [wiki/todos.md](wiki/todos.md).
+For the full phase history and roadmap, see [wiki/phases.md](wiki/phases.md).
 
 ## 7. Docker & Containerization Insights
 
