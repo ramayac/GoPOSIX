@@ -4,7 +4,7 @@
 
 ## 1. Project Identity & Goal
 
-GoPOSIX is a 100% Go-native, POSIX-compliant userland designed to run inside a Docker `FROM scratch` container. It serves as a modern replacement for GNU Coreutils CLI tools by compiling down to a single multicall binary (like BusyBox).
+GoPOSIX is a 100% Go-native, POSIX-compliant userland designed for **programmatic consumption** in containerized environments. It runs as a persistent JSON-RPC 2.0 daemon with a typed Go SDK (60µs per RPC call, 11× faster than BusyBox fork+exec). A multicall CLI binary (like BusyBox) is also available as a secondary interface.
 
 GoPOSIX is designed for **programmatic consumption** in containerized environments:
 1. Every utility supports structured machine-readable output via a `--json` flag.
@@ -22,12 +22,14 @@ Whenever you write or modify code in this repository, you **MUST** adhere to the
 
 ## 3. Component Structure
 
-- `cmd/goposix/main.go`: The multicall entry point. Handles symlink invocation (e.g., `/bin/ls -> /bin/goposix`) and subcommand invocation (`goposix ls`).
+- `cmd/goposix/main.go`: The multicall entry point. Handles symlink invocation (e.g., `/bin/ls -> /bin/goposix`), subcommand invocation (`goposix ls`), and daemon mode (`goposix daemon`).
 - `internal/dispatch/`: The command registry.
+- `internal/daemon/`: The JSON-RPC 2.0 persistent daemon server.
+- `pkg/client/`: The typed Go SDK for programmatic daemon access (60µs/call).
 - `pkg/common/`: Foundation libraries (flags, JSON envelope, JSON-RPC types).
 - `pkg/<utility>/`: Implementation of specific POSIX utilities (e.g., `pkg/cat/`, `pkg/ls/`).
 - `test/compliance/`: Bash scripts that compare GoPOSIX's output and exit codes against the host OS (GNU/Linux) equivalents.
-- `docker/`: Dockerfiles for the production `scratch` image and the `alpine` debug image.
+- `docker/`: Dockerfiles — default daemon image (`Dockerfile`), CLI scratch (`Dockerfile.cli`), debug (`Dockerfile.debug`).
 
 ## 4. Development Workflow
 
@@ -73,7 +75,8 @@ Refer to the Phase documents in `wiki/` (e.g., `wiki/plan_updated.md`) to unders
 - **Phase 09:** Release & Automation — **COMPLETED**
 - **Phase 10:** POSIX Test Framework — **COMPLETED**
 - **Phase 11–19:** Post-MVP tiers, Gold roadmap, coverage hardening, benchmarks — **COMPLETED**
-- **Phase 20:** Hardening II (flag audit, code cleanup, doc fixes) — **IN PROGRESS**
+- **Phase 20:** Hardening II (flag audit, code cleanup, doc fixes) — **COMPLETED**
+- **Phase 22:** Hardening III (daemon-first pivot, Go SDK) — **IN PROGRESS**
 
 ## 7. Docker & Containerization Insights
 

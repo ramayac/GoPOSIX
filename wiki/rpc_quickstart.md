@@ -171,4 +171,43 @@ go run ./examples/rpc_client/main.go
 
 ## Go Client SDK
 
-For production use, import `pkg/client/` for connection pooling, retry, and typed helper methods. See `wiki/rpc_api.md`.
+For production use, import `pkg/client/` for connection pooling, retry, and typed helper methods. See `docs/SDK.md` for the full guide.
+
+### Quick SDK Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "github.com/ramayac/goposix/pkg/client"
+)
+
+func main() {
+    c, _ := client.New("/tmp/goposix.sock",
+        client.WithPoolSize(4),
+        client.WithTimeout(30*time.Second),
+    )
+    defer c.Close()
+
+    // Typed call — returns structured data.
+    result, _ := c.Ls(context.Background(), "/etc", nil)
+    for _, f := range result.Entries {
+        fmt.Println(f.Name)
+    }
+
+    // All 77 utilities have typed methods:
+    // c.Cat(), c.Grep(), c.Sort(), c.Find(), c.Tar(), ...
+}
+```
+
+| Feature | raw socket | Go SDK |
+|---------|:---:|:---:|
+| Typed return values | ❌ | ✅ |
+| Connection pooling | ❌ | ✅ |
+| Retry with backoff | ❌ | ✅ |
+| Context propagation | ❌ | ✅ |
+| Per-call latency | ~2ms (socat) | ~60µs |
+
+See also [rpc_api.md](rpc_api.md) for the full RPC API reference.

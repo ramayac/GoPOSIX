@@ -1,6 +1,6 @@
 # Phase 22 — Hardening III (Daemon-First Pivot)
 
-> **Status:** PLANNING | **Date:** 2026-05-18 | **Trigger:** Benchmark data (Phase 19) + Go SDK discovery
+> **Status:** IN PROGRESS | **Date:** 2026-05-18 | **Trigger:** Benchmark data (Phase 19) + Go SDK discovery
 >
 > **Key finding:** The Go SDK client with persistent connection achieves **60µs per RPC call — 11× faster than BusyBox fork+exec (680µs)**. The old socat-per-call approach was 3× *slower* than BusyBox. The project has been selling the right architecture with the wrong interface.
 
@@ -194,14 +194,14 @@ This gives the CLI image daemon benefits without changing its entrypoint — if 
 
 ## 5. Acceptance Criteria
 
-- [ ] M1: `make image` builds daemon image, `make image-cli` builds CLI-only image
-- [ ] M1: `docker run -d --name goposix goposix:latest` starts daemon and responds to SDK calls
-- [ ] M1: `docker run --rm goposix:cli ls -la /` works as before (backward compatible)
-- [ ] M2: README quickstart shows Go SDK example, not CLI `--json` flag
-- [ ] M2: AGENTS.md project identity says "persistent daemon with Go SDK" first
-- [ ] M3: `docs/SDK.md` exists with connection examples, typed methods, performance expectations
-- [ ] M4: README includes benchmark numbers (60µs/call, 11×, grep 5.4×)
-- [ ] M4: `wiki/19_performance_benchmarking.md` has actual measured matrix, not predictions
+- [x] M1: `make image` builds daemon image, `make image-cli` builds CLI-only image
+- [x] M1: `docker run -d --name goposix goposix:latest` starts daemon and responds to SDK calls
+- [x] M1: `docker run --rm goposix:cli ls -la /` works as before (backward compatible)
+- [x] M2: README quickstart shows Go SDK example, not CLI `--json` flag
+- [x] M2: AGENTS.md project identity says "persistent daemon with Go SDK" first
+- [x] M3: `docs/SDK.md` exists with connection examples, typed methods, performance expectations
+- [x] M4: README includes benchmark numbers (60µs/call, 11×, grep 5.4×)
+- [x] M4: `wiki/19_performance_benchmarking.md` has actual measured matrix, not predictions
 - [ ] `make test` passes (zero regressions)
 - [ ] `make testsuite` passes (548/4/10, no new failures)
 - [ ] `make bench-quick` passes with SDK mode

@@ -56,7 +56,8 @@ All phases 00–11 are complete. These documents describe the as-built implement
 | [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases |
 | [19_performance_benchmarking.md](19_performance_benchmarking.md) | Phase 19 — Performance Benchmarking (DONE) |
 | [20_hardening_ii.md](20_hardening_ii.md) | Phase 20 — Hardening II: flag audit, coverage, input safety ✅ |
-| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III: Daemon-First Pivot (PLANNING) |
+| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III: Daemon-First Pivot (IN PROGRESS) |
+| [23_multi_tenant_sandbox.md](23_multi_tenant_sandbox.md) | Phase 23 — Multi-Tenant Sandbox: Linux Experiment Security (PLANNING) |
 
 ## Deferred / Future
 

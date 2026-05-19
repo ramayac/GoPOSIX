@@ -8,7 +8,8 @@ MODULE     := github.com/ramayac/goposix
 VERSION    ?= $(shell git describe --tags --always 2>/dev/null || echo "dev")
 LDFLAGS    := -ldflags "-s -w -X '$(MODULE)/pkg/common.Version=$(VERSION)' \
                               -X 'github.com/ramayac/goposix.Version=$(VERSION)'"
-DOCKER_IMG := goposix:$(VERSION)
+DOCKER_IMG     := goposix:$(VERSION)
+DOCKER_IMG_CLI := goposix:cli-$(VERSION)
 
 # Directories tested by the unit-test and coverage targets.
 PKG_DIRS   := . \
@@ -113,6 +114,9 @@ help:
 	@echo "    build        Compile the goposix binary (CGO_ENABLED=0)"
 	@echo "    build-race   Compile with -race detector (dev only)"
 	@echo "    install      Install goposix to \$$GOPATH/bin"
+	@echo "    image        Build the default (daemon) Docker image"
+	@echo "    image-cli    Build the CLI-only (scratch) Docker image"
+	@echo "    image-debug  Build the debug (Alpine+shell) Docker image"
 	@echo ""
 	@echo "  Test"
 	@echo "    test         Run all unit tests"
@@ -126,10 +130,11 @@ help:
 	@echo "    fmt          Run gofmt -w on all Go files"
 	@echo "    fmt-check    Check formatting without modifying files"
 	@echo ""
-	@echo "  Docker"
-	@echo "    docker        Build production scratch image ($(DOCKER_IMG))"
+	@echo "  Container"
+	@echo "    docker        Build default daemon image ($(DOCKER_IMG))"
+	@echo "    docker-cli    Build CLI-only scratch image (goposix:cli)"
 	@echo "    docker-debug  Build Alpine debug image (goposix:debug)"
-	@echo "    smoke-docker  Run smoke tests inside the production container"
+	@echo "    smoke-docker  Run smoke tests in CLI container"
 	@echo ""
 	@echo "  Smoke"
 	@echo "    smoke        Build + run manual integration smoke tests (local)"
@@ -245,8 +250,10 @@ fmt-check:
 	@echo "All files are gofmt-compliant."
 
 # -------------------------------------------------------------------
-# Docker targets
+# Container targets
 # -------------------------------------------------------------------
+
+# Default image: persistent daemon (goposix:latest)
 .PHONY: docker
 docker:
 	docker build \
@@ -254,33 +261,58 @@ docker:
 	  -t $(DOCKER_IMG) \
 	  -f docker/Dockerfile .
 
+# Convenience aliases for clarity.
+.PHONY: image
+dimage: docker
+
+# CLI-only scratch image (goposix:cli)
+.PHONY: docker-cli
+docker-cli:
+	docker build \
+	  --build-arg VERSION=$(VERSION) \
+	  -t $(DOCKER_IMG_CLI) \
+	  -t goposix:cli \
+	  -f docker/Dockerfile.cli .
+
+.PHONY: image-cli
+dimage-cli: docker-cli
+
 .PHONY: docker-debug
 docker-debug: ## Build debug alpine docker image
 	docker build -t goposix:debug -f docker/Dockerfile.debug .
+
+.PHONY: image-debug
+dimage-debug: docker-debug
 
 .PHONY: docker-shell
 docker-shell: docker-debug ## Run an interactive shell in the docker image
 	docker run -it --rm goposix:debug sh
 
 .PHONY: docker-run
-docker-run: docker ## Run a command in the production scratch container (e.g., make docker-run CMD="ls -la")
-	docker run --rm $(DOCKER_IMG) $(CMD)
+docker-run: docker-cli ## Run a command in the CLI scratch container (e.g., make docker-run CMD="ls -la")
+	docker run --rm goposix:cli $(CMD)
 
-# smoke-docker: run smoke checks inside the production scratch container.
+.PHONY: docker-run-daemon
+docker-run-daemon: docker ## Start the daemon container
+	docker run -d --name goposix goposix:latest
+	@echo "Daemon running. Socket: /var/run/goposix.sock"
+	@echo "Stop: docker rm -f goposix"
+
+# smoke-docker: run smoke checks inside the CLI container.
 .PHONY: smoke-docker
-smoke-docker: docker
+smoke-docker: docker-cli
 	@echo ""
-	@echo "--- Docker smoke tests ($(DOCKER_IMG)) ---"
-	docker run --rm $(DOCKER_IMG) true
+	@echo "--- Docker smoke tests (goposix:cli) ---"
+	docker run --rm goposix:cli true
 	@echo "true: exit=0 OK"
-	docker run --rm $(DOCKER_IMG) false; [ $$? -eq 1 ] && echo "false: exit=1 OK"
-	docker run --rm $(DOCKER_IMG) echo smoke test passed
-	docker run --rm $(DOCKER_IMG) echo --json smoke test
-	docker run --rm $(DOCKER_IMG) whoami --json
-	docker run --rm $(DOCKER_IMG) hostname --json
-	docker run --rm $(DOCKER_IMG) uname --json
-	docker run --rm $(DOCKER_IMG) pwd --json
-	docker run --rm $(DOCKER_IMG) --help
+	docker run --rm goposix:cli false; [ $$? -eq 1 ] && echo "false: exit=1 OK"
+	docker run --rm goposix:cli echo smoke test passed
+	docker run --rm goposix:cli echo --json smoke test
+	docker run --rm goposix:cli whoami --json
+	docker run --rm goposix:cli hostname --json
+	docker run --rm goposix:cli uname --json
+	docker run --rm goposix:cli pwd --json
+	docker run --rm goposix:cli --help
 	@echo ""
 	@echo "=== ALL DOCKER SMOKE TESTS PASSED ==="
 
@@ -349,7 +381,7 @@ symlink-test: build
 .PHONY: clean
 clean:
 	rm -f $(BINARY) $(BINARY)-race coverage.out coverage.html
-	-docker rmi $(DOCKER_IMG) goposix:debug 2>/dev/null || true
+	-docker rmi $(DOCKER_IMG) goposix:cli goposix:debug 2>/dev/null || true
 	@echo "clean: done"
 
 .PHONY: tidy

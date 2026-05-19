@@ -1,8 +1,8 @@
 # System Architecture
 
 GoPOSIX is a POSIX-compliant userland implemented as a single, statically-linked Go binary.
-It functions as both a traditional CLI tool (multicall binary) and as a persistent
-JSON-RPC 2.0 daemon for programmatic consumers.
+The primary interface is a persistent JSON-RPC 2.0 daemon with a typed Go SDK (60µs/call).
+A multicall CLI binary is available as a secondary interface.
 
 **Version:** v1.0.0 (Gold) | **Go:** 1.26 | **Binary:** ~10 MB fully static
 
@@ -16,12 +16,29 @@ JSON-RPC 2.0 daemon for programmatic consumers.
 3. **Container-Native:** Runs as non-root user `goposix:1000` inside a `FROM scratch` Docker
    image. Compiles with `CGO_ENABLED=0` for full static linking.
 
+## Performance
+
+| Interface | Per-call latency | vs BusyBox (680µs fork+exec) |
+|-----------|:---:|:---:|
+| **Go SDK (persistent conn)** | **60µs** | **11× faster** |
+| `socat` (per-call overhead) | 2,000µs | 3× slower |
+| CLI cold start | 7,000µs | 10× slower |
+
+Other wins: `grep` on 100MB file is 0.16s vs BusyBox 0.86s (5.4× faster, RE2 vs POSIX ERE).
+
 ## Component Flow
 
 ```
-                  ┌──────────────────────────────────┐
-                  │  Programmatic Consumer / CLI User │
-                  └──────┬───────────────┬───────────┘
+                         ┌─────────────────────────────┐
+                         │  Go SDK Client (primary)     │
+                         │  c.Ls(ctx, "/", nil)         │
+                         │  60µs/call, typed methods    │
+                         └──────────┬──────────────────┘
+                                    │
+                                    ▼
+                  ┌─────────────────────────────────────┐
+                  │  Programmatic Consumer / CLI User    │
+                  └──────┬───────────────┬──────────────┘
                          │               │
                    Unix Socket     CLI invocation
                    (JSON-RPC)      (symlink/goposix <cmd>)
@@ -44,7 +61,7 @@ JSON-RPC 2.0 daemon for programmatic consumers.
                     ┌───────────┼───────────┐
                     ▼           ▼           ▼
               ┌─────────┐ ┌─────────┐ ┌─────────┐
-              │ pkg/ls  │ │ pkg/cat │ │ pkg/... │  (40+ utilities)
+              │ pkg/ls  │ │ pkg/cat │ │ pkg/... │  (77 utilities)
               └────┬────┘ └────┬────┘ └────┬────┘
                    │           │           │
                    └───────────┼───────────┘
@@ -55,9 +72,6 @@ JSON-RPC 2.0 daemon for programmatic consumers.
                       │ flags, output, │
                       │ security, json │
                       └────────────────┘
-
-Agent clients can also use the Go client library (pkg/client) for typed
-JSON-RPC calls, connection pooling, and retry logic.
 ```
 
 ## Directory Structure
