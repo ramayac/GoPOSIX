@@ -27,61 +27,20 @@ I'm not the first to start something like this, there is [cugo](https://github.c
 
 Anyway the project got into a point that, while it's not complete (awk is missing, but I'll be using goawk probably) but _I'm happy_ with the results, and that's enough for me ☑️.
 
-## Obvious Recognitions
+## Honest and Obvious Recognitions
 
-- None of this would be possible without the amazing [BusyBox](https://busybox.net/) project and its [TEST SUITE](https://github.com/brgl/busybox/blob/master/testsuite/runtest), absolutely amazing and inspiring work.
-- And [Mvdan Shell](https://github.com/mvdan/sh), it really saved my butt. Absolutely brilliant.
+I want to be very clear about this:
+>  The only reason this works is that there's a brutally thorough, existing corpus of tests to validate against. The AI iterated until it passed. Without BusyBox's tests, this project is just random hallucinated code. **The test suite is the real hero**.
 
-## Features of the project
+- So check and support [BusyBox](https://busybox.net/) project and take a look at its amazing [test suite](https://github.com/brgl/busybox/blob/master/testsuite/runtest), it's a masterpiece of thoroughness and coverage, and it made this project possible.
+- Also [Mvdan Shell](https://github.com/mvdan/sh), it really saved my butt. Absolutely brilliant.
+- And [goawk](https://github.com/benhoyt/goawk), which I'll be using for the `awk` implementation, another big save!
 
-Key Features:
-- **Persistent Daemon + Go SDK:** Start one container, call `c.Echo(ctx, "hi")` at 60µs/call.
-  11× faster than BusyBox fork+exec for bulk operations ([Performance](wiki/performance.md)) (Yes, we have performance benchmarks!)
-- **JSON Output on every utility:** Every utility supports `--json` for structured output
-  ([JSON Schema](wiki/json_schema.md)). Why not?
-- **Portable Scripting:** Sandboxed shell interpreter via `mvdan.cc/sh` with (some) configurable timeout
-  and resource limits ([Security Model](wiki/security.md)).
-- **High Compatibility:** 99.3% BusyBox test pass rate (548 of 552 tested).
-- **CI Gate:** ≥70% overall code coverage enforced on every push (actual: 75.7%).
+Finally: let's not kid ourselves, this project is 90% wiring the AI to do the heavy lifting, 10% is steering it in the right direction, the fact that I was able to "solo dev" this with an LLM, reproducing close to 99% of BusyBox's behavior in a completely different language shows that POSIX utilities are, at their core, text transformers with very well-defined contracts (do one thing and do it well).
 
 ## Quickstart!
 
-### Daemon + Go SDK (recommended)
-
-```bash
-# Start the daemon.
-./goposix daemon --socket /tmp/goposix.sock &
-# Or in Docker:
-docker run -d --name goposix ghcr.io/ramayac/goposix:latest
-```
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "github.com/ramayac/goposix/pkg/client"
-)
-
-func main() {
-    c, _ := client.New("/tmp/goposix.sock")  // /var/run/goposix.sock in Docker
-    defer c.Close()
-
-    // List files as structured data.
-    result, _ := c.Ls(context.Background(), "/", nil)
-    for _, entry := range result.Entries {
-        fmt.Printf("%s %7d %s\n", entry.Mode, entry.Size, entry.Name)
-    }
-
-    // Execute shell scripts.
-    out, _ := c.ShellExec(context.Background(), "echo hello from goposix")
-    fmt.Print(out.Stdout)
-}
-```
-
-> **Performance:** 60µs per RPC call with persistent connection — 11× faster than BusyBox
-> fork+exec. See [docs/SDK.md](docs/SDK.md) for the full Go SDK guide.
+See [docs/SDK.md](docs/SDK.md) for the full Go SDK guide and [wiki/usage.md](wiki/usage.md) for CLI usage and Docker recipes.
 
 ### CLI (secondary)
 
@@ -112,9 +71,9 @@ I think there should be more... right?
 
 | Metric | GoPOSIX | BusyBox | Ratio |
 |--------|:------:|:------:|:-----:|
-| Per-call latency (Go SDK, persistent) | **60µs** | 680µs (fork+exec) | **11× faster** 🚬 |
+| Per-call latency (Go SDK, persistent) | **60µs** | 680µs (fork+exec) | **11× faster** |
 | `grep` on 100MB file | **0.16s** | 0.86s | **5.4× faster** (RE2 vs POSIX ERE) |
-| Binary size | 10 MB | 800 KB | 12.5× larger 🥲 |
+| Binary size | 10 MB | 800 KB | 12.5× larger |
 | Cold start | 7ms | <1ms | Not bad, but not great |
 
 See [Performance Quick Reference](wiki/performance.md) and [Benchmarking Plan](wiki/19_performance_benchmarking.md) for full details.
@@ -129,22 +88,8 @@ See [Performance Quick Reference](wiki/performance.md) and [Benchmarking Plan](w
 - [POSIX Coverage Matrix](wiki/posix_coverage.md)
 - [Test Coverage Matrix](wiki/test_coverage_matrix.md)
 - [POSIX FAQ](wiki/posix_faq.md)
-- [Road to Gold](wiki/12_road_to_gold.md)
 
-## Status
-
-**77 POSIX utilities implemented** (100% of target scope excluding `awk`).
-
-For full details see the [POSIX Compliance Matrix](wiki/posix_coverage.md) and the
-[Test Coverage Matrix](wiki/test_coverage_matrix.md) (per-utility breakdown across all suites).
-
-**BusyBox Test Suite:** 548 passed, 4 failed, 10 skipped of 552 total tested (99.3%)
-
-The 4 remaining failures: 3 `date` (Go TZ limitations + cosmetic error format) and 1 `fold`
-(NUL handling — echo harness limitation). The 10 skipped tests require external compression tools
-(bzip2, xz, uudecode). Honeslty I don't want to do this right now.
-
-## Project Principles
+## Quick Project Principles
 
 - **Multicall Binary:** Single binary dispatched via symlink or subcommand (`goposix ls`).
 - **Daemon-First:** The default image starts the persistent JSON-RPC daemon. Use the Go SDK for
@@ -156,4 +101,4 @@ The 4 remaining failures: 3 `date` (Go TZ limitations + cosmetic error format) a
 - **`--json` Only:** Structured output via `--json` long flag only — no short-form (`-j`) collision with POSIX flags (ouch!)
 - **POSIX Flag Parsing:** Custom parser in `pkg/common/flags.go` with escape hatches for free-form utilities.
 
-Does it work? damn right it does: [KoreGoOS](https://github.com/ramayac/KoreGoOS)
+Does it work? damn right it does: [KoreGoOS](https://github.com/ramayac/KoreGoOS).
