@@ -8,26 +8,52 @@ builds:
     ldflags: ["-s", "-w", "-X 'github.com/ramayac/goposix/pkg/common.Version={{.Version}}' -X 'github.com/ramayac/goposix.Version={{.Version}}'"]
 
 dockers:
-  - image_templates: ["ghcr.io/ramayac/goposix:{{.Version}}-amd64"]
+  # Default image: persistent daemon (primary release artifact).
+  - image_templates:
+      - "ghcr.io/ramayac/goposix:{{.Version}}-amd64"
+      - "ghcr.io/ramayac/goposix:latest-amd64"
+    dockerfile: docker/Dockerfile.goreleaser.daemon
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64"
+  - image_templates:
+      - "ghcr.io/ramayac/goposix:{{.Version}}-arm64"
+      - "ghcr.io/ramayac/goposix:latest-arm64"
+    dockerfile: docker/Dockerfile.goreleaser.daemon
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/arm64"
+  # CLI-only scratch image (secondary release artifact).
+  - image_templates:
+      - "ghcr.io/ramayac/goposix:{{.Version}}-cli-amd64"
+      - "ghcr.io/ramayac/goposix:cli-amd64"
     dockerfile: docker/Dockerfile.goreleaser
     use: buildx
     build_flag_templates:
       - "--platform=linux/amd64"
-  - image_templates: ["ghcr.io/ramayac/goposix:{{.Version}}-arm64"]
+  - image_templates:
+      - "ghcr.io/ramayac/goposix:{{.Version}}-cli-arm64"
+      - "ghcr.io/ramayac/goposix:cli-arm64"
     dockerfile: docker/Dockerfile.goreleaser
     use: buildx
     build_flag_templates:
       - "--platform=linux/arm64"
 
 docker_manifests:
+  # Default: daemon image.
   - name_template: ghcr.io/ramayac/goposix:{{.Version}}
     image_templates:
       - ghcr.io/ramayac/goposix:{{.Version}}-amd64
       - ghcr.io/ramayac/goposix:{{.Version}}-arm64
   - name_template: ghcr.io/ramayac/goposix:latest
     image_templates:
-      - ghcr.io/ramayac/goposix:{{.Version}}-amd64
-      - ghcr.io/ramayac/goposix:{{.Version}}-arm64
+      - ghcr.io/ramayac/goposix:latest-amd64
+      - ghcr.io/ramayac/goposix:latest-arm64
+  # CLI-only scratch image.
+  - name_template: ghcr.io/ramayac/goposix:cli
+    image_templates:
+      - ghcr.io/ramayac/goposix:cli-amd64
+      - ghcr.io/ramayac/goposix:cli-arm64
 
 sboms:
   - id: archive

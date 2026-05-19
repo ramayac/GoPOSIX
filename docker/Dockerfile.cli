@@ -1,8 +1,10 @@
 # syntax=docker/dockerfile:1
 
 # =============================================================================
-# GoPOSIX CLI — multicall binary for symlink/subcommand invocation.
-# Statically linked, FROM scratch, ~10 MB.
+# CLI-only image — GoPOSIX as a multicall binary (FROM scratch).
+#
+# This is the secondary image for one-shot CLI invocations.
+# For persistent daemon usage, use the default image (docker/Dockerfile).
 #
 # Usage:
 #   docker build -t goposix:cli -f docker/Dockerfile.cli .
@@ -33,6 +35,8 @@ RUN /goposix --list-commands > /commands.txt
 # Stage 2: Symlink generator — creates /out/bin with binary + symlinks.
 FROM alpine:3.20 AS symlinker
 
+# We create a clean directory for our binary and symlinks to avoid
+# pulling in alpine's busybox and other binaries.
 RUN mkdir -p /out/bin
 
 COPY --from=builder /goposix /out/bin/goposix
@@ -40,7 +44,7 @@ COPY --from=builder /commands.txt /commands.txt
 
 RUN while IFS= read -r cmd; do ln -s /bin/goposix "/out/bin/${cmd}"; done < /commands.txt
 
-# User/group files for non-root execution.
+# User/group files and home directory for non-root execution.
 RUN echo "goposix:x:1000:1000::/home/goposix:/bin/false" >> /etc/passwd && \
     echo "goposix:x:1000:" >> /etc/group && \
     mkdir -p /home/goposix && \
@@ -57,7 +61,7 @@ COPY --from=symlinker /etc/passwd /etc/passwd
 COPY --from=symlinker /etc/group  /etc/group
 COPY --from=symlinker /out/bin/ /bin/
 
-# --chown preserves ownership in FROM scratch.
+# --chown preserves ownership for both files and directories in FROM scratch.
 COPY --chown=1000:1000 --from=symlinker /home/goposix /home/goposix
 
 USER goposix

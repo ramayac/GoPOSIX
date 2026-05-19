@@ -317,6 +317,7 @@ type GoposixParams struct {
 	Path      string   `json:"path"`
 	Text      string   `json:"text"`
 	SessionId string   `json:"sessionId"`
+	RawOutput bool     `json:"rawOutput"` // skip --json, return raw stdout text
 }
 
 func (s *Server) processRequest(req Request) *Response {
@@ -482,12 +483,14 @@ func (s *Server) processRequest(req Request) *Response {
 	// Build args
 	var args []string
 	var session *Session
+	var rawOutput bool
 
 	if len(req.Params) > 0 {
 		var p GoposixParams
 		var dynMap map[string]interface{}
 		
 		if err := json.Unmarshal(req.Params, &p); err == nil {
+			rawOutput = p.RawOutput
 			if p.SessionId != "" {
 				session, _ = s.sm.Get(p.SessionId)
 			}
@@ -522,7 +525,10 @@ func (s *Server) processRequest(req Request) *Response {
 	// Prepend --json so utilities with custom flag parsers (echo) see it first.
 	// common.ParseFlags handles --json at any position; echo's parseEchoFlags only
 	// scans flags at the start of the argument list.
-	args = append([]string{"--json"}, args...)
+	// Skip --json when rawOutput is requested (CLI forwarding preserves human-readable output).
+	if !rawOutput {
+		args = append([]string{"--json"}, args...)
+	}
 
 	var buf bytes.Buffer
 	// 50MB response limit to prevent OOM
@@ -531,6 +537,21 @@ func (s *Server) processRequest(req Request) *Response {
 	// Execute the command
 	exitCode := cmd.Run(args, lw)
 		rpcExitCode = exitCode
+
+	// rawOutput: return the raw stdout text directly (used by CLI forwarder).
+	if rawOutput {
+		if req.ID == nil {
+			return nil
+		}
+		return &Response{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Result: map[string]interface{}{
+				"exitCode": exitCode,
+				"stdout":   buf.String(),
+			},
+		}
+	}
 
 	// We intercept the output which should be a JSONEnvelope.
 	// But `buf` might contain multiple lines or other things if the utility misbehaves.

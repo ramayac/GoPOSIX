@@ -4,6 +4,37 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-19] doc | Filled `wiki/repo-map.md`
+
+Populated the repo-map template with: top-level file roles, high-signal directory
+map (cmd, pkg, internal, docker, test, wiki, docs), generated artifacts, build/run
+commands (from Makefile), .wikirc ignored paths, and the 8 architectural invariants
+(from AGENTS.md).
+
+## [2026-05-19] ingest | Phase 22 complete + Phase 23 plan + benchmark results (branch: `feat/hardening-iii`)
+
+Phase 22 (Daemon-First Pivot) completed:
+- `docker/Dockerfile` → daemon default, `docker/Dockerfile.cli` → CLI-only
+- GoReleaser builds daemon as primary (`Dockerfile.goreleaser.daemon`), CLI as secondary
+- README: SDK quickstart first, benchmark numbers (60µs/call, 10.9×, 5.1× grep)
+- `docs/SDK.md` — comprehensive Go SDK guide with typed method reference
+- M5 forwarder (`forwarder.go`) exists but not yet wired into `main.go` (deferred)
+
+Benchmark suite hardened (Phase 19):
+- Nanosecond timing (Cat A), xargs-P4 parallel ops (Cat B/D), Go SDK bench_client
+- Cat F: 3-mode comparison (socat vs Go SDK vs BusyBox) — SDK is 10.9× faster
+- Cat J: Go SDK rpc-loop mode — 5 typed calls/iter, 2.1× faster than BusyBox
+- Data-driven findings in all 10 categories, report.sh fixed for cat/ subdirectory
+- Rate limiter raised 100→100K req/s in `internal/daemon/server.go`
+- `wiki/19_performance_benchmarking.md` §6: actual measured matrix replaces predictions
+
+Phase 23 (Multi-Tenant Sandbox) planned: 6-step roadmap for per-session filesystem
+isolation, command allowlists, audit trails, resource quotas, subprocess jailing.
+
+Updated: wiki/19_performance_benchmarking.md, wiki/22_hardening_iii.md,
+wiki/23_multi_tenant_sandbox.md, wiki/phases.md, wiki/index.md,
+.github/prompts/continue.prompt.md (new reusable session prompt)
+
 ## [2026-05-18] doc | Performance Quick Reference (`wiki/performance.md`)
 
 Created a standalone quick-reference page for the performance benchmarking system.

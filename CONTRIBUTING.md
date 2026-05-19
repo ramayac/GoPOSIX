@@ -38,6 +38,9 @@ Follow this checklist when implementing a new POSIX utility:
 - **Gate:** CI enforces ≥70% overall coverage (`COVERAGE_THRESHOLD` in Makefile).
 - **Current coverage:** 75.7% (as of 2026-05-18).
 - **Per-package:** No package should be below 60%. Target ≥70% for all.
+- **SDK Coverage:** The Go SDK client (`pkg/client/`) has typed methods for all 77 utilities.
+  When adding new utilities, add the corresponding typed method to the SDK and test coverage
+  for it in `pkg/client/client_test.go`.
 - Check per-package coverage: `make cover-pkg`
 
 ## BusyBox Test Suite

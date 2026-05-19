@@ -4,12 +4,19 @@
 # GoPOSIX daemon — persistent JSON-RPC server (default production image).
 # Statically linked, FROM scratch, ~10 MB.
 #
+# This is the recommended production image. The daemon starts automatically
+# and listens on /home/goposix/goposix.sock for Go SDK or JSON-RPC clients.
+#
 # Usage:
 #   docker build -t goposix:latest -f docker/Dockerfile .
 #   docker run -d --name goposix -p 8080:8080 goposix:latest
-#   curl -X POST http://localhost:8080/rpc \
-#     -H 'Content-Type: application/json' \
-#     -d '{"jsonrpc":"2.0","method":"goposix.echo","params":{"text":"hello"},"id":1}'
+#
+#   # Connect via Go SDK (60µs per call, 11× faster than BusyBox fork+exec):
+#   c, _ := client.New("/home/goposix/goposix.sock")
+#   c.Echo(ctx, "hello")
+#
+#   # For CLI-only access, use goposix:cli instead:
+#   docker pull ghcr.io/ramayac/goposix:cli
 # =============================================================================
 
 # Stage 1: Builder — compiles a fully static binary.
@@ -65,5 +72,7 @@ COPY --chown=1000:1000 --from=symlinker /home/goposix /home/goposix
 
 USER goposix
 EXPOSE 8080
+
+# Start the daemon on a Unix socket (and optional HTTP for remote access).
 ENTRYPOINT ["/bin/goposix", "daemon", "--socket", "/home/goposix/goposix.sock", "--workers", "4"]
 CMD ["--listen-addr", ":8080"]

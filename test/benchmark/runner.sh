@@ -156,7 +156,7 @@ echo ""
 # Category list (order matters — create deps before consumers).
 # ---------------------------------------------------------------------------
 ALL_CATEGORIES="cat_h_sizes cat_a_startup cat_b_bulk_create cat_c_bulk_ls cat_d_bulk_move cat_e_text_throughput cat_f_daemon_vs_process cat_g_memory cat_j_rpc_loop cat_i_concurrent"
-QUICK_CATEGORIES="cat_h_sizes cat_a_startup"
+QUICK_CATEGORIES="cat_h_sizes cat_a_startup cat_f_daemon_vs_process"
 
 # ---------------------------------------------------------------------------
 # Execute.
