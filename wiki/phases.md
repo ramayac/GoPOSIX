@@ -47,7 +47,7 @@ goposix binary (single static ELF, <12MB)
 | **4 — System** | `ps`, `kill`, `sleep`, `date`, `id`, `groups`, `chmod`, `chown`, `chgrp`, `df`, `du`, `find`, `xargs` | 06 ✅ |
 | **5 — Advanced** | `tar`, `gzip`, `sha256sum`, `md5sum`, `diff`, `patch`, `test`/`[`, `printf`, `expr` | 07 ✅ |
 | **Post-MVP** | `dd`, `od`, `patch` (`egrep`, `fgrep` aliases) | 15/18 ✅ |
-| **Platinum** | `awk` | 07a ⏳ |
+| **Platinum** | `awk` | 07a ✅ |
 
 ### Technical Specs
 

@@ -25,7 +25,7 @@ All things kind of aligned in the last month so here we are now.
 
 I'm not the first to start something like this, there is [cugo](https://github.com/jcmdln/cugo) and [go-posix](https://github.com/nirenjan/go-posix), but sadly they seem to be abandoned, and no wonder! A project like this is a huge undertaking, its probably a year of solid work for 1 human, that being said, took about 3 weeks to do with AI, with the proper "harness" and "agentic development" approach, that's really something.
 
-Anyway the project got into a point that, while it's not complete (awk is missing, but I'll be using goawk probably) but _I'm happy_ with the results, and that's enough for me ☑️.
+Anyway the project got into a point that _I'm happy_ with the results, that's enough for me ☑️.
 
 ## Honest and Obvious Recognitions
 
@@ -34,7 +34,7 @@ I want to be very clear about this:
 
 - So check and support [BusyBox](https://busybox.net/) project and take a look at its amazing [test suite](https://github.com/brgl/busybox/blob/master/testsuite/runtest), it's a masterpiece of thoroughness and coverage, and it made this project possible.
 - Also [Mvdan Shell](https://github.com/mvdan/sh), it really saved my butt. Absolutely brilliant.
-- And [goawk](https://github.com/benhoyt/goawk), which I'll be using for the `awk` implementation, another big save!
+- And [goawk](https://github.com/benhoyt/goawk), which I used for the `awk` implementation, another big save!
 
 Finally: let's not kid ourselves, this project is 90% wiring the AI to do the heavy lifting, 10% is steering it in the right direction, the fact that I was able to "solo dev" this with an LLM, reproducing close to 99% of BusyBox's behavior in a completely different language shows that POSIX utilities are, at their core, text transformers with very well-defined contracts (do one thing and do it well).
 
