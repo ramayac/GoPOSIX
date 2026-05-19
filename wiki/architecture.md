@@ -84,7 +84,7 @@ GoPOSIX/
 │   ├── daemon/          JSON-RPC 2.0 persistent server (Unix socket, self-healing)
 │   └── shell/           Sandboxed shell execution (mvdan.cc/sh, timeout, limits)
 ├── pkg/
-│   ├── common/          Foundation: flags.go, output.go, security.go, json.go
+│   ├── common/          Foundation: flags.go, compiled.go, output.go, security.go, json.go
 │   ├── client/          Go JSON-RPC client (connection pool, retry, typed helpers)
 │   ├── daemon/          Daemon bootstrap + CLI entry point
 │   ├── shell/           Shell CLI wrapper

@@ -36,6 +36,7 @@
 - [19_performance_benchmarking.md](19_performance_benchmarking.md) | Benchmark results: GoPOSIX vs BusyBox (DONE).
 - [20_hardening_ii.md](20_hardening_ii.md) | Hardening II: flag audit, code cleanup, coverage, input safety.
 - [22_hardening_iii.md](22_hardening_iii.md) | Hardening III: Daemon-First Pivot.
+- [23_flags_rewrite.md](23_flags_rewrite.md) | Flags Rewrite: zero-allocation POSIX scanner (COMPLETED).
 
 ## Deferred / Future
 
