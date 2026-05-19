@@ -95,6 +95,7 @@
 | `test` / `[` | 82.9% | — | — | ❌ |
 | `printf` | 65.6% | 26 | ✅ 26/26 | ✅ |
 | `expr` | 82.6% | 2 | ✅ 2/2 | ✅ |
+| `awk` | 88.1% | 53 | ✅ 3+ recommended | ✅ |
 | `shell` | 60.8% | — | — | ✅ |
 
 ## Tier 6 — Post-MVP (Phase 15–16, 18.3)
@@ -168,7 +169,6 @@
 | 2 | fold NUL | 1 (echo harness limitation) |
 | 3 | JSON-RPC daemon tests missing | 4 utilities (daemon, tee, testcmd, truefalse); patch skipped |
 | 4 | Unit coverage < 60% | 1 package: `client` (55.4%) |
-| 5 | `awk` not implemented | Platinum gate (deferred) |
 
 ## Notes
 

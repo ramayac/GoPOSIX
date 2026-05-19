@@ -169,7 +169,7 @@ This means:
 - Every utility we *do* implement should behave identically to its POSIX
   specification (flags, exit codes, output format).
 - We don't need to implement `mailx`, `lp`, `m4`, or `ed` to be useful.
-- We **should** implement `awk` because it unlocks a massive class of real-world
+- We **have implemented** `awk` (via goawk v1.31.0 integration, 37/54 BusyBox tests passing) because it unlocks a massive class of real-world
   scripts that would otherwise fail in our environment.
 
 ---
@@ -213,12 +213,14 @@ Rarely needed in containerized automation contexts:
 | Can GoPOSIX be useful without it?                    | Yes, for simple scripts |
 | Will real-world scripts break without it?            | **Many will, yes** |
 | Is it the hardest utility to implement?              | It's among the hardest (it's a full language) |
-| Should GoPOSIX implement it?                          | **Yes**, as a capstone utility |
+| Should GoPOSIX implement it?                          | **Yes** ✅ (implemented via goawk integration) |
 | Does it need to be done first?                       | No — it can come after the simpler utilities |
 
 `awk` is to POSIX what a compiler is to a programming language — technically you
 could hand-assemble everything, but nobody wants to. It's the utility that turns
 a collection of simple tools into a programmable text-processing system.
+GoPOSIX ships `awk` via the [benhoyt/goawk](https://github.com/benhoyt/goawk)
+library (MIT, zero deps, pure Go).
 
 ---
 

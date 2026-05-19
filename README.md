@@ -1,10 +1,10 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX with >97% BusyBox test compatibility.
+A Go-native, single-binary POSIX with 96.6% BusyBox test compatibility (591/612).
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![go vet](https://img.shields.io/badge/go%20vet-passing-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
-[![coverage](https://img.shields.io/badge/coverage-76.2%25-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/badge/coverage-76.9%25-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ramayac/goposix)](https://goreportcard.com/report/github.com/ramayac/goposix)
 [![Go Version](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go)](https://go.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -25,7 +25,7 @@ All things kind of aligned in the last month so here we are now.
 
 I'm not the first to start something like this, there is [cugo](https://github.com/jcmdln/cugo) and [go-posix](https://github.com/nirenjan/go-posix), but sadly they seem to be abandoned, and no wonder! A project like this is a huge undertaking, its probably a year of solid work for 1 human, that being said, took about 3 weeks to do with AI, with the proper "harness" and "agentic development" approach, that's really something.
 
-Anyway the project got into a point that, while it's not complete (awk is missing, but I'll be using goawk probably) but _I'm happy_ with the results, and that's enough for me ☑️.
+Anyway the project got into a point that _I'm happy_ with the results, that's enough for me ☑️.
 
 ## Honest and Obvious Recognitions
 
@@ -34,7 +34,7 @@ I want to be very clear about this:
 
 - So check and support [BusyBox](https://busybox.net/) project and take a look at its amazing [test suite](https://github.com/brgl/busybox/blob/master/testsuite/runtest), it's a masterpiece of thoroughness and coverage, and it made this project possible.
 - Also [Mvdan Shell](https://github.com/mvdan/sh), it really saved my butt. Absolutely brilliant.
-- And [goawk](https://github.com/benhoyt/goawk), which I'll be using for the `awk` implementation, another big save!
+- And [goawk](https://github.com/benhoyt/goawk), which I used for the `awk` implementation, another big save!
 
 Finally: let's not kid ourselves, this project is 90% wiring the AI to do the heavy lifting, 10% is steering it in the right direction, the fact that I was able to "solo dev" this with an LLM, reproducing close to 99% of BusyBox's behavior in a completely different language shows that POSIX utilities are, at their core, text transformers with very well-defined contracts (do one thing and do it well).
 
@@ -79,14 +79,13 @@ I think there should be more... right?
 See [Performance Quick Reference](wiki/performance.md) and [Benchmarking Plan](wiki/19_performance_benchmarking.md) for full details.
 
 ## Documentation (yes, we have docs and it's decent!)
-- [Go SDK Guide](docs/SDK.md) — typed client for all 77 utilities
+- [Go SDK Guide](docs/SDK.md) — typed client for all 78 utilities
 - [RPC API Reference](wiki/rpc_api.md)
 - [JSON-RPC Protocol](wiki/rpc_quickstart.md) — raw socket protocol for non-Go clients
 - [Architecture](wiki/architecture.md)
 - [Security Model](wiki/security.md)
 - [JSON Schema](wiki/json_schema.md)
-- [POSIX Coverage Matrix](wiki/posix_coverage.md)
-- [Test Coverage Matrix](wiki/test_coverage_matrix.md)
+- [Test Coverage & Compliance Matrix](wiki/test_coverage_matrix.md)
 - [POSIX FAQ](wiki/posix_faq.md)
 
 ## Quick Project Principles

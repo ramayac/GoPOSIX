@@ -4,18 +4,6 @@
 
 ---
 
-## `awk` Implementation (Platinum Gate)
-
-**Doc:** [07a_awk.md](07a_awk.md) — canonical design, ~180 lines
-
-Full POSIX-compliant `awk` parser and interpreter. Deferred because it's a massive
-undertaking (~3,000+ LOC) that doesn't block Gold-tier certification. Complex text
-processing is already covered by `grep`, `sed`, and structured JSON output.
-
-**Status:** DEFERRED (design complete, not started)
-
----
-
 ## XML Output (`--xml`)
 
 Structured XML envelope mirroring the existing `--json` format. The JSON envelope

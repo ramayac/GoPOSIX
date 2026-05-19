@@ -126,9 +126,9 @@ to preserve directory ownership in `FROM scratch`. The daemon socket lives at
 | `pkg/client` | Go SDK for JSON-RPC clients. Connection pooling, batch requests, exponential backoff, typed wrappers for every utility. |
 | `pkg/<util>` | One package per POSIX utility. Library layer (testable `Run()`) + CLI layer (`run()`) wired via `init()` → dispatch. |
 
-## Utilities Implemented (40+)
+## Utilities Implemented (78)
 
-`basename`, `cat`, `chgrp`, `chmod`, `chown`, `cp`, `cut`, `date`, `df`, `diff`, `dirname`,
+`awk`, `basename`, `cat`, `chgrp`, `chmod`, `chown`, `cp`, `cut`, `date`, `df`, `diff`, `dirname`,
 `du`, `echo`, `env`, `expr`, `find`, `grep`, `gzip`, `head`, `hostname`, `id`, `kill`,
 `ln`, `ls`, `md5sum`, `mkdir`, `mv`, `printenv`, `printf`, `ps`, `pwd`, `readlink`, `rm`,
 `rmdir`, `sed`, `sha256sum`, `sleep`, `sort`, `stat`, `tail`, `tar`, `tee`, `testcmd`,
@@ -136,9 +136,7 @@ to preserve directory ownership in `FROM scratch`. The daemon socket lives at
 
 ## BusyBox Test Suite
 
-**548 passed, 4 failed, 10 skipped** (99.3% pass rate, 552 total tested).
-Failures: 3 in `date` (Go POSIX timezone limitations), 1 in `fold` (NUL handling via echo harness).
-Run `make testsuite` before every commit to prevent regressions.
+Check [wiki/test_coverage_matrix.md](wiki/test_coverage_matrix.md) for the breakdown of unit test coverage, BusyBox test suite status, and JSON-RPC support for each utility.
 
 ## Phase History
 
