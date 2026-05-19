@@ -58,6 +58,7 @@ When implementing a new utility or feature, follow this checklist:
 
 ## 5. Security & Safety
 
+- **Daemon-First:** The default Docker image (`goposix:latest`) starts the persistent JSON-RPC daemon. CLI access is available as a secondary interface (`goposix:cli`). The Go SDK (`pkg/client/`) is the primary programmatic interface at 60µs/call.
 - **Root Protection:** Utilities that perform destructive operations (like `rm`) must include guards against destroying the root filesystem (e.g., `rm -rf /` must be refused without `--no-preserve-root`).
 - **BusyBox Test Suite:** 548 passed, 4 failed, 10 skipped (99.3% pass rate, 552 total tested). Failures: 3 in `date` (Go POSIX TZ limitations), 1 in `fold` (NUL handling). Run `make testsuite` before every commit to prevent regressions.
 

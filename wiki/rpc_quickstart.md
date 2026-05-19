@@ -1,10 +1,13 @@
-# JSON-RPC Quickstart
+# JSON-RPC Protocol Reference
 
-How to interact with GoPOSIX programmatically via JSON-RPC.
+GoPOSIX uses JSON-RPC 2.0 over a Unix socket as its wire protocol. The typed
+[Go SDK](../docs/SDK.md) is the recommended client for Go users (60µs/call, connection
+pooling, retry). This document covers the **raw protocol** for non-Go clients,
+debugging, and understanding what the SDK does under the hood.
 
 ## Overview
 
-GoPOSIX exposes a Unix socket-based JSON-RPC 2.0 API that lets any program:
+The daemon exposes a Unix socket-based JSON-RPC 2.0 API that lets any program:
 
 1. Start a GoPOSIX daemon (lightweight, ~8 MB container image)
 2. Create isolated sessions with per-session working directories
@@ -14,11 +17,24 @@ GoPOSIX exposes a Unix socket-based JSON-RPC 2.0 API that lets any program:
 
 ## Quick Start
 
+### Go (recommended)
+
+```go
+c, _ := client.New("/tmp/goposix.sock")
+defer c.Close()
+result, _ := c.Ls(ctx, "/etc", nil)  // typed, 60µs
+```
+
+See **[docs/SDK.md](../docs/SDK.md)** for the full Go SDK guide.
+
+### Any Language (raw protocol)
+
 ```bash
 make example-rpc
 ```
 
-This runs `examples/rpc_client/main.go` — a self-contained Go program that demonstrates the full lifecycle.
+This runs `examples/rpc_client/main.go` — a self-contained Go program that demonstrates
+the full lifecycle using raw JSON-RPC. For non-Go languages, read on.
 
 ## Architecture
 

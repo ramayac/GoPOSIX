@@ -102,7 +102,7 @@ See [Performance Quick Reference](wiki/performance.md) and [Benchmarking Plan](w
 ## Documentation
 - [Go SDK Guide](docs/SDK.md) — typed client for all 77 utilities
 - [RPC API Reference](wiki/rpc_api.md)
-- [JSON-RPC Quickstart](wiki/rpc_quickstart.md) — raw socket + Go SDK examples
+- [JSON-RPC Protocol](wiki/rpc_quickstart.md) — raw socket protocol for non-Go clients
 - [Architecture](wiki/architecture.md)
 - [Security Model](wiki/security.md)
 - [JSON Schema](wiki/json_schema.md)

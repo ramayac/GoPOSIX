@@ -142,7 +142,7 @@ help:
 	@echo ""
 	@echo "  Performance"
 	@echo "    bench-image   Build benchmark Docker image"
-	@echo "    bench-quick   Quick benchmark (Cat A+H, SCALE=0.1 for CI)"
+	@echo "    bench-quick   Quick benchmark (Cat A+H+F, SCALE=0.1 for CI)"
 	@echo "    bench-all     Full benchmark suite (SCALE=1.0)"
 	@echo "    bench-smoke   CI smoke (SCALE=0.1, ~30s)"
 	@echo "    bench-pub     Publication quality (SCALE=5.0, ~40min)"
