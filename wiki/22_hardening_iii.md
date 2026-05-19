@@ -136,7 +136,7 @@ Create `docs/SDK.md` covering:
 - Update `wiki/19_performance_benchmarking.md` with actual measured data (replace the predicted matrix)
 - Add Cat F SDK mode to CI smoke test (`make bench-quick`)
 
-### M5 — goposix:cli Entrypoint Smart Routing (target: later)
+### M5 — goposix:cli Entrypoint Smart Routing ✅ (implemented)
 
 Make the CLI image detect a running daemon and forward commands through it:
 
@@ -152,7 +152,14 @@ func Main() int {
 }
 ```
 
-This gives the CLI image daemon benefits without changing its entrypoint — if you're `docker exec`-ing into a daemon container, commands auto-forward. Deferred because it needs the Go SDK linked into the multicall binary (minor import, but increases binary size slightly).
+This gives the CLI image daemon benefits without changing its entrypoint — if you're `docker exec`-ing into a daemon container, commands auto-forward.
+
+**Implementation:**
+- `forwarder.go` — `TryForward()` checks for daemon socket, pipes stdin detection, JSON-RPC forwarding
+- `internal/daemon/server.go` — `GoposixParams.RawOutput` skips `--json` prepend and returns raw stdout
+- `cmd/goposix/main.go` — calls `TryForward()` before cold-start dispatch
+- Socket path configurable via `GOPOSIX_SOCKET` env var (default: `/var/run/goposix.sock`)
+- Stdin-piped commands fall back to cold start (daemon doesn't support stdin streaming)
 
 ---
 
