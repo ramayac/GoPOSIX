@@ -7,7 +7,6 @@
 package goposix
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -100,13 +99,7 @@ func forwardToDaemon(socketPath string, argv []string) int {
 		return -1
 	}
 
-	// Read response.
-	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(conn); err != nil {
-		return -1
-	}
-
-	// Parse JSON-RPC response.
+	// Read response (newline-delimited JSON — daemon keeps the connection open).
 	var resp struct {
 		JSONRPC string `json:"jsonrpc"`
 		ID      int    `json:"id"`
@@ -120,7 +113,8 @@ func forwardToDaemon(socketPath string, argv []string) int {
 		} `json:"error"`
 	}
 
-	if err := json.Unmarshal(buf.Bytes(), &resp); err != nil {
+	dec := json.NewDecoder(conn)
+	if err := dec.Decode(&resp); err != nil {
 		fmt.Fprintf(os.Stderr, "%s: forward parse error: %v\n", binName, err)
 		return 126
 	}

@@ -78,6 +78,13 @@ for i := 0; i < 10000; i++ {
 - `goposix:cli` = scratch CLI (old `Dockerfile`, `ENTRYPOINT ["/bin/goposix"]`)
 - `goposix:debug` = same as before (Alpine + shell, interactive)
 
+**Release images (GoReleaser):** `.goreleaser.yml` builds multi-arch daemon images
+(via `docker/Dockerfile.goreleaser.daemon`) as the primary release artifact, with CLI images
+(via `docker/Dockerfile.goreleaser`) as secondary.
+
+**M5 forwarder:** `forwarder.go` exists at repo root with daemon socket detection and
+command forwarding logic. Not yet wired into `cmd/goposix/main.go` (deferred).
+
 ### M2 — Go SDK Quickstart in README (target: immediate)
 
 Replace the current `--json` CLI example with an SDK example:
