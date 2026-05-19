@@ -1,0 +1,47 @@
+# =============================================================================
+# GoReleaser Daemon Dockerfile — binary is pre-built by GoReleaser.
+# Produces the default goposix image (persistent JSON-RPC daemon).
+# Used by .goreleaser.yml. For local builds, use docker/Dockerfile.
+# =============================================================================
+
+# Stage 1: Extract runtime dependencies and generate symlinks.
+FROM alpine:3.20 AS setup
+
+RUN apk add --no-cache ca-certificates tzdata
+
+# Generate symlinks from the GoReleaser-built binary.
+COPY goposix /tmp/goposix
+RUN /tmp/goposix --list-commands > /commands.txt && \
+    mkdir -p /out/bin && \
+    while IFS= read -r cmd; do ln -s /bin/goposix "/out/bin/${cmd}"; done < /commands.txt
+
+# Non-root user.
+RUN addgroup -g 1000 goposix && adduser -u 1000 -G goposix -s /bin/sh -D goposix && \
+    mkdir -p /var/run && chown goposix:goposix /var/run
+
+# Stage 2: Alpine-based daemon image.
+FROM alpine:3.20
+
+# CA certificates and timezone data.
+COPY --from=setup /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=setup /usr/share/zoneinfo /usr/share/zoneinfo
+ENV ZONEINFO=/usr/share/zoneinfo
+
+# Non-root user.
+COPY --from=setup /etc/passwd /etc/passwd
+COPY --from=setup /etc/group /etc/group
+COPY --from=setup /etc/shadow /etc/shadow
+
+# Binary + symlinks.
+COPY goposix /bin/goposix
+COPY --from=setup /out/bin/ /bin/
+
+# Socket directory (non-root writable).
+COPY --from=setup /var/run /var/run
+
+USER goposix
+EXPOSE 8080
+
+# Start the daemon (optional HTTP observability via CMD).
+ENTRYPOINT ["/bin/goposix", "daemon", "--socket", "/var/run/goposix.sock", "--workers", "4"]
+CMD ["--listen-addr", ":8080"]

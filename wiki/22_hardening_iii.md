@@ -1,6 +1,6 @@
 # Phase 22 — Hardening III (Daemon-First Pivot)
 
-> **Status:** PLANNING | **Date:** 2026-05-18 | **Trigger:** Benchmark data (Phase 19) + Go SDK discovery
+> **Status:** COMPLETED | **Date:** 2026-05-18 | **Trigger:** Benchmark data (Phase 19) + Go SDK discovery
 >
 > **Key finding:** The Go SDK client with persistent connection achieves **60µs per RPC call — 11× faster than BusyBox fork+exec (680µs)**. The old socat-per-call approach was 3× *slower* than BusyBox. The project has been selling the right architecture with the wrong interface.
 
@@ -78,6 +78,13 @@ for i := 0; i < 10000; i++ {
 - `goposix:cli` = scratch CLI (old `Dockerfile`, `ENTRYPOINT ["/bin/goposix"]`)
 - `goposix:debug` = same as before (Alpine + shell, interactive)
 
+**Release images (GoReleaser):** `.goreleaser.yml` builds multi-arch daemon images
+(via `docker/Dockerfile.goreleaser.daemon`) as the primary release artifact, with CLI images
+(via `docker/Dockerfile.goreleaser`) as secondary.
+
+**M5 forwarder:** `forwarder.go` exists at repo root with daemon socket detection and
+command forwarding logic. Not yet wired into `cmd/goposix/main.go` (deferred).
+
 ### M2 — Go SDK Quickstart in README (target: immediate)
 
 Replace the current `--json` CLI example with an SDK example:
@@ -129,7 +136,7 @@ Create `docs/SDK.md` covering:
 - Update `wiki/19_performance_benchmarking.md` with actual measured data (replace the predicted matrix)
 - Add Cat F SDK mode to CI smoke test (`make bench-quick`)
 
-### M5 — goposix:cli Entrypoint Smart Routing (target: later)
+### M5 — goposix:cli Entrypoint Smart Routing ✅ (implemented)
 
 Make the CLI image detect a running daemon and forward commands through it:
 
@@ -145,7 +152,14 @@ func Main() int {
 }
 ```
 
-This gives the CLI image daemon benefits without changing its entrypoint — if you're `docker exec`-ing into a daemon container, commands auto-forward. Deferred because it needs the Go SDK linked into the multicall binary (minor import, but increases binary size slightly).
+This gives the CLI image daemon benefits without changing its entrypoint — if you're `docker exec`-ing into a daemon container, commands auto-forward.
+
+**Implementation:**
+- `forwarder.go` — `TryForward()` checks for daemon socket, pipes stdin detection, JSON-RPC forwarding
+- `internal/daemon/server.go` — `GoposixParams.RawOutput` skips `--json` prepend and returns raw stdout
+- `cmd/goposix/main.go` — calls `TryForward()` before cold-start dispatch
+- Socket path configurable via `GOPOSIX_SOCKET` env var (default: `/var/run/goposix.sock`)
+- Stdin-piped commands fall back to cold start (daemon doesn't support stdin streaming)
 
 ---
 
@@ -194,18 +208,18 @@ This gives the CLI image daemon benefits without changing its entrypoint — if 
 
 ## 5. Acceptance Criteria
 
-- [ ] M1: `make image` builds daemon image, `make image-cli` builds CLI-only image
-- [ ] M1: `docker run -d --name goposix goposix:latest` starts daemon and responds to SDK calls
-- [ ] M1: `docker run --rm goposix:cli ls -la /` works as before (backward compatible)
-- [ ] M2: README quickstart shows Go SDK example, not CLI `--json` flag
-- [ ] M2: AGENTS.md project identity says "persistent daemon with Go SDK" first
-- [ ] M3: `docs/SDK.md` exists with connection examples, typed methods, performance expectations
-- [ ] M4: README includes benchmark numbers (60µs/call, 11×, grep 5.4×)
-- [ ] M4: `wiki/19_performance_benchmarking.md` has actual measured matrix, not predictions
-- [ ] `make test` passes (zero regressions)
-- [ ] `make testsuite` passes (548/4/10, no new failures)
-- [ ] `make bench-quick` passes with SDK mode
-- [ ] `make bench-all` completes all categories including 3-mode Cat F
+- [x] M1: `make image` builds daemon image, `make image-cli` builds CLI-only image
+- [x] M1: `docker run -d --name goposix goposix:latest` starts daemon and responds to SDK calls
+- [x] M1: `docker run --rm goposix:cli ls -la /` works as before (backward compatible)
+- [x] M2: README quickstart shows Go SDK example, not CLI `--json` flag
+- [x] M2: AGENTS.md project identity says "persistent daemon with Go SDK" first
+- [x] M3: `docs/SDK.md` exists with connection examples, typed methods, performance expectations
+- [x] M4: README includes benchmark numbers (60µs/call, 11×, grep 5.4×)
+- [x] M4: `wiki/19_performance_benchmarking.md` has actual measured matrix, not predictions
+- [x] `make test` passes (zero regressions)
+- [x] `make testsuite` passes (548/4/10, no new failures)
+- [x] `make bench-quick` passes with SDK mode
+- [x] `make bench-all` completes all categories including 3-mode Cat F
 
 ---
 

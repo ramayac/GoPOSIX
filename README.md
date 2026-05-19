@@ -1,8 +1,9 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX userland. GoPOSIX replaces GNU Coreutils in Docker
-`FROM scratch` containers, featuring structured `--json` output in every utility and a
-persistent JSON-RPC daemon to eliminate process-spawning overhead.
+A Go-native POSIX userland with a persistent JSON-RPC 2.0 daemon and a typed Go SDK.
+GoPOSIX replaces GNU Coreutils in Docker containers, delivering **60µs per RPC call** —
+**11× faster than BusyBox fork+exec (680µs)**. Every utility supports structured `--json`
+output. CLI access is available as a secondary interface.
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![go vet](https://img.shields.io/badge/go%20vet-passing-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
@@ -16,10 +17,10 @@ persistent JSON-RPC daemon to eliminate process-spawning overhead.
 Platinum gate ([Phase 07a](wiki/07a_awk.md)). 77 utilities, 548 BusyBox tests passing out of 552 tested (99.3%).
 
 Key Features:
+- **Persistent Daemon + Go SDK:** Start one container, call `c.Echo(ctx, "hi")` at 60µs/call.
+  11× faster than BusyBox fork+exec for bulk operations ([Performance](wiki/performance.md)).
 - **Machine-Readable by Default:** Every utility supports `--json` for structured output
-  ([JSON Schema](docs/JSON_SCHEMA.md)). `--xml` is in progress ([Phase 14](wiki/14_xml_output.md)).
-- **Low-Overhead Execution:** A persistent JSON-RPC 2.0 daemon with session management
-  ([RPC API](wiki/rpc_api.md)).
+  ([JSON Schema](wiki/json_schema.md)).
 - **Portable Scripting:** Sandboxed shell interpreter via `mvdan.cc/sh` with configurable timeout
   and resource limits ([Security Model](wiki/security.md)).
 - **High Compatibility:** 99.3% BusyBox test pass rate (548 of 552 tested).
@@ -27,28 +28,58 @@ Key Features:
 
 ## Quickstart
 
-### Docker
-```bash
-docker pull ghcr.io/ramayac/goposix:latest
-docker run --rm ghcr.io/ramayac/goposix:latest ls --json /
-```
+### Daemon + Go SDK (recommended)
 
-### Build from Source
 ```bash
-make all
-./goposix --list-commands
-```
-
-### Run Tests
-```bash
-make test          # unit tests
-make testsuite     # BusyBox integration tests (gates every commit)
-make ci            # full pipeline (test + testsuite + coverage + docker)
-```
-
-### Start Daemon
-```bash
+# Start the daemon.
 ./goposix daemon --socket /tmp/goposix.sock &
+# Or in Docker:
+docker run -d --name goposix ghcr.io/ramayac/goposix:latest
+```
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "github.com/ramayac/goposix/pkg/client"
+)
+
+func main() {
+    c, _ := client.New("/tmp/goposix.sock")  // /var/run/goposix.sock in Docker
+    defer c.Close()
+
+    // List files as structured data.
+    result, _ := c.Ls(context.Background(), "/", nil)
+    for _, entry := range result.Entries {
+        fmt.Printf("%s %7d %s\n", entry.Mode, entry.Size, entry.Name)
+    }
+
+    // Execute shell scripts.
+    out, _ := c.ShellExec(context.Background(), "echo hello from goposix")
+    fmt.Print(out.Stdout)
+}
+```
+
+> **Performance:** 60µs per RPC call with persistent connection — 11× faster than BusyBox
+> fork+exec. See [docs/SDK.md](docs/SDK.md) for the full Go SDK guide.
+
+### CLI (secondary)
+
+```bash
+# One-shot CLI invocation.
+docker pull ghcr.io/ramayac/goposix:cli
+docker run --rm ghcr.io/ramayac/goposix:cli ls --json /
+```
+
+### Build & Test
+
+```bash
+make all          # vet + test + build
+make test         # unit tests
+make testsuite    # BusyBox integration tests (gates every commit)
+make ci           # full pipeline (test + testsuite + coverage + docker)
 ```
 
 ### Environment Variables
@@ -57,12 +88,24 @@ make ci            # full pipeline (test + testsuite + coverage + docker)
 |----------|---------|-------------|
 | `GOPOSIX_SHELL_TIMEOUT` | `30s` | Shell execution timeout (Go duration format, e.g. `60s`, `5m`) |
 
+## Performance Highlights
+
+| Metric | GoPOSIX | BusyBox | Ratio |
+|--------|:------:|:------:|:-----:|
+| Per-call latency (Go SDK, persistent) | **60µs** | 680µs (fork+exec) | **11× faster** |
+| `grep` on 100MB file | **0.16s** | 0.86s | **5.4× faster** (RE2 vs POSIX ERE) |
+| Binary size | 10 MB | 800 KB | 12.5× larger |
+| Cold start | 7ms | <1ms | Architecture tradeoff |
+
+See [Performance Quick Reference](wiki/performance.md) and [Benchmarking Plan](wiki/19_performance_benchmarking.md) for full details.
+
 ## Documentation
+- [Go SDK Guide](docs/SDK.md) — typed client for all 77 utilities
+- [RPC API Reference](wiki/rpc_api.md)
+- [JSON-RPC Protocol](wiki/rpc_quickstart.md) — raw socket protocol for non-Go clients
 - [Architecture](wiki/architecture.md)
-- [JSON Schema](wiki/json_schema.md)
-- [RPC API](wiki/rpc_api.md)
-- [JSON-RPC Quickstart](wiki/rpc_quickstart.md)
 - [Security Model](wiki/security.md)
+- [JSON Schema](wiki/json_schema.md)
 - [POSIX Coverage Matrix](wiki/posix_coverage.md)
 - [Test Coverage Matrix](wiki/test_coverage_matrix.md)
 - [POSIX FAQ](wiki/posix_faq.md)
@@ -83,6 +126,8 @@ The 4 remaining failures: 3 `date` (Go TZ limitations + cosmetic error format) a
 
 ## Project Principles
 
+- **Daemon-First:** The default image starts the persistent JSON-RPC daemon. Use the Go SDK for
+  programmatic access (60µs/call). CLI is available as a secondary interface (`goposix:cli`).
 - **No CGO:** Static compilation for `FROM scratch` containers (`CGO_ENABLED=0`).
 - **Near-Zero Dependencies:** Only 3 external Go modules: `mvdan.cc/sh/v3` (shell interpreter),
   `golang.org/x/sys` (cross-platform syscalls), `golang.org/x/term` (terminal detection).

@@ -661,3 +661,70 @@ func TestServerNotificationsOverSocket(t *testing.T) {
 		t.Error("expected no response for notification")
 	}
 }
+
+func TestProcessRequest_RawOutput(t *testing.T) {
+	s := NewServer("/tmp/test-raw.sock", 1, "")
+
+	// rawOutput=true should return raw stdout text (no JSON envelope).
+	params, _ := json.Marshal(GoposixParams{Text: "hello-raw", RawOutput: true})
+	req := Request{JSONRPC: "2.0", Method: "goposix.echo", Params: params, ID: 1}
+	res := s.processRequest(req)
+	if res == nil {
+		t.Fatal("expected response")
+	}
+	if res.Error != nil {
+		t.Fatalf("unexpected error: %v", res.Error.Message)
+	}
+	result, ok := res.Result.(map[string]interface{})
+	if !ok {
+		t.Fatal("expected Result to be map[string]interface{}")
+	}
+	if ec, ok := result["exitCode"].(int); !ok || ec != 0 {
+		t.Errorf("exitCode = %v (type %T), want int(0)", result["exitCode"], result["exitCode"])
+	}
+	stdout, _ := result["stdout"].(string)
+	if stdout != "hello-raw\n" {
+		t.Errorf("stdout = %q, want %q", stdout, "hello-raw\n")
+	}
+
+	// rawOutput=false should still return JSON envelope.
+	params2, _ := json.Marshal(GoposixParams{Text: "hello-json", RawOutput: false})
+	req2 := Request{JSONRPC: "2.0", Method: "goposix.echo", Params: params2, ID: 2}
+	res2 := s.processRequest(req2)
+	if res2 == nil {
+		t.Fatal("expected response")
+	}
+	if res2.Error != nil {
+		t.Fatalf("unexpected error: %v", res2.Error.Message)
+	}
+	// JSON mode: Result should contain "data" with the envelope
+	result2, ok := res2.Result.(map[string]interface{})
+	if !ok {
+		t.Fatal("expected Result to be map[string]interface{}")
+	}
+	if _, ok := result2["data"]; !ok {
+		t.Error("expected JSON envelope 'data' field in non-raw mode")
+	}
+}
+
+func TestProcessRequest_RawOutputExitCode(t *testing.T) {
+	s := NewServer("/tmp/test-raw2.sock", 1, "")
+
+	// false command should return exit code 1 with rawOutput.
+	params, _ := json.Marshal(GoposixParams{RawOutput: true})
+	req := Request{JSONRPC: "2.0", Method: "goposix.false", Params: params, ID: 1}
+	res := s.processRequest(req)
+	if res == nil {
+		t.Fatal("expected response")
+	}
+	if res.Error != nil {
+		t.Fatalf("unexpected error: %v", res.Error.Message)
+	}
+	result, ok := res.Result.(map[string]interface{})
+	if !ok {
+		t.Fatal("expected Result to be map[string]interface{}")
+	}
+	if ec, ok := result["exitCode"].(int); !ok || ec != 1 {
+		t.Errorf("exitCode for false = %v (type %T), want int(1)", result["exitCode"], result["exitCode"])
+	}
+}

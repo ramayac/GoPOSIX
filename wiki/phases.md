@@ -2,13 +2,11 @@
 
 > **Version:** 5.4 | **Date:** 2026-05-17 | **Tier:** GOLD | **Branch:** `main`
 >
-> **Status:** 77 utilities | 548 BusyBox passes (99.3%) | ~72% coverage | 59/77 JSON-RPC
+> **Status:** 77 utilities | 548 BusyBox passes (99.3%) | ~76% coverage | 77/77 JSON-RPC
 >
-> ✅ Phase 15 COMPLETED — dd + od (2 I/O utilities, 10 BusyBox tests)
-> ✅ Phase 16 COMPLETED — 9 Tier 2 utilities
-> ✅ Phase 17 COMPLETED — 12 Tier 3 utility stubs
-> ✅ Phase 18 COMPLETED — CI, patch, egrep/fgrep, coverage (daemon 64.6%, diff 57.1%, client 55.4%)
-> 📋 Phase 19 IMPLEMENTING — Performance Benchmarking (GoPOSIX vs BusyBox)
+> ✅ Phase 22 IN PROGRESS — Hardening III: Daemon-First Pivot
+> ✅ Phase 20 COMPLETED — Hardening II: flag audit, doc fixes
+> ✅ Phase 19 DONE — Performance Benchmarking
 
 ---
 
@@ -100,7 +98,9 @@ goposix binary (single static ELF, <12MB)
 | [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases | **COMPLETED** |
 | [19_performance_benchmarking.md](19_performance_benchmarking.md) | Phase 19 — Performance Benchmarking Plan (GoPOSIX vs BusyBox) | **DONE** |
 | [20_hardening_ii.md](20_hardening_ii.md) | Phase 20 — Hardening II (flag audit, code cleanup, coverage, input safety) | **COMPLETED** |
-| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III (Daemon-First Pivot) | **PLANNING** |
+| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III (Daemon-First Pivot) | **IN PROGRESS** |
+| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III (Daemon-First Pivot) | **COMPLETED** |
+| [23_multi_tenant_sandbox.md](23_multi_tenant_sandbox.md) | Phase 23 — Multi-Tenant Sandbox (Linux Experiment Security) | **PLANNING** |
 | [performance.md](performance.md) | Performance Quick Reference — commands, scale, categories | **LIVING** |
 | [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 
@@ -110,7 +110,7 @@ goposix binary (single static ELF, <12MB)
 
 | # | Item | Doc |
 |---|------|-----|
-| — | Daemon-first pivot (SDK as default interface) | [22_hardening_iii.md](22_hardening_iii.md) — planning |
+| — | Daemon-first pivot (SDK as default interface) | [22_hardening_iii.md](22_hardening_iii.md) — in progress |
 | — | `awk` implementation (Platinum gate) | [07a_awk.md](07a_awk.md) — deferred |
 | — | Low-coverage hardening (split, tty — all >60% now) | [todos.md](todos.md) |
 | — | XML output (`--xml`) | [14_xml_output.md](14_xml_output.md) — deferred |

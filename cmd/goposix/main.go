@@ -90,5 +90,11 @@ import (
 )
 
 func main() {
+	// M5: If a daemon socket is available and stdin is a terminal,
+	// forward the command to the persistent daemon (60µs per call).
+	// Falls back to cold-start dispatch if forwarding is not possible.
+	if code := goposix.TryForward(); code >= 0 {
+		os.Exit(code)
+	}
 	os.Exit(goposix.Main())
 }
