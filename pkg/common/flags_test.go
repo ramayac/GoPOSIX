@@ -1,4 +1,4 @@
-package getopt
+package common
 
 import (
 	"testing"
@@ -149,7 +149,6 @@ func TestEmptyArgs(t *testing.T) {
 }
 
 func TestShortValueInCluster(t *testing.T) {
-	// -ofoo.txt should parse as -o foo.txt (value in same cluster)
 	result, err := ParseFlags([]string{"-ofoo.txt"}, testSpec)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -165,7 +164,6 @@ func TestOptionalValueFlag(t *testing.T) {
 			{Short: "e", Long: "eof", Type: FlagOptionalValue},
 		},
 	}
-	// -e without value
 	result, err := ParseFlags([]string{"-e"}, spec)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -184,7 +182,6 @@ func TestOptionalValueFlagWithValue(t *testing.T) {
 			{Short: "e", Long: "eof", Type: FlagOptionalValue},
 		},
 	}
-	// -eSTR form
 	result, err := ParseFlags([]string{"-eEOFSTR"}, spec)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -200,7 +197,6 @@ func TestLongOptionalValue(t *testing.T) {
 			{Long: "eof", Type: FlagOptionalValue},
 		},
 	}
-	// --eof without value
 	result, err := ParseFlags([]string{"--eof"}, spec)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -212,7 +208,6 @@ func TestLongOptionalValue(t *testing.T) {
 		t.Errorf("expected empty value, got %q", result.Get("eof"))
 	}
 
-	// --eof=STR form
 	result2, err := ParseFlags([]string{"--eof=STR"}, spec)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -230,7 +225,6 @@ func TestStopAtFirstNonFlag(t *testing.T) {
 		},
 		StopAtFirstNonFlag: true,
 	}
-	// "-n hello -e world" → -n is parsed, everything else is positional
 	result, err := ParseFlags([]string{"-n", "hello", "-e", "world"}, spec)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -251,6 +245,21 @@ func TestStopAtFirstNonFlag(t *testing.T) {
 
 // Benchmarks
 
+var benchSpec = FlagSpec{
+	Defs: []FlagDef{
+		{Short: "i", Long: "ignore-case", Type: FlagBool},
+		{Short: "v", Long: "invert-match", Type: FlagBool},
+		{Short: "c", Long: "count", Type: FlagBool},
+		{Short: "n", Long: "line-number", Type: FlagBool},
+		{Short: "l", Long: "files-with-matches", Type: FlagBool},
+		{Short: "o", Long: "only-matching", Type: FlagBool},
+		{Short: "q", Long: "quiet", Type: FlagBool},
+		{Short: "f", Long: "file", Type: FlagValue},
+		{Short: "e", Long: "regexp", Type: FlagValue},
+		{Long: "json", Type: FlagBool},
+	},
+}
+
 var groupedBenchSpec = FlagSpec{
 	Defs: []FlagDef{
 		{Short: "l", Long: "list", Type: FlagBool},
@@ -265,21 +274,6 @@ var longBenchSpec = FlagSpec{
 		{Short: "c", Long: "count", Type: FlagBool},
 		{Short: "n", Long: "line-number", Type: FlagBool},
 		{Short: "e", Long: "regexp", Type: FlagValue},
-	},
-}
-
-var benchSpec = FlagSpec{
-	Defs: []FlagDef{
-		{Short: "i", Long: "ignore-case", Type: FlagBool},
-		{Short: "v", Long: "invert-match", Type: FlagBool},
-		{Short: "c", Long: "count", Type: FlagBool},
-		{Short: "n", Long: "line-number", Type: FlagBool},
-		{Short: "l", Long: "files-with-matches", Type: FlagBool},
-		{Short: "o", Long: "only-matching", Type: FlagBool},
-		{Short: "q", Long: "quiet", Type: FlagBool},
-		{Short: "f", Long: "file", Type: FlagValue},
-		{Short: "e", Long: "regexp", Type: FlagValue},
-		{Long: "json", Type: FlagBool},
 	},
 }
 
