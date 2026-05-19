@@ -1,6 +1,6 @@
 # Phase 22 — Hardening III (Daemon-First Pivot)
 
-> **Status:** IN PROGRESS | **Date:** 2026-05-18 | **Trigger:** Benchmark data (Phase 19) + Go SDK discovery
+> **Status:** COMPLETED | **Date:** 2026-05-18 | **Trigger:** Benchmark data (Phase 19) + Go SDK discovery
 >
 > **Key finding:** The Go SDK client with persistent connection achieves **60µs per RPC call — 11× faster than BusyBox fork+exec (680µs)**. The old socat-per-call approach was 3× *slower* than BusyBox. The project has been selling the right architecture with the wrong interface.
 
@@ -202,10 +202,10 @@ This gives the CLI image daemon benefits without changing its entrypoint — if 
 - [x] M3: `docs/SDK.md` exists with connection examples, typed methods, performance expectations
 - [x] M4: README includes benchmark numbers (60µs/call, 11×, grep 5.4×)
 - [x] M4: `wiki/19_performance_benchmarking.md` has actual measured matrix, not predictions
-- [ ] `make test` passes (zero regressions)
-- [ ] `make testsuite` passes (548/4/10, no new failures)
-- [ ] `make bench-quick` passes with SDK mode
-- [ ] `make bench-all` completes all categories including 3-mode Cat F
+- [x] `make test` passes (zero regressions)
+- [x] `make testsuite` passes (548/4/10, no new failures)
+- [x] `make bench-quick` passes with SDK mode
+- [x] `make bench-all` completes all categories including 3-mode Cat F
 
 ---
 

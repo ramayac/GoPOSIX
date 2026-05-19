@@ -56,7 +56,7 @@ All phases 00–11 are complete. These documents describe the as-built implement
 | [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases |
 | [19_performance_benchmarking.md](19_performance_benchmarking.md) | Phase 19 — Performance Benchmarking (DONE) |
 | [20_hardening_ii.md](20_hardening_ii.md) | Phase 20 — Hardening II: flag audit, coverage, input safety ✅ |
-| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III: Daemon-First Pivot (IN PROGRESS) |
+| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III: Daemon-First Pivot ✅ |
 | [23_multi_tenant_sandbox.md](23_multi_tenant_sandbox.md) | Phase 23 — Multi-Tenant Sandbox: Linux Experiment Security (PLANNING) |
 
 ## Deferred / Future
@@ -65,7 +65,7 @@ All phases 00–11 are complete. These documents describe the as-built implement
 - [14_xml_output.md](14_xml_output.md) | XML Output Support design (not implemented)
 - [19_performance_benchmarking.md](19_performance_benchmarking.md) | Performance Benchmarking Plan — GoPOSIX vs BusyBox (DONE)
 - [performance.md](performance.md) | Performance Quick Reference — commands, scale, categories, results
-- [22_hardening_iii.md](22_hardening_iii.md) | Hardening III — Daemon-First Pivot (PLANNING)
+- [22_hardening_iii.md](22_hardening_iii.md) | Hardening III — Daemon-First Pivot ✅
 ## Design
 
 - [goposixos.md](goposixos.md) | GoPOSIXOS design — historical snapshot (moved to separate repo); all GoPOSIX-side prep work is complete

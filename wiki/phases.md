@@ -99,7 +99,7 @@ goposix binary (single static ELF, <12MB)
 | [19_performance_benchmarking.md](19_performance_benchmarking.md) | Phase 19 — Performance Benchmarking Plan (GoPOSIX vs BusyBox) | **DONE** |
 | [20_hardening_ii.md](20_hardening_ii.md) | Phase 20 — Hardening II (flag audit, code cleanup, coverage, input safety) | **COMPLETED** |
 | [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III (Daemon-First Pivot) | **IN PROGRESS** |
-| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III (Daemon-First Pivot) | **PLANNING** |
+| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III (Daemon-First Pivot) | **COMPLETED** |
 | [23_multi_tenant_sandbox.md](23_multi_tenant_sandbox.md) | Phase 23 — Multi-Tenant Sandbox (Linux Experiment Security) | **PLANNING** |
 | [performance.md](performance.md) | Performance Quick Reference — commands, scale, categories | **LIVING** |
 | [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
