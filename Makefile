@@ -16,6 +16,7 @@ PKG_DIRS   := . \
               ./pkg/common/... \
               ./internal/dispatch/... \
               ./pkg/echo/... \
+              ./pkg/awk/... \
               ./pkg/truefalse/... \
               ./pkg/whoami/... \
               ./pkg/hostname/... \

@@ -86,7 +86,7 @@ goposix binary (single static ELF, <12MB)
 | 20 | Hardening II — flag audit, code cleanup, coverage, input safety | ✅ |
 | 22 | Hardening III — Daemon-First Pivot | ✅ |
 | 23 | Flags Rewrite — zero-allocation POSIX scanner | ✅ |
-| — | `awk` (Platinum gate) | ⬜ |
+| 07a | `awk` — Platinum gate (integrated goawk v1.31.0) | ✅ |
 
 ---
 
@@ -94,7 +94,6 @@ goposix binary (single static ELF, <12MB)
 
 | # | Item | Doc |
 |---|------|-----|
-| — | `awk` implementation (Platinum gate) | [07a_awk.md](07a_awk.md) — deferred |
 | — | Multi-agent observability | [24_multi_agent_observability.md](24_multi_agent_observability.md) — planning |
 | 23 | Flags Rewrite (zero-allocation POSIX scanner) | [23_flags_rewrite.md](23_flags_rewrite.md) — COMPLETED |
 | — | Ongoing maintenance | [todos.md](todos.md), [deferred.md](deferred.md) |

@@ -21,7 +21,6 @@ dedicated JSON-RPC sub-tests for their stdin-dependent success paths.)
 ## Deferred
 
 See [deferred.md](deferred.md) for the consolidated list. Key items:
-- `awk` implementation (Platinum gate) → [07a_awk.md](07a_awk.md)
 - XML output (`--xml`)
 - Multi-tenant sandbox
 - Multi-agent observability → [24_multi_agent_observability.md](24_multi_agent_observability.md)

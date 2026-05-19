@@ -1,6 +1,6 @@
 # Phase 07a — `awk` (POSIX Text Processing)
 
-> **Status:** ⏳ Not Started | **Depends on:** Phase 07.4 (Tier 5 utilities) | **Canonical awk document**
+> **Status:** ✅ COMPLETED | **Depends on:** Phase 07.4 (Tier 5 utilities) | **Canonical awk document**
 >
 > **Approach:** Wrap [benhoyt/goawk](https://github.com/benhoyt/goawk) v1.31.0
 > (17,409 LOC, MIT, zero deps, pure Go) as `pkg/awk/`. This replaces the
