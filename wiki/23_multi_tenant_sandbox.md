@@ -1,11 +1,19 @@
 # Phase 23 — Multi-Tenant Sandbox (Linux Experiment Security)
 
-> **Status:** PLANNING | **Date:** 2026-05-18 | **Trigger:** Security audit for multi-tenant "Linux experiment" use case
+> **Status:** DEFERRED | **Date:** 2026-05-18 | **Deferred:** 2026-05-18
 >
 > **Goal:** Transform GoPOSIX from a single-tenant daemon into a secure multi-tenant
 > environment where each RPC session has isolated filesystem, resource limits, command
 > restrictions, and audit trail — enabling browser-based Linux playgrounds, CTF platforms,
 > coding interview tools, and container-native sandboxes.
+>
+> **Deferral rationale:** The current primary use case is single-tenant, multi-agent
+> collaboration on a shared filesystem (one user, many trusted agents operating on the
+> same repo). Workspace isolation would break the shared-repo model. The observability
+> and audit trail components of this phase have been extracted into
+> [Phase 24 — Multi-Agent Observability](24_multi_agent_observability.md). The
+> multi-tenant isolation features (workspace isolation, command allowlist, subprocess
+> sandboxing) are deferred until a concrete untrusted-user use case emerges.
 
 ---
 
