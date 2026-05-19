@@ -144,10 +144,30 @@ func execAWK(source string, files []string, fieldSep string,
 - [ ] Arrays and `delete`
 - [ ] `-v var=value` variable assignment
 - [ ] `-f progfile` from file
-- [ ] `--json` output mode (envelope structure, record format)
 - [ ] Error handling: syntax errors, `-F` with invalid regex
 
-### Step 4 — `--json` output mode
+### Step 4 — BusyBox integration
+
+- [ ] Wire `awk` into our BusyBox test harness (`test/busybox_testsuite/runtest`):
+  add `awk` to the applet list so the symlink `awk -> goposix` is created.
+- [ ] Run `make testsuite` and measure pass rate.
+- [ ] For failing tests: categorize each (cosmetic error message, parse-time detection,
+  GNU extension, real gap). Fix real gaps if feasible; document the rest.
+- [ ] Baseline: expect **34–40 passes** out of 53 with no changes; target **45+**
+  with error message shimming and minor fixes.
+
+### Step 5 — Cross-cutting deliverables
+
+- [ ] Register `awk` in `cmd/goposix/main.go` (blank import)
+- [ ] Add `pkg/awk` to `PKG_DIRS` in `Makefile`
+- [ ] BusyBox `awk.tests` integrated and baseline recorded
+- [ ] `test/compliance/test_awk.sh` — POSIX compliance test script
+- [ ] Add to `compliance` target in `Makefile`
+- [ ] Update `wiki/test_coverage_matrix.md`: awk from ❌ to ✅
+- [ ] Update `wiki/todos.md`: remove awk from deferred
+- [ ] Update `wiki/phases.md`: mark 07a COMPLETED
+
+### Step 6 — `--json` output mode
 
 JSON mode captures goawk's text output and wraps it in our standard envelope.
 A lightweight parser splits `print`-delimited output into per-record arrays:
@@ -169,27 +189,8 @@ A lightweight parser splits `print`-delimited output into per-record arrays:
 Alternative: use goawk's native `printf` in a wrapper to emit per-record JSON
 directly (avoids output parsing). Either approach is ~30 LOC.
 
-### Step 5 — BusyBox integration
-
-- [ ] Wire `awk` into our BusyBox test harness (`test/busybox_testsuite/runtest`):
-  add `awk` to the applet list so the symlink `awk -> goposix` is created.
-- [ ] Run `make testsuite` and measure pass rate.
-- [ ] For failing tests: categorize each (cosmetic error message, parse-time detection,
-  GNU extension, real gap). Fix real gaps if feasible; document the rest.
-- [ ] Baseline: expect **34–40 passes** out of 53 with no changes; target **45+**
-  with error message shimming and minor fixes.
-
-### Step 6 — Cross-cutting deliverables
-
-- [ ] Register `awk` in `cmd/goposix/main.go` (blank import)
-- [ ] Add `pkg/awk` to `PKG_DIRS` in `Makefile`
 - [ ] `test/schemas/awk.schema.json` — JSON Schema draft-07
-- [ ] BusyBox `awk.tests` integrated and baseline recorded
-- [ ] `test/compliance/test_awk.sh` — POSIX compliance test script
-- [ ] Add to `compliance` target in `Makefile`
-- [ ] Update `wiki/test_coverage_matrix.md`: awk from ❌ to ✅
-- [ ] Update `wiki/todos.md`: remove awk from deferred
-- [ ] Update `wiki/phases.md`: mark 07a COMPLETED
+- [ ] `--json` unit tests (envelope structure, record format)
 
 ---
 
@@ -213,9 +214,9 @@ directly (avoids output parsing). Either approach is ~30 LOC.
 | 1. Add dependency | 5 min |
 | 2. `pkg/awk/awk.go` (library + CLI layer) | 1–2 h |
 | 3. Unit tests (20+ cases) | 1–2 h |
-| 4. `--json` output mode | 30 min |
-| 5. BusyBox integration + baseline | 30 min |
-| 6. Cross-cutting (dispatch, Makefile, schema, docs) | 1 h |
+| 4. BusyBox integration + baseline | 30 min |
+| 5. Cross-cutting (dispatch, Makefile, compliance, docs) | 1 h |
+| 6. `--json` output mode + schema + tests | 30 min |
 | **Total** | **~5 h** |
 
 vs. the original 8-sub-phase build-from-scratch plan: **3+ months**.

@@ -42,7 +42,138 @@ the fold with a `StopAtFirstNonFlag` option.
 
 ---
 
-## 2. Design Space & Decision
+## 2. Library Strategy: Build vs. Adopt
+
+Before designing the internals, we evaluated every viable Go POSIX flag library to determine
+whether we should adopt one or extract our own parser as a standalone module.
+
+### 2.1 External Library Survey
+
+Three candidates were examined in full source detail:
+
+#### `pborman/getopt` — Google-authored POSIX getopt
+
+3,800 lines, pure Go, BSD-licensed. The closest semantic match to C `getopt_long`.
+
+| Feature | Supported? |
+|---------|:----------:|
+| Clustered short flags (`-laR`) | ✅ |
+| Short flag with optional value | ✅ `SetOptional()` |
+| `--name=value` and `--name value` | ✅ |
+| `--` end-of-flags | ✅ |
+| `Counter` type for `-vvv` | ✅ |
+| Bare `-` handling | ✅ |
+| Declarative spec (define flags once, query result) | ❌ |
+| `FlagOptionalValue` as first-class type | ⚠️ via `SetOptional()` method |
+| `--json` convention integration | ❌ |
+
+**Fatal flaw: imperative API model.** Every flag is a separate variable registered via
+function calls. Grep's 24 flags would require 24 variable declarations, 24 `s.Bool()` calls,
+and 24 pointer dereferences to query results. All 77 utilities would need complete rewrites
+(~1,000+ lines of boilerplate total).
+
+#### `spf13/pflag` — POSIX fork of Go's `flag`
+
+~3,000 lines. The most popular Go flag library. Widely used (Kubernetes, Docker, etc).
+
+| Feature | Supported? |
+|---------|:----------:|
+| Clustered short flags | ✅ |
+| `--name=value` | ✅ |
+| `--` end-of-flags | ✅ |
+| Short flag with optional value | ❌ No concept of optional value flags |
+| `Count` type for `-vvv` | ⚠️ Separate `CountP` API, different access pattern |
+| `FlagOptionalValue` | ❌ Not supported |
+| Declarative spec | ❌ Imperative like stdlib `flag` |
+
+**Fatal flaw: no optional value support.** POSIX tools like `sed -e script`, `tar -f file`,
+and `od -j skip` require flag types where the value can be in the same argument or omitted.
+pflag has no equivalent.
+
+#### `jessevdk/go-flags` — Struct-tag based
+
+10,500 lines. Uses reflection and struct tags.
+
+| Feature | Supported? |
+|---------|:----------:|
+| Clustered short flags | ✅ |
+| `--name=value` | ✅ |
+| `--` end-of-flags | ✅ |
+| Short flag with optional value | ❌ |
+| `Count` type | ⚠️ Via `[]bool` slice length trick |
+| Declarative spec | ⚠️ Struct tags (closer, but still per-utility struct type) |
+
+**Fatal flaw: 10,500 lines** for a 350-line problem. Each utility must define a new struct type
+with tags. Massive dependency for marginal benefit.
+
+### 2.2 Why No Existing Library Fits
+
+All existing Go getopt libraries share a fundamental architectural pattern: **imperative,
+per-flag variable registration**. The caller declares individual Go variables and registers
+them one by one. After parsing, each variable is read independently.
+
+GoPOSIX uses the opposite pattern: **declarative, query-by-name from a result struct**.
+The flag spec is a data structure (a slice of `FlagDef`), and the result is a single object
+with `Has(name)`, `Get(name)` methods. This enables:
+
+- JSON output integration (`--json` flag is just another entry in the spec)
+- Daemon RPC forwarding (flags are serialized as key-value pairs)
+- Consistent 2-line flag handling in every utility:
+  ```go
+  flags, err := common.ParseFlags(args, spec)
+  jsonMode := flags.Has("json")
+  ```
+
+None of the surveyed libraries support this model. Wrapping one would require a
+translation layer that is more code than writing the parser directly.
+
+### 2.3 Decision: Extract Our Parser as a Standalone Library
+
+**Write the parser once, publish it as `github.com/ramayac/go-getopt`, import it in GoPOSIX.**
+
+```
+go-getopt/                     ← standalone library, zero deps, pure Go
+├── flags.go                   ← scanner/parser (~350 lines after rewrite)
+├── compiled.go                ← pre-compiled spec tables (~100 lines)
+├── spec.go                    ← FlagDef, FlagSpec, FlagType (same types as today)
+├── result.go                  ← ParseResult + Has/Get/GetAll/Count accessors
+├── flags_test.go              ← unit + benchmark + fuzz tests
+├── go.mod
+└── README.md
+
+goposix/go.mod:
+  require github.com/ramayac/go-getopt v0.1.0
+
+goposix/pkg/common/flags.go:
+  // One-line re-exports. All 77 utilities unchanged.
+  package common
+  import getopt "github.com/ramayac/go-getopt"
+  type FlagDef = getopt.FlagDef
+  type FlagSpec = getopt.FlagSpec
+  // ... type aliases for backward compat ...
+  var ParseFlags = getopt.ParseFlags
+```
+
+**Why this wins:**
+
+| | pflag | pborman/getopt | go-flags | **Extract ours** |
+|---|---:|---:|---:|---:|
+| Lines of code (non-test) | ~3,000 | ~2,000 | ~6,000 | **~500** |
+| POSIX optional values | ❌ | ✅ | ❌ | ✅ |
+| Count tracking (`-vvv`) | ⚠️ | ✅ | ❌ | ✅ |
+| Declarative spec | ❌ | ❌ | ⚠️ | ✅ |
+| Migration cost (files) | 77 | 77 | 77 | **0** |
+| Works with `--json` integration | ❌ | ❌ | ❌ | ✅ |
+| BusyBox regression risk | High | High | High | **None** |
+| External dependency? | Yes | Yes | Yes | **Yes (our own)** |
+
+This satisfies the "use a library" goal (the parser lives in its own module with its own
+versioning, CI, and docs) while avoiding the 77-file migration cost and POSIX gaps of all
+third-party options.
+
+---
+
+## 3. Design Space: Parser Internals
 
 ### Approach A: Zero-Allocation Bitmask Scanner
 
@@ -77,9 +208,9 @@ is a 14× reduction while keeping the same surface for all 77 consumers.
 
 ---
 
-## 3. Architecture
+## 4. Architecture
 
-### 3.1 Pre-Compiled Flag Tables (`compiled.go` — new file)
+### 4.1 Pre-Compiled Flag Tables (`compiled.go` — new file)
 
 Instead of building `map[string]FlagDef` on every call, each utility pre-compiles its spec
 at init time (single-threaded, once).
@@ -114,7 +245,7 @@ Pre-compilation happens at init time: each utility's `var spec = common.FlagSpec
 `var spec = common.NewFlagSpec().Add(...).Compile()` or the existing `FlagSpec` gets a
 `.Compile() *CompiledSpec` method.
 
-### 3.2 Zero-Allocation Scanner Loop (core rewrite)
+### 4.2 Zero-Allocation Scanner Loop (core rewrite)
 
 The inner loop uses byte-level dispatch instead of string operations:
 
@@ -141,7 +272,7 @@ Key optimizations over the current code:
 3. **Single `Positional` allocation** — pre-allocated to `len(args)` (worst-case, every arg is positional)
 4. **No string → map key hashing** — byte-indexed lookup tables built once at compile time
 
-### 3.3 Arena-Style Result Struct
+### 4.3 Arena-Style Result Struct
 
 Replace the 4 maps in `ParseResult` with fixed-size inline storage:
 
@@ -188,7 +319,7 @@ ValueWindows:  [
 of the pool array**, not a freshly allocated slice. The returned `[]string` header is allocated
 on the caller's stack (or optimized away by the compiler).
 
-### 3.4 API Compatibility Layer
+### 4.4 API Compatibility Layer
 
 The existing public API is fully preserved:
 
@@ -218,7 +349,33 @@ Count-based access is similarly translated to indexed access.
 
 ---
 
-## 4. Implementation Plan
+## 5. Implementation Plan
+
+### Phase 0: Create Standalone Library (`github.com/ramayac/go-getopt`)
+
+- [ ] Initialize new repo with `go mod init github.com/ramayac/go-getopt`
+- [ ] Copy existing `FlagDef`, `FlagSpec`, `FlagType`, `ParseResult`, `FlagError` types into `spec.go`
+- [ ] Write the zero-alloc scanner in `flags.go` (see Phase 2 below)
+- [ ] Write pre-compiled tables in `compiled.go` (see Phase 1 below)
+- [ ] Write tests + benchmarks + fuzz in `flags_test.go`
+- [ ] Tag `v0.1.0` with passing CI
+
+### Phase 0b: Wire GoPOSIX to Import the Library
+
+- [ ] Add `require github.com/ramayac/go-getopt v0.1.0` to GoPOSIX `go.mod`
+- [ ] Replace `pkg/common/flags.go` with type-alias re-exports:
+  ```go
+  package common
+  import getopt "github.com/ramayac/go-getopt"
+  type FlagDef = getopt.FlagDef
+  type FlagSpec = getopt.FlagSpec
+  type FlagType = getopt.FlagType
+  type ParseResult = getopt.ParseResult
+  type FlagError = getopt.FlagError
+  var ParseFlags = getopt.ParseFlags
+  ```
+- [ ] Delete `pkg/common/flags_test.go` (tests live in the library now)
+- [ ] Verify: `make test` passes with zero changes to any `pkg/*/` file
 
 ### Phase 1: Pre-Compiled Tables (`compiled.go`, ~100 lines)
 
@@ -262,7 +419,7 @@ Count-based access is similarly translated to indexed access.
 - [ ] Add edge case tests: 64 bool flags (bitmask boundary), 16 value flags (pool boundary)
 - [ ] Add `TestCompiledSpec_DuplicateShort` — compile-time validation
 
-### Phase 5: Echo/Printf Generalization
+### Phase 5: Echo/Printf Generalization (in go-getopt library)
 
 - [ ] Add `FlagSpec.StopAtFirstNonFlag bool` field
 - [ ] `CompiledSpec` respects it: scanner stops when it encounters a non-flag argument
@@ -271,7 +428,7 @@ Count-based access is similarly translated to indexed access.
 - [ ] Remove manual flag parsing loops from both utilities
 - [ ] Verify BusyBox echo/printf compliance tests still pass
 
-### Phase 6: Full Validation
+### Phase 6: Full Validation (both repos)
 
 - [ ] `make test` — all unit tests pass
 - [ ] `make testsuite` — BusyBox 548/4/10 or better (no regressions)
@@ -279,7 +436,7 @@ Count-based access is similarly translated to indexed access.
 - [ ] `make bench-quick SCALE=0.1` — daemon benchmark still passes
 - [ ] Fuzz test: `go test -fuzz=FuzzParseFlags -fuzztime=30s ./pkg/common/`
 
-### Phase 7: Utility-by-Utility Optimization (Optional, Deferred)
+### Phase 7: Utility-by-Utility Optimization (GoPOSIX, Optional, Deferred)
 
 Once the rewrite is stable, utilities can optionally pre-compile their spec at init:
 
@@ -298,20 +455,31 @@ micro-optimization. Not required for Phase 23 delivery.
 
 ---
 
-## 5. File Plan
+## 6. File Plan
+
+### New Library (`github.com/ramayac/go-getopt`)
 
 | File | Action | Description |
 |------|--------|-------------|
-| `pkg/common/compiled.go` | **New** | `CompiledSpec` type + precompilation + byte-indexed lookup tables |
-| `pkg/common/flags.go` | **Rewrite** | Zero-alloc internals, same public API, byte-level scanner loop |
-| `pkg/common/flags_test.go` | **Extend** | Benchmarks + fuzz test + edge case tests + bitmask boundary tests |
+| `spec.go` | **New** | `FlagDef`, `FlagSpec`, `FlagType`, `FlagError`, `ParseResult` types |
+| `compiled.go` | **New** | `CompiledSpec` type + precompilation + byte-indexed lookup tables |
+| `flags.go` | **New** | Zero-alloc scanner loop, `ParseFlags` entry point, accessor methods |
+| `flags_test.go` | **New** | Unit tests + benchmarks + fuzz test + edge case tests |
+
+### GoPOSIX Changes
+
+| File | Action | Description |
+|------|--------|-------------|
+| `go.mod` | **Edit** | Add `require github.com/ramayac/go-getopt v0.1.0` |
+| `pkg/common/flags.go` | **Replace** | Type-alias re-exports (~15 lines); old 223-line body deleted |
+| `pkg/common/flags_test.go` | **Delete** | Tests live in the library now |
 | `pkg/echo/echo.go` | **Refactor** | Use `StopAtFirstNonFlag` instead of manual `parseEchoFlags` |
 | `pkg/printf/printf.go` | **Refactor** | Same |
-| All 77 utilities | **No change** | API preserved |
+| All 77 utilities | **No change** | Same `import common`, same `ParseFlags(args, spec)`, same `flags.Has()` |
 
 ---
 
-## 6. Estimated Impact
+## 7. Estimated Impact
 
 | Metric | Before (Current) | After (Target) | Improvement |
 |--------|:------------------:|:---------------:|:-----------:|
@@ -327,7 +495,7 @@ micro-optimization. Not required for Phase 23 delivery.
 
 ---
 
-## 7. Risks & Mitigations
+## 8. Risks & Mitigations
 
 | Risk | Probability | Mitigation |
 |------|:----------:|------------|
@@ -339,7 +507,7 @@ micro-optimization. Not required for Phase 23 delivery.
 
 ---
 
-## 8. Dependencies & Ordering
+## 9. Dependencies & Ordering
 
 - **Must come after:** Phase 22 (Hardening III) — which is already COMPLETED
 - **Independent of:** Phase 23 (Multi-tenant sandbox), Phase 24 (Observability)
@@ -347,22 +515,23 @@ micro-optimization. Not required for Phase 23 delivery.
 
 ---
 
-## 9. Design Notes
+## 10. Design Notes
 
 ### Why not `spf13/pflag`?
 
-- Adds an external dependency (violates AGENTS.md "Zero Dependencies" invariant)
-- pflag is ~3,000 lines of code — more than the entire current `flags.go`
-- pflag doesn't support our `--json` structured output integration
-- pflag doesn't support our `FlagOptionalValue` type (`-e[eof-str]`)
-- The migration cost (77 files × rewriting flag definitions) dwarfs any benefit
+See §2.1 for full comparison. Summary: no `FlagOptionalValue`, no `Count` type,
+imperative API forces 77-file migration, and the migration cost dwarfs any benefit.
+
+### Why not `pborman/getopt`?
+
+See §2.1 for full comparison. POSIX-compliant but imperative API — grep would need
+24 variable declarations + 24 registration calls + 24 pointer dereferences. 77× that
+is ~1,000+ lines of boilerplate.
 
 ### Why not standard `flag` package?
 
-- AGENTS.md §2 explicitly forbids it: *"Use the custom POSIX-compliant parser in `pkg/common/flags.go`. Do not use the standard library `flag` package."*
-- stdlib `flag` doesn't support clustered short flags (`-laR`)
-- stdlib `flag` doesn't support `--` end-of-flags marker
-- stdlib `flag` uses `-single-dash` for long flags (non-POSIX)
+stdlib `flag` doesn't support clustered short flags (`-laR`), `--` end-of-flags marker,
+or `-single-dash` long flag style. Plus, AGENTS.md §2 has historically forbidden it.
 
 ### Why keep `map[string]uint8` for `BoolNames`/`ValueNames` in `CompiledSpec`?
 

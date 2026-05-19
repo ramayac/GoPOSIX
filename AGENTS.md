@@ -15,7 +15,7 @@ GoPOSIX is designed for **programmatic consumption** in containerized environmen
 Whenever you write or modify code in this repository, you **MUST** adhere to the following rules:
 
 - **No CGO:** The project must compile completely statically to run in a scratch container. Always use `CGO_ENABLED=0`.
-- **Zero Dependencies:** Avoid external Go modules unless absolutely necessary (e.g., a complex shell interpreter later on). Do not use external libraries for flag parsing, colors, or utility logic.
+- **Low Dependencies:** Avoid external Go modules unless absolutely necessary (e.g., a complex shell interpreter later on).
 - **Unified Flag Parsing:** Use the custom POSIX-compliant parser in `pkg/common/flags.go` (`common.ParseFlags`). **Do not use the standard library `flag` package** or `pflag`. Our parser supports short flag grouping (`-laR`) and standard POSIX conventions.
 - **Standardized Output:** Use the `common.Render()` and `common.RenderError()` functions in `pkg/common/output.go` to handle both standard text output and `--json` structured output. You must pass the `out io.Writer` provided in the `Run` function signature instead of using `os.Stdout`.
 - **Multicall Dispatch:** Every utility lives in its own package under `pkg/` (e.g., `pkg/ls`, `pkg/echo`). Utilities register themselves automatically by calling `dispatch.Register()` in their `init()` function.
