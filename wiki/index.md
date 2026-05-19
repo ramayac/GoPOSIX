@@ -3,6 +3,7 @@
 ## Core
 
 - [README.md](README.md) | Purpose, rules, and shell-first navigation.
+- [usage.md](usage.md) | Usage guide: CLI, daemon, Docker Compose, Go SDK, recipes.
 - [schema.md](schema.md) | Required structure and maintenance contract.
 - [phases.md](phases.md) | Project roadmap, current state, and phase index
 - [test_coverage_matrix.md](test_coverage_matrix.md) | Per-utility test status for all 74 utilities.

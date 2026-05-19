@@ -100,7 +100,6 @@ GoPOSIX/
 │   └── busybox_testsuite/  Ported BusyBox test suite (552 tests)
 ├── testdata/            Shared test fixtures
 ├── wiki/                Architecture, security, RPC API, JSON schema, deploy guides
-└── examples/            Agent integration examples
 ```
 
 ## Docker Images
@@ -168,6 +167,6 @@ Run `make testsuite` before every commit to prevent regressions.
 - [security.md](security.md) — Security model, shell sandbox, deployment posture
 - [rpc_api.md](rpc_api.md) — JSON-RPC client API reference (`pkg/client`)
 - [json_schema.md](json_schema.md) — `--json` output envelope and per-utility schemas
-- [rpc_quickstart.md](rpc_quickstart.md) — How to use GoPOSIX programmatically via JSON-RPC
+- [usage.md](usage.md) — Usage guide: CLI, daemon, Docker Compose, Go SDK, recipes
 - [self_upgrade.md](self_upgrade.md) — Self-upgrade (`--version`, `--upgrade`)
 - [24_multi_agent_observability.md](24_multi_agent_observability.md) — Multi-agent observability (PLANNING)
