@@ -34,7 +34,7 @@ COPY --from=setup /etc/group  /etc/group
 COPY --from=setup /home/goposix /home/goposix
 
 # Binary + symlinks
-COPY goposix /bin/goposix
+COPY --chown=1000:1000 goposix /bin/goposix
 COPY --from=setup /out/bin/ /bin/
 
 USER goposix

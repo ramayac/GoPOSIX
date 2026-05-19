@@ -391,7 +391,7 @@ bench-image:
 
 .PHONY: daemon-image
 daemon-image:
-	docker build -t goposix:daemon -f docker/Dockerfile.daemon .
+	docker build -t goposix:daemon -f docker/Dockerfile .
 
 .PHONY: bench-daemon
 bench-daemon: daemon-image

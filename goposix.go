@@ -77,6 +77,7 @@ func Run(argv []string) int {
 //
 //	--help, -h          print command listing
 //	--version           print binary name and version
+//	--upgrade           self-upgrade to latest GitHub release
 //	--list-commands     print one command name per line (for Dockerfile symlink generation)
 //
 // Returns a POSIX exit code (0 for success, 127 for unknown command, or the
@@ -96,6 +97,12 @@ func RunWithWriter(argv []string, out io.Writer) int {
 			return 0
 		case "--version":
 			fmt.Println(cmdName, "version", Version)
+			return 0
+		case "--upgrade":
+			if err := Upgrade(Version); err != nil {
+				fmt.Fprintf(os.Stderr, "%s: upgrade: %v\n", cmdName, err)
+				return 1
+			}
 			return 0
 		case "--list-commands":
 			dispatch.ListCommands()

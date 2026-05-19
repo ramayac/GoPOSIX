@@ -1,15 +1,12 @@
 # syntax=docker/dockerfile:1
 
 # =============================================================================
-# GoPOSIX daemon — persistent JSON-RPC server (default production image).
+# GoPOSIX CLI — multicall binary for symlink/subcommand invocation.
 # Statically linked, FROM scratch, ~10 MB.
 #
 # Usage:
-#   docker build -t goposix:latest -f docker/Dockerfile .
-#   docker run -d --name goposix -p 8080:8080 goposix:latest
-#   curl -X POST http://localhost:8080/rpc \
-#     -H 'Content-Type: application/json' \
-#     -d '{"jsonrpc":"2.0","method":"goposix.echo","params":{"text":"hello"},"id":1}'
+#   docker build -t goposix:cli -f docker/Dockerfile.cli .
+#   docker run --rm goposix:cli ls -la /
 # =============================================================================
 
 # Stage 1: Builder — compiles a fully static binary.
@@ -43,7 +40,7 @@ COPY --from=builder /commands.txt /commands.txt
 
 RUN while IFS= read -r cmd; do ln -s /bin/goposix "/out/bin/${cmd}"; done < /commands.txt
 
-# User/group files and home directory for non-root execution.
+# User/group files for non-root execution.
 RUN echo "goposix:x:1000:1000::/home/goposix:/bin/false" >> /etc/passwd && \
     echo "goposix:x:1000:" >> /etc/group && \
     mkdir -p /home/goposix && \
@@ -60,10 +57,8 @@ COPY --from=symlinker /etc/passwd /etc/passwd
 COPY --from=symlinker /etc/group  /etc/group
 COPY --from=symlinker /out/bin/ /bin/
 
-# --chown preserves ownership for both files and directories in FROM scratch.
+# --chown preserves ownership in FROM scratch.
 COPY --chown=1000:1000 --from=symlinker /home/goposix /home/goposix
 
 USER goposix
-EXPOSE 8080
-ENTRYPOINT ["/bin/goposix", "daemon", "--socket", "/home/goposix/goposix.sock", "--workers", "4"]
-CMD ["--listen-addr", ":8080"]
+ENTRYPOINT ["/bin/goposix"]

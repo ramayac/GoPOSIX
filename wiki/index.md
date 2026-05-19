@@ -73,6 +73,7 @@ All phases 00–11 are complete. These documents describe the as-built implement
 
 - [posix_coverage.md](posix_coverage.md) | POSIX Compliance Matrix (55 utilities)
 - [posix_faq.md](posix_faq.md) | POSIX Compliance FAQ
+- [self_upgrade.md](self_upgrade.md) | Self-upgrade (`--version`, `--upgrade`) — version comparison, GitHub release fetching, atomic binary replacement
 
 ## Operations
 
