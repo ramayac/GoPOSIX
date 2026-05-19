@@ -5,6 +5,7 @@
 package awk
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -18,8 +19,9 @@ import (
 
 // Result is the structured output for --json mode.
 type Result struct {
-	Output string `json:"output"`
-	Status int    `json:"status"`
+	Lines     []string `json:"lines"`
+	LineCount int      `json:"lineCount"`
+	Status    int      `json:"status"`
 }
 
 // Run executes an AWK program on the given input.
@@ -62,6 +64,25 @@ func Run(source string, files []string, fieldSep string, vars []string,
 		Vars:   allVars,
 	}
 	return interp.ExecProgram(prog, config)
+}
+
+// RunCapture is like Run but captures stdout into a string slice for --json mode.
+func RunCapture(source string, files []string, fieldSep string, vars []string,
+	input io.Reader, errOut io.Writer) ([]string, int, error) {
+
+	var outBuf bytes.Buffer
+	status, err := Run(source, files, fieldSep, vars, input, &outBuf, errOut)
+	if err != nil {
+		return nil, status, err
+	}
+
+	output := outBuf.String()
+	lines := strings.Split(strings.TrimSuffix(output, "\n"), "\n")
+	// Filter out empty result for programs that produce no output
+	if len(lines) == 1 && lines[0] == "" {
+		lines = nil
+	}
+	return lines, status, nil
 }
 
 // run is the CLI entry point registered with the dispatcher.
@@ -114,9 +135,6 @@ func awkRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 			jsonMode = true
 		case strings.HasPrefix(a, "-"):
 			// Unknown flag in an awk context — treat as positional.
-			// This handles cases like awk '-F:' which is invalid flag
-			// syntax for us but might be intentional program text.
-			// Since awk programs can start with -, we're lenient.
 			if programText == "" && len(progFiles) == 0 {
 				programText = a
 			} else {
@@ -158,17 +176,25 @@ func awkRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 		return 2
 	}
 
+	if jsonMode {
+		lines, status, runErr := RunCapture(source, files, fieldSep, vars, stdin, errOut)
+		if runErr != nil {
+			common.RenderError("awk", 2, "ERROR", runErr.Error(), true, out)
+			return 2
+		}
+		common.Render("awk", Result{
+			Lines:     lines,
+			LineCount: len(lines),
+			Status:    status,
+		}, true, out, func() {})
+		return 0
+	}
+
 	status, err := Run(source, files, fieldSep, vars, stdin, out, errOut)
 	if err != nil {
 		fmt.Fprintf(errOut, "awk: %v\n", err)
 		return 2
 	}
-
-	if jsonMode {
-		common.Render("awk", Result{Output: "ok", Status: status}, true, out, func() {})
-		return 0
-	}
-
 	return status
 }
 

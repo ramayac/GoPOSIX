@@ -350,11 +350,11 @@ func TestAWKRunInjectsWriters(t *testing.T) {
 	}
 }
 
-// TestJSONMode tests that --json produces a valid JSON envelope.
+// TestJSONMode tests that --json captures awk output into structured lines.
 func TestJSONMode(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
-	stdin := strings.NewReader("alice 90\n")
-	code := awkRun([]string{"--json", "{ print $1 }"}, &outBuf, &errBuf, stdin)
+	stdin := strings.NewReader("alice 90\nbob 85\n")
+	code := awkRun([]string{"--json", "{ print $1, $2 }"}, &outBuf, &errBuf, stdin)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0 (stderr: %q)", code, errBuf.String())
 	}
@@ -365,8 +365,28 @@ func TestJSONMode(t *testing.T) {
 	if !strings.Contains(out, `"exitCode":0`) {
 		t.Errorf("expected 'exitCode':0, got: %q", out)
 	}
-	if !strings.Contains(out, `"data"`) {
-		t.Errorf("expected 'data' key, got: %q", out)
+	if !strings.Contains(out, `"lines"`) {
+		t.Errorf("expected 'lines' in data, got: %q", out)
+	}
+	if !strings.Contains(out, `"alice 90"`) {
+		t.Errorf("expected 'alice 90' in lines, got: %q", out)
+	}
+	if !strings.Contains(out, `"bob 85"`) {
+		t.Errorf("expected 'bob 85' in lines, got: %q", out)
+	}
+}
+
+// TestJSONModeNoOutput tests --json with a program that produces no output.
+func TestJSONModeNoOutput(t *testing.T) {
+	var outBuf, errBuf bytes.Buffer
+	stdin := strings.NewReader("")
+	code := awkRun([]string{"--json", "BEGIN { x = 1 }"}, &outBuf, &errBuf, stdin)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0 (stderr: %q)", code, errBuf.String())
+	}
+	out := outBuf.String()
+	if !strings.Contains(out, `"lineCount":0`) {
+		t.Errorf("expected 'lineCount':0 in output, got: %q", out)
 	}
 }
 
@@ -440,5 +460,89 @@ func TestRunLibraryFuncSyntaxError(t *testing.T) {
 	}
 	if errBuf.Len() == 0 {
 		t.Error("expected error message on stderr")
+	}
+}
+
+func TestRunCapture(t *testing.T) {
+	var errBuf bytes.Buffer
+	stdin := strings.NewReader("alice 90\nbob 85\n")
+	lines, status, err := RunCapture("{ print $1 }", nil, " ", nil, stdin, &errBuf)
+	if err != nil {
+		t.Fatalf("RunCapture error: %v", err)
+	}
+	if status != 0 {
+		t.Errorf("status %d, want 0", status)
+	}
+	if len(lines) != 2 {
+		t.Errorf("expected 2 lines, got %d: %q", len(lines), lines)
+	}
+	if lines[0] != "alice" || lines[1] != "bob" {
+		t.Errorf("unexpected lines: %q", lines)
+	}
+}
+
+func TestRunCaptureWithFiles(t *testing.T) {
+	tmp, err := os.CreateTemp("", "awk-input-*.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmp.Name())
+	tmp.WriteString("line one\nline two\n")
+	tmp.Close()
+
+	var errBuf bytes.Buffer
+	stdin := strings.NewReader("")
+	lines, status, err := RunCapture("{ print NR, $0 }", []string{tmp.Name()}, " ", nil, stdin, &errBuf)
+	if err != nil {
+		t.Fatalf("RunCapture error: %v", err)
+	}
+	if status != 0 {
+		t.Errorf("status %d, want 0", status)
+	}
+	if lines[0] != "1 line one" || lines[1] != "2 line two" {
+		t.Errorf("unexpected lines: %q", lines)
+	}
+}
+
+func TestRunCaptureNoOutput(t *testing.T) {
+	var errBuf bytes.Buffer
+	stdin := strings.NewReader("")
+	lines, status, err := RunCapture("BEGIN { x = 1 }", nil, " ", nil, stdin, &errBuf)
+	if err != nil {
+		t.Fatalf("RunCapture error: %v", err)
+	}
+	if status != 0 {
+		t.Errorf("status %d, want 0", status)
+	}
+	if len(lines) != 0 {
+		t.Errorf("expected 0 lines, got %d: %q", len(lines), lines)
+	}
+}
+
+func TestRunCaptureSyntaxError(t *testing.T) {
+	var errBuf bytes.Buffer
+	stdin := strings.NewReader("")
+	lines, status, err := RunCapture("{", nil, " ", nil, stdin, &errBuf)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if status != 2 {
+		t.Errorf("status %d, want 2", status)
+	}
+	if lines != nil {
+		t.Errorf("expected nil lines on error, got: %q", lines)
+	}
+}
+
+func TestJSONModeErrorExit(t *testing.T) {
+	var outBuf, errBuf bytes.Buffer
+	stdin := strings.NewReader("")
+	code := awkRun([]string{"--json", "BEGIN { exit 3 }"}, &outBuf, &errBuf, stdin)
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0 — JSON mode always returns 0", code)
+	}
+	out := outBuf.String()
+	if !strings.Contains(out, `"status":3`) {
+		t.Errorf("expected 'status':3 in JSON, got: %q", out)
 	}
 }
