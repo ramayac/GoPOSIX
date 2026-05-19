@@ -1,9 +1,6 @@
 # GoPOSIX
 
-A Go-native POSIX userland with a persistent JSON-RPC 2.0 daemon and a typed Go SDK.
-GoPOSIX replaces GNU Coreutils in Docker containers, delivering **60µs per RPC call** —
-**11× faster than BusyBox fork+exec (680µs)**. Every utility supports structured `--json`
-output. CLI access is available as a secondary interface.
+A Go-native, single-binary POSIX with >97% BusyBox test compatibility.
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![go vet](https://img.shields.io/badge/go%20vet-passing-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
@@ -16,12 +13,19 @@ output. CLI access is available as a secondary interface.
 ## Why?
 
 Well, I wanted to do an experiment on [Harsness Engineering](https://walkinglabs.github.io/learn-harness-engineering/en/), and improve my "agentic development" skills, prompts, instructions and all that.
-I've done Linux From Scracth in my 20's, I like Go-lang and I wanted some tools with --json output (AI wastes time formatting output)... eventually all of these ideas and randomness concluded that **I should** make this. And since I saw deepseek-v4-pro had an very agressive [75% discount until 2026/05/31 15:59 UTC](https://api-docs.deepseek.com/quick_start/pricing), well, there is no excuse now! right? 😃
+I did [LFS](https://www.linuxfromscratch.org/) in my early 20's and I had this weird itch of "do your own thing" but left it alone for my own sanity. Still the POSIX concepts remained in the back of my head.
+Last year (2025) I started to learn Go-lang, and then LLMs got *really good* in December 2025. Good enough that I've been using it at work non stop since then.
 
-I'm not the first to start something like this, but I feel I really got close to the finish line.
-What it would probably take from 6 months to a year solid work, took about 2 weeks with AI. That's really something.
+During that time I got this notion that AI waste time formating output, so I started doing --json output in a lot of my work scripts and tools (to save some time for my robot friends).
+Eventually all of these random ideas boiled to the conclusion that **I should** make a complete implementation of POSIX utilities in Go, with a JSON output and a Go SDK, and then benchmark it against BusyBox. It's the "natural conclusion" ... right?
 
-Anyway this is all experimental and I have gotten into a point that, well it's not complete (awk is missing) but I'm happy with the results, and that's enough for me ☑️.
+Also deepseek-v4-pro had an very agressive [75% discount until 2026/05/31 15:59 UTC](https://api-docs.deepseek.com/quick_start/pricing), and I wanted to try [pi.dev](https://pi.dev) instead of Antigravity/ClaudeCode.
+
+All things kind of aligned in the last month so here we are now.
+
+I'm not the first to start something like this, there is [cugo](https://github.com/jcmdln/cugo) and [go-posix](https://github.com/nirenjan/go-posix), but sadly they seem to be abandoned, and no wonder! A project like this is a huge undertaking, its probably a year of solid work for 1 human, that being said, took about 3 weeks to do with AI, with the proper "harness" and "agentic development" approach, that's really something.
+
+Anyway the project got into a point that, while it's not complete (awk is missing, but I'll be using goawk probably) but _I'm happy_ with the results, and that's enough for me ☑️.
 
 ## Obvious Recognitions
 

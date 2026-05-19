@@ -367,7 +367,7 @@ goposix session create --agent-id build-agent --label pipeline=ci --label commit
 
 ## 8. References
 
-- [Phase 23 — Multi-Tenant Sandbox](23_multi_tenant_sandbox.md) — Audit trail and quota design (extracted and reframed here)
+- [Phase 23 — Multi-Tenant Sandbox](deferred.md) — Audit trail and quota design (extracted and reframed here)
 - [Phase 22 — Hardening III](22_hardening_iii.md) — Daemon-first pivot (prerequisite)
 - [Security model](security.md) — Current security posture, RPC-level protections
 - [Architecture](architecture.md) — Component flow, key packages

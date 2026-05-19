@@ -8,7 +8,7 @@
 > other milestones.
 >
 > **This is the single source of truth for all awk work.** Other documents
-> ([11_post_mvp_priorities.md](11_post_mvp_priorities.md), [12_road_to_gold.md](12_road_to_gold.md))
+> ([phases.md](phases.md))
 > reference this document rather than duplicating task lists.
 
 ---
@@ -41,7 +41,7 @@ These span all sub-phases and must be completed for the utility to ship:
 - [ ] `docs/schemas/awk.schema.json` — copy for documentation
 - [ ] BusyBox `awk.tests` (or equivalent) integrated and passing
 - [ ] Unit tests: ≥20 cases covering patterns, fields, `BEGIN`/`END`, built-ins
-- [ ] Update [posix_coverage.md](posix_coverage.md): change awk from ❌ to ✅
+- [ ] Update [test_coverage_matrix.md](test_coverage_matrix.md): change awk from ❌ to ✅
 - [ ] Update README status table
 - [ ] Update `todos.md` to remove awk from "Known Deviations"
 

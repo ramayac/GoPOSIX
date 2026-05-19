@@ -1,26 +1,24 @@
 # GoPOSIX — Project Roadmap & State
 
-> **Version:** 5.4 | **Date:** 2026-05-17 | **Tier:** GOLD | **Branch:** `main`
+> **Version:** 5.5 | **Date:** 2026-05-19 | **Tier:** GOLD | **Branch:** `main`
 >
-> **Status:** 77 utilities | 548 BusyBox passes (99.3%) | ~76% coverage | 77/77 JSON-RPC
+> **Status:** 77 utilities | 548 BusyBox passes (99.3%) | 76.7% coverage | 77/77 JSON-RPC
 >
-> ✅ Phase 22 IN PROGRESS — Hardening III: Daemon-First Pivot
-> ✅ Phase 20 COMPLETED — Hardening II: flag audit, doc fixes
+> ✅ Phase 22 COMPLETE — Hardening III: Daemon-First Pivot
+> ✅ Phase 20 COMPLETE — Hardening II: flag audit, doc fixes
 > ✅ Phase 19 DONE — Performance Benchmarking
 
 ---
 
 ## Current State
 
-All build phases (00–10) and post-MVP cleanups (11–14c) are **COMPLETED**. The project is at **Gold** tier.
-
 | Metric | Value |
 |--------|-------|
 | BusyBox pass rate | 548 passed / 4 failed / 10 skipped (99.3%) |
-| Overall test coverage | 70.4% |
+| Overall test coverage | 76.7% |
 | Utilities implemented | 77 |
-| JSON-RPC daemon coverage | 59/77 utilities (77%) |
-| Daemon unit coverage | 64.6% (from 35.9%) |
+| JSON-RPC daemon coverage | 77/77 utilities |
+| Daemon unit coverage | 64.6% |
 | Supply chain security | SBOM + Cosign + SLSA L3 + Trivy |
 | Shell security model | Documented + tested (GOPOSIX_SHELL_TIMEOUT, SecurePath, 128MB limits) |
 
@@ -64,45 +62,29 @@ goposix binary (single static ELF, <12MB)
 
 ---
 
-## Phase Files Index
+## Phase History
 
-| File | Title | Status |
-|------|-------|--------|
-| [00_foundation_libs.md](00_foundation_libs.md) | Foundation Libraries (flag parser, JSON envelope, JSON-RPC types) | **COMPLETED** |
-| [01_multicall_tier1.md](01_multicall_tier1.md) | Multicall Dispatcher + Tier 1 Utilities | **COMPLETED** |
-| [02_docker_ci.md](02_docker_ci.md) | Docker Scratch Build + CI Pipeline | **COMPLETED** |
-| [03_filesystem_utils.md](03_filesystem_utils.md) | Tier 2 — Filesystem Utilities | **COMPLETED** |
-| [04_text_processing.md](04_text_processing.md) | Tier 3 — Text Processing Utilities | **COMPLETED** |
-| [05_daemon_core.md](05_daemon_core.md) | JSON-RPC Daemon — Core Server | **COMPLETED** |
-| [06_system_utils.md](06_system_utils.md) | Tier 4 — System & Process Utilities | **COMPLETED** |
-| [07_rpc_features.md](07_rpc_features.md) | RPC Features (sessions, shell, Tier 5) | **COMPLETED** |
-| [08_hardening.md](08_hardening.md) | Production Hardening & Security | **COMPLETED** |
-| [09_release_docs.md](09_release_docs.md) | Release Automation & Documentation | **COMPLETED** |
-| [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | **COMPLETED** |
-| [10a_sed.md](10a_sed.md) | Sed Implementation Details | **COMPLETED** |
-| [07a_awk.md](07a_awk.md) | Awk Implementation Plan (canonical; Platinum gate) | **DEFERRED** |
-| [posix_coverage.md](posix_coverage.md) | POSIX Compliance Matrix (49 utilities) | **COMPLETED** |
-| [posix_faq.md](posix_faq.md) | POSIX Compliance FAQ | **COMPLETED** |
-| [11_lessons_learned.md](11_lessons_learned.md) | Phase 11 Lessons Learned, Insights & Gotchas | **COMPLETED** |
-| [11_post_mvp_priorities.md](11_post_mvp_priorities.md) | Post-MVP Priorities (11.1–11.3 complete; 11.4 awk → 07a) | **COMPLETED** |
-| [11a_lower_priority.md](11a_lower_priority.md) | Lower Priority Improvements (8/8 complete) | **COMPLETED** |
-| [12_road_to_gold.md](12_road_to_gold.md) | Road to Gold — Gap analysis + resolution plan (12.0–12.4) | **GOLD ACHIEVED** |
-| [13_coverage_and_hardening.md](13_coverage_and_hardening.md) | Coverage & Hardening — Audit findings + ramp plan | **COMPLETED** (70.5% reached, exceeds 60% target) |
-| [14_xml_output.md](14_xml_output.md) | XML Output Support — `--xml` flag design (not implemented) | **DEFERRED** |
-| [14a_json_gap_fill.md](14a_json_gap_fill.md) | JSON Gap Fill — 8 utilities now support `--json` | **COMPLETED** |
-| [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md) | BusyBox Regression Fix — 79→3 failures | **COMPLETED** |
-| [14c_posix_json_gap.md](14c_posix_json_gap.md) | JSON-RPC Coverage Gap — 55/55 utilities tested via daemon | **COMPLETED** |
-| [15_post_mvp_tier1.md](15_post_mvp_tier1.md) | Phase 15 — Tier 1: `dd` + `od` (10 BusyBox tests) | **COMPLETED** |
-| [16_post_mvp_tier2.md](16_post_mvp_tier2.md) | Phase 16 — Tier 2: 9 text/stream utilities (43 BusyBox tests) | **COMPLETED** |
-| [17_post_mvp_tier3.md](17_post_mvp_tier3.md) | Phase 17 — Tier 3: 12 utilities without BusyBox coverage | **COMPLETED** |
-| [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases | **COMPLETED** |
-| [19_performance_benchmarking.md](19_performance_benchmarking.md) | Phase 19 — Performance Benchmarking Plan (GoPOSIX vs BusyBox) | **DONE** |
-| [20_hardening_ii.md](20_hardening_ii.md) | Phase 20 — Hardening II (flag audit, code cleanup, coverage, input safety) | **COMPLETED** |
-| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III (Daemon-First Pivot) | **IN PROGRESS** |
-| [22_hardening_iii.md](22_hardening_iii.md) | Phase 22 — Hardening III (Daemon-First Pivot) | **COMPLETED** |
-| [23_multi_tenant_sandbox.md](23_multi_tenant_sandbox.md) | Phase 23 — Multi-Tenant Sandbox (Linux Experiment Security) | **PLANNING** |
-| [performance.md](performance.md) | Performance Quick Reference — commands, scale, categories | **LIVING** |
-| [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
+| Phase | Scope | Status |
+|-------|-------|--------|
+| 00–01 | Foundation + Tier 1 utilities | ✅ |
+| 02 | Docker CI & `scratch` pipeline | ✅ |
+| 03 | Filesystem utils (ls, cat, rm, cp, mv, ...) | ✅ |
+| 04 | Text utils (grep, sed, sort, wc, ...) | ✅ |
+| 05 | JSON-RPC daemon core | ✅ |
+| 06 | System & process utils (ps, find, df, du, ...) | ✅ |
+| 07 | Agent-ready features (diff, tar, shell) | ✅ |
+| 08 | Security hardening | ✅ |
+| 09 | Release & automation | ✅ |
+| 10 | POSIX test framework + BusyBox suite | ✅ |
+| 11 | Post-MVP cleanup, lessons learned | ✅ |
+| 12 | Road to Gold — supply chain, macOS, coverage, BusyBox parity | ✅ |
+| 13 | Coverage & hardening (76.7% reached) | ✅ |
+| 14a-c | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage | ✅ |
+| 15–18 | Post-MVP utilities, quality fixes | ✅ |
+| 19 | Performance benchmarking | ✅ |
+| 20 | Hardening II — flag audit, code cleanup, coverage, input safety | ✅ |
+| 22 | Hardening III — Daemon-First Pivot | ✅ |
+| — | `awk` (Platinum gate) | ⬜ |
 
 ---
 
@@ -110,39 +92,6 @@ goposix binary (single static ELF, <12MB)
 
 | # | Item | Doc |
 |---|------|-----|
-| — | Daemon-first pivot (SDK as default interface) | [22_hardening_iii.md](22_hardening_iii.md) — in progress |
 | — | `awk` implementation (Platinum gate) | [07a_awk.md](07a_awk.md) — deferred |
-| — | Low-coverage hardening (split, tty — all >60% now) | [todos.md](todos.md) |
-| — | XML output (`--xml`) | [14_xml_output.md](14_xml_output.md) — deferred |
-| — | Ongoing maintenance | [todos.md](todos.md) — living doc |
-
-## Historical Phase Docs
-
-These phase-plan documents describe completed work and are retained for reference only:
-
-| File | Phase |
-|------|-------|
-| [00_foundation_libs.md](00_foundation_libs.md) | Phase 00 — Foundation Libraries |
-| [01_multicall_tier1.md](01_multicall_tier1.md) | Phase 01 — Multicall + Tier 1 |
-| [02_docker_ci.md](02_docker_ci.md) | Phase 02 — Docker CI (maintained as living doc) |
-| [03_filesystem_utils.md](03_filesystem_utils.md) | Phase 03 — Filesystem Utils |
-| [04_text_processing.md](04_text_processing.md) | Phase 04 — Text Processing |
-| [05_daemon_core.md](05_daemon_core.md) | Phase 05 — Daemon Core |
-| [06_system_utils.md](06_system_utils.md) | Phase 06 — System Utils |
-| [07_rpc_features.md](07_rpc_features.md) | Phase 07 — RPC Features |
-| [08_hardening.md](08_hardening.md) | Phase 08 — Hardening |
-| [09_release_docs.md](09_release_docs.md) | Phase 09 — Release (maintained as living doc) |
-| [10_posix_framework.md](10_posix_framework.md) | Phase 10 — POSIX Framework |
-| [10a_sed.md](10a_sed.md) | Phase 10a — Sed Details |
-| [11_post_mvp_priorities.md](11_post_mvp_priorities.md) | Phase 11 — Post-MVP Priorities |
-| [11a_lower_priority.md](11a_lower_priority.md) | Phase 11a — Lower Priority |
-| [11_lessons_learned.md](11_lessons_learned.md) | Phase 11 — Lessons Learned |
-| [20_hardening_ii.md](20_hardening_ii.md) | Phase 20 — Hardening II |
-
-## Risk Register
-
-| Risk | Impact | Status |
-|------|--------|--------|
-| `awk` complexity | High | Deferred ([07a_awk.md](07a_awk.md)) |
-| Go regexp ≠ POSIX BRE | Med | Documented — by design |
-| Binary size bloat | Med | Mitigated — `-ldflags="-s -w"`, ~10MB |
+| — | Multi-agent observability | [24_multi_agent_observability.md](24_multi_agent_observability.md) — planning |
+| — | Ongoing maintenance | [todos.md](todos.md), [deferred.md](deferred.md) |

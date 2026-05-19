@@ -240,7 +240,7 @@ This gives the CLI image daemon benefits without changing its entrypoint — if 
 
 - [Phase 19 — Performance Benchmarking](19_performance_benchmarking.md) — benchmark framework and raw data
 - [Phase 20 — Hardening II](20_hardening_ii.md) — `-j` flag audit, coverage, input safety (completed)
-- [Phase 21 — Honest Takes](21_honest_takes.md) — de-agentified language audit (completed, page removed)
+- Phase 21 — Honest Takes: de-agentified language audit (completed; findings merged into Phase 22)
 - [Dockerfile.daemon](../docker/Dockerfile.daemon) — daemon image (already exists)
 - [bench_client](../test/benchmark/bench_client/main.go) — Go SDK benchmark client (already exists)
 - [Go SDK client](../pkg/client/client.go) — production SDK with typed methods for all 77 utilities
