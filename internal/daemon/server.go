@@ -114,7 +114,7 @@ func NewServer(socketPath string, workers int, httpAddr string) *Server {
 
 	if httpAddr != "" {
 		s.obsServer = NewObservabilityServer(httpAddr, &s.totalRequests, &s.activeWorkers,
-			workers, cap(s.connSem), s.uptime, &s.shuttingDown, s.sm, m)
+			workers, s.connSem, s.uptime, &s.shuttingDown, s.sm, m)
 	}
 
 	return s
@@ -160,6 +160,7 @@ func (s *Server) Stop() {
 	if s.obsServer != nil {
 		s.obsServer.Stop()
 	}
+	s.sm.Stop()
 	if s.listener != nil {
 		s.listener.Close()
 	}
@@ -242,7 +243,7 @@ func (s *Server) handleConn(conn net.Conn) {
 				s.writeError(conn, nil, -32600, "Invalid Request")
 				continue
 			}
-			
+
 			if len(reqs) == 0 {
 				s.writeError(conn, nil, -32600, "Invalid Request")
 				continue
@@ -402,8 +403,8 @@ func (s *Server) processRequest(req Request) *Response {
 	}
 
 	if req.Method == "goposix.ping" {
-		if req.ID == nil {
 		rpcCmd = "ping"
+		if req.ID == nil {
 			return nil
 		}
 		return &Response{
@@ -422,14 +423,18 @@ func (s *Server) processRequest(req Request) *Response {
 
 	if req.Method == "goposix.session.create" {
 		rpcCmd = "session.create"
-		if req.ID == nil { return nil }
-		s := s.sm.Create()
-		return &Response{JSONRPC: "2.0", ID: req.ID, Result: s}
+		if req.ID == nil {
+			return nil
+		}
+		sess := s.sm.Create()
+		return &Response{JSONRPC: "2.0", ID: req.ID, Result: sess}
 	}
 
 	if req.Method == "goposix.session.setCwd" {
 		rpcCmd = "session.setCwd"
-		if req.ID == nil { return nil }
+		if req.ID == nil {
+			return nil
+		}
 		var p struct {
 			SessionId string `json:"sessionId"`
 			Path      string `json:"path"`
@@ -444,14 +449,18 @@ func (s *Server) processRequest(req Request) *Response {
 
 	if req.Method == "goposix.session.list" {
 		rpcCmd = "session.list"
-		if req.ID == nil { return nil }
+		if req.ID == nil {
+			return nil
+		}
 		sessions := s.sm.List()
 		return &Response{JSONRPC: "2.0", ID: req.ID, Result: sessions}
 	}
 
 	if req.Method == "goposix.session.destroy" {
 		rpcCmd = "session.destroy"
-		if req.ID == nil { return nil }
+		if req.ID == nil {
+			return nil
+		}
 		var p struct {
 			SessionId string `json:"sessionId"`
 		}
@@ -465,7 +474,9 @@ func (s *Server) processRequest(req Request) *Response {
 
 	if req.Method == "goposix.shell.exec" {
 		rpcCmd = "shell.exec"
-		if req.ID == nil { return nil }
+		if req.ID == nil {
+			return nil
+		}
 		var p struct {
 			SessionId string `json:"sessionId"`
 			Script    string `json:"script"`
@@ -493,7 +504,7 @@ func (s *Server) processRequest(req Request) *Response {
 	}
 
 	cmdName := strings.TrimPrefix(req.Method, "goposix.")
-		rpcCmd = cmdName
+	rpcCmd = cmdName
 	cmd, ok := dispatch.Lookup(cmdName)
 	if !ok {
 		if req.ID != nil {
@@ -509,8 +520,7 @@ func (s *Server) processRequest(req Request) *Response {
 
 	if len(req.Params) > 0 {
 		var p GoposixParams
-		var dynMap map[string]interface{}
-		
+
 		if err := json.Unmarshal(req.Params, &p); err == nil {
 			rawOutput = p.RawOutput
 			if p.SessionId != "" {
@@ -540,7 +550,6 @@ func (s *Server) processRequest(req Request) *Response {
 			if p.Path != "" {
 				args = append(args, p.Path)
 			}
-		} else if err := json.Unmarshal(req.Params, &dynMap); err == nil {
 		}
 	}
 
@@ -558,7 +567,7 @@ func (s *Server) processRequest(req Request) *Response {
 
 	// Execute the command
 	exitCode := cmd.Run(args, lw)
-		rpcExitCode = exitCode
+	rpcExitCode = exitCode
 
 	// rawOutput: return the raw stdout text directly (used by CLI forwarder).
 	if rawOutput {
@@ -579,7 +588,7 @@ func (s *Server) processRequest(req Request) *Response {
 	// But `buf` might contain multiple lines or other things if the utility misbehaves.
 	// We only want the JSON output to embed in our result.
 	var env common.JSONEnvelope
-	
+
 	// Try parsing it
 	if err := json.Unmarshal(buf.Bytes(), &env); err != nil {
 		// It might be raw ndjson or something else, or completely empty (true/false)

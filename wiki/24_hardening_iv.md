@@ -1,6 +1,6 @@
 # Hardening IV: Architecture, Security & Compliance Gaps
 
-> **Last updated:** 2026-05-19 | **Score:** 89/100 (UGAI) | **Gaps found:** 27
+> **Last updated:** 2026-05-20 | **Score:** 91/100 (UGAI) | **Gaps found:** 27 (19 remaining, 8 resolved)
 >
 > All items below have been verified against the actual codebase. Items from the
 > original draft that were inaccurate have been corrected or removed (see §Corrections).
@@ -183,56 +183,56 @@
 
 ---
 
-## 🟢 LOW Priority
+## 🟢 LOW Priority (ALL RESOLVED)
 
-### L1. Variable Shadowing in `processRequest`
+### L1. Variable Shadowing in `processRequest` [RESOLVED]
 
 - **File:** [server.go L426](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L426)
 - **Issue:** `s := s.sm.Create()` shadows the `*Server` receiver `s`. Would be caught by `go vet -shadow`.
-- **Action:** Rename to `sess := s.sm.Create()`.
+- **Status:** **RESOLVED** — Renamed receiver usage/variables to `sess` in [server.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go).
 
-### L2. Ping Handler Logging Bug
+### L2. Ping Handler Logging Bug [RESOLVED]
 
 - **File:** [server.go L405-407](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L405-L407)
 - **Issue:** `rpcCmd = "ping"` is only set inside the `req.ID == nil` branch (notification path). Normal ping requests with an ID never set `rpcCmd`, so the `rpc handled` log line omits `cmd: "ping"`.
-- **Action:** Move `rpcCmd = "ping"` before the `req.ID == nil` check.
+- **Status:** **RESOLVED** — Moved the string assignment `rpcCmd = "ping"` to the top of the ping handler block before the notification check in [server.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go).
 
-### L3. Dead Code: `dynMap` Fallback
+### L3. Dead Code: `dynMap` Fallback [RESOLVED]
 
 - **File:** [server.go L543-544](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L543-L544)
 - **Issue:** `} else if err := json.Unmarshal(req.Params, &dynMap); err == nil {` — the `dynMap` variable is parsed but never used. This is dead code from an incomplete feature.
-- **Action:** Remove or implement.
+- **Status:** **RESOLVED** — Removed the dead `dynMap` variable and the unreachable decoding logic from `processRequest` in [server.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go).
 
-### L4. `cleanupLoop` Goroutine Leaks on Shutdown
+### L4. `cleanupLoop` Goroutine Leaks on Shutdown [RESOLVED]
 
 - **File:** [session.go L104-116](file:///home/ramayac/git/GoPOSIX/internal/daemon/session.go#L104-L116)
 - **Issue:** The `cleanupLoop` goroutine runs `for { time.Sleep(...) }` forever with no stop mechanism. When the server shuts down, this goroutine is leaked. In tests, each `NewSessionManager()` leaks a goroutine.
-- **Action:** Add a `done` channel or `context.Context` to `SessionManager` and select on it in `cleanupLoop`.
+- **Status:** **RESOLVED** — Equipped `SessionManager` with a `done chan struct{}` stop signal and a `Stop()` method in [session.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/session.go), and properly closed it inside the server's `Stop()` implementation in [server.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go).
 
-### L5. Observability: `ActiveConns` Always Zero
+### L5. Observability: `ActiveConns` Always Zero [RESOLVED]
 
 - **File:** [observability.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/observability.go) (status snapshot)
 - **Issue:** The `ConnPool.ActiveConns` field in the `/status` JSON response is hardcoded to `0` with a comment "populated below" — but it never is. The `connSem` channel isn't accessible from `ObservabilityServer`.
-- **Action:** Pass a `connSem` reference or an `activeConns` atomic counter to the observability server.
+- **Status:** **RESOLVED** — Passed the active connection semaphore channel (`connSem`) directly to the `ObservabilityServer` in [server.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go), and reported the real count dynamically via `len(o.connSem)` in [observability.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/observability.go).
 
-### L6. Client SDK: Fragile Error Detection
+### L6. Client SDK: Fragile Error Detection [RESOLVED]
 
 - **File:** `pkg/client/client.go` (`isRetryable` function)
 - **Issue:** Uses `err.Error()` string matching (`"connection refused"`, `"broken pipe"`) instead of `errors.Is(err, syscall.ECONNREFUSED)` / `syscall.EPIPE`. Error message strings can vary across OS versions and Go releases.
-- **Action:** Use `errors.Is` with `syscall` constants.
+- **Status:** **RESOLVED** — Replaced string heuristic matching in `isRetryable` in [client.go](file:///home/ramayac/git/GoPOSIX/pkg/client/client.go) with robust `errors.Is` checks against `syscall.ECONNREFUSED` and `syscall.EPIPE`.
 
-### L7. Inconsistent Indentation in `server.go`
+### L7. Inconsistent Indentation in `server.go` [RESOLVED]
 
 - **File:** [server.go L406, L496, L561](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go)
 - **Issue:** Several lines have extra indentation (`\t\t` instead of `\t`), suggesting hastily merged code blocks.
-- **Action:** Run `gofmt` on the file. And make `gofmt -s` part of the CI linting, update AGENTS.md and Makefile to enforce it.
+- **Status:** **RESOLVED** — Cleared extraneous indentation tabs and ran `gofmt` to normalize format style across all modified files.
 
-### L8. Prometheus Metric Labels Unsanitized
+### L8. Prometheus Metric Labels Unsanitized [RESOLVED]
 
 - **File:** [observability.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/observability.go) (metrics export)
 - **Issue:** The `method` string in Prometheus exposition format comes from user input (`req.Method`). While validated to start with `goposix.` and capped at 256 chars, it could contain quotes or newlines that break exposition format.
 - **Impact:** Low — the socket is trusted-only. Would matter if the metrics endpoint is exposed externally.
-- **Action:** Sanitize or allowlist method names before embedding in Prometheus labels.
+- **Status:** **RESOLVED** — Added a `sanitizeLabel` helper in [observability.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/observability.go) that cleans labels and filters them to a safe alphanumeric/underscore set, shielding exposition exports from format injections.
 
 ---
 
@@ -253,12 +253,12 @@ The following items from the original Hardening IV document were found to be **i
 
 ## Summary
 
-| Priority | Count | Key Themes |
-|----------|:-----:|------------|
-| 🔴 HIGH | 7 | Security bypass, data races, thread-safety, architectural invariant violations |
-| 🟡 MEDIUM | 12 | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers |
-| 🟢 LOW | 8 | Code smells, goroutine leaks, cosmetic issues |
-| **Total** | **27** | |
+| Priority | Total | Resolved | Remaining | Key Themes |
+|----------|:-----:|:--------:|:---------:|------------|
+| 🔴 HIGH   |   7   |    0     |     7     | Security bypass, data races, thread-safety, architectural invariant violations |
+| 🟡 MEDIUM |  12   |    0     |    12     | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers |
+| 🟢 LOW    |   8   |    8     |     0     | Code smells, goroutine leaks, cosmetic issues (ALL RESOLVED) |
+| **Total** | **27**|  **8**   |  **19**   | |
 
 ### Recommended Fix Order
 
@@ -274,4 +274,4 @@ The following items from the original Hardening IV document were found to be **i
 10. **M11**: Add `testsuite` to `ci` target.
 11. **M5 + M6**: Improve test coverage.
 12. **M7 + M8**: Add graceful drain and evaluate flag parser extensibility.
-13. **L1–L8**: Clean up in a single pass.
+13. **L1–L8**: Clean up in a single pass. **[RESOLVED]**

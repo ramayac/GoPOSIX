@@ -17,6 +17,7 @@ import (
 	"math"
 	"net"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -323,9 +324,7 @@ func isRetryable(err error) bool {
 	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
 		return true
 	}
-	// Check for syscall errors via string (portable enough)
-	msg := err.Error()
-	return msg == "connection refused" || msg == "broken pipe"
+	return errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, syscall.EPIPE)
 }
 
 func (c *Client) do(ctx context.Context, req interface{}, resp interface{}) error {

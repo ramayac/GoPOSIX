@@ -19,12 +19,14 @@ type SessionManager struct {
 	sessions             map[string]*Session
 	ttl                  time.Duration
 	totalSessionsCreated int64
+	done                 chan struct{}
 }
 
 func NewSessionManager(ttl time.Duration) *SessionManager {
 	sm := &SessionManager{
 		sessions: make(map[string]*Session),
 		ttl:      ttl,
+		done:     make(chan struct{}),
 	}
 	go sm.cleanupLoop()
 	return sm
@@ -102,15 +104,25 @@ func (sm *SessionManager) List() []*Session {
 }
 
 func (sm *SessionManager) cleanupLoop() {
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
 	for {
-		time.Sleep(time.Minute)
-		sm.mu.Lock()
-		now := time.Now()
-		for id, s := range sm.sessions {
-			if now.Sub(s.LastActive) > sm.ttl {
-				delete(sm.sessions, id)
+		select {
+		case <-ticker.C:
+			sm.mu.Lock()
+			now := time.Now()
+			for id, s := range sm.sessions {
+				if now.Sub(s.LastActive) > sm.ttl {
+					delete(sm.sessions, id)
+				}
 			}
+			sm.mu.Unlock()
+		case <-sm.done:
+			return
 		}
-		sm.mu.Unlock()
 	}
+}
+
+func (sm *SessionManager) Stop() {
+	close(sm.done)
 }

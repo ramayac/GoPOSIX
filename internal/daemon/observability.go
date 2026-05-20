@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -15,9 +16,9 @@ import (
 
 // Metrics tracks aggregated RPC metrics for Prometheus exposition.
 type Metrics struct {
-	mu              sync.Mutex
-	durationCounts  map[string]int64
-	durationSums    map[string]float64 // milliseconds
+	mu               sync.Mutex
+	durationCounts   map[string]int64
+	durationSums     map[string]float64 // milliseconds
 	rateLimitedTotal int64
 }
 
@@ -51,7 +52,7 @@ type ObservabilityServer struct {
 	totalRequests *int64
 	activeWorkers *int32
 	workersMax    int
-	maxConns      int
+	connSem       chan struct{}
 	uptime        time.Time
 	shuttingDown  *int32
 	sessionMgr    *SessionManager
@@ -60,14 +61,14 @@ type ObservabilityServer struct {
 
 // NewObservabilityServer creates a new HTTP observability server.
 func NewObservabilityServer(addr string, totalRequests *int64, activeWorkers *int32,
-	workersMax int, maxConns int, uptime time.Time, shuttingDown *int32, sm *SessionManager, metrics *Metrics,
+	workersMax int, connSem chan struct{}, uptime time.Time, shuttingDown *int32, sm *SessionManager, metrics *Metrics,
 ) *ObservabilityServer {
 	o := &ObservabilityServer{
 		addr:          addr,
 		totalRequests: totalRequests,
 		activeWorkers: activeWorkers,
 		workersMax:    workersMax,
-		maxConns:      maxConns,
+		connSem:       connSem,
 		uptime:        uptime,
 		shuttingDown:  shuttingDown,
 		sessionMgr:    sm,
@@ -220,42 +221,49 @@ func (o *ObservabilityServer) handleMetrics(w http.ResponseWriter, r *http.Reque
 		fmt.Fprintf(w, "# HELP goposix_rpc_duration_ms_count Count of RPC calls per method.\n")
 		fmt.Fprintf(w, "# TYPE goposix_rpc_duration_ms_count counter\n")
 		for _, m := range methods {
-			fmt.Fprintf(w, "goposix_rpc_duration_ms_count{method=\"%s\"} %d\n", m.method, m.count)
+			fmt.Fprintf(w, "goposix_rpc_duration_ms_count{method=\"%s\"} %d\n", sanitizeLabel(m.method), m.count)
 		}
 		fmt.Fprintf(w, "# HELP goposix_rpc_duration_ms_sum Sum of RPC call durations per method in milliseconds.\n")
 		fmt.Fprintf(w, "# TYPE goposix_rpc_duration_ms_sum counter\n")
 		for _, m := range methods {
-			fmt.Fprintf(w, "goposix_rpc_duration_ms_sum{method=\"%s\"} %.2f\n", m.method, m.sum)
+			fmt.Fprintf(w, "goposix_rpc_duration_ms_sum{method=\"%s\"} %.2f\n", sanitizeLabel(m.method), m.sum)
 		}
 	}
 }
 
+func sanitizeLabel(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "\"", "\\\"")
+	s = strings.ReplaceAll(s, "\n", "\\n")
+	return s
+}
+
 // StatusSnapshot holds a complete daemon telemetry snapshot.
 type StatusSnapshot struct {
-	PID             int                     `json:"pid"`
-	UptimeSec       int64                   `json:"uptime_s"`
-	Version         string                  `json:"version"`
-	Goroutines      int                     `json:"goroutines"`
-	GOMAXPROCS      int                     `json:"gomaxprocs"`
-	NumCPU          int                     `json:"num_cpu"`
-	Mem             MemSnapshot             `json:"mem"`
-	Workers         WorkerSnapshot          `json:"workers"`
-	Sessions        SessionStatsSnapshot    `json:"sessions"`
-	RPC             RPCSnapshot             `json:"rpc"`
-	ConnPool        ConnPoolSnapshot        `json:"connection_pool"`
-	PerMethod       []MethodSnapshot        `json:"per_method"`
-	PerSession      []SessionSnapshot       `json:"per_session"`
+	PID        int                  `json:"pid"`
+	UptimeSec  int64                `json:"uptime_s"`
+	Version    string               `json:"version"`
+	Goroutines int                  `json:"goroutines"`
+	GOMAXPROCS int                  `json:"gomaxprocs"`
+	NumCPU     int                  `json:"num_cpu"`
+	Mem        MemSnapshot          `json:"mem"`
+	Workers    WorkerSnapshot       `json:"workers"`
+	Sessions   SessionStatsSnapshot `json:"sessions"`
+	RPC        RPCSnapshot          `json:"rpc"`
+	ConnPool   ConnPoolSnapshot     `json:"connection_pool"`
+	PerMethod  []MethodSnapshot     `json:"per_method"`
+	PerSession []SessionSnapshot    `json:"per_session"`
 }
 
 type MemSnapshot struct {
-	HeapAllocMB   float64 `json:"heap_alloc_mb"`
-	HeapSysMB     float64 `json:"heap_sys_mb"`
-	StackInuseMB  float64 `json:"stack_inuse_mb"`
-	GCPauseMs     float64 `json:"gc_pause_ms"`
-	NumGC         uint32  `json:"num_gc"`
-	TotalAllocMB  float64 `json:"total_alloc_mb"`
-	Mallocs       uint64  `json:"mallocs"`
-	Frees         uint64  `json:"frees"`
+	HeapAllocMB  float64 `json:"heap_alloc_mb"`
+	HeapSysMB    float64 `json:"heap_sys_mb"`
+	StackInuseMB float64 `json:"stack_inuse_mb"`
+	GCPauseMs    float64 `json:"gc_pause_ms"`
+	NumGC        uint32  `json:"num_gc"`
+	TotalAllocMB float64 `json:"total_alloc_mb"`
+	Mallocs      uint64  `json:"mallocs"`
+	Frees        uint64  `json:"frees"`
 }
 
 type WorkerSnapshot struct {
@@ -285,9 +293,9 @@ type MethodSnapshot struct {
 }
 
 type SessionSnapshot struct {
-	ID    string `json:"id"`
-	AgeS  int64  `json:"age_s"`
-	CWD   string `json:"cwd"`
+	ID   string `json:"id"`
+	AgeS int64  `json:"age_s"`
+	CWD  string `json:"cwd"`
 }
 
 func bytesToMB(b uint64) float64 {
@@ -363,8 +371,8 @@ func (o *ObservabilityServer) handleStatus(w http.ResponseWriter, r *http.Reques
 			RateLimited: atomic.LoadInt64(&o.metrics.rateLimitedTotal),
 		},
 		ConnPool: ConnPoolSnapshot{
-			ActiveConns: 0, // populated below if conn sem is available
-			MaxConns:    o.maxConns,
+			ActiveConns: len(o.connSem),
+			MaxConns:    cap(o.connSem),
 		},
 		PerMethod:  methods,
 		PerSession: perSession,
