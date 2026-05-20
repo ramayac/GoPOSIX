@@ -1,56 +1,277 @@
-# Hardening IV: Architecture and Compliance Gaps
+# Hardening IV: Architecture, Security & Compliance Gaps
 
-## 1. Architecture & Elegance Gaps
+> **Last updated:** 2026-05-19 | **Score:** 89/100 (UGAI) | **Gaps found:** 27
+>
+> All items below have been verified against the actual codebase. Items from the
+> original draft that were inaccurate have been corrected or removed (see §Corrections).
 
-### Flag Parsing Friction (Leaky Abstraction)
-- **Issue**: The strict custom flag parser (`pkg/common/flags.go`) expects double-dash long flags (`--name`) and standard short flags. POSIX utilities are notoriously inconsistent (e.g., `find -name` using single dashes, `tar xvf` using no dashes, `dd if=file` using key-value pairs). 
-- **Impact**: We currently have to "pre-process" arguments before feeding them to the generic flag parser. This is a brittle abstraction that requires constant vigilance as new utilities are ported, increasing the risk of breaking standard POSIX flag logic.
-- **Action Item**: Consider extending `pkg/common/flags.go` to natively support utility-specific flag semantics (e.g., single-dash long flags, `dd`-style arguments) without requiring per-utility pre-processing logic.
+---
 
-## 2. Code Quality & Idiomatic Go Gaps
+## Priority Legend
 
-### Daemon Worker "Pool" Allocation
-- **Issue**: In `internal/daemon/server.go`, the `WorkerPool` implementation relies on a bounded semaphore channel to cap concurrency (`wp.sem <- struct{}{}`), but still spawns a *new* goroutine (`go func() {...}`) for every single request.
-- **Impact**: While goroutines are lightweight, at 60µs per call, the garbage collection (GC) overhead of constantly allocating and destroying goroutines under heavy load will eventually bottleneck JSON-RPC throughput.
-- **Action Item**: Refactor the `WorkerPool` into a true thread-pool pattern where a fixed number of worker goroutines sit in a `for` loop, pulling requests from a job channel.
+| Priority | Meaning |
+|----------|---------|
+| 🔴 HIGH | Security vulnerability, data race, or silent data loss. Fix before next release. |
+| 🟡 MEDIUM | Correctness issue, doc drift, or architectural debt. Fix within next sprint. |
+| 🟢 LOW | Code smell, cosmetic, or theoretical concern. Fix opportunistically. |
 
-### Bloated Connection Handler
-- **Issue**: The `handleConn` function in `server.go` mixes rate-limiting, session management, and JSON decoding directly within the same block.
-- **Impact**: Poor separation of concerns makes testing and extending the JSON-RPC daemon difficult.
-- **Action Item**: Refactor `handleConn` into a clear middleware chain (e.g., connection -> rate limiter -> session manager -> payload decoder).
+---
 
-## 3. POSIX Compliance & Robustness Gaps
+## 🔴 HIGH Priority
 
-### The NUL Byte / String Assumption
-- **Issue**: Go inherently treats strings as UTF-8 sequences. However, POSIX pipelines frequently pass arbitrary binary data or NUL-separated records (e.g., `\0`).
-- **Impact**: Utilities like `fold`, `sed`, or `awk` may fail when processing streams that rely on literal NUL bytes or binary data, as they depend on Go's `string` scanning rather than raw `[]byte` buffering. The test `fold with NULs` is already failing due to this.
-- **Action Item**: Audit all text-processing utilities to ensure they use `[]byte` where binary data or NUL bytes are possible, avoiding standard C-style `0` byte checks as EOF markers.
+### H1. `session.setCwd` Bypasses `SecurePath` — Unrestricted CWD
 
-### Timezone Parsing Limitations
-- **Issue**: Go's standard `time` package does not fully support parsing complex POSIX `TZ` strings (e.g., `TZ=XYZ+1:00`).
-- **Impact**: The `date` utility fails several BusyBox tests (`date-@-works`, `date-timezone`) because it relies on standard Go time parsing.
-- **Action Item**: Implement or import a custom POSIX TZ parser for `date` to achieve 100% compliance.
+- **File:** [server.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L430-L443)
+- **Issue:** The `goposix.session.setCwd` RPC method sets the session working directory to any arbitrary path **without** passing it through `SecurePath`. A client can set CWD to `/etc`, `/root`, or `/` — subsequent commands then use that CWD as the `base` for `SecurePath` (line 522), effectively bypassing all path confinement.
+- **Impact:** Complete path traversal bypass for any client with socket access.
+- **Action:** Validate the `path` parameter through `SecurePath` (or at minimum verify it exists and is a directory) before storing it in the session.
 
-### Missing JSON-RPC Stream Tests
-- **Issue**: `tee` and `tr` lack explicit JSON-RPC daemon integration tests in `test/posix-json/`. 
-- **Impact**: Since these utilities heavily manipulate `stdin` streams, daemonizing them is complex (multiplexing streams over JSON-RPC) and prone to deadlocks. Without explicit daemon integration tests, their success paths over JSON-RPC are unverified.
-- **Action Item**: Add dedicated tests for `tee` and `tr` traversing the daemon in JSON-RPC mode.
+### H2. `SecurePath` Does Not Resolve Symlinks
 
-## 4. Performance & Scalability Gaps
+- **File:** [security.go](file:///home/ramayac/git/GoPOSIX/pkg/common/security.go#L24-L28)
+- **Issue:** `SecurePath` uses `filepath.Clean` (lexical) instead of `filepath.EvalSymlinks`. If `/app/data/link` is a symlink to `/etc`, then `SecurePath("/app/data/link/passwd", "/app/data")` passes validation, but the actual file accessed is `/etc/passwd`.
+- **Impact:** Symlink-based path traversal in any environment where the daemon user can access symlinks pointing outside the base directory.
+- **Cross-ref:** [security.md](file:///home/ramayac/git/GoPOSIX/wiki/security.md) claims *"Symlinks are resolved; the resolved target must also be within the allowed path"* — this is **inaccurate**.
+- **Action:** Use `filepath.EvalSymlinks` on the resolved path before the prefix check. Update `security.md` to reflect reality until fixed.
 
-### OOM Ceiling via `LimitWriter`
-- **Issue**: `server.go` enforces a hardcoded 50MB `LimitWriter` on the output buffer to prevent Out-Of-Memory (OOM) crashes during JSON-RPC responses.
-- **Impact**: Running utilities that produce massive output (e.g., `cat large_file.log` or `grep` over huge files) over the JSON-RPC daemon will silently truncate or fail when hitting the 50MB ceiling.
-- **Action Item**: Implement streaming JSON-RPC responses, chunking, or ndjson over the socket for payloads exceeding a certain threshold, rather than caching everything in an in-memory buffer.
+### H3. Session Data Race on Concurrent Access
 
-## 5. Security & Container Readiness Gaps
+- **File:** [session.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/session.go#L52-L61)
+- **Issue:** `Get()` and `List()` return `*Session` pointers while briefly holding the mutex, but callers then read `session.CWD` and `session.Env` (a map) **without any lock** (see [server.go L477-479](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L477-L479)). Concurrent `setCwd` or env mutation causes a data race. Concurrent map read/write on `.Env` will **panic** in Go.
+- **Impact:** Crash under concurrent multi-session load.
+- **Action:** Return copies of session data (copy CWD string and clone Env map) from `Get()`, or hold a read-lock while the caller uses the session.
 
-### Socket Trust & Multi-Tenancy
-- **Issue**: The daemon exposes a Unix socket (`0660`) that acts as a god-object. 
-- **Impact**: If an untrusted tenant gains access to this socket, they have full access to `goposix.shell.exec` and other potentially destructive commands. There is currently no Role-Based Access Control (RBAC) governing which utilities can be called over the socket.
-- **Action Item**: Implement the deferred multi-tenant sandbox model, including socket authentication and utility-level RBAC.
+### H4. Systemic `os.Stderr` Hardcoding Across Utilities
 
-### Symlink Pollution
-- **Issue**: The multicall binary approach and test harnesses rely on creating symlinks (e.g., `/bin/sh -> goposix`).
-- **Impact**: Accidental or uncontrolled symlink creation can shadow host OS binaries if volume-mounted incorrectly, breaking downstream host scripts.
-- **Action Item**: Ensure `goposix` never registers destructive symlinks (like `sh`) globally by default, and provide isolated environments for test suites to prevent host environment corruption.
+- **Files:** 79 source files under `pkg/` (e.g., [ls.go L243](file:///home/ramayac/git/GoPOSIX/pkg/ls/ls.go#L243), [cp.go L201](file:///home/ramayac/git/GoPOSIX/pkg/cp/cp.go#L201), [chmod.go L97](file:///home/ramayac/git/GoPOSIX/pkg/chmod/chmod.go#L97))
+- **Issue:** The majority of utilities write error messages directly to `os.Stderr` instead of using an injected `io.Writer`. This violates the AGENTS.md architectural invariant: *"You must pass the `out io.Writer` provided in the `Run` function signature instead of using `os.Stdout`."*
+- **Impact:** When invoked via the JSON-RPC daemon, error output goes to the daemon process stderr (invisible to the client), not to the JSON-RPC response. Clients never see error messages. This is a systemic daemon UX issue.
+- **Action:** Introduce an `errW io.Writer` parameter (following the `catRun()` injectable pattern) and refactor all utilities to route stderr through it.
+
+### H5. `rm --no-preserve-root` Not In Flag Spec — Unusable Override
+
+- **File:** [rm.go L20-27](file:///home/ramayac/git/GoPOSIX/pkg/rm/rm.go#L20-L27) (flag spec), [rm.go L105](file:///home/ramayac/git/GoPOSIX/pkg/rm/rm.go#L105) (usage)
+- **Issue:** The `FlagSpec` for `rm` defines only `-r`, `-f`, `-v`, and `--json`. However, [rm.go L105](file:///home/ramayac/git/GoPOSIX/pkg/rm/rm.go#L105) checks `flags.Has("no-preserve-root")` and the error message tells users to pass `--no-preserve-root`. Since the flag is not in the spec, `ParseFlags` returns `"unknown flag: --no-preserve-root"` *before* the code ever reaches the guard check.
+- **Impact:** Root protection cannot be overridden even when intentionally desired. The flag the error message tells users to use will itself error. Safe but broken as documented.
+- **Action:** Add `{Long: "no-preserve-root", Type: common.FlagBool}` to the `rm` flag spec.
+
+### H6. Shell Sandbox: `os.Chdir()` Is Not Thread-Safe
+
+- **File:** `internal/shell/interpreter.go` (lines 56, 124)
+- **Issue:** The shell sandbox calls `os.Chdir(hc.Dir)` to set the working directory before executing commands. `os.Chdir` mutates **global process state** — it changes the CWD for the entire daemon process, not just the current goroutine.
+- **Impact:** If multiple `goposix.shell.exec` RPC calls run concurrently (which the worker pool enables), they will clobber each other's CWD. This is a data race on the global process state.
+- **Action:** Avoid `os.Chdir`. Instead, set the `Dir` field on `exec.Cmd` or use the shell interpreter's built-in `Dir` option.
+
+### H7. Missing Injectable Entry Points Across 7+ Utilities
+
+- **Issue:** The `catRun()` pattern (injectable `io.Reader`/`io.Writer` for stdin/stdout/stderr) is the canonical testable pattern per AGENTS.md §4a. The following utilities lack this pattern entirely, hardcoding `os.Stdin` directly in their `run()` function:
+  - `sed` — no `sedRun()` ([engine.go L119](file:///home/ramayac/git/GoPOSIX/pkg/sed/engine.go#L119))
+  - `xargs` — no `xargsRun()` ([xargs.go L81](file:///home/ramayac/git/GoPOSIX/pkg/xargs/xargs.go#L81))
+  - `tr` — no `trRun()` ([tr.go L210, L239](file:///home/ramayac/git/GoPOSIX/pkg/tr/tr.go#L210))
+  - `tee` — no `teeRun()` ([tee.go L55, L90](file:///home/ramayac/git/GoPOSIX/pkg/tee/tee.go#L55))
+  - `head` — no `headRun()` ([head.go L103](file:///home/ramayac/git/GoPOSIX/pkg/head/head.go#L103))
+  - `find` — no `findRun()` ([find.go L196](file:///home/ramayac/git/GoPOSIX/pkg/find/find.go#L196))
+  - `tar` — no `tarRun()` ([tar.go L323, L529](file:///home/ramayac/git/GoPOSIX/pkg/tar/tar.go#L323))
+  - `gzip` — hardcoded `os.Stdin` ([gzip.go L93, L110](file:///home/ramayac/git/GoPOSIX/pkg/gzip/gzip.go#L93))
+  - `cut` — hardcoded `os.Stdin` ([cut.go L216, L220](file:///home/ramayac/git/GoPOSIX/pkg/cut/cut.go#L216))
+  - `sort` — hardcoded `os.Stdin` ([sort.go L542](file:///home/ramayac/git/GoPOSIX/pkg/sort/sort.go#L542))
+  - `uniq` — hardcoded `os.Stdin`
+- **Impact:** These utilities are untestable via the daemon's JSON-RPC path for stdin-dependent operations. Tests that need stdin must swap the global `os.Stdin` (fragile, race-prone). This also means the daemon cannot feed stdin to these utilities at all.
+- **Action:** Refactor each utility to follow the `catRun(args, out, errOut, stdin)` pattern.
+
+---
+
+## 🟡 MEDIUM Priority
+
+### M1. `LimitReader` Is Per-Connection, Not Per-Request
+
+- **File:** [server.go L217](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L217)
+- **Issue:** `io.LimitReader(conn, 1024*1024)` creates a 1MB budget for the **entire connection lifetime**, not per request. The decoder in `handleConn` loops reading multiple requests from the same connection (line 221). After 1MB cumulative input, the connection gets a "Parse error" and is closed.
+- **Impact:** Persistent connections (Go SDK with connection pooling) will silently drop requests after ~1MB of cumulative traffic. This particularly affects batch-heavy workloads.
+- **Action:** Reset the `LimitReader` per request iteration, or use a per-request wrapper that re-limits each `Decode()` call.
+
+### M2. `ls -d` Flag Accepted But Not Implemented
+
+- **File:** [ls.go L55](file:///home/ramayac/git/GoPOSIX/pkg/ls/ls.go#L55) (defined), [ls.go L240-265](file:///home/ramayac/git/GoPOSIX/pkg/ls/ls.go#L240-L265) (never read)
+- **Issue:** The `-d` / `--directory` flag is declared in the `FlagSpec` but `flags.Has("d")` is never called in `run()`. The `-d` behavior (list directories themselves, not their contents) is silently ignored.
+- **Impact:** `ls -d /tmp` incorrectly lists the contents of `/tmp` instead of showing `/tmp` as a single entry. POSIX non-compliance.
+- **Action:** Implement the `-d` flag behavior in both `Run()` (library) and `run()` (CLI).
+
+### M2a. `grep` — File Handle Leak in Loop
+
+- **File:** `pkg/grep/grep.go` (line ~331)
+- **Issue:** `defer f.Close()` is used inside a `for` loop over file readers. All file handles accumulate and only close when the enclosing function returns, not after each file is processed.
+- **Impact:** For large `grep` invocations over many files, file descriptor exhaustion is possible.
+- **Action:** Close the file handle after processing each file (replace `defer` with explicit `.Close()` at the end of the loop body).
+
+### M3. Rate Limiter Effectively Disabled (100K/s)
+
+- **File:** [server.go L216](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L216)
+- **Issue:** The rate limiter is initialized with `100,000 tokens/sec` and `100,000 burst`. This will never trigger in any realistic scenario.
+- **Cross-ref:** [security.md](file:///home/ramayac/git/GoPOSIX/wiki/security.md) documents the limit as *"Max RPC requests/sec per connection: 100"* — a **1000× discrepancy** with the code.
+- **Action:** Either restore a meaningful rate limit (e.g., 1000/s) and make it configurable, or remove the rate limiter and update the security doc.
+
+### M4. `security.md` Contains Multiple Inaccuracies
+
+- **File:** [security.md](file:///home/ramayac/git/GoPOSIX/wiki/security.md)
+- **Issues:**
+  1. Claims symlinks are resolved in `SecurePath` — they are not (see H2).
+  2. Claims rate limit of 100 req/s — code has 100,000 (see M3).
+  3. Claims `session.setCwd` is validated — it is not (see H1).
+- **Action:** Audit and update the entire security document against the actual codebase.
+
+### M5. Low Test Coverage on Complex Utilities
+
+- **Source:** [test_coverage_matrix.md](file:///home/ramayac/git/GoPOSIX/wiki/test_coverage_matrix.md)
+- **Issue:** Several complex utilities have coverage below the 70% gate target:
+  - `cut`: 61.5% — `xargs`: 65.3% — `tar`: 65.3% — `gzip`: 64.2%
+  - `sed`: 67.0% — `printf`: 65.6% — `md5sum`: 65.3%
+  - `client` SDK: 55.4% — `shell`: 60.8% — `tty`: 60.0%
+- **Impact:** Edge cases in complex parsers and I/O paths are untested. These are exactly the utilities where subtle bugs hide.
+- **Action:** Raise coverage on these packages above 70%, prioritizing `client`, `sed`, `tar`, and `cut`.
+
+### M6. Missing Daemon Integration Test Coverage
+
+- **File:** [server_test.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/server_test.go)
+- **Issue:** No integration tests exist for:
+  - Path traversal rejection via the daemon
+  - `LimitReader` exceeded (>1MB request)
+  - `LimitWriter` exceeded (>50MB response)
+  - Concurrent connection limit (connSem cap of 100)
+  - Graceful shutdown with in-flight requests
+  - Observability HTTP endpoints (`/healthz`, `/readyz`, `/metrics`, `/status`)
+  - `session.setCwd` path validation (critical gap given H1)
+- **Action:** Add targeted integration tests for each scenario above.
+
+### M7. No Graceful Drain on Shutdown
+
+- **File:** [server.go L158-174](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L158-L174)
+- **Issue:** `Stop()` closes the listener and immediately closes all tracked connections via `conn.Close()`. There is no grace period for in-flight requests to complete. Requests being processed are killed mid-execution without sending error responses to clients.
+- **Action:** Add a configurable drain timeout (e.g., 5s) — stop accepting new connections, wait for in-flight requests to complete or timeout, then force-close.
+
+### M8. Flag Parsing Friction (Validated)
+
+- **Files:** [find.go](file:///home/ramayac/git/GoPOSIX/pkg/find/find.go) (`preprocessArgs()`), [tar.go](file:///home/ramayac/git/GoPOSIX/pkg/tar/tar.go) (`preprocessTarArgs()`), [dd.go](file:///home/ramayac/git/GoPOSIX/pkg/dd/dd.go) (custom `parseArgs()`)
+- **Issue:** Four utilities require custom pre-processing or bypass `common.ParseFlags` entirely:
+  - `find`: Extracts `-name`, `-type`, `-exec` before calling `ParseFlags`.
+  - `tar`: Converts BSD-style `tar xvf` to `tar -x -v -f` before calling `ParseFlags`.
+  - `dd`: Implements its own `key=value` parser; does not use `ParseFlags` at all.
+  - `awk`: Fully manual flag parsing (awk program text can contain `-` chars).
+- **Impact:** Each new utility with non-standard flag syntax requires a bespoke workaround, increasing maintenance burden.
+- **Action:** Consider extending `FlagSpec` with a `PreProcess` hook or alternative parsing modes.
+
+### M9. `date` — Missing 12+ POSIX Format Specifiers
+
+- **File:** `pkg/date/date.go` (lines ~247-302)
+- **Issue:** The `date` format specifier mapping is missing several POSIX-required specifiers: `%j` (day of year), `%p` (AM/PM), `%r` (12-hour time), `%u` (weekday 1–7), `%V` (ISO week), `%W` (week of year), `%n` (newline), `%t` (tab), `%D` (date as %m/%d/%y), `%F` (ISO date), `%R` (time as %H:%M).
+- **Impact:** POSIX non-compliance. Format strings containing these specifiers produce incorrect output.
+- **Action:** Add the missing specifiers to the format mapping.
+
+### M10. `grep` — Binary File Detection Is a No-Op
+
+- **File:** `pkg/grep/grep.go` (line ~50)
+- **Issue:** The `-a` / `--text` flag is defined in the spec but is never actually used in the code — it's a no-op. Unlike GNU grep which detects binary files and prints "Binary file X matches", GoPOSIX grep treats **all** files as text unconditionally.
+- **Impact:** Binary files with NUL bytes produce garbled output without warning, confusing users.
+- **Action:** Implement binary file detection (scan for NUL bytes in the first buffer) and the `-a` flag to suppress it.
+
+### M11. `Makefile` — BusyBox `testsuite` Not in `ci` Target
+
+- **File:** [Makefile](file:///home/ramayac/git/GoPOSIX/Makefile) (`ci` target)
+- **Issue:** The `ci` target chains `vet test build docker smoke-docker cover-gate` but does NOT include `testsuite` (BusyBox integration tests). AGENTS.md states *"run `make testsuite` before every commit"* but CI doesn't enforce it.
+- **Impact:** BusyBox test suite regressions can slip through CI undetected.
+- **Action:** Add `testsuite` to the `ci` target, or create a `ci-full` target that includes it.
+
+---
+
+## 🟢 LOW Priority
+
+### L1. Variable Shadowing in `processRequest`
+
+- **File:** [server.go L426](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L426)
+- **Issue:** `s := s.sm.Create()` shadows the `*Server` receiver `s`. Would be caught by `go vet -shadow`.
+- **Action:** Rename to `sess := s.sm.Create()`.
+
+### L2. Ping Handler Logging Bug
+
+- **File:** [server.go L405-407](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L405-L407)
+- **Issue:** `rpcCmd = "ping"` is only set inside the `req.ID == nil` branch (notification path). Normal ping requests with an ID never set `rpcCmd`, so the `rpc handled` log line omits `cmd: "ping"`.
+- **Action:** Move `rpcCmd = "ping"` before the `req.ID == nil` check.
+
+### L3. Dead Code: `dynMap` Fallback
+
+- **File:** [server.go L543-544](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L543-L544)
+- **Issue:** `} else if err := json.Unmarshal(req.Params, &dynMap); err == nil {` — the `dynMap` variable is parsed but never used. This is dead code from an incomplete feature.
+- **Action:** Remove or implement.
+
+### L4. `cleanupLoop` Goroutine Leaks on Shutdown
+
+- **File:** [session.go L104-116](file:///home/ramayac/git/GoPOSIX/internal/daemon/session.go#L104-L116)
+- **Issue:** The `cleanupLoop` goroutine runs `for { time.Sleep(...) }` forever with no stop mechanism. When the server shuts down, this goroutine is leaked. In tests, each `NewSessionManager()` leaks a goroutine.
+- **Action:** Add a `done` channel or `context.Context` to `SessionManager` and select on it in `cleanupLoop`.
+
+### L5. Observability: `ActiveConns` Always Zero
+
+- **File:** [observability.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/observability.go) (status snapshot)
+- **Issue:** The `ConnPool.ActiveConns` field in the `/status` JSON response is hardcoded to `0` with a comment "populated below" — but it never is. The `connSem` channel isn't accessible from `ObservabilityServer`.
+- **Action:** Pass a `connSem` reference or an `activeConns` atomic counter to the observability server.
+
+### L6. Client SDK: Fragile Error Detection
+
+- **File:** `pkg/client/client.go` (`isRetryable` function)
+- **Issue:** Uses `err.Error()` string matching (`"connection refused"`, `"broken pipe"`) instead of `errors.Is(err, syscall.ECONNREFUSED)` / `syscall.EPIPE`. Error message strings can vary across OS versions and Go releases.
+- **Action:** Use `errors.Is` with `syscall` constants.
+
+### L7. Inconsistent Indentation in `server.go`
+
+- **File:** [server.go L406, L496, L561](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go)
+- **Issue:** Several lines have extra indentation (`\t\t` instead of `\t`), suggesting hastily merged code blocks.
+- **Action:** Run `gofmt` on the file.
+
+### L8. Prometheus Metric Labels Unsanitized
+
+- **File:** [observability.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/observability.go) (metrics export)
+- **Issue:** The `method` string in Prometheus exposition format comes from user input (`req.Method`). While validated to start with `goposix.` and capped at 256 chars, it could contain quotes or newlines that break exposition format.
+- **Impact:** Low — the socket is trusted-only. Would matter if the metrics endpoint is exposed externally.
+- **Action:** Sanitize or allowlist method names before embedding in Prometheus labels.
+
+---
+
+## Corrections from Original Draft
+
+The following items from the original Hardening IV document were found to be **inaccurate or overstated** after code verification:
+
+| Original Claim | Reality |
+|----------------|---------|
+| Worker pool "GC bottleneck" from spawning goroutines | Go's goroutine scheduler handles this idiomatically. At 60µs/call, ~2KB per goroutine, GC overhead is negligible. The semaphore pattern is correct and idiomatic Go. **Removed as a gap.** |
+| `handleConn` is "bloated" and mixes concerns | At 48 lines it's reasonably scoped. The real complexity is in `processRequest` (287 lines), which would benefit from a routing table but is correct as-is. **Downgraded: not a gap.** |
+| NUL byte issue causes `fold` test failure | The `fold` utility itself handles NUL bytes correctly (verified in code). The BusyBox test failure is in the **echo harness** generating the NUL payload, not in `fold`. **Corrected description.** |
+| `LimitWriter` silently truncates output | `LimitWriter` in `io.go` correctly returns `errors.New("output limit exceeded")`. However, the *caller* in `server.go` doesn't propagate this error to the client. **Reclassified: not a LimitWriter bug, but a daemon response gap.** |
+| 50MB LimitWriter is a real scalability problem | 50MB is generous for JSON-RPC (which requires complete JSON objects). Streaming would require JSON-RPC 2.0 protocol changes. For the Go SDK use case, this is a **reasonable design tradeoff**, not a gap. **Removed as a gap.** |
+| Session `Reap()` is never called — memory leak | **Wrong.** `NewSessionManager` starts `go sm.cleanupLoop()` on [line 29](file:///home/ramayac/git/GoPOSIX/internal/daemon/session.go#L29), which reaps expired sessions every minute ([lines 104-116](file:///home/ramayac/git/GoPOSIX/internal/daemon/session.go#L104-L116)). Sessions are properly cleaned up. |
+
+---
+
+## Summary
+
+| Priority | Count | Key Themes |
+|----------|:-----:|------------|
+| 🔴 HIGH | 7 | Security bypass, data races, thread-safety, architectural invariant violations |
+| 🟡 MEDIUM | 12 | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers |
+| 🟢 LOW | 8 | Code smells, goroutine leaks, cosmetic issues |
+| **Total** | **27** | |
+
+### Recommended Fix Order
+
+1. **H1 + H2 + M4**: Fix `setCwd` validation and `SecurePath` symlink resolution, update `security.md`. These are security issues.
+2. **H6**: Fix `os.Chdir` thread-safety in shell sandbox (data race on global state).
+3. **H3**: Fix session data race (concurrent map panic risk).
+4. **H5**: Add `--no-preserve-root` to `rm` flag spec (safe but broken UX).
+5. **H4 + H7**: Introduce injectable stdin/stderr across all utilities (large refactor, can be phased by tier).
+6. **M1**: Fix `LimitReader` per-connection bug.
+7. **M2 + M2a**: Fix `ls -d` and `grep` file handle leak.
+8. **M3 + M4**: Recalibrate rate limiter and audit `security.md`.
+9. **M9 + M10**: Add missing `date` specifiers and `grep` binary detection.
+10. **M11**: Add `testsuite` to `ci` target.
+11. **M5 + M6**: Improve test coverage.
+12. **M7 + M8**: Add graceful drain and evaluate flag parser extensibility.
+13. **L1–L8**: Clean up in a single pass.
