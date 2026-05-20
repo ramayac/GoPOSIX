@@ -4,6 +4,36 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-19] plan | Daemon observability exports (`wiki/observability_exports.md`)
+
+Created a comprehensive options doc covering 7 approaches (A–G) for exposing daemon
+internals (goroutines, memory, sessions, per-method throughput) to OS tools and
+external consumers. Currently PLANNING — no implementation.
+
+Recommended path (if approved):
+- Phase 1: Go runtime stats in Prometheus `/metrics` (30 min)
+- Phase 2: JSON `/status` endpoint (50 min)
+- Phase 3: `gotop` TUI via `pkg/gotop/` (1–3 hr)
+- Phase 4: Process name in `ps` (15 min, bonus)
+
+Rejected/deferred: thread naming (fragile), cgroups v2 (privilege barrier), eBPF (overkill).
+
+## [2026-05-19] migrate | Move docs/ → wiki/ (branch: `docs/cleanup`)
+
+Moved the last two remaining docs/ files into wiki/:
+- `docs/SDK.md` → `wiki/sdk.md`
+- `docs/SHELL_INTEGRATION.md` → `wiki/shell_integration.md`
+
+Original files replaced with stubs. Cross-references updated in:
+- `README.md`
+- `wiki/rpc_quickstart.md` (3 links → internal `sdk.md`)
+- `wiki/repo-map.md` (docs/ entry updated)
+- `wiki/performance.md` (fixed broken `../docs/ARCHITECTURE.md` → `architecture.md`)
+- `wiki/index.md` (SDK & API section, added `sdk.md` and `shell_integration.md`)
+
+Historical references in `wiki/22_hardening_iii.md` left as-is (they document
+Phase 22 milestones when the docs/ path was accurate).
+
 ## [2026-05-19] cleanup | Wiki consolidation — 48 files → 26 files (branch: `feat/clean-up-wiki`)
 
 Comprehensive wiki cleanup to reduce bloat and improve navigability:

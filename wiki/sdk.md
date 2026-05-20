@@ -1,5 +1,7 @@
 # Go SDK Guide
 
+> Moved from `docs/SDK.md`.
+
 The `pkg/client` package is the **primary interface** to GoPOSIX. It provides a typed,
 connection-pooled Go client for the JSON-RPC 2.0 daemon with ~60µs per-call latency —
 11× faster than BusyBox fork+exec.

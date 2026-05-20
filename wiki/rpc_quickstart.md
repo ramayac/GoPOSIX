@@ -1,7 +1,7 @@
 # JSON-RPC Protocol Reference
 
 GoPOSIX uses JSON-RPC 2.0 over a Unix socket as its wire protocol. The typed
-[Go SDK](../docs/SDK.md) is the recommended client for Go users (60µs/call, connection
+[Go SDK](sdk.md) is the recommended client for Go users (60µs/call, connection
 pooling, retry). This document covers the **raw protocol** for non-Go clients,
 debugging, and understanding what the SDK does under the hood.
 
@@ -25,7 +25,7 @@ defer c.Close()
 result, _ := c.Ls(ctx, "/etc", nil)  // typed, 60µs
 ```
 
-See **[docs/SDK.md](../docs/SDK.md)** for the full Go SDK guide.
+See **[sdk.md](sdk.md)** for the full Go SDK guide.
 
 ### Any Language (raw protocol)
 
@@ -187,7 +187,7 @@ go run ./examples/rpc_client/main.go
 
 ## Go Client SDK
 
-For production use, import `pkg/client/` for connection pooling, retry, and typed helper methods. See `docs/SDK.md` for the full guide.
+For production use, import `pkg/client/` for connection pooling, retry, and typed helper methods. See [sdk.md](sdk.md) for the full guide.
 
 ### Quick SDK Example
 

@@ -23,7 +23,7 @@ via the SDK, and `FROM scratch` containers needing a minimal POSIX userland.
 | `docker/` | Dockerfiles: `Dockerfile` (daemon default), `Dockerfile.cli` (scratch CLI), `Dockerfile.debug` (Alpine+shell), `Dockerfile.goreleaser*` (release). |
 | `test/` | Unit tests (per-package `_test.go`), BusyBox integration suite, benchmark suite, JSON-RPC compliance tests. |
 | `wiki/` | Project documentation: phase plans, architecture, coverage matrix, performance, operations guides. |
-| `docs/` | External docs: `SDK.md`, `ARCHITECTURE.md`, `RPC_QUICKSTART.md`, `SECURITY.md`. |
+| `docs/` | Stubs redirecting to wiki/ (`SDK.md`, `SHELL_INTEGRATION.md`). |
 | `examples/rpc_client/` | Minimal Go SDK example — connect, `Echo()`, `Ls()`, `ShellExec()`. |
 | `AGENTS.md` | AI coding agent instructions — invariants, workflow, architecture rules. |
 | `CONTRIBUTING.md` | Human-facing contributing guide — 8-step utility checklist, coverage policy. |

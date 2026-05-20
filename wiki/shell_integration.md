@@ -1,5 +1,7 @@
 # Shell Integration — CLI-to-Daemon Forwarding
 
+> Moved from `docs/SHELL_INTEGRATION.md`.
+
 How to make every CLI command (`ls`, `cat`, `grep`, ...) talk to a GoPOSIX daemon
 at daemon speed (~100µs) without launching a new Go process. This is a portable
 shell-layer pattern — no second binary, no CGO, no additional build targets.

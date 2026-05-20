@@ -40,7 +40,7 @@ Finally: let's not kid ourselves, this project is 90% wiring the AI to do the he
 
 ## Quickstart!
 
-See [docs/SDK.md](docs/SDK.md) for the full Go SDK guide and [wiki/usage.md](wiki/usage.md) for CLI usage and Docker recipes.
+See [wiki/sdk.md](wiki/sdk.md) for the full Go SDK guide and [wiki/usage.md](wiki/usage.md) for CLI usage and Docker recipes.
 
 ### CLI (secondary)
 
@@ -79,7 +79,7 @@ I think there should be more... right?
 See [Performance Quick Reference](wiki/performance.md) and [Benchmarking Plan](wiki/19_performance_benchmarking.md) for full details.
 
 ## Documentation (yes, we have docs and it's decent!)
-- [Go SDK Guide](docs/SDK.md) — typed client for all 78 utilities
+- [Go SDK Guide](wiki/sdk.md) — typed client for all 78 utilities
 - [RPC API Reference](wiki/rpc_api.md)
 - [JSON-RPC Protocol](wiki/rpc_quickstart.md) — raw socket protocol for non-Go clients
 - [Architecture](wiki/architecture.md)
