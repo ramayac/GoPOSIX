@@ -154,6 +154,55 @@ func (o *ObservabilityServer) handleMetrics(w http.ResponseWriter, r *http.Reque
 	fmt.Fprintf(w, "# TYPE goposix_shutting_down gauge\n")
 	fmt.Fprintf(w, "goposix_shutting_down %d\n", shutdown)
 
+	// Go runtime metrics.
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+
+	fmt.Fprintf(w, "# HELP goposix_goroutines Number of goroutines.\n")
+	fmt.Fprintf(w, "# TYPE goposix_goroutines gauge\n")
+	fmt.Fprintf(w, "goposix_goroutines %d\n", runtime.NumGoroutine())
+
+	fmt.Fprintf(w, "# HELP goposix_gomaxprocs GOMAXPROCS setting.\n")
+	fmt.Fprintf(w, "# TYPE goposix_gomaxprocs gauge\n")
+	fmt.Fprintf(w, "goposix_gomaxprocs %d\n", runtime.GOMAXPROCS(0))
+
+	fmt.Fprintf(w, "# HELP goposix_num_cpu Number of CPUs available.\n")
+	fmt.Fprintf(w, "# TYPE goposix_num_cpu gauge\n")
+	fmt.Fprintf(w, "goposix_num_cpu %d\n", runtime.NumCPU())
+
+	fmt.Fprintf(w, "# HELP goposix_heap_alloc_bytes Bytes of allocated heap objects.\n")
+	fmt.Fprintf(w, "# TYPE goposix_heap_alloc_bytes gauge\n")
+	fmt.Fprintf(w, "goposix_heap_alloc_bytes %d\n", memStats.HeapAlloc)
+
+	fmt.Fprintf(w, "# HELP goposix_heap_sys_bytes Bytes of heap obtained from the OS.\n")
+	fmt.Fprintf(w, "# TYPE goposix_heap_sys_bytes gauge\n")
+	fmt.Fprintf(w, "goposix_heap_sys_bytes %d\n", memStats.HeapSys)
+
+	fmt.Fprintf(w, "# HELP goposix_stack_inuse_bytes Bytes in stack spans.\n")
+	fmt.Fprintf(w, "# TYPE goposix_stack_inuse_bytes gauge\n")
+	fmt.Fprintf(w, "goposix_stack_inuse_bytes %d\n", memStats.StackInuse)
+
+	fmt.Fprintf(w, "# HELP goposix_mallocs_total Total number of mallocs.\n")
+	fmt.Fprintf(w, "# TYPE goposix_mallocs_total counter\n")
+	fmt.Fprintf(w, "goposix_mallocs_total %d\n", memStats.Mallocs)
+
+	fmt.Fprintf(w, "# HELP goposix_frees_total Total number of frees.\n")
+	fmt.Fprintf(w, "# TYPE goposix_frees_total counter\n")
+	fmt.Fprintf(w, "goposix_frees_total %d\n", memStats.Frees)
+
+	fmt.Fprintf(w, "# HELP goposix_total_alloc_bytes Cumulative bytes allocated for heap objects.\n")
+	fmt.Fprintf(w, "# TYPE goposix_total_alloc_bytes counter\n")
+	fmt.Fprintf(w, "goposix_total_alloc_bytes %d\n", memStats.TotalAlloc)
+
+	fmt.Fprintf(w, "# HELP goposix_num_gc_cycles Number of completed GC cycles.\n")
+	fmt.Fprintf(w, "# TYPE goposix_num_gc_cycles counter\n")
+	fmt.Fprintf(w, "goposix_num_gc_cycles %d\n", memStats.NumGC)
+
+	gcPauseNs := memStats.PauseNs[(memStats.NumGC+255)%256]
+	fmt.Fprintf(w, "# HELP goposix_gc_pause_ns Most recent GC pause in nanoseconds.\n")
+	fmt.Fprintf(w, "# TYPE goposix_gc_pause_ns gauge\n")
+	fmt.Fprintf(w, "goposix_gc_pause_ns %d\n", gcPauseNs)
+
 	// Per-method duration aggregates.
 	o.metrics.mu.Lock()
 	type methodAgg struct {

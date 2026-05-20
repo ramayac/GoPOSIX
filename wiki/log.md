@@ -4,6 +4,44 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-19] implement | Observability exports — Options A, B, C, D (branch: `feat/observability`)
+
+Implemented four observability options on a shared feature branch:
+
+**Option A — Thread naming:** `internal/daemon/threadname_linux.go` (and darwin stub).
+Worker goroutines locked to OS threads and named `goposix/wrk-NN` via
+`unix.Prctl(PR_SET_NAME)`. Visible in `htop` / `top -H`.
+
+**Option B — Process name in `ps`:** `internal/daemon/proctitle_linux.go` (and darwin stub).
+Original argv+env memory area discovered at init via `unsafe.StringData`, overwritten
+with live status every 5s. Title: `goposix daemon [W:3/4 S:12 C:500K]` in `ps aux`.
+
+**Option C — Go runtime stats in Prometheus `/metrics`:** Extended `handleMetrics` in
+`internal/daemon/observability.go` with 11 new OpenMetrics series: goroutines,
+gomaxprocs, num_cpu, heap_alloc_bytes, heap_sys_bytes, stack_inuse_bytes, mallocs_total,
+frees_total, total_alloc_bytes, num_gc_cycles, gc_pause_ns. Pure stdlib, ~50 lines.
+
+**Option D — JSON `/status` endpoint:** Added `handleStatus` handler with full
+`StatusSnapshot` struct covering pid, uptime, goroutines, heap, GC, workers, sessions,
+per-method aggregates, and per-session details. Registered at `/status` in the HTTP mux.
+Registered `/status` in the HTTP mux.
+
+**Shutdown fix (pre-existing bug):** `Server.Stop()` now tracks active connections in
+`conns map[net.Conn]struct{}` and closes them before `connWG.Wait()`, preventing
+hang when `handleConn` is blocked in `dec.Decode()`.
+
+**Wiki consolidation:** Merged `wiki/24_multi_agent_observability.md` into
+`wiki/observability_exports.md` (Part 1: Infrastructure Exports, Part 2: Multi-Agent
+Observability). Deleted standalone 24 page. Option E (`gotop`) marked as EXTERNAL
+(separate repo). Phase 24 marked DEFERRED DISCUSSION.
+
+Updated: `wiki/observability_exports.md`, `wiki/index.md`, `wiki/log.md`,
+`internal/daemon/observability.go`, `internal/daemon/server.go`,
+`internal/daemon/session.go`.
+Created: `internal/daemon/threadname_linux.go`, `internal/daemon/threadname_darwin.go`,
+`internal/daemon/proctitle_linux.go`, `internal/daemon/proctitle_darwin.go`.
+Deleted: `wiki/24_multi_agent_observability.md`.
+
 ## [2026-05-19] plan | Daemon observability exports (`wiki/observability_exports.md`)
 
 Created a comprehensive options doc covering 7 approaches (A–G) for exposing daemon

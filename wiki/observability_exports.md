@@ -5,8 +5,9 @@ throughput, per-agent attribution) so operators can see what's happening — whe
 through standard OS tools (`top`, `ps`, `htop`), Prometheus/Grafana, or a custom
 `gotop` TUI.
 
-**Status:** Options A, B, D implemented on branch `feat/observability`. Options C, E
-planned. Multi-agent observability (Phase 24) is PLANNING — no implementation yet.
+**Status:** Options A, B, C, D implemented on branch `feat/observability`.
+Option E (`gotop`) is scoped as a standalone external tool (see below).
+Multi-agent observability (Phase 24) is deferred for later discussion.
 
 ---
 
@@ -14,7 +15,7 @@ planned. Multi-agent observability (Phase 24) is PLANNING — no implementation 
 
 | Surface | Path | Format | What it shows |
 |---------|------|--------|---------------|
-| Prometheus metrics | `-l :9090` → `GET /metrics` | OpenMetrics text | requests_total, workers_active/max, uptime_s, sessions_active, rate_limited, per-method duration aggregates, Go runtime stats |
+| Prometheus metrics | `-l :9090` → `GET /metrics` | OpenMetrics text | requests_total, workers_active/max, uptime_s, sessions_active, rate_limited, per-method duration aggregates, goroutines, heap, GC, num_gc, mallocs/frees |
 | JSON status | `GET /status` | JSON | Full daemon snapshot: pid, uptime, goroutines, heap, GC, workers, sessions, per-method, per-session |
 | Health | `GET /healthz` | JSON | `{"status":"ok"}` |
 | Readiness | `GET /readyz` | JSON | `{"status":"ready"}` or 503 when draining |
@@ -76,39 +77,37 @@ memory area at init time via `unsafe.StringData`, then overwrites it with the ne
 
 ---
 
-### Option C: Go Runtime Stats in Prometheus `/metrics` (PLANNING)
+### Option C: Go Runtime Stats in Prometheus `/metrics` ✅ IMPLEMENTED
 
-Add Go runtime telemetry to the existing `/metrics` endpoint — **pure stdlib,
-no imports, ~40 lines in `observability.go`**.
+Runtime telemetry added to the existing `/metrics` endpoint — **pure stdlib,
+~50 lines in `observability.go`**.
 
-```go
-import "runtime"
-var mem runtime.MemStats
-runtime.ReadMemStats(&mem)
-
-// New Prometheus metrics:
-// goposix_goroutines              gauge     runtime.NumGoroutine()
-// goposix_heap_alloc_bytes        gauge     mem.HeapAlloc
-// goposix_heap_sys_bytes          gauge     mem.HeapSys
-// goposix_heap_idle_bytes         gauge     mem.HeapIdle
-// goposix_stack_inuse_bytes       gauge     mem.StackInuse
-// goposix_gc_pause_ns             gauge     mem.PauseNsRecent (last GC)
-// goposix_num_cpu                 gauge     runtime.NumCPU()
-// goposix_gomaxprocs              gauge     runtime.GOMAXPROCS(0)
-// goposix_mallocs_total           counter   mem.Mallocs
-// goposix_frees_total             counter   mem.Frees
-// goposix_num_gc_cycles           counter   mem.NumGC
-// goposix_total_alloc_bytes       counter   mem.TotalAlloc
+```bash
+curl -s localhost:9090/metrics | grep goposix_
 ```
+
+**New metrics exported:**
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `goposix_goroutines` | gauge | Current goroutine count |
+| `goposix_gomaxprocs` | gauge | GOMAXPROCS setting |
+| `goposix_num_cpu` | gauge | CPUs available |
+| `goposix_heap_alloc_bytes` | gauge | Allocated heap |
+| `goposix_heap_sys_bytes` | gauge | Heap from OS |
+| `goposix_stack_inuse_bytes` | gauge | Stack in use |
+| `goposix_mallocs_total` | counter | Total mallocs |
+| `goposix_frees_total` | counter | Total frees |
+| `goposix_total_alloc_bytes` | counter | Cumulative allocated |
+| `goposix_num_gc_cycles` | counter | GC cycles completed |
+| `goposix_gc_pause_ns` | gauge | Most recent GC pause |
 
 | What | Value |
 |------|-------|
 | **What `top` / `ps` sees** | Nothing. Prometheus/Grafana only. |
-| **Effort** | ~30 min — read `runtime.MemStats`, format OpenMetrics lines |
 | **Portability** | All platforms (std `runtime` package) |
-| **Value** | High. Enables Grafana dashboards with goroutine graphs, heap pressure, GC frequency — the standard Go service monitoring picture. |
 
-**Verdict:** Should be done regardless. 30 minutes, zero risk, big monitoring payoff.
+**Verdict:** ✅ Done. Enables Grafana dashboards with goroutine graphs, heap pressure, GC frequency.
 
 ---
 
@@ -181,11 +180,13 @@ curl -s localhost:9090/status | jq .
 
 ---
 
-### Option E: `gotop` TUI Utility (PLANNING)
+### Option E: `gotop` TUI Utility (EXTERNAL — separate repo)
 
-A `pkg/gotop/` utility (or standalone `cmd/gotop/` binary) that hits the daemon's
-`/status` endpoint at 1–2 Hz and renders a live `htop`-like TUI. Pure Go, zero
-external dependencies (bubbletea or termdash for TUI, or raw ANSI).
+A standalone tool (`github.com/ramayac/gotop` or similar) that hits the daemon's
+`/status` endpoint at 1–2 Hz and renders a live `htop`-like TUI. This is scoped as
+an **external project** — not part of the GoPOSIX repo — to keep dependencies
+minimal and allow independent release cadence. The `/status` endpoint (Option D)
+is the stable API contract it consumes.
 
 ```
 ┌─ goposix daemon @ :9090 ────────────────── uptime: 1h 23m ─┐
@@ -208,16 +209,17 @@ external dependencies (bubbletea or termdash for TUI, or raw ANSI).
 
 | What | Value |
 |------|-------|
-| **Effort** | 1–3 hours depending on TUI library choice (bubbletea ~200 LOC, raw ANSI ~150 LOC) |
+| **Repo** | Separate project (`github.com/ramayac/gotop` recommended) |
 | **Portability** | All platforms (pure Go TUI) |
-| **Dependencies** | Optional — `bubbletea` for polished TUI, or raw ANSI escape codes for zero-dependency |
-| **Value** | High. The best UX for operators. One command to see everything. |
+| **Dependencies** | `bubbletea` (recommended) or raw ANSI |
+| **Data source** | `GET /status` on the daemon's HTTP port |
 
-**Verdict:** The "crown jewel" of observability. Implement after C and D.
+**Verdict:** EXTERNAL. The `/status` endpoint is the stable API contract. `gotop` is
+an independent consumer of that contract — separate repo, separate release cycle.
 
 **Modes:**
-- **Daemon-connected:** `goposix gotop --daemon :9090` — queries `/status` every 1s, shows daemon telemetry
-- **Standalone:** `goposix gotop` (no daemon) — reads local `/proc` like standard `top`, shows only process-level metrics
+- **Daemon-connected:** `gotop --url http://localhost:9090` — queries `/status` every 1s
+- **Standalone:** `gotop` (no daemon) — reads local `/proc` like standard `top`
 
 ---
 
@@ -263,9 +265,9 @@ eBPF programs attached to the Go binary using USDT probes.
 |:---:|------------------------|:------:|:---------:|:-----------:|:-----:|:------:|
 | A | `htop` shows named worker threads | Medium | ❌ | Linux only | Low | ✅ |
 | B | `ps aux` shows live status | 15 min | ❌ | Linux | Med | ✅ |
+| **C** | Nothing (Prometheus) | 30 min | ❌ | **All** | **High** | ✅ |
 | **D** | JSON `/status` endpoint | 50 min | ❌ | **All** | **High** | ✅ |
-| C | Nothing (Prometheus) | 30 min | ❌ | All | High | PLANNING |
-| E | Self-contained TUI | 1–3 hr | ❌ or bubbletea | All | High | PLANNING |
+| E | Self-contained TUI | 1–3 hr | bubbletea | All | High | EXTERNAL |
 | F | `systemd-cgtop` per-session | High | cgroup mgmt | Linux only | Med | DEFERRED |
 | G | Nothing (eBPF toolchain) | Very high | eBPF | Linux only | Zero | REJECTED |
 
@@ -273,7 +275,7 @@ eBPF programs attached to the Go binary using USDT probes.
 
 ## Part 2 — Multi-Agent Observability (Phase 24)
 
-> **Status:** PLANNING — design below; no implementation yet.
+> **Status:** DEFERRED DISCUSSION — design preserved below; to be discussed later.
 >
 > **Goal:** Give a single-tenant GoPOSIX daemon the ability to attribute every RPC
 > operation to a specific agent, trace which files were read or written, and expose
@@ -412,8 +414,8 @@ RPC endpoint: `goposix.session.log` — returns events filtered by time range an
 
 - [Architecture](architecture.md) — Component flow, key packages
 - [Security model](security.md) — Current security posture, RPC-level protections
-- [Session manager](session.go) — Current session implementation
-- [Observability server](observability.go) — Prometheus metrics, health, /status
-- [Daemon server](server.go) — RPC dispatch, structured logging, metrics recording
+- [Session manager](../internal/daemon/session.go) — Session lifecycle, TTL, total_created counter
+- [Observability server](../internal/daemon/observability.go) — Prometheus metrics, health, /status, runtime stats
+- [Daemon server](../internal/daemon/server.go) — RPC dispatch, structured logging, metrics recording, thread naming
 - [Phase 22 — Hardening III](22_hardening_iii.md) — Daemon-first pivot (prerequisite)
 - [deferred.md](deferred.md) — Phase 23 (Multi-Tenant Sandbox) for audit trail and quota design
