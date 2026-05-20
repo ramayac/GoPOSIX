@@ -17,7 +17,7 @@ via the SDK, and `FROM scratch` containers needing a minimal POSIX userland.
 | `pkg/common/` | Foundation libraries: `flags.go` (POSIX flag parser), `output.go` (JSON/text rendering), `security.go` (path traversal prevention), `io.go` (LimitWriter). |
 | `pkg/client/` | Go SDK for JSON-RPC daemon. Typed methods for all 77 utilities. Connection pooling, retry, batch requests. |
 | `pkg/<utility>/` | 77 POSIX utility packages. Each has `Run()` (library) + `run()` (CLI glue). Register via `dispatch.Register()` in `init()`. |
-| `internal/daemon/` | JSON-RPC 2.0 daemon server. Session manager, rate limiter, observability (Prometheus), connection handling. |
+| `internal/daemon/` | JSON-RPC 2.0 daemon server. Session manager, rate limiter, observability (Prometheus + Go runtime stats + JSON /status + healthz/readyz), thread naming (`proctitle_*.go`, `threadname_*.go`), connection tracking for graceful shutdown. |
 | `internal/dispatch/` | Command registry. `Register()`, `Lookup()`, `List()`. |
 | `internal/shell/` | Sandboxed shell interpreter via `mvdan.cc/sh`. Path confinement, output limits. |
 | `docker/` | Dockerfiles: `Dockerfile` (daemon default), `Dockerfile.cli` (scratch CLI), `Dockerfile.debug` (Alpine+shell), `Dockerfile.goreleaser*` (release). |

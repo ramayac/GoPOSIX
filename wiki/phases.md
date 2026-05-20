@@ -1,13 +1,11 @@
 # GoPOSIX — Project Roadmap & State
 
-> **Version:** 5.5 | **Date:** 2026-05-19 | **Tier:** GOLD | **Branch:** `main`
+> **Version:** 5.5 | **Date:** 2026-05-19 | **Tier:** GOLD | **Branch:** `main` (`feat/observability` active)
 >
 > **Status:** 77 utilities | 548 BusyBox passes (99.3%) | 76.7% coverage | 77/77 JSON-RPC
 >
+> 🔧 Observability Milestone (branch `feat/observability`) — Options A, B, C, D complete
 > ✅ Phase 23 COMPLETE — Flags Rewrite: zero-allocation POSIX scanner
-> ✅ Phase 22 COMPLETE — Hardening III: Daemon-First Pivot
-> ✅ Phase 20 COMPLETE — Hardening II: flag audit, doc fixes
-> ✅ Phase 19 DONE — Performance Benchmarking
 
 ---
 
@@ -94,6 +92,6 @@ goposix binary (single static ELF, <12MB)
 
 | # | Item | Doc |
 |---|------|-----|
-| — | Multi-agent observability | [24_multi_agent_observability.md](24_multi_agent_observability.md) — planning |
-| 23 | Flags Rewrite (zero-allocation POSIX scanner) | [23_flags_rewrite.md](23_flags_rewrite.md) — COMPLETED |
+| 🔧 | Observability exports (A–D done, E external) | [observability_exports.md](observability_exports.md) — branch `feat/observability` |
+| — | Multi-agent observability | [observability_exports.md#part-2](observability_exports.md) — deferred discussion |
 | — | Ongoing maintenance | [todos.md](todos.md), [deferred.md](deferred.md) |
