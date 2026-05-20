@@ -312,3 +312,30 @@ func BenchmarkParseFlags_ShortOnly(b *testing.B) {
 		ParseFlags(args, benchSpec)
 	}
 }
+
+func TestPreProcess(t *testing.T) {
+	spec := FlagSpec{
+		Defs: []FlagDef{
+			{Short: "a", Long: "all", Type: FlagBool},
+		},
+		PreProcess: func(args []string) ([]string, error) {
+			var out []string
+			for _, arg := range args {
+				if arg == "-x" {
+					out = append(out, "-a")
+				} else {
+					out = append(out, arg)
+				}
+			}
+			return out, nil
+		},
+	}
+	result, err := ParseFlags([]string{"-x"}, spec)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.Has("a") {
+		t.Error("expected flag -a to be set after pre-processing -x")
+	}
+}
+

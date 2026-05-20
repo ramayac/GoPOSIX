@@ -186,9 +186,13 @@ func Run(r io.Reader, fields, delimiter, chars, bytesList string, onlyDelimited,
 }
 
 func run(args []string, out io.Writer) int {
+	return cutRun(args, out, os.Stderr, os.Stdin)
+}
+
+func cutRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "cut: %v\n", err)
+		fmt.Fprintf(errOut, "cut: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -207,21 +211,21 @@ func run(args []string, out io.Writer) int {
 	}
 
 	if fields == "" && chars == "" && bytesList == "" {
-		fmt.Fprintf(os.Stderr, "cut: you must specify a list of bytes, characters, or fields\n")
+		fmt.Fprintf(errOut, "cut: you must specify a list of bytes, characters, or fields\n")
 		return 1
 	}
 
 	var readers []io.Reader
 	if len(flags.Positional) == 0 {
-		readers = append(readers, os.Stdin)
+		readers = append(readers, stdin)
 	} else {
 		for _, path := range flags.Positional {
 			if path == "-" {
-				readers = append(readers, os.Stdin)
+				readers = append(readers, stdin)
 			} else {
 				f, err := os.Open(path)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "cut: %s: %v\n", path, err)
+					fmt.Fprintf(errOut, "cut: %s: %v\n", path, err)
 					return 1
 				}
 				defer f.Close()
@@ -234,7 +238,7 @@ func run(args []string, out io.Writer) int {
 	for _, r := range readers {
 		lines, err := Run(r, fields, delimiter, chars, bytesList, onlyDelimited, noSuppress, whitespaceFields)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "cut: %v\n", err)
+			fmt.Fprintf(errOut, "cut: %v\n", err)
 			return 1
 		}
 		allLines = append(allLines, lines...)

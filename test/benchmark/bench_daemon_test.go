@@ -37,9 +37,9 @@ func BenchmarkDaemonEcho(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		
+
 		conn.Write(reqBytes)
-		
+
 		var res map[string]interface{}
 		dec := json.NewDecoder(conn)
 		dec.Decode(&res)
@@ -69,9 +69,9 @@ func BenchmarkDaemonLs(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		
+
 		conn.Write(reqBytes)
-		
+
 		var res map[string]interface{}
 		dec := json.NewDecoder(conn)
 		dec.Decode(&res)

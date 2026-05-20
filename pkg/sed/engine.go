@@ -17,29 +17,29 @@ type engineState struct {
 	substituted bool
 	skipRead    bool
 
-	out          io.Writer
-	suppress     bool
-	files        []string
-	fileIdx      int
-	inPlace      bool
-	currentFile  string
-	tmpFile      *os.File
-	outChanged   bool
+	out         io.Writer
+	suppress    bool
+	files       []string
+	fileIdx     int
+	inPlace     bool
+	currentFile string
+	tmpFile     *os.File
+	outChanged  bool
 
-	lastRegex    *regexp.Regexp
+	lastRegex *regexp.Regexp
 
 	pendingAppend []string
 	pendingRead   []string
 
-	addrState map[*Instruction]bool
+	addrState        map[*Instruction]bool
 	matchedLineAddrs map[*Address]bool
-	
-	reader *bufio.Reader
-	hasTrailingNewline bool
+
+	reader                 *bufio.Reader
+	hasTrailingNewline     bool
 	nextHasTrailingNewline bool
-	nextLine string
-	hasNext bool
-	lastLacked map[string]bool
+	nextLine               string
+	hasNext                bool
+	lastLacked             map[string]bool
 }
 
 func (e *engineState) printStream(w io.Writer, s string, streamID string) {
@@ -80,26 +80,30 @@ func (e *engineState) printLineRaw(s string) {
 }
 
 func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bool, globalOut io.Writer) int {
+	return runEngineInternal(insts, readers, suppress, inPlace, globalOut, os.Stderr, os.Stdin)
+}
+
+func runEngineInternal(insts []*Instruction, readers []string, suppress bool, inPlace bool, globalOut io.Writer, errOut io.Writer, stdin io.Reader) int {
 	var err error
 	insts, err = compileAst(insts)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "sed: %v\n", err)
+		fmt.Fprintf(errOut, "sed: %v\n", err)
 		return 1
 	}
 	truncateWFiles(insts)
-	
+
 	if len(readers) == 0 {
 		readers = []string{"-"}
 	}
 
 	e := &engineState{
-		files:     readers,
-		suppress:  suppress,
-		inPlace:   inPlace,
-		addrState: make(map[*Instruction]bool),
+		files:            readers,
+		suppress:         suppress,
+		inPlace:          inPlace,
+		addrState:        make(map[*Instruction]bool),
 		matchedLineAddrs: make(map[*Address]bool),
-		lastLacked: make(map[string]bool),
-		out:       globalOut,
+		lastLacked:       make(map[string]bool),
+		out:              globalOut,
 	}
 
 	exitCode := 0
@@ -116,11 +120,11 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 
 		var r io.Reader
 		if path == "-" {
-			r = os.Stdin
+			r = stdin
 		} else {
 			f, err := os.Open(path)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "sed: %s: %v\n", path, err)
+				fmt.Fprintf(errOut, "sed: %s: %v\n", path, err)
 				exitCode = 1
 				continue
 			}
@@ -132,7 +136,7 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 			tmpPath := path + ".tmp"
 			tmpFile, err := os.Create(tmpPath)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "sed: %v\n", err)
+				fmt.Fprintf(errOut, "sed: %v\n", err)
 				exitCode = 1
 				continue
 			}
@@ -209,7 +213,7 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 				} else if err.Error() == "quit_no_print" {
 					return exitCode
 				} else {
-					fmt.Fprintf(os.Stderr, "sed: %v\n", err)
+					fmt.Fprintf(errOut, "sed: %v\n", err)
 					exitCode = 1
 					break
 				}
@@ -218,7 +222,7 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 					e.printLine(e.patSpace)
 				}
 			}
-			
+
 			// flush appends
 			for _, text := range e.pendingAppend {
 				e.printText(text)
@@ -280,7 +284,7 @@ func (e *engineState) shouldRun(inst *Instruction) bool {
 		} else {
 			matchStart = e.matchAddress(inst.Addr1)
 		}
-		
+
 		if matchStart {
 			active = true
 			e.addrState[inst] = true
@@ -335,10 +339,10 @@ func (e *engineState) execFlat(insts []*Instruction) error {
 				e.lastRegex = re
 				if re.MatchString(e.patSpace) {
 					e.substituted = true
-					
+
 					// Replacement logic
 					repl := inst.Repl
-					
+
 					if inst.Global {
 						e.patSpace = re.ReplaceAllString(e.patSpace, repl)
 					} else if inst.SubNum > 0 {
@@ -397,15 +401,15 @@ func (e *engineState) execFlat(insts []*Instruction) error {
 			if !e.suppress {
 				e.printLine(e.patSpace)
 			}
-			
+
 			if e.isEOF {
 				return fmt.Errorf("quit_no_print")
 			}
-			
+
 			e.patSpace = e.nextLine
 			e.hasTrailingNewline = e.nextHasTrailingNewline
 			e.lineNum++
-			
+
 			lineStr, _ := e.reader.ReadString('\n')
 			if len(lineStr) > 0 {
 				if strings.HasSuffix(lineStr, "\n") {
@@ -429,11 +433,11 @@ func (e *engineState) execFlat(insts []*Instruction) error {
 				// GNU sed prints pattern space if N is at EOF
 				return fmt.Errorf("quit")
 			}
-			
+
 			e.patSpace += "\n" + e.nextLine
 			e.hasTrailingNewline = e.nextHasTrailingNewline
 			e.lineNum++
-			
+
 			lineStr, _ := e.reader.ReadString('\n')
 			if len(lineStr) > 0 {
 				if strings.HasSuffix(lineStr, "\n") {

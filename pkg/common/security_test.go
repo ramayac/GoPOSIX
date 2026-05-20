@@ -15,12 +15,12 @@ func TestSecurePath(t *testing.T) {
 		{"sub/dir/test.txt", "/app/sandbox", false},
 		{"../sandbox/test.txt", "/app/sandbox", false},
 		{"../../app/sandbox/test.txt", "/app/sandbox", false},
-		
+
 		{"../outside.txt", "/app/sandbox", true},
 		{"../../etc/shadow", "/app/sandbox", true},
 		{"/etc/shadow", "/app/sandbox", true},
 		{"/app/sandbox_other", "/app/sandbox", true},
-		
+
 		{"/etc/shadow", "/", false},
 		{"../../etc/shadow", "/", false},
 	}

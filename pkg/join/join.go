@@ -32,8 +32,8 @@ var spec = common.FlagSpec{
 
 // line holds a parsed input line.
 type line struct {
-	raw  string
-	key  string
+	raw    string
+	key    string
 	fields []string
 }
 

@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/chgrp"
 	_ "github.com/ramayac/goposix/pkg/chmod"
 	_ "github.com/ramayac/goposix/pkg/chown"
+	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/cp"
 	_ "github.com/ramayac/goposix/pkg/ln"
 	_ "github.com/ramayac/goposix/pkg/ls"

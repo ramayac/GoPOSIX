@@ -175,9 +175,13 @@ func Run(r io.Reader, w io.Writer, set1, set2 string, deleteFlag, squeezeFlag, c
 }
 
 func run(args []string, out io.Writer) int {
+	return trRun(args, out, os.Stderr, os.Stdin)
+}
+
+func trRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tr: %v\n", err)
+		fmt.Fprintf(errOut, "tr: %v\n", err)
 		return 2
 	}
 	deleteFlag := flags.Has("d")
@@ -189,7 +193,7 @@ func run(args []string, out io.Writer) int {
 		if jsonMode {
 			common.RenderError("tr", 1, "MISSING", "missing operand", true, out)
 		}
-		fmt.Fprintln(os.Stderr, "tr: missing operand")
+		fmt.Fprintln(errOut, "tr: missing operand")
 		return 1
 	}
 
@@ -207,7 +211,7 @@ func run(args []string, out io.Writer) int {
 
 	if jsonMode {
 		// Read all stdin, process, capture output
-		input, err := io.ReadAll(os.Stdin)
+		input, err := io.ReadAll(stdin)
 		if err != nil {
 			common.RenderError("tr", 1, "READ", err.Error(), true, out)
 			return 1
@@ -236,9 +240,9 @@ func run(args []string, out io.Writer) int {
 		return 0
 	}
 
-	err = Run(os.Stdin, os.Stdout, set1, set2, deleteFlag, squeezeFlag, complementFlag)
+	err = Run(stdin, out, set1, set2, deleteFlag, squeezeFlag, complementFlag)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tr: %v\n", err)
+		fmt.Fprintf(errOut, "tr: %v\n", err)
 		return 1
 	}
 

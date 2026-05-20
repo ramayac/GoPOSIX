@@ -18,13 +18,13 @@ import (
 	_ "github.com/ramayac/goposix/pkg/echo"
 	_ "github.com/ramayac/goposix/pkg/grep"
 	_ "github.com/ramayac/goposix/pkg/head"
-	_ "github.com/ramayac/goposix/pkg/tail"
-	_ "github.com/ramayac/goposix/pkg/rm"
-	_ "github.com/ramayac/goposix/pkg/mkdir"
-	_ "github.com/ramayac/goposix/pkg/touch"
 	_ "github.com/ramayac/goposix/pkg/ls"
+	_ "github.com/ramayac/goposix/pkg/mkdir"
 	_ "github.com/ramayac/goposix/pkg/pwd"
+	_ "github.com/ramayac/goposix/pkg/rm"
 	_ "github.com/ramayac/goposix/pkg/stat"
+	_ "github.com/ramayac/goposix/pkg/tail"
+	_ "github.com/ramayac/goposix/pkg/touch"
 	_ "github.com/ramayac/goposix/pkg/truefalse"
 	_ "github.com/ramayac/goposix/pkg/wc"
 )
@@ -451,8 +451,12 @@ func TestCat(t *testing.T) {
 	c, _ := New(socket)
 	defer c.Close()
 	res, err := c.Cat(context.Background(), "/etc/hosts")
-	if err != nil { t.Fatalf("Cat: %v", err) }
-	if len(res.Lines) == 0 { t.Error("expected lines") }
+	if err != nil {
+		t.Fatalf("Cat: %v", err)
+	}
+	if len(res.Lines) == 0 {
+		t.Error("expected lines")
+	}
 }
 
 func TestHead(t *testing.T) {
@@ -461,8 +465,12 @@ func TestHead(t *testing.T) {
 	c, _ := New(socket)
 	defer c.Close()
 	res, err := c.Head(context.Background(), "/etc/hosts", 3)
-	if err != nil { t.Fatalf("Head: %v", err) }
-	if len(res.Lines) == 0 { t.Error("expected lines") }
+	if err != nil {
+		t.Fatalf("Head: %v", err)
+	}
+	if len(res.Lines) == 0 {
+		t.Error("expected lines")
+	}
 }
 
 func TestTail(t *testing.T) {
@@ -471,8 +479,12 @@ func TestTail(t *testing.T) {
 	c, _ := New(socket)
 	defer c.Close()
 	res, err := c.Tail(context.Background(), "/etc/hosts", 3)
-	if err != nil { t.Fatalf("Tail: %v", err) }
-	if len(res.Lines) == 0 { t.Error("expected lines") }
+	if err != nil {
+		t.Fatalf("Tail: %v", err)
+	}
+	if len(res.Lines) == 0 {
+		t.Error("expected lines")
+	}
 }
 
 func TestRm(t *testing.T) {
@@ -484,8 +496,12 @@ func TestRm(t *testing.T) {
 	c, _ := New(socket)
 	defer c.Close()
 	res, err := c.Rm(context.Background(), []string{f}, true, false)
-	if err != nil { t.Fatalf("Rm: %v", err) }
-	if len(res.Removed) == 0 { t.Error("expected removed") }
+	if err != nil {
+		t.Fatalf("Rm: %v", err)
+	}
+	if len(res.Removed) == 0 {
+		t.Error("expected removed")
+	}
 }
 
 func TestMkdir(t *testing.T) {
@@ -495,8 +511,12 @@ func TestMkdir(t *testing.T) {
 	c, _ := New(socket)
 	defer c.Close()
 	res, err := c.Mkdir(context.Background(), dir, false)
-	if err != nil { t.Fatalf("Mkdir: %v", err) }
-	if len(res.Created) == 0 { t.Error("expected created") }
+	if err != nil {
+		t.Fatalf("Mkdir: %v", err)
+	}
+	if len(res.Created) == 0 {
+		t.Error("expected created")
+	}
 }
 
 func TestTouch(t *testing.T) {
@@ -506,8 +526,12 @@ func TestTouch(t *testing.T) {
 	c, _ := New(socket)
 	defer c.Close()
 	res, err := c.Touch(context.Background(), []string{f})
-	if err != nil { t.Fatalf("Touch: %v", err) }
-	if len(res.Touched) == 0 { t.Error("expected touched") }
+	if err != nil {
+		t.Fatalf("Touch: %v", err)
+	}
+	if len(res.Touched) == 0 {
+		t.Error("expected touched")
+	}
 }
 
 func TestWithMaxRetries(t *testing.T) {
@@ -516,7 +540,9 @@ func TestWithMaxRetries(t *testing.T) {
 	c, _ := New(socket, WithMaxRetries(2))
 	defer c.Close()
 	_, err := c.Ping(context.Background())
-	if err != nil { t.Fatalf("Ping with retries: %v", err) }
+	if err != nil {
+		t.Fatalf("Ping with retries: %v", err)
+	}
 }
 
 func TestDial(t *testing.T) {
@@ -524,7 +550,9 @@ func TestDial(t *testing.T) {
 	defer stop()
 	_ = stop
 	c2 := Dial(socket, 1*time.Second)
-	if c2 == nil { t.Fatal("Dial returned nil") }
+	if c2 == nil {
+		t.Fatal("Dial returned nil")
+	}
 	c2.Close()
 }
 

@@ -731,3 +731,38 @@ func TestFgrepAlias(t *testing.T) {
 		t.Errorf("expected literal dot match, got: %q", outBuf.String())
 	}
 }
+
+func TestGrepBinaryHandling(t *testing.T) {
+	// Create binary payload with NUL byte: "hello\x00world\n"
+	binaryData := "hello\x00world\n"
+
+	// 1. Without -a flag, it should print "Binary file (standard input) matches"
+	{
+		var outBuf, errBuf bytes.Buffer
+		stdinR := strings.NewReader(binaryData)
+		code := grepRun([]string{"hello", "-"}, &outBuf, &errBuf, stdinR)
+		if code != 0 {
+			t.Errorf("expected exit code 0, got %d", code)
+		}
+		got := outBuf.String()
+		want := "Binary file (standard input) matches\n"
+		if got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	}
+
+	// 2. With -a flag, it should treat as text and print the matched line
+	{
+		var outBuf, errBuf bytes.Buffer
+		stdinR := strings.NewReader(binaryData)
+		code := grepRun([]string{"-a", "hello", "-"}, &outBuf, &errBuf, stdinR)
+		if code != 0 {
+			t.Errorf("expected exit code 0, got %d", code)
+		}
+		got := outBuf.String()
+		want := "hello\x00world\n"
+		if got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	}
+}

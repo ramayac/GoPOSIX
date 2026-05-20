@@ -41,10 +41,10 @@ func run(args []string, out io.Writer) int {
 
 	ownerStr := flags.Positional[0]
 	parts := strings.SplitN(ownerStr, ":", 2)
-	
+
 	uid := -1
 	gid := -1
-	
+
 	if parts[0] != "" {
 		uid = lookupUID(parts[0])
 	}

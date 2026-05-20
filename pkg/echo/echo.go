@@ -38,13 +38,20 @@ func processEscapes(s string) string {
 			i++
 			c := s[i]
 			switch c {
-			case 'n': sb.WriteByte('\n')
-			case 't': sb.WriteByte('\t')
-			case 'r': sb.WriteByte('\r')
-			case '\\': sb.WriteByte('\\')
-			case 'a': sb.WriteByte('\a')
-			case 'b': sb.WriteByte('\b')
-			case 'v': sb.WriteByte('\v')
+			case 'n':
+				sb.WriteByte('\n')
+			case 't':
+				sb.WriteByte('\t')
+			case 'r':
+				sb.WriteByte('\r')
+			case '\\':
+				sb.WriteByte('\\')
+			case 'a':
+				sb.WriteByte('\a')
+			case 'b':
+				sb.WriteByte('\b')
+			case 'v':
+				sb.WriteByte('\v')
 			case 'x':
 				// hex
 				if i+1 < len(s) {

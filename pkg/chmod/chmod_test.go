@@ -60,7 +60,6 @@ func TestCLI_SymbolicMode(t *testing.T) {
 	}
 }
 
-
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
 	code := run([]string{"--nonexistent"}, &out)

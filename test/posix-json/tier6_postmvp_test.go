@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/cksum"
+	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/join"
 	_ "github.com/ramayac/goposix/pkg/link"
 	_ "github.com/ramayac/goposix/pkg/logger"

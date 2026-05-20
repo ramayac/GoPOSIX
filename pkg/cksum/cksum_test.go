@@ -13,8 +13,8 @@ func TestPosixCRC_KnownValues(t *testing.T) {
 		input    string
 		expected uint32
 	}{
-		{"", 4294967295},        // empty file
-		{"hello", 3287646509},   // "hello" (5 bytes)
+		{"", 4294967295},           // empty file
+		{"hello", 3287646509},      // "hello" (5 bytes)
 		{"1234567890", 1187747251}, // 10 bytes
 	}
 	for _, tt := range tests {

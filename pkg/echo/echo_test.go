@@ -56,8 +56,8 @@ func TestProcessEscapes(t *testing.T) {
 		{`\b`, "\b"},
 		{`\v`, "\v"},
 		{`\n\t\a`, "\n\t\a"},
-		{`\x41`, "A"},        // hex
-		{`\x41\x42`, "AB"},   // double hex
+		{`\x41`, "A"},      // hex
+		{`\x41\x42`, "AB"}, // double hex
 		{`\nhello\tworld`, "\nhello\tworld"},
 		{`text\n`, "text\n"},
 		{`\x`, "\\x"},

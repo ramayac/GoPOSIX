@@ -128,7 +128,7 @@ func TestGzipJSON(t *testing.T) {
 	}
 	data := env["data"].([]interface{})
 	stat := data[0].(map[string]interface{})
-	
+
 	if stat["file"] != file {
 		t.Errorf("wrong file name in json")
 	}
@@ -238,13 +238,90 @@ func captureStderr(fn func()) string {
 	os.Stderr = orig
 	return <-done
 }
-func TestCLI_Compress(t *testing.T) { dir := t.TempDir(); f := filepath.Join(dir, "test.txt"); os.WriteFile(f, []byte("hello"), 0644); var out bytes.Buffer; code := runGzip([]string{"-c", f}, &out); if code != 0 { t.Fatalf("exit %d", code) }; if out.Len() == 0 { t.Error("expected compressed output") } }
-func TestCLI_Decompress(t *testing.T) { dir := t.TempDir(); f := filepath.Join(dir, "test.gz"); var buf bytes.Buffer; gzw := gzip.NewWriter(&buf); gzw.Write([]byte("hello")); gzw.Close(); os.WriteFile(f, buf.Bytes(), 0644); var out bytes.Buffer; code := runGzip([]string{"-d", "-c", f}, &out); if code != 0 { t.Fatalf("exit %d", code) }; if out.String() != "hello" { t.Errorf("got %q, want 'hello'", out.String()) } }
-func TestCLI_JSON(t *testing.T) { dir := t.TempDir(); f := filepath.Join(dir, "j.txt"); os.WriteFile(f, []byte("json"), 0644); var out bytes.Buffer; code := runGzip([]string{"--json", f}, &out); if code != 0 { t.Fatalf("exit %d", code) }; if out.Len() == 0 { t.Error("expected output") } }
-func TestCLI_Stdout(t *testing.T) { dir := t.TempDir(); f := filepath.Join(dir, "s.txt"); os.WriteFile(f, []byte("stdout"), 0644); var out bytes.Buffer; code := runGzip([]string{"-c", "--stdout", f}, &out); if code != 0 { t.Fatalf("exit %d", code) } }
-func TestCLI_MissingFile(t *testing.T) { var out bytes.Buffer; code := runGzip([]string{"/nonexistent/gzip/file"}, &out); if code != 1 { t.Errorf("exit %d, want 1", code) } }
-func TestCLI_BadFlag(t *testing.T) { var out bytes.Buffer; code := runGzip([]string{"--nonexistent"}, &out); if code == 0 { t.Errorf("exit %d, want non-zero for bad flag", code) } }
-func TestCLI_Gunzip(t *testing.T) { dir := t.TempDir(); f := filepath.Join(dir, "gun.gz"); var buf bytes.Buffer; gzw := gzip.NewWriter(&buf); gzw.Write([]byte("hello")); gzw.Close(); os.WriteFile(f, buf.Bytes(), 0644); var out bytes.Buffer; code := runGunzip([]string{"-c", f}, &out); if code != 0 { t.Fatalf("exit %d", code) }; if out.String() != "hello" { t.Errorf("got %q, want 'hello'", out.String()) } }
+func TestCLI_Compress(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "test.txt")
+	os.WriteFile(f, []byte("hello"), 0644)
+	var out bytes.Buffer
+	code := runGzip([]string{"-c", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if out.Len() == 0 {
+		t.Error("expected compressed output")
+	}
+}
+func TestCLI_Decompress(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "test.gz")
+	var buf bytes.Buffer
+	gzw := gzip.NewWriter(&buf)
+	gzw.Write([]byte("hello"))
+	gzw.Close()
+	os.WriteFile(f, buf.Bytes(), 0644)
+	var out bytes.Buffer
+	code := runGzip([]string{"-d", "-c", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if out.String() != "hello" {
+		t.Errorf("got %q, want 'hello'", out.String())
+	}
+}
+func TestCLI_JSON(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "j.txt")
+	os.WriteFile(f, []byte("json"), 0644)
+	var out bytes.Buffer
+	code := runGzip([]string{"--json", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if out.Len() == 0 {
+		t.Error("expected output")
+	}
+}
+func TestCLI_Stdout(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "s.txt")
+	os.WriteFile(f, []byte("stdout"), 0644)
+	var out bytes.Buffer
+	code := runGzip([]string{"-c", "--stdout", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+}
+func TestCLI_MissingFile(t *testing.T) {
+	var out bytes.Buffer
+	code := runGzip([]string{"/nonexistent/gzip/file"}, &out)
+	if code != 1 {
+		t.Errorf("exit %d, want 1", code)
+	}
+}
+func TestCLI_BadFlag(t *testing.T) {
+	var out bytes.Buffer
+	code := runGzip([]string{"--nonexistent"}, &out)
+	if code == 0 {
+		t.Errorf("exit %d, want non-zero for bad flag", code)
+	}
+}
+func TestCLI_Gunzip(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "gun.gz")
+	var buf bytes.Buffer
+	gzw := gzip.NewWriter(&buf)
+	gzw.Write([]byte("hello"))
+	gzw.Close()
+	os.WriteFile(f, buf.Bytes(), 0644)
+	var out bytes.Buffer
+	code := runGunzip([]string{"-c", f}, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if out.String() != "hello" {
+		t.Errorf("got %q, want 'hello'", out.String())
+	}
+}
 
 func TestGzip_Level9(t *testing.T) {
 	dir := t.TempDir()

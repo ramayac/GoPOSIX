@@ -13,9 +13,9 @@ import (
 
 // SleepResult is the structured result for --json mode.
 type SleepResult struct {
-	Duration   float64 `json:"duration"`
-	Requested  float64 `json:"requested"`
-	Interrupted bool   `json:"interrupted"`
+	Duration    float64 `json:"duration"`
+	Requested   float64 `json:"requested"`
+	Interrupted bool    `json:"interrupted"`
 }
 
 var spec = common.FlagSpec{

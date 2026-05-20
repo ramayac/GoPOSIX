@@ -81,10 +81,10 @@ func runHead(args []string) (int, string, string) {
 	var jsonBuf bytes.Buffer
 
 	var exitCode int
-	stdout, stderr := captureOutput(func() {
+	_, stderr := captureOutput(func() {
 		exitCode = cmd.Run(args, &jsonBuf)
 	})
-	return exitCode, stdout, stderr
+	return exitCode, jsonBuf.String(), stderr
 }
 
 func runHeadWithStdin(stdin string, args []string) (int, string, string) {
@@ -95,10 +95,10 @@ func runHeadWithStdin(stdin string, args []string) (int, string, string) {
 	var jsonBuf bytes.Buffer
 
 	var exitCode int
-	stdout, stderr := captureOutputWithStdin(stdin, func() {
+	_, stderr := captureOutputWithStdin(stdin, func() {
 		exitCode = cmd.Run(args, &jsonBuf)
 	})
-	return exitCode, stdout, stderr
+	return exitCode, jsonBuf.String(), stderr
 }
 
 // ========== Existing library-layer tests (kept for regression) ==========

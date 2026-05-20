@@ -36,9 +36,13 @@ func (c *countingWriter) Write(p []byte) (int, error) {
 }
 
 func run(args []string, out io.Writer) int {
+	return teeRun(args, out, os.Stderr, os.Stdin)
+}
+
+func teeRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tee: %v\n", err)
+		fmt.Fprintf(errOut, "tee: %v\n", err)
 		return 2
 	}
 	appendMode := flags.Has("a")
@@ -52,7 +56,7 @@ func run(args []string, out io.Writer) int {
 	if jsonMode {
 		stdoutCapture = io.Discard
 	} else {
-		stdoutCapture = os.Stdout
+		stdoutCapture = out
 	}
 
 	writers = append(writers, stdoutCapture)
@@ -72,7 +76,7 @@ func run(args []string, out io.Writer) int {
 			if jsonMode {
 				common.RenderError("tee", 1, "OPEN", fmt.Sprintf("%s: %v", path, err), true, out)
 			} else {
-				fmt.Fprintf(os.Stderr, "tee: %s: %v\n", path, err)
+				fmt.Fprintf(errOut, "tee: %s: %v\n", path, err)
 			}
 			exitCode = 1
 			continue
@@ -87,17 +91,17 @@ func run(args []string, out io.Writer) int {
 	var totalWritten int64
 	if jsonMode {
 		cw := &countingWriter{w: multiWriter}
-		_, err = io.Copy(cw, os.Stdin)
+		_, err = io.Copy(cw, stdin)
 		totalWritten = cw.count
 	} else {
-		_, err = io.Copy(multiWriter, os.Stdin)
+		_, err = io.Copy(multiWriter, stdin)
 	}
 
 	if err != nil {
 		if jsonMode {
 			common.RenderError("tee", 1, "WRITE", err.Error(), true, out)
 		} else {
-			fmt.Fprintf(os.Stderr, "tee: %v\n", err)
+			fmt.Fprintf(errOut, "tee: %v\n", err)
 		}
 		exitCode = 1
 	}

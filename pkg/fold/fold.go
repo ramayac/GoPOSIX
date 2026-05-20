@@ -120,7 +120,7 @@ func foldLineBytes(line string, width int, spaceBreak bool) []byte {
 func foldLineRunes(line string, width int, spaceBreak bool) []byte {
 	runes := []rune(line)
 	var result []byte
-	pos := 0  // column position
+	pos := 0   // column position
 	start := 0 // rune index
 
 	for i := 0; i < len(runes); i++ {

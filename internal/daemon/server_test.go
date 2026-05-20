@@ -927,7 +927,7 @@ func TestIntegration_LimitReaderExceeded(t *testing.T) {
 	defer conn.Close()
 
 	// Send a payload larger than 1MB
-	largePayload := strings.Repeat("a", 1024*1024 + 1024)
+	largePayload := strings.Repeat("a", 1024*1024+1024)
 	conn.Write([]byte(largePayload))
 
 	// The connection should respond with a Parse error and close
@@ -942,6 +942,7 @@ func TestIntegration_LimitReaderExceeded(t *testing.T) {
 }
 
 var registerLimitWriterOnce sync.Once
+
 func registerLimitWriterCommand() {
 	registerLimitWriterOnce.Do(func() {
 		dispatch.Register(dispatch.Command{
@@ -1005,7 +1006,7 @@ func TestIntegration_LimitWriterExceeded(t *testing.T) {
 func TestIntegration_ConcurrentConnectionLimit(t *testing.T) {
 	socket := filepath.Join(t.TempDir(), "conn_limit.sock")
 	s := NewServer(socket, 2, "")
-	
+
 	// Override capacity to 2 for quick testing
 	s.connSem = make(chan struct{}, 2)
 
@@ -1102,4 +1103,3 @@ func TestIntegration_GracefulShutdownInFlight(t *testing.T) {
 		// Connection might be closed by stop, which is expected
 	}
 }
-

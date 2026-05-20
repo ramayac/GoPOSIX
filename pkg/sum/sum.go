@@ -15,7 +15,9 @@ type FileSum struct {
 	Checksum int    `json:"checksum"`
 	Blocks   int    `json:"blocks"`
 }
-type SumResult struct{ Files []FileSum `json:"files"` }
+type SumResult struct {
+	Files []FileSum `json:"files"`
+}
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{

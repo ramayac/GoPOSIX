@@ -226,3 +226,45 @@ func TestBusyBox_Date_RejectsExtraArgs(t *testing.T) {
 		t.Fatalf("exit code %d, want 1", code)
 	}
 }
+
+func TestPOSIXDateSpecifiers(t *testing.T) {
+	// We want to test a specific date to verify all format specifiers:
+	// Date: 2026-05-19 21:47:58 (Tuesday, 139th day of year)
+	// We can use the "-d" parsing. Let's construct a dotted compact string: 202605192147.58
+	tests := []struct {
+		format   string
+		expected string
+	}{
+		{"+%j", "139"},         // day of year
+		{"+%p", "PM"},          // AM/PM
+		{"+%r", "09:47:58 PM"}, // 12-hour clock
+		{"+%u", "2"},           // weekday [1-7], Tuesday = 2
+		{"+%V", "21"},          // ISO 8601 week number (2026-05-19 is in week 21)
+		{"+%W", "20"},          // Week of year, Monday first
+		{"+%U", "20"},          // Week of year, Sunday first
+		{"+%n", "\n"},          // newline
+		{"+%t", "\t"},          // tab
+		{"+%D", "05/19/26"},    // %m/%d/%y
+		{"+%F", "2026-05-19"},  // ISO date
+		{"+%R", "21:47"},       // %H:%M
+		{"+%w", "2"},           // weekday [0-6], Sunday = 0
+		{"+%k", "21"},          // hour 0-23 space padded
+		{"+%l", " 9"},          // hour 1-12 space padded
+	}
+
+	for _, tc := range tests {
+		var out bytes.Buffer
+		rc := run([]string{"-d", "2026.05.19-21:47:58", tc.format}, &out)
+		if rc != 0 {
+			t.Fatalf("failed to run date for format %s: exit code %d", tc.format, rc)
+		}
+		got := out.String()
+		// strip trailing newline which run() appends
+		if len(got) > 0 && got[len(got)-1] == '\n' {
+			got = got[:len(got)-1]
+		}
+		if got != tc.expected {
+			t.Errorf("format %s: got %q, want %q", tc.format, got, tc.expected)
+		}
+	}
+}

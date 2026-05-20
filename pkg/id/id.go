@@ -40,7 +40,7 @@ func run(args []string, out io.Writer) int {
 
 	uid, _ := strconv.Atoi(u.Uid)
 	gid, _ := strconv.Atoi(u.Gid)
-	
+
 	g, _ := user.LookupGroupId(u.Gid)
 	groupName := u.Gid
 	if g != nil {

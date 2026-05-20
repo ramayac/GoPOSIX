@@ -1,11 +1,10 @@
 # GoPOSIX — Project Roadmap & State
 
-> **Version:** 5.5 | **Date:** 2026-05-19 | **Tier:** GOLD | **Branch:** `main` (`feat/observability` active)
+> **Version:** 5.6 | **Date:** 2026-05-20 | **Tier:** GOLD | **Branch:** `main`
 >
 > **Status:** 77 utilities | 548 BusyBox passes (99.3%) | 76.7% coverage | 77/77 JSON-RPC
 >
-> 🔧 Observability Milestone (branch `feat/observability`) — Options A, B, C, D complete
-> ✅ Phase 23 COMPLETE — Flags Rewrite: zero-allocation POSIX scanner
+> ✅ Phase 24 (Hardening IV Part 1) — 21 compliance gaps resolved (branch `feat/hardening4-part1`): injectable streams for 11 utilities, resolved sed regex issues, 13+ POSIX `date` format specifiers, `grep` binary detection, `ls -d` flag, `PreProcess` flag hook, 5 more resolved. 6 HIGH-priority items remain (H1–H6).
 
 ---
 
@@ -84,6 +83,7 @@ goposix binary (single static ELF, <12MB)
 | 20 | Hardening II — flag audit, code cleanup, coverage, input safety | ✅ |
 | 22 | Hardening III — Daemon-First Pivot | ✅ |
 | 23 | Flags Rewrite — zero-allocation POSIX scanner | ✅ |
+| 24 | Hardening IV Part 1 — 21 compliance gaps resolved, 6 remain | 🟡 |
 | 07a | `awk` — Platinum gate (integrated goawk v1.31.0) | ✅ |
 
 ---
@@ -92,6 +92,8 @@ goposix binary (single static ELF, <12MB)
 
 | # | Item | Doc |
 |---|------|-----|
+| 🔴 | Hardening IV — 6 remaining HIGH-priority gaps (H1–H6) | [24_hardening_iv.md](24_hardening_iv.md) — branch `feat/hardening4-part1` |
+| ✅ | Hardening IV Part 1 — 21 gaps resolved (injectable streams, date specifiers, grep binary detection, ls -d, PreProcess hook, +15 more) | [24_hardening_iv.md](24_hardening_iv.md) |
 | 🔧 | Observability exports (A–D done, E external) | [observability_exports.md](observability_exports.md) — branch `feat/observability` |
 | — | Multi-agent observability | [observability_exports.md#part-2](observability_exports.md) — deferred discussion |
 | — | Ongoing maintenance | [todos.md](todos.md), [deferred.md](deferred.md) |

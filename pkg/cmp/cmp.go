@@ -12,11 +12,11 @@ import (
 )
 
 type CmpResult struct {
-	Equal    bool `json:"equal"`
-	BytePos  int  `json:"byte_pos,omitempty"`
-	LineNum  int  `json:"line_num,omitempty"`
-	Val1     int  `json:"val1,omitempty"`
-	Val2     int  `json:"val2,omitempty"`
+	Equal   bool `json:"equal"`
+	BytePos int  `json:"byte_pos,omitempty"`
+	LineNum int  `json:"line_num,omitempty"`
+	Val1    int  `json:"val1,omitempty"`
+	Val2    int  `json:"val2,omitempty"`
 }
 
 var cmpSpec = common.FlagSpec{

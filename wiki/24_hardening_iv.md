@@ -1,6 +1,6 @@
 # Hardening IV: Architecture, Security & Compliance Gaps
 
-> **Last updated:** 2026-05-20 | **Score:** 93/100 (UGAI) | **Gaps found:** 27 (15 remaining, 12 resolved)
+> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (6 remaining, 21 resolved)
 >
 > All items below have been verified against the actual codebase. Items from the
 > original draft that were inaccurate have been corrected or removed (see §Corrections).
@@ -62,7 +62,7 @@
 - **Impact:** If multiple `goposix.shell.exec` RPC calls run concurrently (which the worker pool enables), they will clobber each other's CWD. This is a data race on the global process state.
 - **Action:** Avoid `os.Chdir`. Instead, set the `Dir` field on `exec.Cmd` or use the shell interpreter's built-in `Dir` option.
 
-### H7. Missing Injectable Entry Points Across 7+ Utilities
+### H7. Missing Injectable Entry Points Across 7+ Utilities [RESOLVED]
 
 - **Issue:** The `catRun()` pattern (injectable `io.Reader`/`io.Writer` for stdin/stdout/stderr) is the canonical testable pattern per AGENTS.md §4a. The following utilities lack this pattern entirely, hardcoding `os.Stdin` directly in their `run()` function:
   - `sed` — no `sedRun()` ([engine.go L119](file:///home/ramayac/git/GoPOSIX/pkg/sed/engine.go#L119))
@@ -77,39 +77,39 @@
   - `sort` — hardcoded `os.Stdin` ([sort.go L542](file:///home/ramayac/git/GoPOSIX/pkg/sort/sort.go#L542))
   - `uniq` — hardcoded `os.Stdin`
 - **Impact:** These utilities are untestable via the daemon's JSON-RPC path for stdin-dependent operations. Tests that need stdin must swap the global `os.Stdin` (fragile, race-prone). This also means the daemon cannot feed stdin to these utilities at all.
-- **Action:** Refactor each utility to follow the `catRun(args, out, errOut, stdin)` pattern.
+- **Status:** **RESOLVED** — Extracted injectable `xxxRun(args, out, errOut, stdin)` entry points for all 11 target utilities (`sed`, `xargs`, `tr`, `tee`, `head`, `find`, `tar`, `gzip`, `cut`, `sort`, `uniq`). Extracted internal streams and passed them recursively to child/exec processes. Backed by updated unit and BusyBox integration test suites.
 
 ---
 
 ## 🟡 MEDIUM Priority
 
-### M1. `LimitReader` Is Per-Connection, Not Per-Request
+### M1. `LimitReader` Is Per-Connection, Not Per-Request [RESOLVED]
 
 - **File:** [server.go L217](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L217)
 - **Issue:** `io.LimitReader(conn, 1024*1024)` creates a 1MB budget for the **entire connection lifetime**, not per request. The decoder in `handleConn` loops reading multiple requests from the same connection (line 221). After 1MB cumulative input, the connection gets a "Parse error" and is closed.
 - **Impact:** Persistent connections (Go SDK with connection pooling) will silently drop requests after ~1MB of cumulative traffic. This particularly affects batch-heavy workloads.
-- **Action:** Reset the `LimitReader` per request iteration, or use a per-request wrapper that re-limits each `Decode()` call.
+- **Status:** **RESOLVED** — Implemented a custom thread-safe `PerRequestLimitReader` that allows resetting the read budget via `.Reset()` on each request iteration in the persistent connection loop. The maximum request budget is environment-variable configurable via `GOPOSIX_MAX_REQUEST_SIZE`, defaulting to `1048576` (1MB). Added comprehensive unit and integration tests to verify bounds.
 
-### M2. `ls -d` Flag Accepted But Not Implemented
+### M2. `ls -d` Flag Accepted But Not Implemented [RESOLVED]
 
 - **File:** [ls.go L55](file:///home/ramayac/git/GoPOSIX/pkg/ls/ls.go#L55) (defined), [ls.go L240-265](file:///home/ramayac/git/GoPOSIX/pkg/ls/ls.go#L240-L265) (never read)
 - **Issue:** The `-d` / `--directory` flag is declared in the `FlagSpec` but `flags.Has("d")` is never called in `run()`. The `-d` behavior (list directories themselves, not their contents) is silently ignored.
 - **Impact:** `ls -d /tmp` incorrectly lists the contents of `/tmp` instead of showing `/tmp` as a single entry. POSIX non-compliance.
-- **Action:** Implement the `-d` flag behavior in both `Run()` (library) and `run()` (CLI).
+- **Status:** **RESOLVED** — Implemented the `-d` / `--directory` flag in `pkg/ls/ls.go` by short-circuiting directory traversal when `directoryMode` is true, treating directory arguments as plain files for output. Backed by dedicated unit tests.
 
-### M2a. `grep` — File Handle Leak in Loop
+### M2a. `grep` — File Handle Leak in Loop [RESOLVED]
 
 - **File:** `pkg/grep/grep.go` (line ~331)
 - **Issue:** `defer f.Close()` is used inside a `for` loop over file readers. All file handles accumulate and only close when the enclosing function returns, not after each file is processed.
 - **Impact:** For large `grep` invocations over many files, file descriptor exhaustion is possible.
-- **Action:** Close the file handle after processing each file (replace `defer` with explicit `.Close()` at the end of the loop body).
+- **Status:** **RESOLVED** — Bounded the file opening and processing logic within an anonymous self-invoking function inside the `readers` loop, ensuring `defer f.Close()` cleanly releases every file descriptor immediately after its individual processing completes, preventing accumulation and exhaustion.
 
-### M3. Rate Limiter Effectively Disabled (100K/s)
+### M3. Rate Limiter Effectively Disabled (100K/s) [RESOLVED]
 
 - **File:** [server.go L216](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L216)
 - **Issue:** The rate limiter is initialized with `100,000 tokens/sec` and `100,000 burst`. This will never trigger in any realistic scenario.
 - **Cross-ref:** [security.md](file:///home/ramayac/git/GoPOSIX/wiki/security.md) documents the limit as *"Max RPC requests/sec per connection: 100"* — a **1000× discrepancy** with the code.
-- **Action:** Either restore a meaningful rate limit (e.g., 1000/s) and make it configurable, or remove the rate limiter and update the security doc.
+- **Status:** **RESOLVED** — Re-calibrated the default connection rate limit to `100` requests per second and `100` burst, aligning perfectly with standard specifications. Made the rate limit dynamically configurable via the `GOPOSIX_RATE_LIMIT` environment variable.
 
 ### M4. `security.md` Contains Multiple Inaccuracies [RESOLVED]
 
@@ -142,13 +142,13 @@
   - `session.setCwd` path validation (critical gap given H1)
 - **Status:** **RESOLVED** — Designed and implemented comprehensive end-to-end integration tests in `server_test.go` verifying path traversal blocks, request/response limits, connection limiting, shutdown scenarios, and observability endpoints under heavy payloads. All integration tests pass successfully.
 
-### M7. No Graceful Drain on Shutdown
+### M7. No Graceful Drain on Shutdown [RESOLVED]
 
 - **File:** [server.go L158-174](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L158-L174)
 - **Issue:** `Stop()` closes the listener and immediately closes all tracked connections via `conn.Close()`. There is no grace period for in-flight requests to complete. Requests being processed are killed mid-execution without sending error responses to clients.
-- **Action:** Add a configurable drain timeout (e.g., 5s) — stop accepting new connections, wait for in-flight requests to complete or timeout, then force-close.
+- **Status:** **RESOLVED** — Replaced direct connection termination with a graceful draining phase during `Server.Stop()`. It closes the listener, waits for the `connWG` WaitGroup to clear within a configurable timeout (`GOPOSIX_SHUTDOWN_TIMEOUT`, defaulting to `5s`), and only triggers forceful socket termination if in-flight requests exceed the grace window.
 
-### M8. Flag Parsing Friction (Validated)
+### M8. Flag Parsing Friction (Validated) [RESOLVED]
 
 - **Files:** [find.go](file:///home/ramayac/git/GoPOSIX/pkg/find/find.go) (`preprocessArgs()`), [tar.go](file:///home/ramayac/git/GoPOSIX/pkg/tar/tar.go) (`preprocessTarArgs()`), [dd.go](file:///home/ramayac/git/GoPOSIX/pkg/dd/dd.go) (custom `parseArgs()`)
 - **Issue:** Four utilities require custom pre-processing or bypass `common.ParseFlags` entirely:
@@ -157,21 +157,21 @@
   - `dd`: Implements its own `key=value` parser; does not use `ParseFlags` at all.
   - `awk`: Fully manual flag parsing (awk program text can contain `-` chars).
 - **Impact:** Each new utility with non-standard flag syntax requires a bespoke workaround, increasing maintenance burden.
-- **Action:** Consider extending `FlagSpec` with a `PreProcess` hook or alternative parsing modes.
+- **Status:** **RESOLVED** — Added a `PreProcess` function hook to `common.FlagSpec` and integrated it directly in `common.ParseFlags`. Migrated argument preprocessing pipelines for `tar` and `find` into this hook, simplifying architecture and reducing custom pre-parsing code inside utilities. Backed by dedicated unit tests.
 
-### M9. `date` — Missing 12+ POSIX Format Specifiers
+### M9. `date` — Missing 12+ POSIX Format Specifiers [RESOLVED]
 
 - **File:** `pkg/date/date.go` (lines ~247-302)
 - **Issue:** The `date` format specifier mapping is missing several POSIX-required specifiers: `%j` (day of year), `%p` (AM/PM), `%r` (12-hour time), `%u` (weekday 1–7), `%V` (ISO week), `%W` (week of year), `%n` (newline), `%t` (tab), `%D` (date as %m/%d/%y), `%F` (ISO date), `%R` (time as %H:%M).
 - **Impact:** POSIX non-compliance. Format strings containing these specifiers produce incorrect output.
-- **Action:** Add the missing specifiers to the format mapping.
+- **Status:** **RESOLVED** — Fully implemented all missing format specifiers (`%j`, `%p`, `%r`, `%u`, `%V`, `%W`, `%U`, `%n`, `%t`, `%D`, `%F`, `%R`, `%w`, `%k`, `%l`) within `formatDate` in `pkg/date/date.go`, backed by comprehensive test vectors covering leap years, week numbering boundaries, and standard POSIX formats.
 
-### M10. `grep` — Binary File Detection Is a No-Op
+### M10. `grep` — Binary File Detection Is a No-Op [RESOLVED]
 
 - **File:** `pkg/grep/grep.go` (line ~50)
 - **Issue:** The `-a` / `--text` flag is defined in the spec but is never actually used in the code — it's a no-op. Unlike GNU grep which detects binary files and prints "Binary file X matches", GoPOSIX grep treats **all** files as text unconditionally.
 - **Impact:** Binary files with NUL bytes produce garbled output without warning, confusing users.
-- **Action:** Implement binary file detection (scan for NUL bytes in the first buffer) and the `-a` flag to suppress it.
+- **Status:** **RESOLVED** — Added binary file detection by pre-scanning the first 8192 bytes of file/stream input for `NUL` bytes. Reconstructed input streams using `io.MultiReader` to ensure full payload preservation. Enabled standard matches/non-matches reporting for binary streams ("Binary file X matches"), while preserving raw text processing when the override `-a` / `--text` flag is set.
 
 ### M11. `Makefile` — BusyBox `testsuite` Not in `ci` Target [RESOLVED]
 
@@ -253,23 +253,34 @@ The following items from the original Hardening IV document were found to be **i
 
 | Priority | Total | Resolved | Remaining | Key Themes |
 |----------|:-----:|:--------:|:---------:|------------|
-| 🔴 HIGH   |   7   |    0     |     7     | Security bypass, data races, thread-safety, architectural invariant violations |
-| 🟡 MEDIUM |  12   |    0     |    12     | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers |
+| 🔴 HIGH   |   7   |    1     |     6     | Security bypass, data races, thread-safety, architectural invariant violations |
+| 🟡 MEDIUM |  12   |   12     |     0     | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers (ALL RESOLVED) |
 | 🟢 LOW    |   8   |    8     |     0     | Code smells, goroutine leaks, cosmetic issues (ALL RESOLVED) |
-| **Total** | **27**|  **8**   |  **19**   | |
+| **Total** | **27**|   21     |     6     | |
 
-### Recommended Fix Order
+### Remaining Fix Order (6 items)
 
-1. **H1 + H2 + M4**: Fix `setCwd` validation and `SecurePath` symlink resolution, update `security.md`. These are security issues.
+1. **H1 + H2**: Fix `setCwd` validation and `SecurePath` symlink resolution, update `security.md`. These are security issues.
 2. **H6**: Fix `os.Chdir` thread-safety in shell sandbox (data race on global state).
 3. **H3**: Fix session data race (concurrent map panic risk).
 4. **H5**: Add `--no-preserve-root` to `rm` flag spec (safe but broken UX).
-5. **H4 + H7**: Introduce injectable stdin/stderr across all utilities (large refactor, can be phased by tier).
-6. **M1**: Fix `LimitReader` per-connection bug.
-7. **M2 + M2a**: Fix `ls -d` and `grep` file handle leak.
-8. **M3 + M4**: Recalibrate rate limiter and audit `security.md`.
-9. **M9 + M10**: Add missing `date` specifiers and `grep` binary detection.
-10. **M11**: Add `testsuite` to `ci` target.
-11. **M5 + M6**: Improve test coverage.
-12. **M7 + M8**: Add graceful drain and evaluate flag parser extensibility.
-13. **L1–L8**: Clean up in a single pass. **[RESOLVED]**
+5. **H4**: Continue injectable stderr refactor across remaining utilities (11 of ~79 done).
+
+### Resolved (21 items)
+
+| Item | Resolution |
+|------|-----------|
+| H7 | Injectable `xxxRun()` entry points for all 11 target utilities |
+| M1 | `PerRequestLimitReader` per-request reset |
+| M2 | `ls -d` / `--directory` flag implemented |
+| M2a | `grep` file handle leak bounded with anonymous function scope |
+| M3 | Rate limiter recalibrated to 100 req/s |
+| M4 | `security.md` inaccuracies audited and corrected |
+| M5 | Test coverage improved (`pkg/common` → 90.0%) |
+| M6 | Daemon integration tests added (path traversal, limits, shutdown, observability) |
+| M7 | Graceful drain on shutdown with configurable timeout |
+| M8 | `PreProcess` hook added to `FlagSpec` for `tar`/`find` |
+| M9 | 13+ missing `date` POSIX format specifiers implemented |
+| M10 | `grep` binary file detection (NUL scan + `-a` override) |
+| M11 | `testsuite` added to `ci` target in Makefile |
+| L1–L8 | All low-priority code smells resolved in a single pass |

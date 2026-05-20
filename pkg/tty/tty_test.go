@@ -43,7 +43,9 @@ func TestTtyCLI_NotATty(t *testing.T) {
 	var out bytes.Buffer
 	code := run([]string{}, &out)
 	// When not connected to a terminal, outputs "not a tty"
-	if out.String() != "not a tty\n" { t.Errorf("got %q", out.String()) }
+	if out.String() != "not a tty\n" {
+		t.Errorf("got %q", out.String())
+	}
 	_ = code
 }
 
@@ -51,7 +53,9 @@ func TestTtyCLI_Silent(t *testing.T) {
 	var out bytes.Buffer
 	code := run([]string{"-s"}, &out)
 	// -s silent mode
-	if out.Len() != 0 { t.Errorf("expected no output in silent mode, got %q", out.String()) }
+	if out.Len() != 0 {
+		t.Errorf("expected no output in silent mode, got %q", out.String())
+	}
 	_ = code
 }
 

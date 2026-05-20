@@ -121,7 +121,7 @@ func humanSize(n int64) string {
 }
 
 // Run performs the ls operation and returns the result.
-func Run(paths []string, showAll, almostAll, recursive bool) ([]LsResult, error) {
+func Run(paths []string, showAll, almostAll, recursive, directoryMode bool) ([]LsResult, error) {
 	if len(paths) == 0 {
 		paths = []string{"."}
 	}
@@ -133,7 +133,7 @@ func Run(paths []string, showAll, almostAll, recursive bool) ([]LsResult, error)
 			return nil, err
 		}
 
-		if !info.IsDir() {
+		if directoryMode || !info.IsDir() {
 			fi := buildFileInfo(p, info)
 			results = append(results, LsResult{
 				Path:  p,
@@ -178,7 +178,7 @@ func Run(paths []string, showAll, almostAll, recursive bool) ([]LsResult, error)
 		if recursive {
 			for _, e := range entries {
 				if e.IsDir() && e.Name() != "." && e.Name() != ".." {
-					sub, err := Run([]string{filepath.Join(p, e.Name())}, showAll, almostAll, true)
+					sub, err := Run([]string{filepath.Join(p, e.Name())}, showAll, almostAll, true, false)
 					if err == nil {
 						results = append(results, sub...)
 					}
@@ -255,9 +255,10 @@ func run(args []string, out io.Writer) int {
 	onePer := flags.Has("1")
 	showInode := flags.Has("i")
 	showBlocks := flags.Has("s")
+	directoryMode := flags.Has("d")
 
 	paths := flags.Positional
-	results, err := Run(paths, showAll, almostAll, recursive)
+	results, err := Run(paths, showAll, almostAll, recursive, directoryMode)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ls: %v\n", err)
 		common.RenderError("ls", 2, "ENOENT", err.Error(), jsonMode, out)
@@ -279,13 +280,13 @@ func run(args []string, out io.Writer) int {
 		files := sortFiles(res.Files, byTime, bySize, reverse)
 		// Only show path header for directories, not individual files.
 		// System ls: "ls -l file1 dir1" shows "dir1:" header but not "file1:".
-		showHeader := multiPath && !isSingleFile(files, res.Path)
+		showHeader := multiPath && !isSingleFile(files, res.Path, directoryMode)
 		if showHeader {
 			fmt.Fprintf(out, "%s:\n", res.Path)
 		}
 		// Emit "total NNN" line when -l or -s is active and we're
 		// listing a directory or multiple items (not a single file).
-		if (longFmt || (showBlocks && !longFmt)) && !isSingleFile(files, res.Path) {
+		if (longFmt || (showBlocks && !longFmt)) && !isSingleFile(files, res.Path, directoryMode) {
 			var totalBlocks int64
 			for _, fi := range files {
 				totalBlocks += fi.Blocks / 2
@@ -296,7 +297,7 @@ func run(args []string, out io.Writer) int {
 			name := fi.Name
 			// For single-file arguments, use the original path (GNU ls
 			// preserves the path specified by the user).
-			if isSingleFile(files, res.Path) && res.Path != "" {
+			if isSingleFile(files, res.Path, directoryMode) && res.Path != "" {
 				name = res.Path
 				fi.Name = res.Path // update for printLong too
 			}
@@ -337,9 +338,12 @@ func run(args []string, out io.Writer) int {
 
 // isSingleFile returns true if the listing is for a single regular file
 // (not a directory or multiple files). Used to suppress "total" header.
-func isSingleFile(files []FileInfo, path string) bool {
+func isSingleFile(files []FileInfo, path string, directoryMode bool) bool {
 	if len(files) != 1 {
 		return false
+	}
+	if directoryMode {
+		return true
 	}
 	fi, err := os.Lstat(path)
 	if err != nil {

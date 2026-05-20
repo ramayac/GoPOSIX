@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/basename"
+	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/dirname"
 	_ "github.com/ramayac/goposix/pkg/env"
 	_ "github.com/ramayac/goposix/pkg/expr"

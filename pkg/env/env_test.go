@@ -41,30 +41,46 @@ func TestCLI_Default(t *testing.T) {
 	defer os.Unsetenv("CLI_TEST_VAR")
 	var out bytes.Buffer
 	code := run([]string{}, &out)
-	if code != 0 { t.Fatalf("exit %d", code) }
-	if !strings.Contains(out.String(), "CLI_TEST_VAR=hello") { t.Errorf("expected env var, got: %s", out.String()) }
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if !strings.Contains(out.String(), "CLI_TEST_VAR=hello") {
+		t.Errorf("expected env var, got: %s", out.String())
+	}
 }
 func TestCLI_IgnoreEnv(t *testing.T) {
 	var out bytes.Buffer
 	code := run([]string{"-i"}, &out)
-	if code != 0 { t.Fatalf("exit %d", code) }
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
 }
 func TestCLI_VarAssignment(t *testing.T) {
 	var out bytes.Buffer
 	code := run([]string{"-i", "FOO=bar", "BAZ=qux"}, &out)
-	if code != 0 { t.Fatalf("exit %d", code) }
-	if !strings.Contains(out.String(), "FOO=bar") { t.Errorf("expected FOO=bar, got: %s", out.String()) }
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if !strings.Contains(out.String(), "FOO=bar") {
+		t.Errorf("expected FOO=bar, got: %s", out.String())
+	}
 }
 func TestCLI_JSON(t *testing.T) {
 	os.Setenv("J_VAR", "val")
 	defer os.Unsetenv("J_VAR")
 	var out bytes.Buffer
 	code := run([]string{"--json", "J_VAR"}, &out)
-	if code != 0 { t.Fatalf("exit %d", code) }
-	if !strings.Contains(out.String(), "\"vars\"") { t.Errorf("expected JSON, got: %s", out.String()) }
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if !strings.Contains(out.String(), "\"vars\"") {
+		t.Errorf("expected JSON, got: %s", out.String())
+	}
 }
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
 	code := run([]string{"--nonexistent"}, &out)
-	if code != 2 { t.Errorf("expected exit 2, got %d", code) }
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
 }

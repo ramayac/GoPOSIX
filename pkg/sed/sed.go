@@ -31,9 +31,13 @@ var spec = common.FlagSpec{
 }
 
 func run(args []string, out io.Writer) int {
+	return sedRun(args, out, os.Stderr, os.Stdin)
+}
+
+func sedRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "sed: %v\n", err)
+		fmt.Fprintf(errOut, "sed: %v\n", err)
 		return 2
 	}
 	if flags.Has("version") {
@@ -45,7 +49,7 @@ func run(args []string, out io.Writer) int {
 	inPlace := flags.Has("i")
 
 	if jsonMode && inPlace {
-		fmt.Fprintln(os.Stderr, "sed: --json and --in-place are mutually exclusive")
+		fmt.Fprintln(errOut, "sed: --json and --in-place are mutually exclusive")
 		return 2
 	}
 
@@ -63,7 +67,7 @@ func run(args []string, out io.Writer) int {
 		for _, f := range fs {
 			b, err := os.ReadFile(f)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "sed: %v\n", err)
+				fmt.Fprintf(errOut, "sed: %v\n", err)
 				return 1
 			}
 			if expr != "" {
@@ -79,7 +83,7 @@ func run(args []string, out io.Writer) int {
 		// No expression and no file
 		common.RenderError("sed", 1, "MISSING", "missing command", jsonMode, out)
 		if !jsonMode {
-			fmt.Fprintln(os.Stderr, "sed: missing command")
+			fmt.Fprintln(errOut, "sed: missing command")
 		}
 		return 1
 	}
@@ -88,14 +92,14 @@ func run(args []string, out io.Writer) int {
 	if err != nil {
 		common.RenderError("sed", 1, "SYNTAX", err.Error(), jsonMode, out)
 		if !jsonMode {
-			fmt.Fprintf(os.Stderr, "sed: %v\n", err)
+			fmt.Fprintf(errOut, "sed: %v\n", err)
 		}
 		return 1
 	}
 
 	if jsonMode {
 		var buf bytes.Buffer
-		exitCode := runEngine(insts, flags.Positional, suppressDefault, inPlace, &buf)
+		exitCode := runEngineInternal(insts, flags.Positional, suppressDefault, inPlace, &buf, errOut, stdin)
 		lines := strings.Split(buf.String(), "\n")
 		// Remove trailing empty string from split
 		if len(lines) > 0 && lines[len(lines)-1] == "" {
@@ -110,7 +114,7 @@ func run(args []string, out io.Writer) int {
 		return exitCode
 	}
 
-	return runEngine(insts, flags.Positional, suppressDefault, inPlace, out)
+	return runEngineInternal(insts, flags.Positional, suppressDefault, inPlace, out, errOut, stdin)
 }
 
 func init() {

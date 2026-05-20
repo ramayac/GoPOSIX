@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/ramayac/goposix/internal/daemon"
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/cat"
+	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/echo"
 	_ "github.com/ramayac/goposix/pkg/sed"
 	_ "github.com/ramayac/goposix/pkg/sleep"
@@ -30,7 +30,7 @@ type ResultWrapper struct {
 
 func startDaemon(t *testing.T) string {
 	socketPath := filepath.Join(t.TempDir(), "goposix.sock")
-	
+
 	// Start daemon in background
 	go func() {
 		err := daemon.RunDaemon(socketPath, 2, "")
@@ -157,21 +157,21 @@ func TestStructuredOutputSemantics(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var result ResultWrapper
 			err := c.Call(context.Background(), tt.method, tt.params, &result)
-			
+
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			
+
 			if result.ExitCode != tt.expectCode {
 				t.Errorf("expected exit code %d, got %d", tt.expectCode, result.ExitCode)
 			}
-			
+
 			if tt.verifyData != nil {
 				tt.verifyData(t, result.Data)
 			}
 		})
 	}
-	
+
 	t.Run("cat utility fails on missing file and preserves exit code", func(t *testing.T) {
 		// Manual call to inspect the Error object
 		conn, err := net.Dial("unix", socket)
@@ -179,7 +179,7 @@ func TestStructuredOutputSemantics(t *testing.T) {
 			t.Fatalf("failed to connect: %v", err)
 		}
 		defer conn.Close()
-		
+
 		req := map[string]interface{}{
 			"jsonrpc": "2.0",
 			"method":  "goposix.cat",
@@ -188,13 +188,13 @@ func TestStructuredOutputSemantics(t *testing.T) {
 		}
 		b, _ := json.Marshal(req)
 		conn.Write(b)
-		
+
 		var res map[string]interface{}
 		dec := json.NewDecoder(conn)
 		if err := dec.Decode(&res); err != nil {
 			t.Fatalf("failed to decode response: %v", err)
 		}
-		
+
 		if res["error"] != nil {
 			// If it eventually uses RenderError, it'll be here
 			errObj := res["error"].(map[string]interface{})
@@ -204,13 +204,13 @@ func TestStructuredOutputSemantics(t *testing.T) {
 			}
 			return
 		}
-		
+
 		resObj := res["result"].(map[string]interface{})
 		if int(resObj["exitCode"].(float64)) != 1 {
 			t.Errorf("expected exit code 1 in result, got %v", resObj["exitCode"])
 		}
 	})
-	
+
 	t.Run("tee utility via daemon creates file and returns bytesWritten", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		outFile := filepath.Join(tmpDir, "tee_out.txt")

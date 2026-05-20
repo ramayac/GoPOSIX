@@ -49,33 +49,41 @@ type FileInfo struct {
 }
 
 func run(args []string, out io.Writer) int {
-	var flagArgs []string
-	// Parse -exec command first, then pass remaining to flag parser.
+	return findRun(args, out, os.Stderr, os.Stdin)
+}
+
+func findRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
 	var execCmd []string
 	execPlus := false
-	for i := 0; i < len(args); i++ {
-		a := args[i]
-		if a == "-exec" {
-			i++
-			for i < len(args) && args[i] != ";" && args[i] != "+" {
-				execCmd = append(execCmd, args[i])
+
+	specCopy := spec
+	specCopy.PreProcess = func(in []string) ([]string, error) {
+		var flagArgs []string
+		for i := 0; i < len(in); i++ {
+			a := in[i]
+			if a == "-exec" {
 				i++
+				for i < len(in) && in[i] != ";" && in[i] != "+" {
+					execCmd = append(execCmd, in[i])
+					i++
+				}
+				if i < len(in) && in[i] == "+" {
+					execPlus = true
+				}
+			} else if strings.HasPrefix(a, "--") {
+				flagArgs = append(flagArgs, a)
+			} else if strings.HasPrefix(a, "-") && len(a) > 2 {
+				flagArgs = append(flagArgs, "-"+a)
+			} else {
+				flagArgs = append(flagArgs, a)
 			}
-			if i < len(args) && args[i] == "+" {
-				execPlus = true
-			}
-		} else if strings.HasPrefix(a, "--") {
-			flagArgs = append(flagArgs, a)
-		} else if strings.HasPrefix(a, "-") && len(a) > 2 {
-			flagArgs = append(flagArgs, "-"+a)
-		} else {
-			flagArgs = append(flagArgs, a)
 		}
+		return flagArgs, nil
 	}
 
-	flags, err := common.ParseFlags(flagArgs, spec)
+	flags, err := common.ParseFlags(args, specCopy)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "find: %v\n", err)
+		fmt.Fprintf(errOut, "find: %v\n", err)
 		return 1
 	}
 
@@ -95,7 +103,7 @@ func run(args []string, out io.Writer) int {
 
 	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "find: %s: %v\n", p, err)
+			fmt.Fprintf(errOut, "find: %s: %v\n", p, err)
 			return nil
 		}
 
@@ -168,7 +176,7 @@ func run(args []string, out io.Writer) int {
 
 	// Execute -exec commands if present.
 	if len(execCmd) > 0 {
-		return runExec(results, execCmd, execPlus)
+		return runExec(results, execCmd, execPlus, out, errOut)
 	}
 
 	jsonMode := flags.Has("json")
@@ -183,7 +191,7 @@ func run(args []string, out io.Writer) int {
 }
 
 // runExec executes a command for each matched file (or in batches with +).
-func runExec(results []FileInfo, execCmd []string, execPlus bool) int {
+func runExec(results []FileInfo, execCmd []string, execPlus bool, out io.Writer, errOut io.Writer) int {
 	if len(results) == 0 {
 		return 0
 	}
@@ -193,8 +201,8 @@ func runExec(results []FileInfo, execCmd []string, execPlus bool) int {
 		// + mode: batch all paths together in one invocation.
 		args := buildExecArgs(execCmd, results)
 		cmd := exec.Command(args[0], args[1:]...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+		cmd.Stdout = out
+		cmd.Stderr = errOut
 		err := cmd.Run()
 		if err != nil {
 			if ee, ok := err.(*exec.ExitError); ok {
@@ -212,8 +220,8 @@ func runExec(results []FileInfo, execCmd []string, execPlus bool) int {
 		for _, r := range results {
 			args := buildExecArgs(execCmd, []FileInfo{r})
 			cmd := exec.Command(args[0], args[1:]...)
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
+			cmd.Stdout = out
+			cmd.Stderr = errOut
 			cmd.Run() // ignore exit code
 		}
 	}
