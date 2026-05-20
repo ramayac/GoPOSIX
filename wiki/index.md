@@ -45,7 +45,7 @@
 
 - [deferred.md](deferred.md) | Summary of all deferred and planned future work.
 - [07a_awk.md](07a_awk.md) | Awk implementation plan (canonical; Platinum gate).
-- [24_multi_agent_observability.md](24_multi_agent_observability.md) | Multi-agent observability (PLANNING).
+- [observability_exports.md#part-2--multi-agent-observability-phase-24](observability_exports.md) | Multi-agent observability (PLANNING).
 
 ## Operations
 

@@ -15,9 +15,10 @@ type Session struct {
 }
 
 type SessionManager struct {
-	mu       sync.Mutex
-	sessions map[string]*Session
-	ttl      time.Duration
+	mu                   sync.Mutex
+	sessions             map[string]*Session
+	ttl                  time.Duration
+	totalSessionsCreated int64
 }
 
 func NewSessionManager(ttl time.Duration) *SessionManager {
@@ -44,6 +45,7 @@ func (sm *SessionManager) Create() *Session {
 		LastActive: time.Now(),
 	}
 	sm.sessions[id] = s
+	sm.totalSessionsCreated++
 	return s
 }
 
@@ -79,6 +81,13 @@ func (sm *SessionManager) Destroy(id string) bool {
 		delete(sm.sessions, id)
 	}
 	return ok
+}
+
+// TotalCreated returns the total number of sessions ever created.
+func (sm *SessionManager) TotalCreated() int64 {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	return sm.totalSessionsCreated
 }
 
 func (sm *SessionManager) List() []*Session {

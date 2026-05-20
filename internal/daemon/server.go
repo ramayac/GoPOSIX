@@ -50,7 +50,8 @@ type Error struct {
 
 // WorkerPool provides a bounded concurrency pool.
 type WorkerPool struct {
-	sem chan struct{}
+	sem          chan struct{}
+	nextWorkerID int64 // atomic counter for thread naming
 }
 
 // NewWorkerPool creates a new pool.
@@ -62,8 +63,10 @@ func NewWorkerPool(size int) *WorkerPool {
 func (wp *WorkerPool) Submit(ctx context.Context, fn func()) error {
 	select {
 	case wp.sem <- struct{}{}:
+		wid := int(atomic.AddInt64(&wp.nextWorkerID, 1))
 		go func() {
 			defer func() { <-wp.sem }()
+			setWorkerThreadName(wid)
 			fn()
 		}()
 		return nil
@@ -86,6 +89,8 @@ type Server struct {
 
 	connSem      chan struct{}
 	connWG       sync.WaitGroup
+	connsMu      sync.Mutex
+	conns        map[net.Conn]struct{} // tracked for shutdown
 	shuttingDown int32
 
 	workersMax int
@@ -102,13 +107,14 @@ func NewServer(socketPath string, workers int, httpAddr string) *Server {
 		uptime:     time.Now(),
 		sm:         NewSessionManager(30 * time.Minute),
 		connSem:    make(chan struct{}, 100), // Max 100 concurrent connections
+		conns:      make(map[net.Conn]struct{}),
 		workersMax: workers,
 		metrics:    m,
 	}
 
 	if httpAddr != "" {
 		s.obsServer = NewObservabilityServer(httpAddr, &s.totalRequests, &s.activeWorkers,
-			workers, s.uptime, &s.shuttingDown, s.sm, m)
+			workers, cap(s.connSem), s.uptime, &s.shuttingDown, s.sm, m)
 	}
 
 	return s
@@ -144,6 +150,7 @@ func (s *Server) Start() error {
 	}
 
 	go s.acceptLoop()
+	go s.procTitleUpdater()
 	return nil
 }
 
@@ -156,6 +163,12 @@ func (s *Server) Stop() {
 	if s.listener != nil {
 		s.listener.Close()
 	}
+	// Close all tracked connections to unblock any reads in handleConn.
+	s.connsMu.Lock()
+	for conn := range s.conns {
+		conn.Close()
+	}
+	s.connsMu.Unlock()
 	s.connWG.Wait()
 	os.Remove(s.socketPath)
 }
@@ -180,9 +193,18 @@ func (s *Server) acceptLoop() {
 		s.connSem <- struct{}{}
 		s.connWG.Add(1)
 
+		s.connsMu.Lock()
+		s.conns[conn] = struct{}{}
+		s.connsMu.Unlock()
+
 		go func(c net.Conn) {
 			defer s.connWG.Done()
-			defer func() { <-s.connSem }()
+			defer func() {
+				s.connsMu.Lock()
+				delete(s.conns, c)
+				s.connsMu.Unlock()
+				<-s.connSem
+			}()
 			s.handleConn(c)
 		}(conn)
 	}
@@ -606,6 +628,24 @@ func (s *Server) processRequest(req Request) *Response {
 			"exitCode": exitCode,
 			"data":     env.Data,
 		},
+	}
+}
+
+// procTitleUpdater periodically updates the OS process title with live daemon
+// state so that ps aux shows e.g. "goposix daemon [W:3/4 S:12 C:500K]".
+func (s *Server) procTitleUpdater() {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for range ticker.C {
+		if atomic.LoadInt32(&s.shuttingDown) == 1 {
+			return
+		}
+		active := atomic.LoadInt32(&s.activeWorkers)
+		sessions := len(s.sm.List())
+		total := atomic.LoadInt64(&s.totalRequests)
+		title := fmt.Sprintf("goposix daemon [W:%d/%d S:%d C:%d]",
+			active, s.workersMax, sessions, total)
+		setProcTitle(title)
 	}
 }
 
