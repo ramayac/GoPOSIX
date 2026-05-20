@@ -19,35 +19,45 @@ func init() {
 
 	// os.Args[0] points to the beginning of the argv area.
 	// After argv comes the environment block — the region is contiguous.
-	start := uintptr(unsafe.Pointer(unsafe.StringData(os.Args[0])))
-	end := start
+	// Keep base as unsafe.Pointer (not uintptr) to satisfy go vet.
+	basePtr := unsafe.Pointer(unsafe.StringData(os.Args[0]))
+	base := uintptr(basePtr)
+	var endOffset uintptr
 
 	// Walk argv strings.
 	for _, a := range os.Args {
 		ptr := uintptr(unsafe.Pointer(unsafe.StringData(a)))
-		if ptr < start || ptr > end+4096 { // not contiguous — runtime copied argv
+		if ptr < base {
+			return // pointer before base — not contiguous
+		}
+		offset := ptr - base
+		if offset > endOffset+4096 { // gap too large — runtime copied argv
 			return
 		}
-		next := ptr + uintptr(len(a)) + 1 // +1 for null terminator
-		if next > end {
-			end = next
+		next := offset + uintptr(len(a)) + 1 // +1 for null terminator
+		if next > endOffset {
+			endOffset = next
 		}
 	}
 
 	// Walk environment strings (immediately after argv).
 	for _, e := range os.Environ() {
 		ptr := uintptr(unsafe.Pointer(unsafe.StringData(e)))
-		if ptr < start || ptr > end+4096 { // not contiguous — stop here
+		if ptr < base {
+			break // pointer before base — not contiguous
+		}
+		offset := ptr - base
+		if offset > endOffset+4096 { // gap too large — stop here
 			break
 		}
-		next := ptr + uintptr(len(e)) + 1
-		if next > end {
-			end = next
+		next := offset + uintptr(len(e)) + 1
+		if next > endOffset {
+			endOffset = next
 		}
 	}
 
-	if end > start {
-		argvArea = unsafe.Slice((*byte)(unsafe.Pointer(start)), int(end-start))
+	if endOffset > 0 {
+		argvArea = unsafe.Slice((*byte)(basePtr), int(endOffset))
 	}
 }
 
