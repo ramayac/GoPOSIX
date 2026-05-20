@@ -114,7 +114,7 @@ func TestRunMultiWordEscapes(t *testing.T) {
 
 func TestRunCLIBasic(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"hello", "world"}, &buf)
+	code := run([]string{"hello", "world"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -125,7 +125,7 @@ func TestRunCLIBasic(t *testing.T) {
 
 func TestRunCLINoNewline(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"-n", "hello"}, &buf)
+	code := run([]string{"-n", "hello"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -136,7 +136,7 @@ func TestRunCLINoNewline(t *testing.T) {
 
 func TestRunCLINoNewlineEscapes(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"-ne", `hello\nworld`}, &buf)
+	code := run([]string{"-ne", `hello\nworld`}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -147,7 +147,7 @@ func TestRunCLINoNewlineEscapes(t *testing.T) {
 
 func TestRunCLIJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json", "hello", "world"}, &buf)
+	code := run([]string{"--json", "hello", "world"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -163,7 +163,7 @@ func TestRunCLIJSON(t *testing.T) {
 
 func TestRunCLIJSONWithEscapes(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json", "-e", `hello\nworld`}, &buf)
+	code := run([]string{"--json", "-e", `hello\nworld`}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -179,7 +179,7 @@ func TestRunCLIJSONWithEscapes(t *testing.T) {
 
 func TestRunCLIJSONNoNewline(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json", "-n", "hello"}, &buf)
+	code := run([]string{"--json", "-n", "hello"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -198,7 +198,7 @@ func TestRunCLIJSONNoNewline(t *testing.T) {
 func TestBusyBox_Echo_ArgumentStartingWithDashes(t *testing.T) {
 	// BusyBox: echo -ne "--- -\n+++ input" should print the text, not error.
 	var buf bytes.Buffer
-	code := run([]string{"-ne", "--- -\n+++ input"}, &buf)
+	code := run([]string{"-ne", "--- -\n+++ input"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -211,7 +211,7 @@ func TestBusyBox_Echo_ArgumentStartingWithDashes(t *testing.T) {
 func TestBusyBox_Echo_ArgumentIsDash(t *testing.T) {
 	// BusyBox: echo -n "--- hello" should print literal text.
 	var buf bytes.Buffer
-	code := run([]string{"-n", "--- hello"}, &buf)
+	code := run([]string{"-n", "--- hello"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -224,7 +224,7 @@ func TestBusyBox_Echo_NonOptsFlagGroup(t *testing.T) {
 	// BusyBox CONFIG_DESKTOP test: echo -neEZ should print "-neEZ" literally
 	// because Z is not a recognized flag.
 	var buf bytes.Buffer
-	code := run([]string{"-neEZ"}, &buf)
+	code := run([]string{"-neEZ"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -236,7 +236,7 @@ func TestBusyBox_Echo_NonOptsFlagGroup(t *testing.T) {
 func TestBusyBox_Echo_OctalEscapeNNN(t *testing.T) {
 	// BusyBox: echo -ne '\41z' should output "!z" (octal 041 = 0x21 = '!')
 	var buf bytes.Buffer
-	code := run([]string{"-ne", `\41z`}, &buf)
+	code := run([]string{"-ne", `\41z`}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -248,7 +248,7 @@ func TestBusyBox_Echo_OctalEscapeNNN(t *testing.T) {
 func TestBusyBox_Echo_OctalEscapeZeroNNN(t *testing.T) {
 	// BusyBox: echo -ne '\041' should output "!"
 	var buf bytes.Buffer
-	code := run([]string{"-ne", `\041`}, &buf)
+	code := run([]string{"-ne", `\041`}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}

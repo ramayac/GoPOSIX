@@ -381,7 +381,7 @@ func TestBusyBox_Printf_ArgumentStartingWithDash(t *testing.T) {
 
 func TestRunCLI(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"%s=%d\\n", "x", "42"}, &buf)
+	code := run([]string{"%s=%d\\n", "x", "42"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -392,7 +392,7 @@ func TestRunCLI(t *testing.T) {
 
 func TestRunCLIJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json", "hello %s", "world"}, &buf)
+	code := run([]string{"--json", "hello %s", "world"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -408,7 +408,7 @@ func TestRunCLIJSON(t *testing.T) {
 
 func TestRunCLIMissingOperand(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{}, &buf)
+	code := run([]string{}, nil, &buf)
 	if code != 1 {
 		t.Fatalf("exit code %d, want 1", code)
 	}
@@ -417,7 +417,7 @@ func TestRunCLIMissingOperand(t *testing.T) {
 func TestRunCLI_ArgStartingWithDash(t *testing.T) {
 	// printf '%s\n' -5 should NOT treat -5 as a flag
 	var buf bytes.Buffer
-	code := run([]string{"%s\n", "-5"}, &buf)
+	code := run([]string{"%s\n", "-5"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}

@@ -232,7 +232,7 @@ func TestEvalNonInteger(t *testing.T) {
 
 func TestRunCLI(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"3", "+", "5"}, &buf)
+	code := run([]string{"3", "+", "5"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -243,7 +243,7 @@ func TestRunCLI(t *testing.T) {
 
 func TestRunCLIJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json", "3", "+", "5"}, &buf)
+	code := run([]string{"--json", "3", "+", "5"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -259,7 +259,7 @@ func TestRunCLIJSON(t *testing.T) {
 
 func TestRunCLIExitOne(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"5", "=", "3"}, &buf)
+	code := run([]string{"5", "=", "3"}, nil, &buf)
 	// Result is "0" → exit code 1
 	if code != 1 {
 		t.Errorf("exit code %d, want 1", code)

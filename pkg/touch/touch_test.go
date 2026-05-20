@@ -134,7 +134,7 @@ func TestBusyBox_Touch_NoCreateSkipsMissingTouchesExisting(t *testing.T) {
 func TestCLI_Basic(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "test.txt")
 	var out bytes.Buffer
-	code := run([]string{f}, &out)
+	code := run([]string{f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -146,7 +146,7 @@ func TestCLI_Basic(t *testing.T) {
 func TestCLI_NoCreate(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "nonexist.txt")
 	var out bytes.Buffer
-	code := run([]string{"-c", f}, &out)
+	code := run([]string{"-c", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -166,7 +166,7 @@ func TestCLI_ReferenceFile(t *testing.T) {
 	os.WriteFile(target, []byte("target"), 0644)
 
 	var out bytes.Buffer
-	code := run([]string{"-r", ref, target}, &out)
+	code := run([]string{"-r", ref, target}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -180,7 +180,7 @@ func TestCLI_ReferenceFile(t *testing.T) {
 func TestCLI_DateString(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "dated.txt")
 	var out bytes.Buffer
-	code := run([]string{"-d", "2020-06-15 12:00:00", f}, &out)
+	code := run([]string{"-d", "2020-06-15 12:00:00", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -195,7 +195,7 @@ func TestCLI_DateString(t *testing.T) {
 func TestCLI_TimeStamp(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "timestamped.txt")
 	var out bytes.Buffer
-	code := run([]string{"-t", "202006151200.00", f}, &out)
+	code := run([]string{"-t", "202006151200.00", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -210,7 +210,7 @@ func TestCLI_TimeStamp(t *testing.T) {
 func TestCLI_JSON(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "json.txt")
 	var out bytes.Buffer
-	code := run([]string{"--json", f}, &out)
+	code := run([]string{"--json", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -221,7 +221,7 @@ func TestCLI_JSON(t *testing.T) {
 
 func TestCLI_MissingFile(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{}, &out)
+	code := run([]string{}, nil, &out)
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing file operand, got %d", code)
 	}
@@ -229,7 +229,7 @@ func TestCLI_MissingFile(t *testing.T) {
 
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, &out)
+	code := run([]string{"--nonexistent"}, nil, &out)
 	if code != 2 {
 		t.Errorf("expected exit 2 for bad flag, got %d", code)
 	}
@@ -237,7 +237,7 @@ func TestCLI_BadFlag(t *testing.T) {
 
 func TestCLI_BadReference(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"-r", "/nonexistent/ref", "/tmp/x"}, &out)
+	code := run([]string{"-r", "/nonexistent/ref", "/tmp/x"}, nil, &out)
 	if code != 1 {
 		t.Errorf("expected exit 1 for bad reference, got %d", code)
 	}
@@ -246,7 +246,7 @@ func TestCLI_BadReference(t *testing.T) {
 func TestCLI_BadDate(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "bad.txt")
 	var out bytes.Buffer
-	code := run([]string{"-d", "not-a-date", f}, &out)
+	code := run([]string{"-d", "not-a-date", f}, nil, &out)
 	if code != 1 {
 		t.Errorf("expected exit 1 for invalid date, got %d", code)
 	}
@@ -255,7 +255,7 @@ func TestCLI_BadDate(t *testing.T) {
 func TestCLI_LongFlags(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "long.txt")
 	var out bytes.Buffer
-	code := run([]string{"--no-create", f}, &out)
+	code := run([]string{"--no-create", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}

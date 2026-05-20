@@ -160,14 +160,14 @@ func TestCutEmptyFields(t *testing.T) {
 
 func TestCLI_Fields(t *testing.T) {
 	var outBuf bytes.Buffer
-	code := run([]string{"-f", "1", "-d", ":"}, &outBuf)
+	code := run([]string{"-f", "1", "-d", ":"}, nil, &outBuf)
 	// stdin not piped in test — should error or handle gracefully
 	_ = code
 }
 
 func TestCLI_BadFlag(t *testing.T) {
 	var outBuf bytes.Buffer
-	code := run([]string{"--bad-flag"}, &outBuf)
+	code := run([]string{"--bad-flag"}, nil, &outBuf)
 	if code != 2 {
 		t.Errorf("expected exit 2 for bad flag, got %d", code)
 	}
@@ -175,7 +175,7 @@ func TestCLI_BadFlag(t *testing.T) {
 
 func TestCLI_MissingList(t *testing.T) {
 	var outBuf bytes.Buffer
-	code := run([]string{}, &outBuf)
+	code := run([]string{}, nil, &outBuf)
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing list, got %d", code)
 	}
@@ -183,7 +183,7 @@ func TestCLI_MissingList(t *testing.T) {
 
 func TestCLI_NoxistentFile(t *testing.T) {
 	var outBuf bytes.Buffer
-	code := run([]string{"-f", "1", "/nonexistent_12345"}, &outBuf)
+	code := run([]string{"-f", "1", "/nonexistent_12345"}, nil, &outBuf)
 	if code != 1 {
 		t.Errorf("expected exit 1 for nonexistent file, got %d", code)
 	}
@@ -194,7 +194,7 @@ func TestCLI_WithFile(t *testing.T) {
 	f := tmpDir + "/test.txt"
 	os.WriteFile(f, []byte("a:b:c\n1:2:3\n"), 0644)
 	var outBuf bytes.Buffer
-	code := run([]string{"-f", "1", "-d", ":", f}, &outBuf)
+	code := run([]string{"-f", "1", "-d", ":", f}, nil, &outBuf)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -209,7 +209,7 @@ func TestCLI_JSON(t *testing.T) {
 	f := tmpDir + "/test.txt"
 	os.WriteFile(f, []byte("a:b\n"), 0644)
 	var outBuf bytes.Buffer
-	code := run([]string{"-f", "1", "-d", ":", "--json", f}, &outBuf)
+	code := run([]string{"-f", "1", "-d", ":", "--json", f}, nil, &outBuf)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}

@@ -223,7 +223,7 @@ func TestSumRun_StdinDash(t *testing.T) {
 
 func TestSumRun_Dispatch(t *testing.T) {
 	var outBuf bytes.Buffer
-	rc := run([]string{}, &outBuf)
+	rc := run([]string{}, nil, &outBuf)
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}

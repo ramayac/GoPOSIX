@@ -15,7 +15,7 @@ func TestNohupExecute(t *testing.T) {
 	defer os.Chdir(origDir)
 
 	var buf bytes.Buffer
-	code := run([]string{"echo", "hello"}, &buf)
+	code := run([]string{"echo", "hello"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -30,14 +30,14 @@ func TestNohupExecute(t *testing.T) {
 
 func TestNohupExitCode(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"false"}, &buf)
+	code := run([]string{"false"}, nil, &buf)
 	if code != 1 {
 		t.Errorf("expected exit 1 from false, got %d", code)
 	}
 }
 
 func TestNohupMissingCommand(t *testing.T) {
-	code := run([]string{}, io.Discard)
+	code := run([]string{}, nil, io.Discard)
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing command, got %d", code)
 	}
@@ -45,7 +45,7 @@ func TestNohupMissingCommand(t *testing.T) {
 
 func TestNohupJson(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json", "true"}, &buf)
+	code := run([]string{"--json", "true"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -56,7 +56,7 @@ func TestNohupJson(t *testing.T) {
 
 func TestNohup_BadFlag(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--bad-flag"}, &buf)
+	code := run([]string{"--bad-flag"}, nil, &buf)
 	if code != 2 {
 		t.Errorf("expected exit 2 for bad flag, got %d", code)
 	}
@@ -71,7 +71,7 @@ func TestRun_EmptyCommand(t *testing.T) {
 
 func TestNohup_JSON_MissingCommand(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json"}, &buf)
+	code := run([]string{"--json"}, nil, &buf)
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing command, got %d", code)
 	}

@@ -20,7 +20,7 @@ func TestRunReturnsFields(t *testing.T) {
 
 func TestRunCLI(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{}, &buf)
+	code := run([]string{}, nil, &buf)
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -28,7 +28,7 @@ func TestRunCLI(t *testing.T) {
 
 func TestRunCLIJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json"}, &buf)
+	code := run([]string{"--json"}, nil, &buf)
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}

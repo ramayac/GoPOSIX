@@ -329,7 +329,7 @@ func TestOd_FileNotFound(t *testing.T) {
 
 func TestOd_Dispatch(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{}, &out)
+	code := run([]string{}, nil, &out)
 	// run() uses os.Stdin which is /dev/null in tests
 	if code != 0 {
 		t.Errorf("exit code: got %d, want 0", code)

@@ -56,7 +56,7 @@ func TestCLI_Basic(t *testing.T) {
 	link := filepath.Join(dir, "link")
 	os.Symlink(target, link)
 	var out bytes.Buffer
-	code := run([]string{link}, &out)
+	code := run([]string{link}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -71,7 +71,7 @@ func TestCLI_Canonicalize(t *testing.T) {
 	link := filepath.Join(dir, "link")
 	os.Symlink(target, link)
 	var out bytes.Buffer
-	code := run([]string{"-f", link}, &out)
+	code := run([]string{"-f", link}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -83,7 +83,7 @@ func TestCLI_JSON(t *testing.T) {
 	link := filepath.Join(dir, "l")
 	os.Symlink(target, link)
 	var out bytes.Buffer
-	code := run([]string{"--json", link}, &out)
+	code := run([]string{"--json", link}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -93,14 +93,14 @@ func TestCLI_JSON(t *testing.T) {
 }
 func TestCLI_NoArgs(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{}, &out)
+	code := run([]string{}, nil, &out)
 	if code != 1 {
 		t.Errorf("exit %d, want 1", code)
 	}
 }
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, &out)
+	code := run([]string{"--nonexistent"}, nil, &out)
 	if code != 2 {
 		t.Errorf("exit %d, want 2", code)
 	}

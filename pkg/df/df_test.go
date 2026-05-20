@@ -8,7 +8,7 @@ import (
 
 func TestDfRun(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"/"}, &out)
+	rc := run([]string{"/"}, nil, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -19,7 +19,7 @@ func TestDfRun(t *testing.T) {
 
 func TestDfJSON(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"--json", "/"}, &out)
+	rc := run([]string{"--json", "/"}, nil, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}

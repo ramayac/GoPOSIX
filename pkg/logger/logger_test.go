@@ -71,7 +71,7 @@ func TestRunFromStdin(t *testing.T) {
 
 func TestLoggerJson(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json", "-t", "jsontag", "hello"}, &buf)
+	code := run([]string{"--json", "-t", "jsontag", "hello"}, nil, &buf)
 	// May fail to connect to syslog, but should still produce JSON
 	if code != 0 {
 		t.Logf("logger exit %d (may be OK if syslog unavailable)", code)
@@ -112,7 +112,7 @@ func TestParsePriority_ShortForm(t *testing.T) {
 
 func TestCLI_BadFlag(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--bad-flag"}, &buf)
+	code := run([]string{"--bad-flag"}, nil, &buf)
 	if code != 2 {
 		t.Errorf("expected exit 2 for bad flag, got %d", code)
 	}

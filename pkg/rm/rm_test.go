@@ -66,7 +66,7 @@ func TestCLI_BasicFile(t *testing.T) {
 	f := filepath.Join(dir, "x.txt")
 	os.WriteFile(f, []byte("data"), 0644)
 	var out bytes.Buffer
-	code := run([]string{f}, &out)
+	code := run([]string{f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -81,7 +81,7 @@ func TestCLI_Recursive(t *testing.T) {
 	os.MkdirAll(sub, 0755)
 	os.WriteFile(filepath.Join(sub, "f.txt"), []byte("x"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-r", sub}, &out)
+	code := run([]string{"-r", sub}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -95,7 +95,7 @@ func TestCLI_Force(t *testing.T) {
 	f := filepath.Join(dir, "z.txt")
 	// File doesn't exist; -f should suppress error
 	var out bytes.Buffer
-	code := run([]string{"-f", f}, &out)
+	code := run([]string{"-f", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -103,7 +103,7 @@ func TestCLI_Force(t *testing.T) {
 
 func TestCLI_RefuseRoot(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"/"}, &out)
+	code := run([]string{"/"}, nil, &out)
 	if code != 1 {
 		t.Errorf("expected exit 1 for rm /, got %d", code)
 	}
@@ -114,7 +114,7 @@ func TestCLI_JSON(t *testing.T) {
 	f := filepath.Join(dir, "j.json")
 	os.WriteFile(f, []byte("x"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"--json", f}, &out)
+	code := run([]string{"--json", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -125,7 +125,7 @@ func TestCLI_JSON(t *testing.T) {
 
 func TestCLI_MissingOperand(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{}, &out)
+	code := run([]string{}, nil, &out)
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing operand, got %d", code)
 	}
@@ -133,7 +133,7 @@ func TestCLI_MissingOperand(t *testing.T) {
 
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, &out)
+	code := run([]string{"--nonexistent"}, nil, &out)
 	if code != 2 {
 		t.Errorf("expected exit 2 for bad flag, got %d", code)
 	}
@@ -144,7 +144,7 @@ func TestCLI_LongFlags(t *testing.T) {
 	sub := filepath.Join(dir, "longtest")
 	os.MkdirAll(sub, 0755)
 	var out bytes.Buffer
-	code := run([]string{"--recursive", sub}, &out)
+	code := run([]string{"--recursive", sub}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -160,7 +160,7 @@ func TestCLI_MultipleFiles(t *testing.T) {
 	os.WriteFile(f1, []byte("a"), 0644)
 	os.WriteFile(f2, []byte("b"), 0644)
 	var out bytes.Buffer
-	code := run([]string{f1, f2}, &out)
+	code := run([]string{f1, f2}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}

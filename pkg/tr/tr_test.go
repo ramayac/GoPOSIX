@@ -49,7 +49,7 @@ func TestTrJSONTranslate(t *testing.T) {
 	}()
 
 	var out bytes.Buffer
-	code := run([]string{"--json", "a-z", "A-Z"}, &out)
+	code := run([]string{"--json", "a-z", "A-Z"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -85,7 +85,7 @@ func TestTrJSONDelete(t *testing.T) {
 	}()
 
 	var out bytes.Buffer
-	code := run([]string{"--json", "-d", "l"}, &out)
+	code := run([]string{"--json", "-d", "l"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
