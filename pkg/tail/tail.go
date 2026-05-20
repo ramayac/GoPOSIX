@@ -87,7 +87,7 @@ func Run(r io.Reader, w io.Writer, linesCount int, bytesCount int, fromStart boo
 	return lines, scanner.Err()
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	// Preprocess: convert traditional "-N" (where N is a number) to "-n N"
 	cleanArgs := make([]string, 0, len(args))
 	for i := 0; i < len(args); i++ {
@@ -162,9 +162,9 @@ func run(args []string, out io.Writer) int {
 			header := fmt.Sprintf("==> %s <==", name)
 			if !jsonMode {
 				if i > 0 {
-					fmt.Fprintln(out)
+					fmt.Fprintln(stdout)
 				}
-				fmt.Fprintln(out, header)
+				fmt.Fprintln(stdout, header)
 			}
 		}
 
@@ -181,7 +181,7 @@ func run(args []string, out io.Writer) int {
 			f = file
 		}
 
-		writer := out
+		writer := stdout
 		if jsonMode {
 			writer = io.Discard
 		}
@@ -217,7 +217,7 @@ func run(args []string, out io.Writer) int {
 	}
 
 	if jsonMode {
-		common.Render("tail", TailResult{Lines: allLines, LineCount: len(allLines)}, true, out, func() {})
+		common.Render("tail", TailResult{Lines: allLines, LineCount: len(allLines)}, true, stdout, func() {})
 	}
 
 	return exitCode

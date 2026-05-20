@@ -150,7 +150,7 @@ func uniqTempFile(t *testing.T, content string) string {
 func TestCLI_Basic(t *testing.T) {
 	f := uniqTempFile(t, "a\na\nb\nb\nc\n")
 	var out bytes.Buffer
-	code := run([]string{f}, &out)
+	code := run([]string{f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -163,7 +163,7 @@ func TestCLI_Basic(t *testing.T) {
 func TestCLI_Count(t *testing.T) {
 	f := uniqTempFile(t, "a\na\nb\n")
 	var out bytes.Buffer
-	code := run([]string{"-c", f}, &out)
+	code := run([]string{"-c", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -175,7 +175,7 @@ func TestCLI_Count(t *testing.T) {
 func TestCLI_Duplicates(t *testing.T) {
 	f := uniqTempFile(t, "a\na\nb\nc\nc\n")
 	var out bytes.Buffer
-	code := run([]string{"-d", f}, &out)
+	code := run([]string{"-d", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -188,7 +188,7 @@ func TestCLI_Duplicates(t *testing.T) {
 func TestCLI_Unique(t *testing.T) {
 	f := uniqTempFile(t, "a\na\nb\nc\nc\n")
 	var out bytes.Buffer
-	code := run([]string{"-u", f}, &out)
+	code := run([]string{"-u", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -200,7 +200,7 @@ func TestCLI_Unique(t *testing.T) {
 func TestCLI_IgnoreCase(t *testing.T) {
 	f := uniqTempFile(t, "a\nA\nb\n")
 	var out bytes.Buffer
-	code := run([]string{"-i", f}, &out)
+	code := run([]string{"-i", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -213,7 +213,7 @@ func TestCLI_IgnoreCase(t *testing.T) {
 func TestCLI_JSON(t *testing.T) {
 	f := uniqTempFile(t, "a\na\nb\n")
 	var out bytes.Buffer
-	code := run([]string{"--json", f}, &out)
+	code := run([]string{"--json", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -224,7 +224,7 @@ func TestCLI_JSON(t *testing.T) {
 
 func TestCLI_FileNotFound(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"/nonexistent/uniq/file"}, &out)
+	code := run([]string{"/nonexistent/uniq/file"}, nil, &out)
 	if code != 1 {
 		t.Errorf("expected exit 1, got %d", code)
 	}
@@ -232,7 +232,7 @@ func TestCLI_FileNotFound(t *testing.T) {
 
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, &out)
+	code := run([]string{"--nonexistent"}, nil, &out)
 	if code != 2 {
 		t.Errorf("expected exit 2, got %d", code)
 	}

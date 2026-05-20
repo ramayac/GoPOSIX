@@ -25,7 +25,7 @@ type FSInfo struct {
 	Mountpoint string `json:"mountpoint"`
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "df: %v\n", err)
@@ -58,12 +58,12 @@ func run(args []string, out io.Writer) int {
 	human := flags.Has("h")
 	jsonMode := flags.Has("json")
 
-	common.Render("df", []FSInfo{info}, jsonMode, out, func() {
-		fmt.Fprintf(out, "Filesystem\tSize\tUsed\tAvail\tMounted on\n")
+	common.Render("df", []FSInfo{info}, jsonMode, stdout, func() {
+		fmt.Fprintf(stdout, "Filesystem\tSize\tUsed\tAvail\tMounted on\n")
 		if human {
-			fmt.Fprintf(out, "unknown\t%dM\t%dM\t%dM\t%s\n", size/1024/1024, used/1024/1024, avail/1024/1024, path)
+			fmt.Fprintf(stdout, "unknown\t%dM\t%dM\t%dM\t%s\n", size/1024/1024, used/1024/1024, avail/1024/1024, path)
 		} else {
-			fmt.Fprintf(out, "unknown\t%d\t%d\t%d\t%s\n", size/1024, used/1024, avail/1024, path)
+			fmt.Fprintf(stdout, "unknown\t%d\t%d\t%d\t%s\n", size/1024, used/1024, avail/1024, path)
 		}
 	})
 

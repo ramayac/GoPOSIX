@@ -14,7 +14,7 @@ func TestLogname(t *testing.T) {
 	defer os.Setenv("LOGNAME", orig)
 
 	var buf bytes.Buffer
-	code := run([]string{}, &buf)
+	code := run([]string{}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -28,7 +28,7 @@ func TestLognameNoEnv(t *testing.T) {
 	os.Unsetenv("LOGNAME")
 	defer os.Setenv("LOGNAME", orig)
 
-	code := run([]string{}, io.Discard)
+	code := run([]string{}, nil, io.Discard)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -40,7 +40,7 @@ func TestLognameJson(t *testing.T) {
 	defer os.Setenv("LOGNAME", orig)
 
 	var buf bytes.Buffer
-	code := run([]string{"--json"}, &buf)
+	code := run([]string{"--json"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}

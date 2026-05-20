@@ -11,10 +11,10 @@ import (
 	"github.com/ramayac/goposix/internal/dispatch"
 )
 
-// Run is the library-layer entry point for dd. It reads from in, writes to out,
+// Run is the library-layer entry point for dd. It reads from in, writes to stdout,
 // and writes status information to statusW. args contains key=value operands.
 // Returns a POSIX exit code (0 on success, 1 on write error, 2 on usage error).
-func Run(args []string, in io.Reader, out io.Writer, statusW io.Writer) int {
+func Run(args []string, in io.Reader, stdout io.Writer, statusW io.Writer) int {
 	opts := parseOperands(args)
 
 	// Resolve input
@@ -50,7 +50,7 @@ func Run(args []string, in io.Reader, out io.Writer, statusW io.Writer) int {
 		outFile = f
 		output = f
 	} else {
-		output = out
+		output = stdout
 	}
 
 	// Determine block sizes
@@ -195,7 +195,7 @@ func Run(args []string, in io.Reader, out io.Writer, statusW io.Writer) int {
 	// Status report to stderr
 	if opts.status != "none" {
 		fmt.Fprintf(statusW, "%d+%d records in\n", inFull, inPart)
-		fmt.Fprintf(statusW, "%d+%d records out\n", outFull, outPart)
+		fmt.Fprintf(statusW, "%d+%d records stdout\n", outFull, outPart)
 		if opts.status != "noxfer" && totalOut > 0 {
 			fmt.Fprintf(statusW, "%d bytes copied\n", totalOut)
 		}
@@ -314,8 +314,8 @@ func parseInt64(s string) (int64, error) {
 // CLI glue
 // ---------------------------------------------------------------------------
 
-func run(args []string, out io.Writer) int {
-	return ddRun(args, os.Stdin, out, os.Stderr)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return ddRun(args, os.Stdin, stdout, os.Stderr)
 }
 
 // ddRun is the testable entry point for the dd CLI.

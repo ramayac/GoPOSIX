@@ -190,7 +190,7 @@ func Run(r io.Reader, prefix string, linesPerFile int64, bytesPerFile int64, suf
 	return SplitResult{Files: files, Chunks: chunkIdx}, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "split: %v\n", err)
@@ -243,7 +243,7 @@ func run(args []string, out io.Writer) int {
 		f, err := os.Open(fileArg)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "split: %v\n", err)
-			common.RenderError("split", 1, "EOPEN", err.Error(), jsonMode, out)
+			common.RenderError("split", 1, "EOPEN", err.Error(), jsonMode, stdout)
 			return 1
 		}
 		defer f.Close()
@@ -253,11 +253,11 @@ func run(args []string, out io.Writer) int {
 	result, err := Run(input, prefix, linesPerFile, bytesPerFile, suffixLen, numeric, filter)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "split: %v\n", err)
-		common.RenderError("split", 1, "ESPLIT", err.Error(), jsonMode, out)
+		common.RenderError("split", 1, "ESPLIT", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
-	common.Render("split", result, jsonMode, out, func() {})
+	common.Render("split", result, jsonMode, stdout, func() {})
 	return 0
 }
 

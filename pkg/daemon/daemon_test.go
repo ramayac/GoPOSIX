@@ -44,7 +44,7 @@ func TestRunDaemonWorkerCount(t *testing.T) {
 
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, &out)
+	code := run([]string{"--nonexistent"}, nil, &out)
 	if code != 2 {
 		t.Errorf("expected exit 2 for bad flag, got %d", code)
 	}
@@ -54,7 +54,7 @@ func TestCLI_WorkerCount(t *testing.T) {
 	socket := filepath.Join(t.TempDir(), "goposix.sock")
 	var out bytes.Buffer
 	go func() {
-		run([]string{"-s", socket, "-w", "2"}, &out)
+		run([]string{"-s", socket, "-w", "2"}, nil, &out)
 	}()
 	time.Sleep(100 * time.Millisecond)
 }
@@ -64,7 +64,7 @@ func TestCLI_DefaultSocketFlag(t *testing.T) {
 	// -s with a temp socket path — daemon will bind to it
 	socket := filepath.Join(t.TempDir(), "def.sock")
 	go func() {
-		run([]string{"-s", socket}, &out)
+		run([]string{"-s", socket}, nil, &out)
 	}()
 	time.Sleep(100 * time.Millisecond)
 }

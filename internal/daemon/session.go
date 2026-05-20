@@ -14,6 +14,22 @@ type Session struct {
 	LastActive time.Time         `json:"lastActive"`
 }
 
+// copy returns a deep copy of the session. Must be called while holding sm.mu.
+func (s *Session) copy() *Session {
+	c := &Session{
+		ID:         s.ID,
+		CWD:        s.CWD,
+		LastActive: s.LastActive,
+	}
+	if s.Env != nil {
+		c.Env = make(map[string]string, len(s.Env))
+		for k, v := range s.Env {
+			c.Env[k] = v
+		}
+	}
+	return c
+}
+
 type SessionManager struct {
 	mu                   sync.Mutex
 	sessions             map[string]*Session
@@ -56,10 +72,11 @@ func (sm *SessionManager) Get(id string) (*Session, bool) {
 	defer sm.mu.Unlock()
 
 	s, ok := sm.sessions[id]
-	if ok {
-		s.LastActive = time.Now()
+	if !ok {
+		return nil, false
 	}
-	return s, ok
+	s.LastActive = time.Now()
+	return s.copy(), true
 }
 
 func (sm *SessionManager) SetCwd(id string, path string) bool {
@@ -96,9 +113,9 @@ func (sm *SessionManager) List() []*Session {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
-	var list []*Session
+	list := make([]*Session, 0, len(sm.sessions))
 	for _, s := range sm.sessions {
-		list = append(list, s)
+		list = append(list, s.copy())
 	}
 	return list
 }
@@ -124,5 +141,10 @@ func (sm *SessionManager) cleanupLoop() {
 }
 
 func (sm *SessionManager) Stop() {
-	close(sm.done)
+	select {
+	case <-sm.done:
+		// already stopped
+	default:
+		close(sm.done)
+	}
 }

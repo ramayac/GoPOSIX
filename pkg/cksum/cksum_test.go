@@ -83,7 +83,7 @@ func TestCksumTextOutput(t *testing.T) {
 	os.WriteFile(f, []byte("hello"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{f}, &buf)
+	code := run([]string{f}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -100,7 +100,7 @@ func TestCksumJson(t *testing.T) {
 	os.WriteFile(f, []byte("hello"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"--json", f}, &buf)
+	code := run([]string{"--json", f}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}

@@ -28,7 +28,7 @@ func TestBasic(t *testing.T) {
 
 func TestRunCLI(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"/usr/bin/test"}, &buf)
+	code := run([]string{"/usr/bin/test"}, nil, &buf)
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -36,7 +36,7 @@ func TestRunCLI(t *testing.T) {
 
 func TestRunCLIJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json", "/usr/bin/test"}, &buf)
+	code := run([]string{"--json", "/usr/bin/test"}, nil, &buf)
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -47,7 +47,7 @@ func TestRunCLIJSON(t *testing.T) {
 
 func TestRunCLINoArgs(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{}, &buf)
+	code := run([]string{}, nil, &buf)
 	if code != 1 {
 		t.Errorf("expected exit 1, got %d", code)
 	}

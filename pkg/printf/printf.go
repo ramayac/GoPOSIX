@@ -28,7 +28,7 @@ type PrintfResult struct {
 type runState struct {
 	format string   // escape-processed format string
 	args   []string // positional arguments
-	out    *strings.Builder
+	stdout    *strings.Builder
 	argIdx int  // current argument index (cycles)
 	hadErr bool // any conversion error occurred
 	pos    int  // current position in format string (0-based byte index)
@@ -43,7 +43,7 @@ func Format(format string, args []string) (string, bool) {
 	state := &runState{
 		format: processEscapes(format),
 		args:   args,
-		out:    &strings.Builder{},
+		stdout:    &strings.Builder{},
 	}
 
 	// POSIX: reuse format string as often as needed to satisfy all args.
@@ -62,7 +62,7 @@ func Format(format string, args []string) (string, bool) {
 		state.pos = 0
 	}
 
-	return state.out.String(), state.hadErr
+	return state.stdout.String(), state.hadErr
 }
 
 // processOnePass makes one pass through the format string, consuming args.
@@ -79,7 +79,7 @@ func (state *runState) processOnePass() bool {
 		state.pos++
 
 		if c != '%' {
-			state.out.WriteByte(c)
+			state.stdout.WriteByte(c)
 			continue
 		}
 
@@ -91,7 +91,7 @@ func (state *runState) processOnePass() bool {
 
 		// Handle %% — literal percent
 		if state.format[state.pos] == '%' {
-			state.out.WriteByte('%')
+			state.stdout.WriteByte('%')
 			state.pos++
 			continue
 		}
@@ -192,7 +192,7 @@ func (state *runState) processOnePass() bool {
 		case 'c':
 			state.doCharConv()
 		case '%':
-			state.out.WriteByte('%')
+			state.stdout.WriteByte('%')
 		case 'b':
 			state.doBConv()
 		default:
@@ -214,24 +214,24 @@ func (s *runState) nextArg() string {
 
 func (s *runState) formatError(msg, detail string) {
 	// Interleave error message in the output (separated by newline)
-	if s.out.Len() > 0 && s.out.String()[s.out.Len()-1] != '\n' {
-		s.out.WriteByte('\n')
+	if s.stdout.Len() > 0 && s.stdout.String()[s.stdout.Len()-1] != '\n' {
+		s.stdout.WriteByte('\n')
 	}
-	s.out.WriteString("printf: ")
+	s.stdout.WriteString("printf: ")
 	// Format depends on error type:
 	// - "invalid number" → printf: invalid number 'arg'
 	// - "invalid format" → printf: %: invalid format
 	if msg == "invalid format" {
-		s.out.WriteString(detail)
-		s.out.WriteString(": ")
-		s.out.WriteString(msg)
+		s.stdout.WriteString(detail)
+		s.stdout.WriteString(": ")
+		s.stdout.WriteString(msg)
 	} else {
-		s.out.WriteString(msg)
-		s.out.WriteString(" '")
-		s.out.WriteString(detail)
-		s.out.WriteString("'")
+		s.stdout.WriteString(msg)
+		s.stdout.WriteString(" '")
+		s.stdout.WriteString(detail)
+		s.stdout.WriteString("'")
 	}
-	s.out.WriteByte('\n')
+	s.stdout.WriteByte('\n')
 	s.hadErr = true
 }
 
@@ -318,7 +318,7 @@ func (s *runState) doStringConv(flags string, width, precision int, hasPrecision
 func (s *runState) doCharConv() {
 	arg := s.nextArg()
 	if len(arg) > 0 {
-		s.out.WriteByte(arg[0])
+		s.stdout.WriteByte(arg[0])
 	}
 }
 
@@ -326,7 +326,7 @@ func (s *runState) doBConv() {
 	arg := s.nextArg()
 	// Process escape sequences in the argument
 	processed := processEscapesForB(arg)
-	s.out.WriteString(processed)
+	s.stdout.WriteString(processed)
 }
 
 // processEscapesForB handles escape sequences for %b (similar to echo -e but
@@ -443,7 +443,7 @@ func (s *runState) formatInt(val int64, conv byte, flags string, width, precisio
 		}
 	}
 	fmtStr += string(goConv)
-	s.out.WriteString(fmt.Sprintf(fmtStr, val))
+	s.stdout.WriteString(fmt.Sprintf(fmtStr, val))
 }
 
 func (s *runState) formatUint(val uint64, conv byte, flags string, width, precision int, hasPrecision bool) {
@@ -471,7 +471,7 @@ func (s *runState) formatUint(val uint64, conv byte, flags string, width, precis
 		}
 	}
 	fmtStr += string(conv)
-	s.out.WriteString(fmt.Sprintf(fmtStr, val))
+	s.stdout.WriteString(fmt.Sprintf(fmtStr, val))
 }
 
 func (s *runState) formatFloat(val float64, conv byte, flags string, width, precision int, hasPrecision bool) {
@@ -500,7 +500,7 @@ func (s *runState) formatFloat(val float64, conv byte, flags string, width, prec
 		}
 	}
 	fmtStr += string(conv)
-	s.out.WriteString(fmt.Sprintf(fmtStr, val))
+	s.stdout.WriteString(fmt.Sprintf(fmtStr, val))
 }
 
 func (s *runState) formatString(arg, flags string, width, precision int, hasPrecision bool) {
@@ -513,14 +513,14 @@ func (s *runState) formatString(arg, flags string, width, precision int, hasPrec
 	if width >= 0 && width > len(arg) {
 		pad := width - len(arg)
 		if strings.Contains(flags, "-") {
-			s.out.WriteString(arg)
-			writePad(s.out, pad)
+			s.stdout.WriteString(arg)
+			writePad(s.stdout, pad)
 		} else {
-			writePad(s.out, pad)
-			s.out.WriteString(arg)
+			writePad(s.stdout, pad)
+			s.stdout.WriteString(arg)
 		}
 	} else {
-		s.out.WriteString(arg)
+		s.stdout.WriteString(arg)
 	}
 }
 
@@ -704,7 +704,7 @@ func processEscapes(s string) string {
 	return buf.String()
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	// Manual flag parsing: only --json is accepted as a flag.
 	// Everything else (including -...) is a positional argument.
 	jsonMode := false
@@ -718,7 +718,7 @@ func run(args []string, out io.Writer) int {
 	}
 
 	if len(posArgs) == 0 {
-		common.RenderError("printf", 1, "MISSING_OPERAND", "missing operand", jsonMode, out)
+		common.RenderError("printf", 1, "MISSING_OPERAND", "missing operand", jsonMode, stdout)
 		if !jsonMode {
 			fmt.Fprintf(os.Stderr, "printf: missing operand\n")
 		}
@@ -735,8 +735,8 @@ func run(args []string, out io.Writer) int {
 		exitCode = 1
 	}
 
-	common.Render("printf", PrintfResult{Output: output}, jsonMode, out, func() {
-		fmt.Fprint(out, output)
+	common.Render("printf", PrintfResult{Output: output}, jsonMode, stdout, func() {
+		fmt.Fprint(stdout, output)
 	})
 	return exitCode
 }

@@ -118,7 +118,7 @@ func RunWithWriter(argv []string, out io.Writer) int {
 		return 127
 	}
 
-	return cmd.Run(argv[1:], out)
+	return cmd.Run(argv[1:], os.Stdin, out)
 }
 
 func isWellKnown(name string) bool {

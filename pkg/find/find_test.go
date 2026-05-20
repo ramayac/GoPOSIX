@@ -9,7 +9,7 @@ import (
 
 func TestFindRun(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"."}, &out)
+	rc := run([]string{"."}, nil, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -20,7 +20,7 @@ func TestFindRun(t *testing.T) {
 
 func TestFindJSON(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"--json", "."}, &out)
+	rc := run([]string{"--json", "."}, nil, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -65,7 +65,7 @@ func TestBuildExecArgsMultiplePlaceholders(t *testing.T) {
 // BusyBox hardening: find -xdev should be accepted as a valid flag.
 func TestFindXdevFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{".", "-xdev"}, &out)
+	code := run([]string{".", "-xdev"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("find -xdev exited with %d, want 0", code)
 	}
@@ -91,7 +91,7 @@ func setupFindTree(t *testing.T) string {
 func TestFind_NamePattern(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
-	code := run([]string{dir, "-name", "*.txt"}, &out)
+	code := run([]string{dir, "-name", "*.txt"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -108,7 +108,7 @@ func TestFind_NamePattern(t *testing.T) {
 func TestFind_TypeFile(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
-	code := run([]string{dir, "-type", "f"}, &out)
+	code := run([]string{dir, "-type", "f"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -124,7 +124,7 @@ func TestFind_TypeFile(t *testing.T) {
 func TestFind_TypeDir(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
-	code := run([]string{dir, "-type", "d"}, &out)
+	code := run([]string{dir, "-type", "d"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -142,7 +142,7 @@ func TestFind_TypeDir(t *testing.T) {
 func TestFind_MaxDepth(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
-	code := run([]string{dir, "-maxdepth", "1"}, &out)
+	code := run([]string{dir, "-maxdepth", "1"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -160,7 +160,7 @@ func TestFind_MaxDepth(t *testing.T) {
 func TestFind_MaxDepthLongFlag(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
-	code := run([]string{dir, "--maxdepth", "1"}, &out)
+	code := run([]string{dir, "--maxdepth", "1"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -172,7 +172,7 @@ func TestFind_MaxDepthLongFlag(t *testing.T) {
 func TestFind_JSON(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
-	code := run([]string{dir, "--json"}, &out)
+	code := run([]string{dir, "--json"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -184,7 +184,7 @@ func TestFind_JSON(t *testing.T) {
 func TestFind_JSONShortFlag(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
-	code := run([]string{dir, "--json"}, &out)
+	code := run([]string{dir, "--json"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -196,7 +196,7 @@ func TestFind_JSONShortFlag(t *testing.T) {
 func TestFind_CombinedFilters(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
-	code := run([]string{dir, "-name", "*.txt", "-type", "f", "-maxdepth", "1"}, &out)
+	code := run([]string{dir, "-name", "*.txt", "-type", "f", "-maxdepth", "1"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -212,7 +212,7 @@ func TestFind_CombinedFilters(t *testing.T) {
 
 func TestFind_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{".", "--nonexistent"}, &out)
+	code := run([]string{".", "--nonexistent"}, nil, &out)
 	if code != 1 {
 		t.Errorf("expected exit 1 for bad flag, got %d", code)
 	}
@@ -220,7 +220,7 @@ func TestFind_BadFlag(t *testing.T) {
 
 func TestFind_NoArgs(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{}, &out)
+	code := run([]string{}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -234,7 +234,7 @@ func TestFind_Mtime(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
 	// -mtime -1: files modified less than 1 day ago (all our temp files)
-	code := run([]string{dir, "-mtime", "-1"}, &out)
+	code := run([]string{dir, "-mtime", "-1"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -248,7 +248,7 @@ func TestFind_MtimeExact(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
 	// -mtime 0: files modified exactly today
-	code := run([]string{dir, "-mtime", "0"}, &out)
+	code := run([]string{dir, "-mtime", "0"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -260,7 +260,7 @@ func TestFind_MtimeExact(t *testing.T) {
 func TestFind_Exec(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
-	code := run([]string{dir, "-exec", "echo", "found", ";"}, &out)
+	code := run([]string{dir, "-exec", "echo", "found", ";"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -273,7 +273,7 @@ func TestFind_Exec(t *testing.T) {
 func TestFind_ExecPlus(t *testing.T) {
 	dir := setupFindTree(t)
 	var out bytes.Buffer
-	code := run([]string{dir, "-exec", "echo", "{}", "+"}, &out)
+	code := run([]string{dir, "-exec", "echo", "{}", "+"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -282,7 +282,7 @@ func TestFind_ExecPlus(t *testing.T) {
 func TestFind_EmptyDir(t *testing.T) {
 	dir := t.TempDir()
 	var out bytes.Buffer
-	code := run([]string{dir}, &out)
+	code := run([]string{dir}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}

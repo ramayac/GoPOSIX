@@ -40,7 +40,7 @@ func TestCLI_Default(t *testing.T) {
 	os.Setenv("CLI_TEST_VAR", "hello")
 	defer os.Unsetenv("CLI_TEST_VAR")
 	var out bytes.Buffer
-	code := run([]string{}, &out)
+	code := run([]string{}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -50,14 +50,14 @@ func TestCLI_Default(t *testing.T) {
 }
 func TestCLI_IgnoreEnv(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"-i"}, &out)
+	code := run([]string{"-i"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
 }
 func TestCLI_VarAssignment(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"-i", "FOO=bar", "BAZ=qux"}, &out)
+	code := run([]string{"-i", "FOO=bar", "BAZ=qux"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -69,7 +69,7 @@ func TestCLI_JSON(t *testing.T) {
 	os.Setenv("J_VAR", "val")
 	defer os.Unsetenv("J_VAR")
 	var out bytes.Buffer
-	code := run([]string{"--json", "J_VAR"}, &out)
+	code := run([]string{"--json", "J_VAR"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -79,7 +79,7 @@ func TestCLI_JSON(t *testing.T) {
 }
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, &out)
+	code := run([]string{"--nonexistent"}, nil, &out)
 	if code != 2 {
 		t.Errorf("expected exit 2, got %d", code)
 	}

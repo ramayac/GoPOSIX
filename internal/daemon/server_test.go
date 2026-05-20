@@ -947,11 +947,11 @@ func registerLimitWriterCommand() {
 	registerLimitWriterOnce.Do(func() {
 		dispatch.Register(dispatch.Command{
 			Name: "test_limit_writer",
-			Run: func(args []string, out io.Writer) int {
+			Run: func(args []string, stdin io.Reader, stdout io.Writer) int {
 				// write 51 MB of data
 				buf := make([]byte, 1024*1024)
 				for i := 0; i < 51; i++ {
-					_, err := out.Write(buf)
+					_, err := stdout.Write(buf)
 					if err != nil {
 						return 1
 					}
@@ -1101,5 +1101,62 @@ func TestIntegration_GracefulShutdownInFlight(t *testing.T) {
 	conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 	if err := dec.Decode(&resp); err != nil {
 		// Connection might be closed by stop, which is expected
+	}
+}
+
+// TestDaemonStdinSupport verifies that the stdin field in GoposixParams is
+// plumbed through to commands that consume stdin.
+func TestDaemonStdinSupport(t *testing.T) {
+	// Register a test command that reads stdin and echoes it back.
+	dispatch.Register(dispatch.Command{
+		Name: "test-stdin-echo",
+		Run: func(args []string, stdin io.Reader, stdout io.Writer) int {
+			data, _ := io.ReadAll(stdin)
+			stdout.Write(data)
+			return 0
+		},
+	})
+
+	sock := filepath.Join(t.TempDir(), "stdin-test.sock")
+	srv := NewServer(sock, 4, "")
+	srv.Start()
+	defer srv.Stop()
+
+	conn, err := net.DialTimeout("unix", sock, 1*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	// Send request with stdin data.
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "goposix.test-stdin-echo",
+		Params:  json.RawMessage(`{"stdin":"hello from stdin"}`),
+		ID:      "1",
+	}
+	enc := json.NewEncoder(conn)
+	if err := enc.Encode(req); err != nil {
+		t.Fatal(err)
+	}
+
+	var resp Response
+	dec := json.NewDecoder(conn)
+	if err := dec.Decode(&resp); err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.Error != nil {
+		t.Fatalf("RPC error: %s", resp.Error.Message)
+	}
+
+	result, ok := resp.Result.(map[string]interface{})
+	if !ok {
+		t.Fatal("invalid result")
+	}
+	// When --json is not used, output goes to data as raw string.
+	data, _ := result["data"].(string)
+	if !strings.Contains(data, "hello from stdin") {
+		t.Errorf("expected stdin content in response, got: %q", data)
 	}
 }

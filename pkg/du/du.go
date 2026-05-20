@@ -30,7 +30,7 @@ type DirInfo struct {
 	Files int    `json:"files"`
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "du: %v\n", err)
@@ -106,16 +106,16 @@ func run(args []string, out io.Writer) int {
 		})
 	}
 
-	common.Render("du", results, jsonMode, out, func() {
+	common.Render("du", results, jsonMode, stdout, func() {
 		for _, r := range results {
 			if summarize {
 				// use the same formatting as below
 			}
 			if human {
-				fmt.Fprintf(out, "%s\t%s\n", humanSize(r.Size), r.Path)
+				fmt.Fprintf(stdout, "%s\t%s\n", humanSize(r.Size), r.Path)
 			} else {
 				blocks := r.Size / blockSize
-				fmt.Fprintf(out, "%d\t%s\n", blocks, r.Path)
+				fmt.Fprintf(stdout, "%d\t%s\n", blocks, r.Path)
 			}
 		}
 	})

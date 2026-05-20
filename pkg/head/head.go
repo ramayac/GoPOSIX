@@ -54,11 +54,11 @@ type headInput struct {
 	closer io.Closer // non-nil for files that need closing
 }
 
-func run(args []string, out io.Writer) int {
-	return headRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return headRun(args, stdout, os.Stderr, os.Stdin)
 }
 
-func headRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
+func headRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "head: %v\n", err)
@@ -125,13 +125,13 @@ func headRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) in
 		if len(inputs) > 1 {
 			if !jsonMode {
 				if i > 0 {
-					fmt.Fprintln(out)
+					fmt.Fprintln(stdout)
 				}
-				fmt.Fprintf(out, "==> %s <==\n", in.name)
+				fmt.Fprintf(stdout, "==> %s <==\n", in.name)
 			}
 		}
 
-		var w io.Writer = out
+		var w io.Writer = stdout
 		if jsonMode {
 			w = io.Discard
 		}
@@ -159,7 +159,7 @@ func headRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) in
 	}
 
 	if jsonMode {
-		common.Render("head", HeadResult{Lines: allLines, LineCount: len(allLines)}, true, out, func() {})
+		common.Render("head", HeadResult{Lines: allLines, LineCount: len(allLines)}, true, stdout, func() {})
 	}
 
 	return exitCode

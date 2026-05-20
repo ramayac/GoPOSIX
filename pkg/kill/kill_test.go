@@ -8,7 +8,7 @@ import (
 
 func TestKillMissingArgs(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{}, &out)
+	rc := run([]string{}, nil, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -16,7 +16,7 @@ func TestKillMissingArgs(t *testing.T) {
 
 func TestKillJSON(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"--json", "9999999"}, &out)
+	rc := run([]string{"--json", "9999999"}, nil, &out)
 	if rc != 1 {
 		t.Errorf("expected 1, got %d", rc)
 	}

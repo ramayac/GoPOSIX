@@ -62,7 +62,7 @@ func Run(r io.Reader, sysv bool) (int, int) {
 	return sumBSD(data)
 }
 
-func sumRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
+func sumRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "sum: %v\n", err)
@@ -101,7 +101,7 @@ func sumRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	}
 
 	if jsonMode {
-		common.Render("sum", SumResult{Files: results}, true, out, func() {})
+		common.Render("sum", SumResult{Files: results}, true, stdout, func() {})
 		return 0
 	}
 
@@ -109,22 +109,22 @@ func sumRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	for _, r := range results {
 		if sysv {
 			if multi || r.File != "" {
-				fmt.Fprintf(out, "%d %d %s\n", r.Checksum, r.Blocks, r.File)
+				fmt.Fprintf(stdout, "%d %d %s\n", r.Checksum, r.Blocks, r.File)
 			} else {
-				fmt.Fprintf(out, "%d %d\n", r.Checksum, r.Blocks)
+				fmt.Fprintf(stdout, "%d %d\n", r.Checksum, r.Blocks)
 			}
 		} else {
 			if multi {
-				fmt.Fprintf(out, "%05d %5d %s\n", r.Checksum, r.Blocks, r.File)
+				fmt.Fprintf(stdout, "%05d %5d %s\n", r.Checksum, r.Blocks, r.File)
 			} else {
-				fmt.Fprintf(out, "%05d %5d\n", r.Checksum, r.Blocks)
+				fmt.Fprintf(stdout, "%05d %5d\n", r.Checksum, r.Blocks)
 			}
 		}
 	}
 	return 0
 }
 
-func run(args []string, out io.Writer) int { return sumRun(args, out, os.Stderr, os.Stdin) }
+func run(args []string, stdin io.Reader, stdout io.Writer) int { return sumRun(args, stdout, os.Stderr, os.Stdin) }
 func init() {
 	dispatch.Register(dispatch.Command{Name: "sum", Usage: "Compute checksum and block count", Run: run})
 }

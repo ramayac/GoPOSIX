@@ -34,6 +34,7 @@ var spec = common.FlagSpec{
 		{Short: "p", Long: "", Type: common.FlagValue},
 		{Short: "R", Long: "", Type: common.FlagBool},
 		{Short: "N", Long: "", Type: common.FlagBool},
+		{Long: "json", Type: common.FlagBool},
 	},
 }
 
@@ -549,8 +550,8 @@ func parseHunkHeader(line string) (Hunk, error) {
 // CLI glue
 // ---------------------------------------------------------------------------
 
-func run(args []string, out io.Writer) int {
-	return patchRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return patchRun(args, stdout, os.Stderr, os.Stdin)
 }
 
 func patchRun(args []string, stdout, stderr io.Writer, stdin io.Reader) int {
@@ -559,6 +560,8 @@ func patchRun(args []string, stdout, stderr io.Writer, stdin io.Reader) int {
 		fmt.Fprintf(stderr, "patch: %v\n", err)
 		return 2
 	}
+
+	jsonMode := flags.Has("json")
 
 	stripLevel := 0
 	if ps := flags.Get("p"); ps != "" {
@@ -570,7 +573,10 @@ func patchRun(args []string, stdout, stderr io.Writer, stdin io.Reader) int {
 	// Read patch data
 	patchData, err := io.ReadAll(stdin)
 	if err != nil {
-		fmt.Fprintf(stderr, "patch: read stdin: %v\n", err)
+		common.RenderError("patch", 2, "IO", err.Error(), jsonMode, stdout)
+		if !jsonMode {
+			fmt.Fprintf(stderr, "patch: read stdin: %v\n", err)
+		}
 		return 2
 	}
 
@@ -583,7 +589,10 @@ func patchRun(args []string, stdout, stderr io.Writer, stdin io.Reader) int {
 			patchFile := flags.Positional[1]
 			data, ferr := os.ReadFile(patchFile)
 			if ferr != nil {
-				fmt.Fprintf(stderr, "patch: %s: %v\n", patchFile, ferr)
+				common.RenderError("patch", 2, "ENOENT", ferr.Error(), jsonMode, stdout)
+				if !jsonMode {
+					fmt.Fprintf(stderr, "patch: %s: %v\n", patchFile, ferr)
+				}
 				return 2
 			}
 			patchData = data
@@ -591,35 +600,47 @@ func patchRun(args []string, stdout, stderr io.Writer, stdin io.Reader) int {
 	}
 
 	result, err := Run(patchData, targetPath, stripLevel, reverse, ignoreApplied)
-	if result != nil {
+
+	// Determine exit code: 0 on success, 1 on hunk failure or internal error.
+	// The envelope exitCode is always 0 (Render convention); consumers check
+	// result.Rejected > 0 or the process exit code for failure detection.
+	exitCode := 0
+	if err != nil {
+		exitCode = 1
+	}
+
+	// If Run returned no result at all (parse error), render an error envelope.
+	if result == nil {
+		common.RenderError("patch", exitCode, "EPATCH", err.Error(), jsonMode, stdout)
+		if !jsonMode {
+			fmt.Fprintf(stderr, "patch: %v\n", err)
+		}
+		return exitCode
+	}
+
+	// Success or hunk failure — both have structured PatchResult data.
+	common.Render("patch", result, jsonMode, stdout, func() {
 		msg := "patching file"
 		if result.IsNew {
 			msg = "creating"
 		}
-		// Always print the status line when we have a target (even on failure)
 		if result.Applied > 0 || result.Rejected > 0 {
 			fmt.Fprintf(stderr, "%s %s\n", msg, result.File)
 		}
-	}
-	if err != nil {
-		if result != nil && result.Msg != "" {
+		if err != nil && result.Msg != "" {
 			fmt.Fprint(stderr, result.Msg)
 			if !strings.HasSuffix(result.Msg, "\n") {
 				fmt.Fprint(stderr, "\n")
 			}
 		}
-		if result == nil || result.Rejected == 0 {
-			fmt.Fprintf(stderr, "patch: %v\n", err)
-		}
-		return 1
-	}
-	return 0
+	})
+	return exitCode
 }
 
 func init() {
 	dispatch.Register(dispatch.Command{
 		Name:  "patch",
-		Usage: "patch [-pN] [-R] [-N] [file [patchfile]] — apply a unified diff to files",
+		Usage: "patch [-pN] [-R] [-N] [--json] [file [patchfile]] — apply a unified diff to files",
 		Run:   run,
 	})
 }

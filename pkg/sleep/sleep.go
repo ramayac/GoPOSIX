@@ -24,7 +24,7 @@ var spec = common.FlagSpec{
 	},
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sleep: %v\n", err)
@@ -34,7 +34,7 @@ func run(args []string, out io.Writer) int {
 
 	if len(flags.Positional) == 0 {
 		if jsonMode {
-			common.RenderError("sleep", 1, "MISSING", "missing operand", true, out)
+			common.RenderError("sleep", 1, "MISSING", "missing operand", true, stdout)
 		}
 		fmt.Fprintln(os.Stderr, "sleep: missing operand")
 		return 1
@@ -54,7 +54,7 @@ func run(args []string, out io.Writer) int {
 		sec, err := strconv.ParseFloat(durStr, 64)
 		if err != nil {
 			if jsonMode {
-				common.RenderError("sleep", 1, "INVALID", fmt.Sprintf("invalid time interval %q", durStr), true, out)
+				common.RenderError("sleep", 1, "INVALID", fmt.Sprintf("invalid time interval %q", durStr), true, stdout)
 			}
 			fmt.Fprintf(os.Stderr, "sleep: invalid time interval %q\n", durStr)
 			return 1
@@ -72,7 +72,7 @@ func run(args []string, out io.Writer) int {
 			Duration:    actual,
 			Requested:   requested,
 			Interrupted: false,
-		}, true, out, func() {})
+		}, true, stdout, func() {})
 	}
 	return 0
 }

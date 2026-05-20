@@ -12,7 +12,7 @@ func TestHardLink(t *testing.T) {
 	link := filepath.Join(dir, "link")
 	os.WriteFile(target, []byte("data"), 0644)
 
-	code := run([]string{target, link}, os.Stdout)
+	code := run([]string{target, link}, nil, os.Stdout)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -31,7 +31,7 @@ func TestSymlink(t *testing.T) {
 	link := filepath.Join(dir, "link")
 	os.WriteFile(target, []byte("data"), 0644)
 
-	code := run([]string{"-s", target, link}, os.Stdout)
+	code := run([]string{"-s", target, link}, nil, os.Stdout)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -51,14 +51,14 @@ func TestForceOverwrite(t *testing.T) {
 	os.WriteFile(target, []byte("data"), 0644)
 	os.WriteFile(link, []byte("old"), 0644)
 
-	code := run([]string{"-f", target, link}, os.Stdout)
+	code := run([]string{"-f", target, link}, nil, os.Stdout)
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
 }
 
 func TestMissingOperand(t *testing.T) {
-	code := run([]string{"/x"}, os.Stdout)
+	code := run([]string{"/x"}, nil, os.Stdout)
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing operand, got %d", code)
 	}

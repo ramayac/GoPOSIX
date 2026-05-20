@@ -34,7 +34,7 @@ func Run() (WhoamiResult, error) {
 	return WhoamiResult{User: u.Username, UID: uid}, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "whoami: %v\n", err)
@@ -45,12 +45,12 @@ func run(args []string, out io.Writer) int {
 	result, err := Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "whoami: %v\n", err)
-		common.RenderError("whoami", 1, "EUSER", err.Error(), jsonMode, out)
+		common.RenderError("whoami", 1, "EUSER", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
-	common.Render("whoami", result, jsonMode, out, func() {
-		fmt.Fprintln(out, result.User)
+	common.Render("whoami", result, jsonMode, stdout, func() {
+		fmt.Fprintln(stdout, result.User)
 	})
 	return 0
 }

@@ -23,26 +23,26 @@ var spec = common.FlagSpec{
 	},
 }
 
-func runTrue(args []string, out io.Writer) int {
+func runTrue(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "true: %v\n", err)
 		return 2
 	}
 	if flags.Has("json") {
-		common.Render("true", BoolResult{ExitCode: 0, Value: true}, true, out, func() {})
+		common.Render("true", BoolResult{ExitCode: 0, Value: true}, true, stdout, func() {})
 	}
 	return 0
 }
 
-func runFalse(args []string, out io.Writer) int {
+func runFalse(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "false: %v\n", err)
 		return 2
 	}
 	if flags.Has("json") {
-		common.Render("false", BoolResult{ExitCode: 1, Value: false}, true, out, func() {})
+		common.Render("false", BoolResult{ExitCode: 1, Value: false}, true, stdout, func() {})
 	}
 	return 1
 }

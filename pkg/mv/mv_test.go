@@ -143,7 +143,7 @@ func TestBusyBox_Mv_TargetFlag(t *testing.T) {
 	os.WriteFile(f1, []byte("data"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"-t", dstDir, f1}, &buf)
+	code := run([]string{"-t", dstDir, f1}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("mv -t failed with exit %d", code)
 	}

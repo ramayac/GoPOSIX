@@ -35,11 +35,11 @@ func (c *countingWriter) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func run(args []string, out io.Writer) int {
-	return teeRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return teeRun(args, stdout, os.Stderr, os.Stdin)
 }
 
-func teeRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
+func teeRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "tee: %v\n", err)
@@ -56,7 +56,7 @@ func teeRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int
 	if jsonMode {
 		stdoutCapture = io.Discard
 	} else {
-		stdoutCapture = out
+		stdoutCapture = stdout
 	}
 
 	writers = append(writers, stdoutCapture)
@@ -74,7 +74,7 @@ func teeRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int
 		f, err := os.OpenFile(path, fileFlags, 0666)
 		if err != nil {
 			if jsonMode {
-				common.RenderError("tee", 1, "OPEN", fmt.Sprintf("%s: %v", path, err), true, out)
+				common.RenderError("tee", 1, "OPEN", fmt.Sprintf("%s: %v", path, err), true, stdout)
 			} else {
 				fmt.Fprintf(errOut, "tee: %s: %v\n", path, err)
 			}
@@ -99,7 +99,7 @@ func teeRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int
 
 	if err != nil {
 		if jsonMode {
-			common.RenderError("tee", 1, "WRITE", err.Error(), true, out)
+			common.RenderError("tee", 1, "WRITE", err.Error(), true, stdout)
 		} else {
 			fmt.Fprintf(errOut, "tee: %v\n", err)
 		}
@@ -114,7 +114,7 @@ func teeRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int
 		common.Render("tee", TeeResult{
 			BytesWritten: totalWritten,
 			Files:        filePaths,
-		}, true, out, func() {})
+		}, true, stdout, func() {})
 	}
 
 	return exitCode

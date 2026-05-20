@@ -30,11 +30,11 @@ type ExecResult struct {
 	ExitCode int    `json:"exitCode"`
 }
 
-func run(args []string, out io.Writer) int {
-	return xargsRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return xargsRun(args, stdout, os.Stderr, os.Stdin)
 }
 
-func xargsRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
+func xargsRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "xargs: %v\n", err)
@@ -152,7 +152,7 @@ func xargsRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) i
 		}
 
 		cmd := exec.Command(baseCmd, args...)
-		cmd.Stdout = out
+		cmd.Stdout = stdout
 		cmd.Stderr = errOut
 
 		if trace {
@@ -186,7 +186,7 @@ func xargsRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) i
 	}
 
 	if flags.Has("json") {
-		common.Render("xargs", results, true, out, func() {})
+		common.Render("xargs", results, true, stdout, func() {})
 	}
 
 	return exitCode

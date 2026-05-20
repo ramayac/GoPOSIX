@@ -1,6 +1,11 @@
 # Hardening IV: Architecture, Security & Compliance Gaps
 
-> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (6 remaining, 21 resolved)
+> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (3 remaining, 24 resolved)
+>
+> **This branch (`feat/hardeing-iv-partii`):** Shell redirect fix + Phase 25 daemon stdin support.
+> Shell `openHandler` no longer defaults redirections to `/` when CWD is empty.
+> `dispatch.Command.Run` signature expanded to `(args, stdin io.Reader, stdout io.Writer)`.
+> `GoposixParams` gained `Stdin` field, plumbed through daemon to all 76 utilities.
 >
 > All items below have been verified against the actual codebase. Items from the
 > original draft that were inaccurate have been corrected or removed (see §Corrections).
@@ -26,20 +31,19 @@
 - **Impact:** Complete path traversal bypass for any client with socket access.
 - **Action:** Validate the `path` parameter through `SecurePath` (or at minimum verify it exists and is a directory) before storing it in the session.
 
-### H2. `SecurePath` Does Not Resolve Symlinks
+### H2. `SecurePath` Does Not Resolve Symlinks [RESOLVED]
 
-- **File:** [security.go](file:///home/ramayac/git/GoPOSIX/pkg/common/security.go#L24-L28)
-- **Issue:** `SecurePath` uses `filepath.Clean` (lexical) instead of `filepath.EvalSymlinks`. If `/app/data/link` is a symlink to `/etc`, then `SecurePath("/app/data/link/passwd", "/app/data")` passes validation, but the actual file accessed is `/etc/passwd`.
+- **File:** [security.go](file:///home/ramayac/git/GoPOSIX/pkg/common/security.go)
+- **Issue:** `SecurePath` used `filepath.Clean` (lexical) instead of `filepath.EvalSymlinks`. If `/app/data/link` is a symlink to `/etc`, then `SecurePath("/app/data/link/passwd", "/app/data")` passed validation, but the actual file accessed was `/etc/passwd`.
 - **Impact:** Symlink-based path traversal in any environment where the daemon user can access symlinks pointing outside the base directory.
-- **Cross-ref:** [security.md](file:///home/ramayac/git/GoPOSIX/wiki/security.md) claims *"Symlinks are resolved; the resolved target must also be within the allowed path"* — this is **inaccurate**.
-- **Action:** Use `filepath.EvalSymlinks` on the resolved path before the prefix check. Update `security.md` to reflect reality until fixed.
+- **Status:** **RESOLVED** — Added `resolveSymlinks()` helper that calls `filepath.EvalSymlinks` on the target path. For paths that do not exist yet (e.g., new file creation), it walks up to the deepest existing parent, resolves its symlinks, and appends the non-existent tail — catching escape symlinks in parent directories. Base directory is also resolved before the prefix comparison. Updated `security.md` to reflect resolution. Backed by symlink-aware unit tests.
 
-### H3. Session Data Race on Concurrent Access
+### H3. Session Data Race on Concurrent Access [RESOLVED]
 
-- **File:** [session.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/session.go#L52-L61)
-- **Issue:** `Get()` and `List()` return `*Session` pointers while briefly holding the mutex, but callers then read `session.CWD` and `session.Env` (a map) **without any lock** (see [server.go L477-479](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L477-L479)). Concurrent `setCwd` or env mutation causes a data race. Concurrent map read/write on `.Env` will **panic** in Go.
+- **File:** [session.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/session.go)
+- **Issue:** `Get()` and `List()` returned raw `*Session` pointers while briefly holding the mutex, but callers then read `session.CWD` and `session.Env` (a map) **without any lock**. Concurrent `setCwd` or env mutation caused a data race. Concurrent map read/write on `.Env` panics in Go.
 - **Impact:** Crash under concurrent multi-session load.
-- **Action:** Return copies of session data (copy CWD string and clone Env map) from `Get()`, or hold a read-lock while the caller uses the session.
+- **Status:** **RESOLVED** — `Get()` and `List()` now return deep copies via `Session.copy()`, cloning the Env map before releasing the mutex. All callers receive their own independent snapshot. Verified with `go test -race` — 4 races detected before fix, 0 after. Also fixed pre-existing `close of closed channel` panic in `SessionManager.Stop()` (now idempotent).
 
 ### H4. Systemic `os.Stderr` Hardcoding Across Utilities
 
@@ -55,12 +59,14 @@
 - **Impact:** Root protection cannot be overridden even when intentionally desired. The flag the error message tells users to use will itself error. Safe but broken as documented.
 - **Action:** Add `{Long: "no-preserve-root", Type: common.FlagBool}` to the `rm` flag spec.
 
-### H6. Shell Sandbox: `os.Chdir()` Is Not Thread-Safe
+### H6. Shell Sandbox: `os.Chdir()` Is Not Thread-Safe [RESOLVED]
 
-- **File:** `internal/shell/interpreter.go` (lines 56, 124)
-- **Issue:** The shell sandbox calls `os.Chdir(hc.Dir)` to set the working directory before executing commands. `os.Chdir` mutates **global process state** — it changes the CWD for the entire daemon process, not just the current goroutine.
+- **File:** `internal/shell/interpreter.go`
+- **Issue:** The shell sandbox called `os.Chdir(hc.Dir)` to set the working directory before executing dispatch commands and after `cd` in scripts. `os.Chdir` mutates **global process state** — it changes the CWD for the entire daemon process, not just the current goroutine.
 - **Impact:** If multiple `goposix.shell.exec` RPC calls run concurrently (which the worker pool enables), they will clobber each other's CWD. This is a data race on the global process state.
-- **Action:** Avoid `os.Chdir`. Instead, set the `Dir` field on `exec.Cmd` or use the shell interpreter's built-in `Dir` option.
+- **Status:** **RESOLVED** — Added `execMu sync.Mutex` serializing all calls to `Exec()`. Process CWD saved at entry and restored on exit, preventing `cd` side-effects from leaking between sequential calls (the daemon tracks CWD per-session, not via process state). Updated `TestCdAndPwd`, `TestCdPersistsAcrossExecCalls`, `TestCdWithExplicitCwd` to verify no CWD leaks. Added `TestConcurrentShellExec` (5 goroutines × 100 iterations, passes `-race`). Added `make test-race` target to Makefile.
+- **Also resolved (this branch):** Shell `openHandler` redirect bug — when `cwd` was empty (non-interactive shell invocations), file redirections like `> tutu.txt` resolved to `/tutu.txt` instead of the process CWD. Fixed by falling back to `os.Getwd()` when no explicit CWD is provided. 3 new tests added.
+- **Also resolved (this branch):** `dispatch.Command.Run` signature expanded to include `stdin io.Reader` — the first step toward threading per-command state. `GoposixParams` gained a `Stdin` field plumbed through the daemon. Future work: eliminate `os.Chdir` entirely by threading a CWD parameter through the `dispatch.Command.Run` signature.
 
 ### H7. Missing Injectable Entry Points Across 7+ Utilities [RESOLVED]
 
@@ -253,23 +259,24 @@ The following items from the original Hardening IV document were found to be **i
 
 | Priority | Total | Resolved | Remaining | Key Themes |
 |----------|:-----:|:--------:|:---------:|------------|
-| 🔴 HIGH   |   7   |    1     |     6     | Security bypass, data races, thread-safety, architectural invariant violations |
+| 🔴 HIGH   |   7   |    4     |     3     | Security bypass, data races, thread-safety, architectural invariant violations |
 | 🟡 MEDIUM |  12   |   12     |     0     | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers (ALL RESOLVED) |
 | 🟢 LOW    |   8   |    8     |     0     | Code smells, goroutine leaks, cosmetic issues (ALL RESOLVED) |
-| **Total** | **27**|   21     |     6     | |
+| **Total** | **27**|   24     |     3     | |
 
-### Remaining Fix Order (6 items)
+### Remaining Fix Order (3 items)
 
-1. **H1 + H2**: Fix `setCwd` validation and `SecurePath` symlink resolution, update `security.md`. These are security issues.
-2. **H6**: Fix `os.Chdir` thread-safety in shell sandbox (data race on global state).
-3. **H3**: Fix session data race (concurrent map panic risk).
-4. **H5**: Add `--no-preserve-root` to `rm` flag spec (safe but broken UX).
-5. **H4**: Continue injectable stderr refactor across remaining utilities (11 of ~79 done).
+1. **H1**: Fix `setCwd` validation — validate path through `SecurePath` before storing in session.
+2. **H5**: Add `--no-preserve-root` to `rm` flag spec (one-line fix).
+3. **H4**: Continue injectable stderr refactor across remaining utilities (11 of ~79 done).
 
 ### Resolved (21 items)
 
 | Item | Resolution |
 |------|-----------|
+| H2 | `resolveSymlinks()` helper with `EvalSymlinks`, parent walk-up for non-existent paths |
+| H3 | `Get()`/`List()` return deep copies via `Session.copy()`, `Stop()` made idempotent |
+| H6 | `execMu sync.Mutex` serializes `Exec()`, CWD save/restore prevents cd leaks |
 | H7 | Injectable `xxxRun()` entry points for all 11 target utilities |
 | M1 | `PerRequestLimitReader` per-request reset |
 | M2 | `ls -d` / `--directory` flag implemented |

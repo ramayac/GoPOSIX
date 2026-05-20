@@ -54,7 +54,7 @@ func Run(adjustment int, command []string) (int, error) {
 	return 0, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "nice: %v\n", err)
@@ -68,7 +68,7 @@ func run(args []string, out io.Writer) int {
 		adj, err := strconv.Atoi(adjStr)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "nice: invalid adjustment: %s\n", adjStr)
-			common.RenderError("nice", 1, "EARGS", "invalid adjustment", jsonMode, out)
+			common.RenderError("nice", 1, "EARGS", "invalid adjustment", jsonMode, stdout)
 			return 1
 		}
 		adjustment = adj
@@ -76,14 +76,14 @@ func run(args []string, out io.Writer) int {
 
 	if len(flags.Positional) == 0 {
 		fmt.Fprintln(os.Stderr, "nice: missing command")
-		common.RenderError("nice", 1, "EARGS", "missing command", jsonMode, out)
+		common.RenderError("nice", 1, "EARGS", "missing command", jsonMode, stdout)
 		return 1
 	}
 
 	exitCode, err := Run(adjustment, flags.Positional)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "nice: %v\n", err)
-		common.RenderError("nice", 1, "ENICE", err.Error(), jsonMode, out)
+		common.RenderError("nice", 1, "ENICE", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
@@ -93,7 +93,7 @@ func run(args []string, out io.Writer) int {
 			Command:    flags.Positional,
 			ExitCode:   exitCode,
 		}
-		common.Render("nice", result, true, out, func() {})
+		common.Render("nice", result, true, stdout, func() {})
 	}
 	return exitCode
 }

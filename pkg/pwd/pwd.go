@@ -39,7 +39,7 @@ func Run(physical bool) (PwdResult, error) {
 	return PwdResult{Path: dir}, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pwd: %v\n", err)
@@ -51,12 +51,12 @@ func run(args []string, out io.Writer) int {
 	result, err := Run(physical)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pwd: %v\n", err)
-		common.RenderError("pwd", 1, "EPWD", err.Error(), jsonMode, out)
+		common.RenderError("pwd", 1, "EPWD", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
-	common.Render("pwd", result, jsonMode, out, func() {
-		fmt.Fprintln(out, result.Path)
+	common.Render("pwd", result, jsonMode, stdout, func() {
+		fmt.Fprintln(stdout, result.Path)
 	})
 	return 0
 }

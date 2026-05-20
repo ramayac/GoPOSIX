@@ -8,7 +8,7 @@ import (
 
 func TestDuRun(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"."}, &out)
+	rc := run([]string{"."}, nil, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -19,7 +19,7 @@ func TestDuRun(t *testing.T) {
 
 func TestDuJSON(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"--json", "."}, &out)
+	rc := run([]string{"--json", "."}, nil, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -50,7 +50,7 @@ func TestBusyBox_Du_HumanReadable(t *testing.T) {
 func TestBusyBox_Du_KFlag(t *testing.T) {
 	// du -k should accept the -k flag and produce output.
 	var out bytes.Buffer
-	rc := run([]string{"-k", "."}, &out)
+	rc := run([]string{"-k", "."}, nil, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -62,7 +62,7 @@ func TestBusyBox_Du_KFlag(t *testing.T) {
 func TestBusyBox_Du_MFlag(t *testing.T) {
 	// du -m should accept the -m flag.
 	var out bytes.Buffer
-	rc := run([]string{"-m", "."}, &out)
+	rc := run([]string{"-m", "."}, nil, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -74,7 +74,7 @@ func TestBusyBox_Du_MFlag(t *testing.T) {
 func TestBusyBox_Du_LFlag(t *testing.T) {
 	// du -l should accept the -l flag (count hard links).
 	var out bytes.Buffer
-	rc := run([]string{"-l", "."}, &out)
+	rc := run([]string{"-l", "."}, nil, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}

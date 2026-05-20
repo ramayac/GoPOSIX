@@ -99,7 +99,7 @@ func isSymbolicMode(modeStr string) bool {
 	return strings.ContainsAny(modeStr, "-+=")
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "chmod: %v\n", err)
@@ -138,7 +138,7 @@ func run(args []string, out io.Writer) int {
 			}
 		}
 		if flags.Has("json") {
-			common.Render("chmod", ChmodResp{Changed: res}, true, out, func() {})
+			common.Render("chmod", ChmodResp{Changed: res}, true, stdout, func() {})
 		}
 		return exitCode
 	}
@@ -162,7 +162,7 @@ func run(args []string, out io.Writer) int {
 		}
 	}
 	if flags.Has("json") {
-		common.Render("chmod", ChmodResp{Changed: res}, true, out, func() {})
+		common.Render("chmod", ChmodResp{Changed: res}, true, stdout, func() {})
 	}
 	return exitCode
 }

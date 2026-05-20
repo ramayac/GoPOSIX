@@ -44,7 +44,7 @@ func charsToString(chars [65]int8) string {
 	return string(b)
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "uname: %v\n", err)
@@ -55,7 +55,7 @@ func run(args []string, out io.Writer) int {
 	result, err := Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "uname: %v\n", err)
-		common.RenderError("uname", 1, "EUNAME", err.Error(), jsonMode, out)
+		common.RenderError("uname", 1, "EUNAME", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
@@ -71,7 +71,7 @@ func run(args []string, out io.Writer) int {
 		s = true
 	}
 
-	common.Render("uname", result, jsonMode, out, func() {
+	common.Render("uname", result, jsonMode, stdout, func() {
 		var parts []string
 		if s {
 			parts = append(parts, result.Sysname)
@@ -88,7 +88,7 @@ func run(args []string, out io.Writer) int {
 		if m {
 			parts = append(parts, result.Machine)
 		}
-		fmt.Fprintln(out, strings.Join(parts, " "))
+		fmt.Fprintln(stdout, strings.Join(parts, " "))
 	})
 	return 0
 }

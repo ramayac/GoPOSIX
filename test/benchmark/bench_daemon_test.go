@@ -85,6 +85,6 @@ func BenchmarkCLIEcho(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var buf bytes.Buffer
-		cmd.Run([]string{"hello"}, &buf)
+		cmd.Run([]string{"hello"}, nil, &buf)
 	}
 }

@@ -90,17 +90,17 @@ func Run(r io.Reader, w io.Writer, numberAll, numberNonBlank, squeezeBlank bool)
 			prefix = fmt.Sprintf("%6d\t", lineNum)
 		}
 
-		out := prefix + line
-		fmt.Fprintln(w, out)
-		lines = append(lines, out)
+		stdout := prefix + line
+		fmt.Fprintln(w, stdout)
+		lines = append(lines, stdout)
 	}
 	return lines, scanner.Err()
 }
 
 // catRun is the injectable CLI entry point for cat. It mirrors the POSIX
-// cat command: it parses flags, opens files, reads stdin, and writes to out.
+// cat command: it parses flags, opens files, reads stdin, and writes to stdout.
 // errOut receives error messages. stdin is the reader for "-" and default stdin.
-func catRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
+func catRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "cat: %v\n", err)
@@ -153,13 +153,13 @@ func catRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 			}
 			allLines = append(allLines, lines...)
 		}
-		common.Render("cat", CatResult{Lines: allLines, LineCount: len(allLines)}, true, out, func() {})
+		common.Render("cat", CatResult{Lines: allLines, LineCount: len(allLines)}, true, stdout, func() {})
 		return 0
 	}
 
 	if !numberAll && !numberNonBlank && !squeezeBlank && !showNonPrinting && !showEnds {
 		for _, r := range readers {
-			if _, err := io.Copy(out, r); err != nil {
+			if _, err := io.Copy(stdout, r); err != nil {
 				fmt.Fprintf(errOut, "cat: %v\n", err)
 				return 1
 			}
@@ -169,11 +169,11 @@ func catRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 
 	// cat -v / -e: per-character vis processing.
 	if showNonPrinting || showEnds {
-		return catRunVis(readers, showEnds || showNonPrinting, showEnds, jsonMode, out, errOut)
+		return catRunVis(readers, showEnds || showNonPrinting, showEnds, jsonMode, stdout, errOut)
 	}
 
 	for _, r := range readers {
-		if _, err := Run(r, out, numberAll, numberNonBlank, squeezeBlank); err != nil {
+		if _, err := Run(r, stdout, numberAll, numberNonBlank, squeezeBlank); err != nil {
 			fmt.Fprintf(errOut, "cat: %v\n", err)
 			return 1
 		}
@@ -181,12 +181,12 @@ func catRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	return 0
 }
 
-func run(args []string, out io.Writer) int {
-	return catRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return catRun(args, stdout, os.Stderr, os.Stdin)
 }
 
 // catRunVis handles cat -v and/or cat -e: per-line vis transformation.
-func catRunVis(readers []io.Reader, doVis, showEnds, jsonMode bool, out, errOut io.Writer) int {
+func catRunVis(readers []io.Reader, doVis, showEnds, jsonMode bool, stdout, errOut io.Writer) int {
 	var allLines []string
 	for _, r := range readers {
 		scanner := bufio.NewScanner(r)
@@ -197,7 +197,7 @@ func catRunVis(readers []io.Reader, doVis, showEnds, jsonMode bool, out, errOut 
 			} else if showEnds {
 				line += "$"
 			}
-			fmt.Fprintln(out, line)
+			fmt.Fprintln(stdout, line)
 			allLines = append(allLines, line)
 		}
 		if err := scanner.Err(); err != nil {
@@ -206,7 +206,7 @@ func catRunVis(readers []io.Reader, doVis, showEnds, jsonMode bool, out, errOut 
 		}
 	}
 	if jsonMode {
-		common.Render("cat", CatResult{Lines: allLines, LineCount: len(allLines)}, true, out, func() {})
+		common.Render("cat", CatResult{Lines: allLines, LineCount: len(allLines)}, true, stdout, func() {})
 	}
 	return 0
 }

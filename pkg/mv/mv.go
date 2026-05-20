@@ -44,12 +44,12 @@ func moveFile(src, dst string) error {
 	}
 	defer in.Close()
 	si, _ := in.Stat()
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, si.Mode())
+	stdout, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, si.Mode())
 	if err != nil {
 		return err
 	}
-	defer out.Close()
-	if _, err := io.Copy(out, in); err != nil {
+	defer stdout.Close()
+	if _, err := io.Copy(stdout, in); err != nil {
 		return err
 	}
 	return os.Remove(src)
@@ -74,7 +74,7 @@ func Run(srcs []string, dst string) (MvResult, error) {
 	return result, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "mv: %v\n", err)
@@ -100,10 +100,10 @@ func run(args []string, out io.Writer) int {
 	result, err := Run(srcs, dst)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "mv: %v\n", err)
-		common.RenderError("mv", 1, "EMV", err.Error(), jsonMode, out)
+		common.RenderError("mv", 1, "EMV", err.Error(), jsonMode, stdout)
 		return 1
 	}
-	common.Render("mv", result, jsonMode, out, func() {})
+	common.Render("mv", result, jsonMode, stdout, func() {})
 	return 0
 }
 

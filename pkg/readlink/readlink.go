@@ -45,7 +45,7 @@ func Run(path string, canonicalize bool) (ReadlinkResult, error) {
 	return ReadlinkResult{Path: path, Target: target}, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "readlink: %v\n", err)
@@ -61,12 +61,12 @@ func run(args []string, out io.Writer) int {
 		result, err := Run(p, flags.Has("f"))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "readlink: %v\n", err)
-			common.RenderError("readlink", 1, "EREADLINK", err.Error(), jsonMode, out)
+			common.RenderError("readlink", 1, "EREADLINK", err.Error(), jsonMode, stdout)
 			exitCode = 1
 			continue
 		}
-		common.Render("readlink", result, jsonMode, out, func() {
-			fmt.Fprintln(out, result.Target)
+		common.Render("readlink", result, jsonMode, stdout, func() {
+			fmt.Fprintln(stdout, result.Target)
 		})
 	}
 	return exitCode

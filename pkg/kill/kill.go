@@ -28,7 +28,7 @@ type KillResp struct {
 	Signaled []KillResult `json:"signaled"`
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "kill: %v\n", err)
@@ -67,7 +67,7 @@ func run(args []string, out io.Writer) int {
 	}
 
 	if flags.Has("json") {
-		common.Render("kill", KillResp{Signaled: res}, true, out, func() {})
+		common.Render("kill", KillResp{Signaled: res}, true, stdout, func() {})
 	}
 
 	return exitCode

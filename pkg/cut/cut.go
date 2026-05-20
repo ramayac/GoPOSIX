@@ -185,11 +185,11 @@ func Run(r io.Reader, fields, delimiter, chars, bytesList string, onlyDelimited,
 	return lines, scanner.Err()
 }
 
-func run(args []string, out io.Writer) int {
-	return cutRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return cutRun(args, stdout, os.Stderr, os.Stdin)
 }
 
-func cutRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
+func cutRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "cut: %v\n", err)
@@ -245,11 +245,11 @@ func cutRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int
 	}
 
 	if jsonMode {
-		common.Render("cut", CutResult{Lines: allLines}, true, out, func() {})
+		common.Render("cut", CutResult{Lines: allLines}, true, stdout, func() {})
 	} else {
 		for _, line := range allLines {
 			if len(line.Fields) > 0 {
-				fmt.Fprintln(out, line.Fields[0])
+				fmt.Fprintln(stdout, line.Fields[0])
 			}
 		}
 	}

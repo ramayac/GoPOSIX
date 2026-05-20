@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://goposix.dev/schemas/cksum.schema.json",
+  "title": "GoPOSIX cksum --json output",
+  "description": "Validates the complete JSON output of goposix cksum --json.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": { "type": "string", "const": "cksum" },
+    "version": { "type": "string" },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "exitCode": { "type": "integer" },
+    "data": {"type": "object", "required": ["files"], "properties": {"files": {"type": "array", "items": {"type": "object", "required": ["checksum", "bytes"], "properties": {"name": {"type": "string"}, "checksum": {"type": "integer"}, "bytes": {"type": "integer"}}}}}},
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

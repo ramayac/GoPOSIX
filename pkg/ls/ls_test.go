@@ -222,7 +222,7 @@ func TestCLI_BasicDir(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "f.txt"), []byte("x"), 0644)
 	var out bytes.Buffer
-	code := run([]string{dir}, &out)
+	code := run([]string{dir}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -232,7 +232,7 @@ func TestCLI_ShowAll(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, ".hidden"), []byte("x"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-a", dir}, &out)
+	code := run([]string{"-a", dir}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -242,7 +242,7 @@ func TestCLI_LongFormat(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "x.txt"), []byte("hi"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-l", dir}, &out)
+	code := run([]string{"-l", dir}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -253,7 +253,7 @@ func TestCLI_OnePerLine(t *testing.T) {
 	os.WriteFile(filepath.Join(dir, "a.txt"), []byte("a"), 0644)
 	os.WriteFile(filepath.Join(dir, "b.txt"), []byte("b"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-1", dir}, &out)
+	code := run([]string{"-1", dir}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -264,7 +264,7 @@ func TestCLI_Recursive(t *testing.T) {
 	os.MkdirAll(filepath.Join(dir, "sub"), 0755)
 	os.WriteFile(filepath.Join(dir, "sub", "f.txt"), []byte("x"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-R", dir}, &out)
+	code := run([]string{"-R", dir}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -274,7 +274,7 @@ func TestCLI_JSON(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "json.txt"), []byte("x"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"--json", dir}, &out)
+	code := run([]string{"--json", dir}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -286,7 +286,7 @@ func TestCLI_JSON(t *testing.T) {
 func TestCLI_LongFlags(t *testing.T) {
 	dir := t.TempDir()
 	var out bytes.Buffer
-	code := run([]string{"--all", dir}, &out)
+	code := run([]string{"--all", dir}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -294,7 +294,7 @@ func TestCLI_LongFlags(t *testing.T) {
 
 func TestCLI_NotExist(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"/nonexistent/ls/path"}, &out)
+	code := run([]string{"/nonexistent/ls/path"}, nil, &out)
 	if code != 2 {
 		t.Errorf("expected exit 2, got %d", code)
 	}
@@ -302,7 +302,7 @@ func TestCLI_NotExist(t *testing.T) {
 
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, &out)
+	code := run([]string{"--nonexistent"}, nil, &out)
 	if code != 2 {
 		t.Errorf("expected exit 2, got %d", code)
 	}
@@ -312,7 +312,7 @@ func TestCLI_MultipleDirs(t *testing.T) {
 	d1 := t.TempDir()
 	d2 := t.TempDir()
 	var out bytes.Buffer
-	code := run([]string{d1, d2}, &out)
+	code := run([]string{d1, d2}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -325,7 +325,7 @@ func TestCLI_DirectoryMode(t *testing.T) {
 	// In directoryMode, listing the directory should print the directory name itself
 	// instead of listing its contents ("f.txt").
 	var out bytes.Buffer
-	code := run([]string{"-d", dir}, &out)
+	code := run([]string{"-d", dir}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}

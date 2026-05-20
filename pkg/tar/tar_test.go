@@ -23,7 +23,7 @@ func TestTarCreateExtract(t *testing.T) {
 
 	// Create archive
 	var buf bytes.Buffer
-	code := run([]string{"-c", "-f", archiveFile, "-C", tmpDir, "src"}, &buf)
+	code := run([]string{"-c", "-f", archiveFile, "-C", tmpDir, "src"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("create exit code %d", code)
 	}
@@ -37,7 +37,7 @@ func TestTarCreateExtract(t *testing.T) {
 	os.MkdirAll(destDir, 0755)
 
 	var buf2 bytes.Buffer
-	code = run([]string{"-x", "-f", archiveFile, "-C", destDir}, &buf2)
+	code = run([]string{"-x", "-f", archiveFile, "-C", destDir}, nil, &buf2)
 	if code != 0 {
 		t.Fatalf("extract exit code %d", code)
 	}
@@ -75,13 +75,13 @@ func TestTarList(t *testing.T) {
 
 	archiveFile := filepath.Join(tmpDir, "archive.tar")
 	var buf bytes.Buffer
-	code := run([]string{"-c", "-f", archiveFile, "-C", tmpDir, "src"}, &buf)
+	code := run([]string{"-c", "-f", archiveFile, "-C", tmpDir, "src"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("create exit code %d", code)
 	}
 
 	var buf2 bytes.Buffer
-	code = run([]string{"-t", "-f", archiveFile}, &buf2)
+	code = run([]string{"-t", "-f", archiveFile}, nil, &buf2)
 	if code != 0 {
 		t.Fatalf("list exit code %d", code)
 	}
@@ -104,7 +104,7 @@ func TestTarGzip(t *testing.T) {
 
 	// Create with -z
 	var buf bytes.Buffer
-	code := run([]string{"-c", "-z", "-f", archiveFile, "-C", tmpDir, "src"}, &buf)
+	code := run([]string{"-c", "-z", "-f", archiveFile, "-C", tmpDir, "src"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("create exit code %d", code)
 	}
@@ -120,7 +120,7 @@ func TestTarGzip(t *testing.T) {
 
 	// List with -z
 	var buf2 bytes.Buffer
-	code = run([]string{"-t", "-z", "-f", archiveFile}, &buf2)
+	code = run([]string{"-t", "-z", "-f", archiveFile}, nil, &buf2)
 	if code != 0 {
 		t.Fatalf("list exit code %d", code)
 	}
@@ -136,7 +136,7 @@ func TestTarJSON(t *testing.T) {
 
 	archiveFile := filepath.Join(tmpDir, "archive.tar")
 	var buf bytes.Buffer
-	code := run([]string{"--json", "-c", "-f", archiveFile, "-C", tmpDir, "src"}, &buf)
+	code := run([]string{"--json", "-c", "-f", archiveFile, "-C", tmpDir, "src"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("create exit code %d", code)
 	}
@@ -153,19 +153,19 @@ func TestTarJSON(t *testing.T) {
 
 func TestTarMissingArgs(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"-c"}, &buf)
+	code := run([]string{"-c"}, nil, &buf)
 	if code != 1 {
 		t.Errorf("should fail without -f")
 	}
 
 	var buf2 bytes.Buffer
-	code = run([]string{"-f", "test.tar"}, &buf2)
+	code = run([]string{"-f", "test.tar"}, nil, &buf2)
 	if code != 1 {
 		t.Errorf("should fail without mode (-c, -x, -t)")
 	}
 
 	var buf3 bytes.Buffer
-	code = run([]string{"-c", "-x", "-f", "test.tar"}, &buf3)
+	code = run([]string{"-c", "-x", "-f", "test.tar"}, nil, &buf3)
 	if code != 1 {
 		t.Errorf("should fail with multiple modes")
 	}
@@ -187,7 +187,7 @@ func TestTarExtractReadOnlyDir(t *testing.T) {
 	// Create archive
 	archivePath := filepath.Join(tmpDir, "test.tar")
 	createOut := &bytes.Buffer{}
-	code := run(append([]string{"-c", "-f", archivePath, "-C", tmpDir}, "input_dir"), createOut)
+	code := run(append([]string{"-c", "-f", archivePath, "-C", tmpDir}, "input_dir"), nil, createOut)
 	if code != 0 {
 		t.Fatalf("tar create exited with %d, want 0: %s", code, createOut.String())
 	}
@@ -198,7 +198,7 @@ func TestTarExtractReadOnlyDir(t *testing.T) {
 
 	// Extract
 	extractOut := &bytes.Buffer{}
-	code = run([]string{"-x", "-f", archivePath, "-C", tmpDir}, extractOut)
+	code = run([]string{"-x", "-f", archivePath, "-C", tmpDir}, nil, extractOut)
 	if code != 0 {
 		t.Fatalf("tar extract exited with %d, want 0: %s", code, extractOut.String())
 	}
@@ -228,7 +228,7 @@ func TestTar_OldStyleFlags(t *testing.T) {
 	arc := filepath.Join(dir, "test.tar")
 	var out bytes.Buffer
 	// Old-style: "cf" instead of "-c -f"
-	code := run([]string{"cf", arc, "-C", dir, "x.txt"}, &out)
+	code := run([]string{"cf", arc, "-C", dir, "x.txt"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("old-style create exit %d", code)
 	}
@@ -238,7 +238,7 @@ func TestTar_OldStyleFlags(t *testing.T) {
 
 	// Old-style list: "tf"
 	var out2 bytes.Buffer
-	code = run([]string{"tf", arc}, &out2)
+	code = run([]string{"tf", arc}, nil, &out2)
 	if code != 0 {
 		t.Fatalf("old-style list exit %d", code)
 	}
@@ -251,7 +251,7 @@ func TestTar_OldStyleVerbose(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "tvf.tar")
 	var out bytes.Buffer
-	code := run([]string{"cvf", arc, "-C", dir, "x.txt"}, &out)
+	code := run([]string{"cvf", arc, "-C", dir, "x.txt"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("old-style verbose create exit %d", code)
 	}
@@ -265,7 +265,7 @@ func TestTar_CreateLongFlags(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "archive.tar")
 	var out bytes.Buffer
-	code := run([]string{"--create", "--file", arc, "-C", dir, "x.txt"}, &out)
+	code := run([]string{"--create", "--file", arc, "-C", dir, "x.txt"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("--create --file exit %d", code)
 	}
@@ -277,12 +277,12 @@ func TestTar_CreateLongFlags(t *testing.T) {
 func TestTar_ExtractLongFlags(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "arc.tar")
-	run([]string{"-c", "-f", arc, "-C", dir, "x.txt"}, &bytes.Buffer{})
+	run([]string{"-c", "-f", arc, "-C", dir, "x.txt"}, nil, &bytes.Buffer{})
 
 	dest := filepath.Join(dir, "out")
 	os.Mkdir(dest, 0755)
 	var out bytes.Buffer
-	code := run([]string{"--extract", "--file", arc, "--directory", dest}, &out)
+	code := run([]string{"--extract", "--file", arc, "--directory", dest}, nil, &out)
 	if code != 0 {
 		t.Fatalf("--extract exit %d", code)
 	}
@@ -291,10 +291,10 @@ func TestTar_ExtractLongFlags(t *testing.T) {
 func TestTar_ListLongFlags(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "a.tar")
-	run([]string{"-c", "-f", arc, "-C", dir, "x.txt"}, &bytes.Buffer{})
+	run([]string{"-c", "-f", arc, "-C", dir, "x.txt"}, nil, &bytes.Buffer{})
 
 	var out bytes.Buffer
-	code := run([]string{"--list", "--file", arc}, &out)
+	code := run([]string{"--list", "--file", arc}, nil, &out)
 	if code != 0 {
 		t.Fatalf("--list exit %d", code)
 	}
@@ -307,7 +307,7 @@ func TestTar_GzipLongFlag(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "a.tgz")
 	var out bytes.Buffer
-	code := run([]string{"--create", "--gzip", "--file", arc, "-C", dir, "x.txt"}, &out)
+	code := run([]string{"--create", "--gzip", "--file", arc, "-C", dir, "x.txt"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("--gzip create exit %d", code)
 	}
@@ -324,7 +324,7 @@ func TestTar_Verbose(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "v.tar")
 	var out bytes.Buffer
-	code := run([]string{"-c", "-v", "-f", arc, "-C", dir, "x.txt"}, &out)
+	code := run([]string{"-c", "-v", "-f", arc, "-C", dir, "x.txt"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("verbose create exit %d", code)
 	}
@@ -336,10 +336,10 @@ func TestTar_Verbose(t *testing.T) {
 func TestTar_ToStdout(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "o.tar")
-	run([]string{"-c", "-f", arc, "-C", dir, "x.txt"}, &bytes.Buffer{})
+	run([]string{"-c", "-f", arc, "-C", dir, "x.txt"}, nil, &bytes.Buffer{})
 
 	var out bytes.Buffer
-	code := run([]string{"-x", "-O", "-f", arc}, &out)
+	code := run([]string{"-x", "-O", "-f", arc}, nil, &out)
 	if code != 0 {
 		t.Fatalf("-O extract exit %d", code)
 	}
@@ -351,12 +351,12 @@ func TestTar_ToStdout(t *testing.T) {
 func TestTar_Overwrite(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "over.tar")
-	run([]string{"-c", "-f", arc, "-C", dir, "x.txt"}, &bytes.Buffer{})
+	run([]string{"-c", "-f", arc, "-C", dir, "x.txt"}, nil, &bytes.Buffer{})
 
 	// Change file content and extract with --overwrite
 	os.WriteFile(dir+"/x.txt", []byte("new-x"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-x", "--overwrite", "-f", arc, "-C", dir}, &out)
+	code := run([]string{"-x", "--overwrite", "-f", arc, "-C", dir}, nil, &out)
 	if code != 0 {
 		t.Fatalf("--overwrite extract exit %d", code)
 	}
@@ -370,10 +370,10 @@ func TestTar_Overwrite(t *testing.T) {
 func TestTar_JSONList(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "list.json.tar")
-	run([]string{"-c", "-f", arc, "-C", dir, "x.txt", "y.txt"}, &bytes.Buffer{})
+	run([]string{"-c", "-f", arc, "-C", dir, "x.txt", "y.txt"}, nil, &bytes.Buffer{})
 
 	var out bytes.Buffer
-	code := run([]string{"--json", "-t", "-f", arc}, &out)
+	code := run([]string{"--json", "-t", "-f", arc}, nil, &out)
 	if code != 0 {
 		t.Fatalf("JSON list exit %d", code)
 	}
@@ -386,7 +386,7 @@ func TestTar_JSONCreate(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "create.json.tar")
 	var out bytes.Buffer
-	code := run([]string{"--json", "-c", "-f", arc, "-C", dir, "x.txt"}, &out)
+	code := run([]string{"--json", "-c", "-f", arc, "-C", dir, "x.txt"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("JSON create exit %d", code)
 	}
@@ -397,7 +397,7 @@ func TestTar_JSONCreate(t *testing.T) {
 
 func TestTar_BadCDir(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"-c", "-f", "/tmp/test.tar", "-C", "/nonexistent/path/zzz", "dummy"}, &out)
+	code := run([]string{"-c", "-f", "/tmp/test.tar", "-C", "/nonexistent/path/zzz", "dummy"}, nil, &out)
 	if code != 1 {
 		t.Errorf("expected exit 1 for bad -C, got %d", code)
 	}
@@ -406,7 +406,7 @@ func TestTar_BadCDir(t *testing.T) {
 func TestTar_StdinArchive(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "stdin.tar")
-	run([]string{"-c", "-f", arc, "-C", dir, "x.txt"}, &bytes.Buffer{})
+	run([]string{"-c", "-f", arc, "-C", dir, "x.txt"}, nil, &bytes.Buffer{})
 
 	// Read the archive and pipe it to stdin
 	data, _ := os.ReadFile(arc)
@@ -422,7 +422,7 @@ func TestTar_StdinArchive(t *testing.T) {
 	dest := filepath.Join(dir, "stdout")
 	os.Mkdir(dest, 0755)
 	var out bytes.Buffer
-	code := run([]string{"-x", "-f", "-", "-C", dest}, &out)
+	code := run([]string{"-x", "-f", "-", "-C", dest}, nil, &out)
 	if code != 0 {
 		t.Fatalf("stdin extract exit %d", code)
 	}
@@ -432,7 +432,7 @@ func TestTar_ExcludePattern(t *testing.T) {
 	dir := tarTestDir(t)
 	// Create archive with both files
 	arc := filepath.Join(dir, "exclude.tar")
-	run([]string{"-c", "-f", arc, "-C", dir, "x.txt", "y.txt"}, &bytes.Buffer{})
+	run([]string{"-c", "-f", arc, "-C", dir, "x.txt", "y.txt"}, nil, &bytes.Buffer{})
 
 	// Create exclude file
 	excludeFile := filepath.Join(dir, "exclude.txt")
@@ -440,7 +440,7 @@ func TestTar_ExcludePattern(t *testing.T) {
 
 	// Test exclude with list mode (-t)
 	var out bytes.Buffer
-	code := run([]string{"-t", "-v", "-f", arc, "-X", excludeFile}, &out)
+	code := run([]string{"-t", "-v", "-f", arc, "-X", excludeFile}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exclude list exit %d", code)
 	}
@@ -456,7 +456,7 @@ func TestTar_ExcludePattern(t *testing.T) {
 func TestTar_ExtractExclude(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "ext.tar")
-	run([]string{"-c", "-f", arc, "-C", dir, "x.txt", "y.txt"}, &bytes.Buffer{})
+	run([]string{"-c", "-f", arc, "-C", dir, "x.txt", "y.txt"}, nil, &bytes.Buffer{})
 
 	excludeFile := filepath.Join(dir, "ex.txt")
 	os.WriteFile(excludeFile, []byte("y.txt\n"), 0644)
@@ -464,7 +464,7 @@ func TestTar_ExtractExclude(t *testing.T) {
 	dest := filepath.Join(dir, "dest")
 	os.Mkdir(dest, 0755)
 	var out bytes.Buffer
-	code := run([]string{"-x", "-f", arc, "-C", dest, "-X", excludeFile}, &out)
+	code := run([]string{"-x", "-f", arc, "-C", dest, "-X", excludeFile}, nil, &out)
 	if code != 0 {
 		t.Fatalf("extract exclude exit %d", code)
 	}
@@ -482,7 +482,7 @@ func TestTar_MultipleFileArgs(t *testing.T) {
 	os.WriteFile(dir+"/z.txt", []byte("zzz"), 0644)
 	arc := filepath.Join(dir, "multi.tar")
 	var out bytes.Buffer
-	code := run([]string{"-c", "-v", "-f", arc, "-C", dir, "x.txt", "y.txt", "z.txt"}, &out)
+	code := run([]string{"-c", "-v", "-f", arc, "-C", dir, "x.txt", "y.txt", "z.txt"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("multi-file create exit %d", code)
 	}
@@ -498,7 +498,7 @@ func TestTar_OldStyleGzip(t *testing.T) {
 	dir := tarTestDir(t)
 	arc := filepath.Join(dir, "czf.tar.gz")
 	var out bytes.Buffer
-	code := run([]string{"czf", arc, "-C", dir, "x.txt"}, &out)
+	code := run([]string{"czf", arc, "-C", dir, "x.txt"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("old-style czf exit %d", code)
 	}

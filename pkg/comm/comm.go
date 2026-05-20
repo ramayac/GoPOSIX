@@ -148,7 +148,7 @@ func readLines(r io.Reader) ([]string, error) {
 
 // --- CLI Glue ---
 
-func commRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
+func commRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "comm: %v\n", err)
@@ -217,12 +217,12 @@ func commRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	entries := Compare(lines1, lines2, [3]bool{suppress1, suppress2, suppress3})
 
 	if jsonMode {
-		common.Render("comm", toResult(entries), true, out, func() {})
+		common.Render("comm", toResult(entries), true, stdout, func() {})
 		return 0
 	}
 
 	text := Format(entries)
-	fmt.Fprint(out, text)
+	fmt.Fprint(stdout, text)
 
 	if showTotal {
 		c1, c2, c3 := Counts(entries)
@@ -232,8 +232,8 @@ func commRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	return 0
 }
 
-func run(args []string, out io.Writer) int {
-	return commRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return commRun(args, stdout, os.Stderr, os.Stdin)
 }
 
 func init() {

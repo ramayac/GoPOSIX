@@ -122,6 +122,7 @@ help:
 	@echo "  Test"
 	@echo "    test         Run all unit tests"
 	@echo "    test-v       Run all unit tests (verbose)"
+	@echo "    test-race    Run unit tests with race detector (dev only, ~10x slower)"
 	@echo "    cover        Run tests and open HTML coverage report"
 	@echo "    cover-pct    Print per-package coverage percentages"
 	@echo ""
@@ -181,6 +182,21 @@ test:
 .PHONY: test-v
 test-v:
 	CGO_ENABLED=0 go test -v $(PKG_DIRS)
+
+# test-race runs all unit tests with the Go race detector enabled.
+# The race detector instruments memory accesses and detects concurrent
+# read/write conflicts on shared variables, maps, and slices. It catches
+# data races that can cause silent corruption or fatal panics in production.
+#
+# Race detection is ~10x slower than normal tests and uses ~10x more memory.
+# Use this target during development when touching concurrent code (daemon,
+# shell, session manager, client SDK), before merging PRs that modify
+# goroutine coordination, or when debugging flaky test failures.
+#
+# Not included in the default 'test' or 'ci' targets due to overhead.
+.PHONY: test-race
+test-race:
+	go test -race $(PKG_DIRS)
 
 .PHONY: cover
 cover:

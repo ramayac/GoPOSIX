@@ -1,10 +1,10 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX with 96.6% BusyBox test compatibility (591/612).
+A Go-native, single-binary POSIX with 96.6% BusyBox test compatibility (590/611).
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![go vet](https://img.shields.io/badge/go%20vet-passing-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
-[![coverage](https://img.shields.io/badge/coverage-75.9%25-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/badge/coverage-76.6%25-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ramayac/goposix)](https://goreportcard.com/report/github.com/ramayac/goposix)
 [![Go Version](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go)](https://go.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -64,8 +64,21 @@ make ci           # full pipeline (test + testsuite + coverage + docker)
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `GOPOSIX_SHELL_TIMEOUT` | `30s` | Shell execution timeout (Go duration format, e.g. `60s`, `5m`) |
+| `GOPOSIX_MAX_REQUEST_SIZE` | `1048576` (1MB) | Max JSON-RPC request size in bytes |
+| `GOPOSIX_RATE_LIMIT` | `100` | Max JSON-RPC requests/sec per connection |
+| `GOPOSIX_SHUTDOWN_TIMEOUT` | `5s` | Graceful shutdown drain timeout |
 
-I think there should be more... right?
+## Daemon Stdin (new in Phase 25)
+
+The JSON-RPC daemon now accepts a `stdin` field in request params, enabling
+stdin-consuming utilities (grep, sed, sort, wc, tr, head, tail, cut, tee, uniq,
+and 30+ others) to receive input directly through the Go SDK without temp files.
+
+```go
+// Now possible: pass stdin through the daemon
+c.Grep(ctx, []string{"foo"}, client.WithStdin("line1\nline2\nfoo\n"))
+c.Wc(ctx, []string{"-l"}, client.WithStdin("line1\nline2\nline3\n"))
+```
 
 ## Performance Highlights
 

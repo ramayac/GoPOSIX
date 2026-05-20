@@ -693,7 +693,7 @@ func TestGrepRecursiveOnSymlinkToDir(t *testing.T) {
 	os.Symlink("foo", filepath.Join(testDir, "symfoo"))
 
 	var out bytes.Buffer
-	code := run([]string{"-r", ".", filepath.Join(testDir, "symfoo")}, &out)
+	code := run([]string{"-r", ".", filepath.Join(testDir, "symfoo")}, nil, &out)
 	if code != 0 {
 		t.Fatalf("grep -r exited with %d, want 0", code)
 	}

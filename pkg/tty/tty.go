@@ -50,7 +50,7 @@ func Run() (TtyResult, error) {
 	return TtyResult{IsTTY: true, Path: path}, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tty: %v\n", err)
@@ -62,7 +62,7 @@ func run(args []string, out io.Writer) int {
 	result, err := Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tty: %v\n", err)
-		common.RenderError("tty", 1, "ETTY", err.Error(), jsonMode, out)
+		common.RenderError("tty", 1, "ETTY", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
@@ -75,12 +75,12 @@ func run(args []string, out io.Writer) int {
 
 	if !jsonMode {
 		if result.IsTTY {
-			fmt.Fprintln(out, result.Path)
+			fmt.Fprintln(stdout, result.Path)
 		} else {
-			fmt.Fprintln(out, "not a tty")
+			fmt.Fprintln(stdout, "not a tty")
 		}
 	} else {
-		common.Render("tty", result, jsonMode, out, func() {})
+		common.Render("tty", result, jsonMode, stdout, func() {})
 	}
 	return 0
 }

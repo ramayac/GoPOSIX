@@ -27,7 +27,7 @@ func (w *testWriter) Write(p []byte) (int, error) {
 
 func TestDefaultOutput(t *testing.T) {
 	w := &testWriter{maxLines: 5}
-	code := run(nil, w)
+	code := run(nil, nil, w)
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -44,7 +44,7 @@ func TestDefaultOutput(t *testing.T) {
 
 func TestCustomString(t *testing.T) {
 	w := &testWriter{maxLines: 3}
-	code := run([]string{"hello"}, w)
+	code := run([]string{"hello"}, nil, w)
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -57,7 +57,7 @@ func TestCustomString(t *testing.T) {
 
 func TestMultiWordString(t *testing.T) {
 	w := &testWriter{maxLines: 3}
-	code := run([]string{"foo", "bar"}, w)
+	code := run([]string{"foo", "bar"}, nil, w)
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -70,7 +70,7 @@ func TestMultiWordString(t *testing.T) {
 
 func TestYesJSON(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--json"}, &out)
+	code := run([]string{"--json"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -93,7 +93,7 @@ func TestYesJSON(t *testing.T) {
 
 func TestYesJSONWithCount(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--json", "--count", "3"}, &out)
+	code := run([]string{"--json", "--count", "3"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -109,7 +109,7 @@ func TestYesJSONWithCount(t *testing.T) {
 
 func TestYesJSONWithString(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--json", "hello"}, &out)
+	code := run([]string{"--json", "hello"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}

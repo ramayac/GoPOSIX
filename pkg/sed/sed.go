@@ -30,18 +30,18 @@ var spec = common.FlagSpec{
 	},
 }
 
-func run(args []string, out io.Writer) int {
-	return sedRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return sedRun(args, stdout, os.Stderr, os.Stdin)
 }
 
-func sedRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
+func sedRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "sed: %v\n", err)
 		return 2
 	}
 	if flags.Has("version") {
-		fmt.Fprintln(out, "GNU sed version 4.0 (GoPOSIX)")
+		fmt.Fprintln(stdout, "GNU sed version 4.0 (GoPOSIX)")
 		return 0
 	}
 	jsonMode := flags.Has("json")
@@ -81,7 +81,7 @@ func sedRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int
 		flags.Positional = flags.Positional[1:]
 	} else if expr == "" {
 		// No expression and no file
-		common.RenderError("sed", 1, "MISSING", "missing command", jsonMode, out)
+		common.RenderError("sed", 1, "MISSING", "missing command", jsonMode, stdout)
 		if !jsonMode {
 			fmt.Fprintln(errOut, "sed: missing command")
 		}
@@ -90,7 +90,7 @@ func sedRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int
 
 	insts, err := Parse(expr)
 	if err != nil {
-		common.RenderError("sed", 1, "SYNTAX", err.Error(), jsonMode, out)
+		common.RenderError("sed", 1, "SYNTAX", err.Error(), jsonMode, stdout)
 		if !jsonMode {
 			fmt.Fprintf(errOut, "sed: %v\n", err)
 		}
@@ -110,11 +110,11 @@ func sedRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int
 			LineCount: len(lines),
 			Changed:   exitCode == 0,
 			Scripts:   []string{expr},
-		}, true, out, func() {})
+		}, true, stdout, func() {})
 		return exitCode
 	}
 
-	return runEngineInternal(insts, flags.Positional, suppressDefault, inPlace, out, errOut, stdin)
+	return runEngineInternal(insts, flags.Positional, suppressDefault, inPlace, stdout, errOut, stdin)
 }
 
 func init() {

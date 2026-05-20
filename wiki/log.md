@@ -4,6 +4,91 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-20] sync | JSON schema gap fill — 30 new schemas, doc updated, patch --json
+
+Audited `wiki/json_schema.md` against `test/schemas/` and `pkg/`:
+- Found the doc claimed 42 utilities support `--json` — actual count is 76.
+- The doc's "without --json" list (sleep, tee, tr, yes, sed, true, false) was
+  stale: all 7 had gained `--json` flags since the doc was last updated.
+- 23 additional utilities had `--json` support with no schema file and no doc
+  table entry: awk, cksum, cmp, comm, expand, fold, join, link, logger, logname,
+  mkfifo, nice, nl, nohup, od, paste, split, strings, sum, tty, unexpand, unlink, who.
+
+Created 30 new JSON Schema (draft-07) files in `test/schemas/` covering all
+missing utilities. Updated `wiki/json_schema.md`: count 42→76, 46→76 table rows,
+replaced stale "without --json" list with "Only dd does not yet support --json."
+Cross-check: 76 doc rows ↔ 76 schema files ↔ 76 `--json` flags.
+
+**`patch --json` implemented same session:** Added `--json` flag to flag spec,
+wired `common.Render`/`RenderError` into `patchRun()` for success, hunk-failure
+(data preserved), and parse/IO-error paths. 4 new CLI tests (JSON success, hunk
+failure, stdin error, bad patch file). Coverage: 78.0%, race-clean. `dd` deferred
+(manual operand parsing makes flag injection non-trivial; ~30–60 min).
+
+Created: 30 `test/schemas/*.schema.json` files (awk, cksum, cmp, comm, expand,
+false, fold, join, link, logger, logname, mkfifo, nice, nl, nohup, od, paste,
+sed, sleep, split, strings, sum, tee, tr, true, tty, unexpand, unlink, who, yes).
+Updated: `pkg/patch/patch.go`, `pkg/patch/patch_test.go`, `wiki/json_schema.md`,
+`wiki/todos.md`, `wiki/log.md`.
+
+## [2026-05-20] fix | H6 — Shell os.Chdir() thread-safety + Makefile test-race target (branch: `feat/hardeing-iv-partii`)
+
+Resolved H6 (shell os.Chdir not thread-safe):
+- Added `execMu sync.Mutex` serializing all `Exec()` calls. Process CWD saved at
+  entry and restored on exit — `cd` side-effects no longer leak between sequential
+  calls. The daemon tracks CWD per-session via the `cwd` parameter, not via process
+  state, so restoring after each Exec is correct.
+- Updated 3 tests to verify new behavior: `TestCdAndPwd` (CWD restored after),
+  `TestCdPersistsAcrossExecCalls` (cd does NOT leak without explicit cwd),
+  `TestCdWithExplicitCwd` (CWD restored after explicit cwd).
+- Added `TestConcurrentShellExec`: 5 goroutines × 100 cd+pwd iterations, passes
+  under `-race` with zero failures.
+- Added `make test-race` target to Makefile — runs all unit tests with Go race
+  detector. Documented in help output and Makefile comments (~10x slower, dev-only).
+- Documented future work in interpreter.go: eliminate `os.Chdir` entirely by
+  threading a CWD parameter through `dispatch.Command.Run`.
+- Updated `wiki/24_hardening_iv.md`: H6 → RESOLVED. Score: 3 remaining / 24 resolved.
+
+Updated: `internal/shell/interpreter.go`, `internal/shell/interpreter_test.go`,
+`Makefile`, `wiki/24_hardening_iv.md`, `wiki/log.md`, `wiki/todos.md`.
+
+## [2026-05-20] fix | H3 — Session data race (branch: `feat/hardeing-iv-partii`)
+
+Resolved H3 (session data race on concurrent access):
+- `Get()` and `List()` now return deep copies via `Session.copy()` — CWD string
+  copied, Env map cloned before mutex release. All callers receive independent
+  snapshots with no shared references.
+- Fixed pre-existing `close of closed channel` panic in `SessionManager.Stop()`
+  — made idempotent with select/default pattern.
+- Added `session_test.go` with `TestSessionManagerConcurrentRace` — 4 data races
+  detected by `go test -race` before fix: string field write vs read, map
+  write vs read (×2), and realistic SetCwd races. Zero races after fix.
+  All daemon tests pass under `-race`.
+- Updated `wiki/24_hardening_iv.md`: H3 → RESOLVED. Score: 4 remaining / 23 resolved.
+
+Updated: `internal/daemon/session.go`, `internal/daemon/session_test.go`,
+`wiki/24_hardening_iv.md`, `wiki/log.md`.
+Created: `internal/daemon/session_test.go`.
+
+## [2026-05-20] fix | H2 — SecurePath symlink resolution (branch: `feat/hardeing-iv-partii`)
+
+Resolved H2 (SecurePath does not resolve symlinks):
+- Added `resolveSymlinks()` helper in `pkg/common/security.go` that calls
+  `filepath.EvalSymlinks` on the target path. For paths that do not exist yet
+  (new file creation), walks up to the deepest existing parent, resolves its
+  symlinks, and appends the non-existent tail — catching escape symlinks in
+  intermediate directories.
+- `SecurePath` now resolves symlinks on the base directory before the prefix
+  comparison, and on the target path for the traversal check.
+- Added `TestSecurePathSymlinks` with 10 test cases covering: normal paths,
+  symlinks inside base, symlinks outside base, non-existent files through escape
+  symlinks, deep non-existent paths, and resolved-path verification.
+- Updated `wiki/security.md`: symlinks limitation → symlinks resolved.
+- Updated `wiki/24_hardening_iv.md`: H2 → RESOLVED. Score: 5 remaining / 22 resolved.
+
+Updated: `pkg/common/security.go`, `pkg/common/security_test.go`,
+`wiki/security.md`, `wiki/24_hardening_iv.md`, `wiki/log.md`.
+
 ## [2026-05-20] ingest | Hardening IV Part 1 — injectable streams, compliance gap resolution (branch: `feat/hardening4-part1`)
 
 Three commits merged into `feat/hardening4-part1` for PR #21:

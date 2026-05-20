@@ -3,6 +3,7 @@ package shell
 import (
 	"os"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -110,11 +111,10 @@ func TestSyntaxError(t *testing.T) {
 }
 
 // TestCdAndPwd verifies that cd within a shell script changes the working
-// directory for subsequent commands in the same script, and that the
-// change is synced back to the host process via os.Chdir.
+// directory for subsequent commands in the same script. The process CWD
+// is restored after Exec() returns (guarded by execMu).
 func TestCdAndPwd(t *testing.T) {
 	origCwd, _ := os.Getwd()
-	defer os.Chdir(origCwd)
 
 	result := Exec("cd /tmp && pwd", "", nil)
 	if result.ExitCode != 0 {
@@ -125,19 +125,19 @@ func TestCdAndPwd(t *testing.T) {
 		t.Errorf("expected '/tmp', got %q", got)
 	}
 
-	// Verify the host process CWD was synced to /tmp.
+	// Process CWD must be restored after Exec returns (no cd leak).
 	hostCwd, _ := os.Getwd()
-	if hostCwd != "/tmp" {
-		t.Errorf("host process CWD not synced: expected '/tmp', got %q", hostCwd)
+	if hostCwd != origCwd {
+		t.Errorf("host process CWD leaked: expected %q, got %q", origCwd, hostCwd)
 	}
 }
 
-// TestCdPersistsAcrossExecCalls verifies that a cd in one Exec call
-// persists to subsequent Exec calls when no explicit cwd is passed
-// (the host process CWD carries forward).
+// TestCdPersistsAcrossExecCalls verifies that cd in one Exec call does NOT
+// leak to a subsequent call without explicit cwd (the process CWD is restored
+// after each Exec). For cross-call CWD persistence, use the session's cwd
+// parameter or pass an explicit cwd to each call.
 func TestCdPersistsAcrossExecCalls(t *testing.T) {
 	origCwd, _ := os.Getwd()
-	defer os.Chdir(origCwd)
 
 	tmpDir := t.TempDir()
 
@@ -147,22 +147,32 @@ func TestCdPersistsAcrossExecCalls(t *testing.T) {
 		t.Fatalf("cd failed: %s", result1.Stderr)
 	}
 
-	// Second call: pwd should reflect the tmpDir.
+	// Second call without explicit cwd: pwd returns original CWD (not leaked).
 	result2 := Exec("pwd", "", nil)
 	if result2.ExitCode != 0 {
 		t.Fatalf("pwd failed: %s", result2.Stderr)
 	}
 	got := strings.TrimSpace(result2.Stdout)
-	if got != tmpDir {
-		t.Errorf("expected %q, got %q", tmpDir, got)
+	if got != origCwd {
+		t.Errorf("cd leaked across calls: expected %q, got %q", origCwd, got)
+	}
+
+	// With explicit cwd, cd persists as expected.
+	result3 := Exec("cd "+tmpDir+" && pwd", tmpDir, nil)
+	if result3.ExitCode != 0 {
+		t.Fatalf("cd+pwd with explicit cwd failed: %s", result3.Stderr)
+	}
+	got3 := strings.TrimSpace(result3.Stdout)
+	if got3 != tmpDir {
+		t.Errorf("expected %q, got %q", tmpDir, got3)
 	}
 }
 
 // TestCdWithExplicitCwd verifies that cd changes are relative to the
-// explicitly passed cwd, and that the result syncs back correctly.
+// explicitly passed cwd inside the script, and that the process CWD
+// is restored after Exec returns.
 func TestCdWithExplicitCwd(t *testing.T) {
 	origCwd, _ := os.Getwd()
-	defer os.Chdir(origCwd)
 
 	tmpDir := t.TempDir()
 	subDir := tmpDir + "/sub"
@@ -178,10 +188,10 @@ func TestCdWithExplicitCwd(t *testing.T) {
 		t.Errorf("expected %q, got %q", subDir, got)
 	}
 
-	// Host process CWD should now be subDir.
+	// Process CWD must be restored after Exec returns.
 	hostCwd, _ := os.Getwd()
-	if hostCwd != subDir {
-		t.Errorf("host CWD not synced: expected %q, got %q", subDir, hostCwd)
+	if hostCwd != origCwd {
+		t.Errorf("host CWD leaked: expected %q, got %q", origCwd, hostCwd)
 	}
 }
 
@@ -202,4 +212,102 @@ func TestCdToNonexistentDir(t *testing.T) {
 	if hostCwd != origCwd {
 		t.Errorf("host CWD changed unexpectedly: %q -> %q", origCwd, hostCwd)
 	}
+}
+
+// TestRedirectAbsolutePath verifies that > with an absolute path works
+// when cwd is passed explicitly (simulating REPL/invocation with known dir).
+func TestRedirectAbsolutePath(t *testing.T) {
+	tmpDir := t.TempDir()
+	absPath := tmpDir + "/tutu.txt"
+
+	result := Exec("echo hola > "+absPath, tmpDir, nil)
+	if result.ExitCode != 0 {
+		t.Fatalf("redirect to absolute path failed: exit=%d stderr=%q", result.ExitCode, result.Stderr)
+	}
+
+	data, err := os.ReadFile(absPath)
+	if err != nil {
+		t.Fatalf("cannot read output file: %v", err)
+	}
+	got := strings.TrimRight(string(data), "\n")
+	if got != "hola" {
+		t.Errorf("expected 'hola', got %q", got)
+	}
+}
+
+// TestRedirectRelativePath verifies that > with ./relative path works
+// when the cwd is passed explicitly (the original bug: empty cwd defaulted
+// base to "/" making resolves go to root instead of process CWD).
+func TestRedirectRelativePath(t *testing.T) {
+	tmpDir := t.TempDir()
+	relPath := "./tutu.txt"
+	expectedFile := tmpDir + "/tutu.txt"
+
+	result := Exec("echo hola > "+relPath, tmpDir, nil)
+	if result.ExitCode != 0 {
+		t.Fatalf("redirect to ./relative path failed: exit=%d stderr=%q", result.ExitCode, result.Stderr)
+	}
+
+	data, err := os.ReadFile(expectedFile)
+	if err != nil {
+		t.Fatalf("cannot read output file: %v", err)
+	}
+	got := strings.TrimRight(string(data), "\n")
+	if got != "hola" {
+		t.Errorf("expected 'hola', got %q", got)
+	}
+}
+
+// TestRedirectEmptyCwd verifies that > works even when cwd is empty string
+// (the exact bug scenario: non-interactive invocation with cwd="" that used
+// to default base to "/" and fail with permission denied on /tutu.txt).
+func TestRedirectEmptyCwd(t *testing.T) {
+	tmpDir := t.TempDir()
+	origCwd, _ := os.Getwd()
+	defer os.Chdir(origCwd)
+	os.Chdir(tmpDir)
+
+	result := Exec("echo hola > tutu.txt", "", nil)
+	if result.ExitCode != 0 {
+		t.Fatalf("redirect with empty cwd failed: exit=%d stderr=%q", result.ExitCode, result.Stderr)
+	}
+
+	data, err := os.ReadFile(tmpDir + "/tutu.txt")
+	if err != nil {
+		t.Fatalf("cannot read output file: %v", err)
+	}
+	got := strings.TrimRight(string(data), "\n")
+	if got != "hola" {
+		t.Errorf("expected 'hola', got %q", got)
+	}
+}
+
+// TestConcurrentShellExec verifies that multiple concurrent shell Exec calls
+// do not race on os.Chdir. Run with: go test -race -run TestConcurrentShellExec
+func TestConcurrentShellExec(t *testing.T) {
+	var wg sync.WaitGroup
+	const iterations = 100
+
+	// Spawn multiple goroutines that each cd+pwd in different directories.
+	// Without execMu, the os.Chdir calls would clobber each other and
+	// pwd would return the wrong directory.
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				result := Exec("cd /tmp && pwd", "", nil)
+				if result.ExitCode != 0 {
+					t.Errorf("goroutine %d: cd+pwd failed: %s", id, result.Stderr)
+					return
+				}
+				got := strings.TrimSpace(result.Stdout)
+				if got != "/tmp" {
+					t.Errorf("goroutine %d: expected '/tmp', got %q", id, got)
+					return
+				}
+			}
+		}(i)
+	}
+	wg.Wait()
 }

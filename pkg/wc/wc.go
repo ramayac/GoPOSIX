@@ -139,7 +139,7 @@ func CountProper(r io.Reader) (WcResult, error) {
 	return res, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "wc: %v\n", err)
@@ -200,7 +200,7 @@ func run(args []string, out io.Writer) int {
 		if jsonMode {
 			jsonResults[p] = res
 		} else {
-			printCount(res, p, showLines, showWords, showBytes, showChars, showMaxLine, out)
+			printCount(res, p, showLines, showWords, showBytes, showChars, showMaxLine, stdout)
 		}
 	}
 
@@ -208,7 +208,7 @@ func run(args []string, out io.Writer) int {
 		if jsonMode {
 			jsonResults["total"] = total
 		} else {
-			printCount(total, "total", showLines, showWords, showBytes, showChars, showMaxLine, out)
+			printCount(total, "total", showLines, showWords, showBytes, showChars, showMaxLine, stdout)
 		}
 	}
 
@@ -216,16 +216,16 @@ func run(args []string, out io.Writer) int {
 		// Output json results
 		// If single file, unwrap
 		if len(paths) == 1 {
-			common.Render("wc", jsonResults[paths[0]], true, out, func() {})
+			common.Render("wc", jsonResults[paths[0]], true, stdout, func() {})
 		} else {
-			common.Render("wc", jsonResults, true, out, func() {})
+			common.Render("wc", jsonResults, true, stdout, func() {})
 		}
 	}
 
 	return exitCode
 }
 
-func printCount(res WcResult, name string, showLines, showWords, showBytes, showChars, showMaxLine bool, out io.Writer) {
+func printCount(res WcResult, name string, showLines, showWords, showBytes, showChars, showMaxLine bool, stdout io.Writer) {
 	line := ""
 	if showMaxLine {
 		line += fmt.Sprintf(" %d", res.MaxLineLength)
@@ -245,7 +245,7 @@ func printCount(res WcResult, name string, showLines, showWords, showBytes, show
 		line += fmt.Sprintf(" %s", name)
 	}
 	if line != "" {
-		fmt.Fprintln(out, line[1:]) // trim leading space
+		fmt.Fprintln(stdout, line[1:]) // trim leading space
 	}
 }
 

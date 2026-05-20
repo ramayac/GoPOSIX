@@ -32,12 +32,12 @@ type Result struct {
 //   - fieldSep: field separator string (default " " — split on whitespace)
 //   - vars: additional variable assignments in "name=value" format
 //   - input: stdin reader
-//   - out: stdout writer
+//   - stdout: stdout writer
 //   - errOut: stderr writer
 //
 // Returns the exit status and any error.
 func Run(source string, files []string, fieldSep string, vars []string,
-	input io.Reader, out io.Writer, errOut io.Writer) (int, error) {
+	input io.Reader, stdout io.Writer, errOut io.Writer) (int, error) {
 
 	prog, err := parser.ParseProgram([]byte(source), nil)
 	if err != nil {
@@ -58,7 +58,7 @@ func Run(source string, files []string, fieldSep string, vars []string,
 
 	config := &interp.Config{
 		Stdin:  input,
-		Output: out,
+		Output: stdout,
 		Error:  errOut,
 		Args:   files,
 		Vars:   allVars,
@@ -78,7 +78,7 @@ func RunCapture(source string, files []string, fieldSep string, vars []string,
 
 	output := outBuf.String()
 	lines := strings.Split(strings.TrimSuffix(output, "\n"), "\n")
-	// Filter out empty result for programs that produce no output
+	// Filter stdout empty result for programs that produce no output
 	if len(lines) == 1 && lines[0] == "" {
 		lines = nil
 	}
@@ -93,12 +93,12 @@ func RunCapture(source string, files []string, fieldSep string, vars []string,
 //	awk [-F fs] [-v var=value] [-f progfile] [--json] -f progfile [file ...]
 //
 // At least one of 'program' (positional) or '-f progfile' must be provided.
-func run(args []string, out io.Writer) int {
-	return awkRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return awkRun(args, stdout, os.Stderr, os.Stdin)
 }
 
 // awkRun is the injectable entry point for testing.
-func awkRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
+func awkRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	// Manual flag parsing: awk program text can contain anything,
 	// including strings starting with "-". Only -F, -v, -f, and --json
 	// are recognized as flags. Everything else is positional.
@@ -179,18 +179,18 @@ func awkRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	if jsonMode {
 		lines, status, runErr := RunCapture(source, files, fieldSep, vars, stdin, errOut)
 		if runErr != nil {
-			common.RenderError("awk", 2, "ERROR", runErr.Error(), true, out)
+			common.RenderError("awk", 2, "ERROR", runErr.Error(), true, stdout)
 			return 2
 		}
 		common.Render("awk", Result{
 			Lines:     lines,
 			LineCount: len(lines),
 			Status:    status,
-		}, true, out, func() {})
+		}, true, stdout, func() {})
 		return 0
 	}
 
-	status, err := Run(source, files, fieldSep, vars, stdin, out, errOut)
+	status, err := Run(source, files, fieldSep, vars, stdin, stdout, errOut)
 	if err != nil {
 		fmt.Fprintf(errOut, "awk: %v\n", err)
 		return 2

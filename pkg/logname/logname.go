@@ -37,7 +37,7 @@ func Run() (LognameResult, error) {
 	return LognameResult{Logname: u.Username}, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "logname: %v\n", err)
@@ -48,12 +48,12 @@ func run(args []string, out io.Writer) int {
 	result, err := Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "logname: %v\n", err)
-		common.RenderError("logname", 1, "ELOGNAME", err.Error(), jsonMode, out)
+		common.RenderError("logname", 1, "ELOGNAME", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
-	common.Render("logname", result, jsonMode, out, func() {
-		fmt.Fprintln(out, result.Logname)
+	common.Render("logname", result, jsonMode, stdout, func() {
+		fmt.Fprintln(stdout, result.Logname)
 	})
 	return 0
 }

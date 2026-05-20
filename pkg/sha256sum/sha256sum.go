@@ -43,7 +43,7 @@ func HashFile(r io.Reader) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sha256sum: %v\n", err)
@@ -54,13 +54,13 @@ func run(args []string, out io.Writer) int {
 	checkMode := flags.Has("check")
 
 	if checkMode {
-		return runCheck(flags.Positional, jsonMode, out)
+		return runCheck(flags.Positional, jsonMode, stdout)
 	}
 
-	return runHash(flags.Positional, flags.Stdin, jsonMode, out)
+	return runHash(flags.Positional, flags.Stdin, jsonMode, stdout)
 }
 
-func runHash(files []string, readStdin bool, jsonMode bool, out io.Writer) int {
+func runHash(files []string, readStdin bool, jsonMode bool, stdout io.Writer) int {
 	var results []HashResult
 	exitCode := 0
 
@@ -98,18 +98,18 @@ func runHash(files []string, readStdin bool, jsonMode bool, out io.Writer) int {
 		results = append(results, HashResult{File: name, Hash: hash, Algorithm: "sha256"})
 	}
 
-	common.Render("sha256sum", results, jsonMode, out, func() {
+	common.Render("sha256sum", results, jsonMode, stdout, func() {
 		for _, r := range results {
-			fmt.Fprintf(out, "%s  %s\n", r.Hash, r.File)
+			fmt.Fprintf(stdout, "%s  %s\n", r.Hash, r.File)
 		}
 	})
 
 	return exitCode
 }
 
-func runCheck(files []string, jsonMode bool, out io.Writer) int {
+func runCheck(files []string, jsonMode bool, stdout io.Writer) int {
 	if len(files) == 0 {
-		common.RenderError("sha256sum", 1, "MISSING_FILE", "no checksum file specified", jsonMode, out)
+		common.RenderError("sha256sum", 1, "MISSING_FILE", "no checksum file specified", jsonMode, stdout)
 		if !jsonMode {
 			fmt.Fprintf(os.Stderr, "sha256sum: no checksum file specified\n")
 		}
@@ -183,9 +183,9 @@ func runCheck(files []string, jsonMode bool, out io.Writer) int {
 		}
 	}
 
-	common.Render("sha256sum", results, jsonMode, out, func() {
+	common.Render("sha256sum", results, jsonMode, stdout, func() {
 		for _, r := range results {
-			fmt.Fprintf(out, "%s: %s\n", r.File, r.Status)
+			fmt.Fprintf(stdout, "%s: %s\n", r.File, r.Status)
 		}
 	})
 

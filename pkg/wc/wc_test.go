@@ -129,7 +129,7 @@ func wcTempFile(t *testing.T, content string) string {
 func TestCLI_BasicFile(t *testing.T) {
 	f := wcTempFile(t, "hello world\nfoo bar\n")
 	var out bytes.Buffer
-	code := run([]string{f}, &out)
+	code := run([]string{f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -141,7 +141,7 @@ func TestCLI_BasicFile(t *testing.T) {
 func TestCLI_LinesFlag(t *testing.T) {
 	f := wcTempFile(t, "a\nb\nc\n")
 	var out bytes.Buffer
-	code := run([]string{"-l", f}, &out)
+	code := run([]string{"-l", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -150,7 +150,7 @@ func TestCLI_LinesFlag(t *testing.T) {
 func TestCLI_WordsFlag(t *testing.T) {
 	f := wcTempFile(t, "one two three\n")
 	var out bytes.Buffer
-	code := run([]string{"-w", f}, &out)
+	code := run([]string{"-w", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -159,7 +159,7 @@ func TestCLI_WordsFlag(t *testing.T) {
 func TestCLI_BytesFlag(t *testing.T) {
 	f := wcTempFile(t, "abc\n")
 	var out bytes.Buffer
-	code := run([]string{"-c", f}, &out)
+	code := run([]string{"-c", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -168,7 +168,7 @@ func TestCLI_BytesFlag(t *testing.T) {
 func TestCLI_CharsFlag(t *testing.T) {
 	f := wcTempFile(t, "abc\n")
 	var out bytes.Buffer
-	code := run([]string{"-m", f}, &out)
+	code := run([]string{"-m", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -177,7 +177,7 @@ func TestCLI_CharsFlag(t *testing.T) {
 func TestCLI_MaxLineFlag(t *testing.T) {
 	f := wcTempFile(t, "short\nlongest line here\nok\n")
 	var out bytes.Buffer
-	code := run([]string{"-L", f}, &out)
+	code := run([]string{"-L", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -186,7 +186,7 @@ func TestCLI_MaxLineFlag(t *testing.T) {
 func TestCLI_JSON(t *testing.T) {
 	f := wcTempFile(t, "hello\n")
 	var out bytes.Buffer
-	code := run([]string{"--json", f}, &out)
+	code := run([]string{"--json", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -198,7 +198,7 @@ func TestCLI_JSON(t *testing.T) {
 func TestCLI_LongFlags(t *testing.T) {
 	f := wcTempFile(t, "a\nb\n")
 	var out bytes.Buffer
-	code := run([]string{"--lines", f}, &out)
+	code := run([]string{"--lines", f}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -208,7 +208,7 @@ func TestCLI_MultipleFiles(t *testing.T) {
 	f1 := wcTempFile(t, "one\n")
 	f2 := wcTempFile(t, "two\n")
 	var out bytes.Buffer
-	code := run([]string{f1, f2}, &out)
+	code := run([]string{f1, f2}, nil, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -219,7 +219,7 @@ func TestCLI_MultipleFiles(t *testing.T) {
 
 func TestCLI_MissingFile(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"/nonexistent/wc/file"}, &out)
+	code := run([]string{"/nonexistent/wc/file"}, nil, &out)
 	if code != 1 {
 		t.Errorf("expected exit 1, got %d", code)
 	}
@@ -227,7 +227,7 @@ func TestCLI_MissingFile(t *testing.T) {
 
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, &out)
+	code := run([]string{"--nonexistent"}, nil, &out)
 	if code != 2 {
 		t.Errorf("expected exit 2, got %d", code)
 	}

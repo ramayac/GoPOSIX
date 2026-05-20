@@ -9,7 +9,7 @@ import (
 
 func TestXargsJSON(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"--json", "true"}, &out)
+	rc := run([]string{"--json", "true"}, nil, &out)
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -39,7 +39,7 @@ func TestXargsNullDelimited(t *testing.T) {
 	defer func() { os.Stdin = oldStdin; f.Close() }()
 
 	var out bytes.Buffer
-	code := run([]string{"-0", "echo"}, &out)
+	code := run([]string{"-0", "echo"}, nil, &out)
 	if code != 0 {
 		t.Fatalf("xargs -0 exited with %d, want 0", code)
 	}

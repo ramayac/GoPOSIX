@@ -490,11 +490,11 @@ func Run(items []lineItem, keySpecs []keySpec, reverse, numeric, unique, month, 
 	return result
 }
 
-func run(args []string, out io.Writer) int {
-	return sortRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return sortRun(args, stdout, os.Stderr, os.Stdin)
 }
 
-func sortRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
+func sortRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "sort: %v\n", err)
@@ -572,7 +572,7 @@ func sortRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) in
 
 	sortedLines := Run(allItems, keySpecs, reverse, numeric, unique, month, human, stable, tieReverse)
 
-	var w io.Writer = out
+	var w io.Writer = stdout
 	if outputFile != "" {
 		f, err := os.Create(outputFile)
 		if err != nil {
@@ -584,7 +584,7 @@ func sortRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) in
 	}
 
 	if jsonMode {
-		common.Render("sort", SortResult{Lines: sortedLines, Count: len(sortedLines)}, true, out, func() {})
+		common.Render("sort", SortResult{Lines: sortedLines, Count: len(sortedLines)}, true, stdout, func() {})
 	} else {
 		for i, line := range sortedLines {
 			if i > 0 {

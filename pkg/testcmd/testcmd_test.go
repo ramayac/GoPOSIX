@@ -300,7 +300,7 @@ func TestEvaluateFileExecutable(t *testing.T) {
 
 func TestRunTestCLI(t *testing.T) {
 	var buf bytes.Buffer
-	code := runTest([]string{"hello", "=", "hello"}, &buf)
+	code := runTest([]string{"hello", "=", "hello"}, nil, &buf)
 	if code != 0 {
 		t.Errorf("exit code %d, want 0", code)
 	}
@@ -308,7 +308,7 @@ func TestRunTestCLI(t *testing.T) {
 
 func TestRunTestCLIFalse(t *testing.T) {
 	var buf bytes.Buffer
-	code := runTest([]string{"hello", "=", "world"}, &buf)
+	code := runTest([]string{"hello", "=", "world"}, nil, &buf)
 	if code != 1 {
 		t.Errorf("exit code %d, want 1", code)
 	}
@@ -316,7 +316,7 @@ func TestRunTestCLIFalse(t *testing.T) {
 
 func TestRunTestCLIJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := runTest([]string{"--json", "hello", "=", "hello"}, &buf)
+	code := runTest([]string{"--json", "hello", "=", "hello"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -332,7 +332,7 @@ func TestRunTestCLIJSON(t *testing.T) {
 
 func TestRunTestCLIJSONShort(t *testing.T) {
 	var buf bytes.Buffer
-	code := runTest([]string{"--json", "hello", "=", "hello"}, &buf)
+	code := runTest([]string{"--json", "hello", "=", "hello"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -349,7 +349,7 @@ func TestRunTestCLIJSONShort(t *testing.T) {
 func TestRunTestJSONMiddleware(t *testing.T) {
 	// Test that --json can appear in the middle of expression args (edge case)
 	var buf bytes.Buffer
-	code := runTest([]string{"hello", "--json", "=", "hello"}, &buf)
+	code := runTest([]string{"hello", "--json", "=", "hello"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0 (json extracted)", code)
 	}
@@ -365,7 +365,7 @@ func TestRunTestJSONMiddleware(t *testing.T) {
 
 func TestRunBracket(t *testing.T) {
 	var buf bytes.Buffer
-	code := runBracket([]string{"hello", "=", "hello", "]"}, &buf)
+	code := runBracket([]string{"hello", "=", "hello", "]"}, nil, &buf)
 	if code != 0 {
 		t.Errorf("exit code %d, want 0", code)
 	}
@@ -373,7 +373,7 @@ func TestRunBracket(t *testing.T) {
 
 func TestRunBracketMissingClose(t *testing.T) {
 	var buf bytes.Buffer
-	code := runBracket([]string{"hello", "=", "hello"}, &buf)
+	code := runBracket([]string{"hello", "=", "hello"}, nil, &buf)
 	if code != 2 {
 		t.Errorf("exit code %d, want 2", code)
 	}
@@ -381,7 +381,7 @@ func TestRunBracketMissingClose(t *testing.T) {
 
 func TestRunBracketJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := runBracket([]string{"--json", "hello", "=", "hello", "]"}, &buf)
+	code := runBracket([]string{"--json", "hello", "=", "hello", "]"}, nil, &buf)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}

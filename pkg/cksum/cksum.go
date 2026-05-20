@@ -119,7 +119,7 @@ func Run(files []string) (CksumResult, error) {
 	return result, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cksum: %v\n", err)
@@ -130,16 +130,16 @@ func run(args []string, out io.Writer) int {
 	result, err := Run(flags.Positional)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cksum: %v\n", err)
-		common.RenderError("cksum", 1, "ECKSUM", err.Error(), jsonMode, out)
+		common.RenderError("cksum", 1, "ECKSUM", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
-	common.Render("cksum", result, jsonMode, out, func() {
+	common.Render("cksum", result, jsonMode, stdout, func() {
 		for _, f := range result.Files {
 			if f.Name != "" {
-				fmt.Fprintf(out, "%d %d %s\n", f.Checksum, f.Bytes, f.Name)
+				fmt.Fprintf(stdout, "%d %d %s\n", f.Checksum, f.Bytes, f.Name)
 			} else {
-				fmt.Fprintf(out, "%d %d\n", f.Checksum, f.Bytes)
+				fmt.Fprintf(stdout, "%d %d\n", f.Checksum, f.Bytes)
 			}
 		}
 	})
