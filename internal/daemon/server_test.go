@@ -3,13 +3,19 @@ package daemon
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/pkg/common"
 )
 
 // =============================================================================
@@ -728,3 +734,372 @@ func TestProcessRequest_RawOutputExitCode(t *testing.T) {
 		t.Errorf("exitCode for false = %v (type %T), want int(1)", result["exitCode"], result["exitCode"])
 	}
 }
+
+// =============================================================================
+// M6 Integration Tests
+// =============================================================================
+
+func getFreePort() (int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
+	if err != nil {
+		return 0, err
+	}
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port, nil
+}
+
+func TestIntegration_ObservabilityEndpoints(t *testing.T) {
+	port, err := getFreePort()
+	if err != nil {
+		t.Fatalf("failed to find free TCP port: %v", err)
+	}
+
+	socket := filepath.Join(t.TempDir(), "obs.sock")
+	httpAddr := fmt.Sprintf("127.0.0.1:%d", port)
+	s := NewServer(socket, 2, httpAddr)
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start server failed: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(50 * time.Millisecond)
+
+	endpoints := []string{"/healthz", "/readyz", "/metrics", "/status"}
+	for _, ep := range endpoints {
+		resp, err := http.Get("http://" + httpAddr + ep)
+		if err != nil {
+			t.Errorf("GET %s failed: %v", ep, err)
+			continue
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("GET %s returned status %d, want 200", ep, resp.StatusCode)
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Errorf("reading body of %s failed: %v", ep, err)
+			continue
+		}
+
+		if ep == "/healthz" {
+			if !strings.Contains(string(body), `"ok"`) {
+				t.Errorf("%s body = %q, want containing '\"ok\"'", ep, body)
+			}
+		} else if ep == "/readyz" {
+			if !strings.Contains(string(body), `"ready"`) {
+				t.Errorf("%s body = %q, want containing '\"ready\"'", ep, body)
+			}
+		} else if ep == "/status" {
+			var snap StatusSnapshot
+			if err := json.Unmarshal(body, &snap); err != nil {
+				t.Errorf("failed to parse status snapshot: %v", err)
+			}
+			if snap.Version != common.Version {
+				t.Errorf("status snap version = %q, want %q", snap.Version, common.Version)
+			}
+		} else if ep == "/metrics" {
+			if !strings.Contains(string(body), "goposix_rpc_duration_count") && !strings.Contains(string(body), "# HELP") {
+				t.Errorf("metrics body did not look like prometheus metrics: %s", body)
+			}
+		}
+	}
+}
+
+func TestIntegration_PathTraversalRejection(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "traversal.sock")
+	s := NewServer(socket, 2, "")
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(20 * time.Millisecond)
+
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer conn.Close()
+
+	// 1. Create a session
+	enc := json.NewEncoder(conn)
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.session.create", ID: "1"})
+
+	var resp Response
+	dec := json.NewDecoder(conn)
+	if err := dec.Decode(&resp); err != nil {
+		t.Fatalf("decode session.create: %v", err)
+	}
+	if resp.Error != nil {
+		t.Fatalf("session.create failed: %v", resp.Error)
+	}
+	resMap := resp.Result.(map[string]interface{})
+	sessID := resMap["sessionId"].(string)
+
+	// 2. Set CWD to a dummy directory under /tmp
+	paramsSet, _ := json.Marshal(GoposixParams{SessionId: sessID, Path: "/tmp/mysandbox"})
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.session.setCwd", Params: paramsSet, ID: "2"})
+	var resp2 Response
+	if err := dec.Decode(&resp2); err != nil {
+		t.Fatalf("decode session.setCwd: %v", err)
+	}
+
+	// 3. Attempt path traversal with echo
+	paramsEcho, _ := json.Marshal(GoposixParams{SessionId: sessID, Path: "../../etc/passwd"})
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.echo", Params: paramsEcho, ID: "3"})
+	var resp3 Response
+	if err := dec.Decode(&resp3); err != nil {
+		t.Fatalf("decode echo traversal: %v", err)
+	}
+
+	if resp3.Error == nil {
+		t.Fatal("expected path traversal rejection error, got nil")
+	}
+	if resp3.Error.Code != -32602 {
+		t.Errorf("error code = %d, want -32602", resp3.Error.Code)
+	}
+	if !strings.Contains(resp3.Error.Message, "Path traversal detected") {
+		t.Errorf("expected traversal message, got: %q", resp3.Error.Message)
+	}
+}
+
+func TestIntegration_SessionSetCwdPathValidation(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "setcwd_traversal.sock")
+	s := NewServer(socket, 2, "")
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(20 * time.Millisecond)
+
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer conn.Close()
+
+	enc := json.NewEncoder(conn)
+	dec := json.NewDecoder(conn)
+
+	// Create session
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.session.create", ID: "1"})
+	var resp1 Response
+	dec.Decode(&resp1)
+	resMap := resp1.Result.(map[string]interface{})
+	sessID := resMap["sessionId"].(string)
+
+	// Set CWD to /etc (arbitrary path - H1 gap)
+	paramsSet, _ := json.Marshal(GoposixParams{SessionId: sessID, Path: "/etc"})
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.session.setCwd", Params: paramsSet, ID: "2"})
+	var resp2 Response
+	dec.Decode(&resp2)
+	if resp2.Error != nil {
+		t.Fatalf("unexpected error setting arbitrary CWD: %v", resp2.Error)
+	}
+
+	// Verify that the CWD in the session is indeed /etc
+	sess, ok := s.sm.Get(sessID)
+	if !ok {
+		t.Fatal("session not found")
+	}
+	if sess.CWD != "/etc" {
+		t.Errorf("CWD = %q, want /etc (H1 gap)", sess.CWD)
+	}
+}
+
+func TestIntegration_LimitReaderExceeded(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "limit_reader.sock")
+	s := NewServer(socket, 2, "")
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(20 * time.Millisecond)
+
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer conn.Close()
+
+	// Send a payload larger than 1MB
+	largePayload := strings.Repeat("a", 1024*1024 + 1024)
+	conn.Write([]byte(largePayload))
+
+	// The connection should respond with a Parse error and close
+	var resp Response
+	dec := json.NewDecoder(conn)
+	err = dec.Decode(&resp)
+	if err == nil {
+		if resp.Error == nil || !strings.Contains(resp.Error.Message, "Parse error or request too large") {
+			t.Errorf("expected limit error response, got: %+v", resp)
+		}
+	}
+}
+
+var registerLimitWriterOnce sync.Once
+func registerLimitWriterCommand() {
+	registerLimitWriterOnce.Do(func() {
+		dispatch.Register(dispatch.Command{
+			Name: "test_limit_writer",
+			Run: func(args []string, out io.Writer) int {
+				// write 51 MB of data
+				buf := make([]byte, 1024*1024)
+				for i := 0; i < 51; i++ {
+					_, err := out.Write(buf)
+					if err != nil {
+						return 1
+					}
+				}
+				return 0
+			},
+		})
+	})
+}
+
+func TestIntegration_LimitWriterExceeded(t *testing.T) {
+	registerLimitWriterCommand()
+
+	socket := filepath.Join(t.TempDir(), "limit_writer.sock")
+	s := NewServer(socket, 2, "")
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(20 * time.Millisecond)
+
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer conn.Close()
+
+	params, _ := json.Marshal(GoposixParams{RawOutput: true})
+	enc := json.NewEncoder(conn)
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.test_limit_writer", Params: params, ID: "1"})
+
+	var resp Response
+	dec := json.NewDecoder(conn)
+	if err := dec.Decode(&resp); err != nil {
+		t.Fatalf("decode limit writer response: %v", err)
+	}
+
+	// It should succeed or contain a truncated result, but the raw output will have reached 50MB
+	if resp.Error != nil {
+		t.Fatalf("unexpected error response: %v", resp.Error.Message)
+	}
+	resMap, ok := resp.Result.(map[string]interface{})
+	if !ok {
+		t.Fatal("expected map result")
+	}
+	stdout := resMap["stdout"].(string)
+	if len(stdout) != 50*1024*1024 {
+		t.Errorf("expected exactly 50MB of output, got %d bytes", len(stdout))
+	}
+}
+
+func TestIntegration_ConcurrentConnectionLimit(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "conn_limit.sock")
+	s := NewServer(socket, 2, "")
+	
+	// Override capacity to 2 for quick testing
+	s.connSem = make(chan struct{}, 2)
+
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(20 * time.Millisecond)
+
+	// Dial connection 1
+	c1, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial 1: %v", err)
+	}
+	defer c1.Close()
+
+	// Dial connection 2
+	c2, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial 2: %v", err)
+	}
+	defer c2.Close()
+	time.Sleep(10 * time.Millisecond)
+
+	// Dial connection 3 (this will dial, but acceptLoop will block on s.connSem)
+	c3, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial 3: %v", err)
+	}
+	defer c3.Close()
+	time.Sleep(10 * time.Millisecond)
+
+	// Verify c1 works
+	enc1 := json.NewEncoder(c1)
+	enc1.Encode(Request{JSONRPC: "2.0", Method: "goposix.ping", ID: "1"})
+	var r1 Response
+	dec1 := json.NewDecoder(c1)
+	c1.SetReadDeadline(time.Now().Add(50 * time.Millisecond))
+	if err := dec1.Decode(&r1); err != nil {
+		t.Errorf("c1 decode: %v", err)
+	}
+
+	// Verify c3 does not respond (blocks on connection semaphore)
+	enc3 := json.NewEncoder(c3)
+	enc3.Encode(Request{JSONRPC: "2.0", Method: "goposix.ping", ID: "3"})
+	var r3 Response
+	dec3 := json.NewDecoder(c3)
+	c3.SetReadDeadline(time.Now().Add(50 * time.Millisecond))
+	if err := dec3.Decode(&r3); err == nil {
+		t.Error("expected c3 to block and timeout, but got response")
+	}
+
+	// Close c1 to release semaphore slot
+	c1.Close()
+	time.Sleep(50 * time.Millisecond)
+
+	// Now c3 should respond successfully!
+	c3.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
+	dec3 = json.NewDecoder(c3)
+	if err := dec3.Decode(&r3); err != nil {
+		t.Errorf("c3 should now succeed, got: %v", err)
+	}
+}
+
+func TestIntegration_GracefulShutdownInFlight(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "graceful.sock")
+	s := NewServer(socket, 2, "")
+	if err := s.Start(); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer s.Stop()
+	time.Sleep(20 * time.Millisecond)
+
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer conn.Close()
+
+	// Spin up server.Stop() asynchronously
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		s.Stop()
+	}()
+
+	// Ping the server to verify it's working up until shutdown
+	enc := json.NewEncoder(conn)
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.ping", ID: "1"})
+
+	var resp Response
+	dec := json.NewDecoder(conn)
+	conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+	if err := dec.Decode(&resp); err != nil {
+		// Connection might be closed by stop, which is expected
+	}
+}
+

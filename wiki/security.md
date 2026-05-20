@@ -17,10 +17,10 @@ auth layer.
 
 Scripts can access the filesystem subject to path confinement via `SecurePath`:
 
-- When a session has a working directory (CWD) set, file opens are restricted to that
-  subtree. Path traversal (`../../../etc/passwd`) is blocked.
-- When CWD is `/` or unset, the entire filesystem is accessible.
-- Symlinks are followed; the resolved target must also be within the allowed path.
+- **Symlinks limitation:** `SecurePath` currently uses lexical path cleaning (`filepath.Clean`) and does *not* resolve symlinks at the application level (i.e. it does not call `filepath.EvalSymlinks`). If a symlink in the base directory points to a location outside the base directory, access to the external path may be possible.
+
+> [!WARNING]
+> **CWD Path Confinement Limitation:** The `session.setCwd` RPC method does not currently validate that the target directory is restricted to a safe subtree before setting it as the session's working directory. Subsequent commands in that session will then use that new directory as their base path for confinement.
 
 ### Environment Variables
 
@@ -54,7 +54,7 @@ a non-zero exit code. When either output buffer is exceeded, the stream is trunc
 | Protection | Value |
 |-----------|-------|
 | Max request body size | 1 MB |
-| Max RPC requests/sec per connection | 100 (configurable) |
+| Max RPC requests/sec per connection | 100,000 (effectively unrestricted) |
 | Connection limit | Configurable max concurrent connections |
 | Session TTL | Automatic cleanup of idle sessions |
 
@@ -73,6 +73,8 @@ a non-zero exit code. When either output buffer is exceeded, the stream is trunc
 6. **Session isolation.** Use sessions (`goposix.session.create`) for multi-step workflows.
    Sessions confine file operations to a working directory and carry environment state
    across calls. Stateless calls operate against `/` by default.
+   > [!CAUTION]
+   > Note that `session.setCwd` does not validate path boundaries. Do not permit untrusted clients to invoke `session.setCwd` with arbitrary path inputs.
 
 ### Should `shell.exec` require a session?
 

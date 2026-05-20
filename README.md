@@ -4,7 +4,7 @@ A Go-native, single-binary POSIX with 96.6% BusyBox test compatibility (591/612)
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![go vet](https://img.shields.io/badge/go%20vet-passing-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
-[![coverage](https://img.shields.io/badge/coverage-74.7%25-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/badge/coverage-75.9%25-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ramayac/goposix)](https://goreportcard.com/report/github.com/ramayac/goposix)
 [![Go Version](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go)](https://go.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)

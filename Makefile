@@ -496,5 +496,5 @@ bench-shell: bench-image
 	  goposix:bench
 
 .PHONY: ci
-ci: vet test build docker smoke-docker cover-gate
+ci: vet test build docker smoke-docker cover-gate testsuite
 	@echo "ci: full pipeline complete (coverage ≥ $(COVERAGE_THRESHOLD)%)"
