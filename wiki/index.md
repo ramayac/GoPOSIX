@@ -17,11 +17,13 @@
 - [security.md](security.md) | Security model, shell sandbox, deployment posture.
 - [self_upgrade.md](self_upgrade.md) | Self-upgrade (`--version`, `--upgrade`).
 
-## API & Schema
+## SDK & API
 
+- [sdk.md](sdk.md) | Go SDK guide — typed client, connection pooling, 60µs/call (primary interface).
 - [rpc_api.md](rpc_api.md) | JSON-RPC client API reference (`pkg/client`).
-- [rpc_quickstart.md](rpc_quickstart.md) | JSON-RPC quickstart with Go SDK examples.
+- [rpc_quickstart.md](rpc_quickstart.md) | JSON-RPC quickstart — raw protocol for non-Go clients.
 - [json_schema.md](json_schema.md) | `--json` output envelope and per-utility schemas.
+- [shell_integration.md](shell_integration.md) | CLI-to-daemon forwarding for shell users (socat, Python, Go helper).
 
 ## Test & Compliance
 
