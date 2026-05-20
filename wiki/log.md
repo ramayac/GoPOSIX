@@ -4,6 +4,20 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-19] plan | Daemon observability exports (`wiki/observability_exports.md`)
+
+Created a comprehensive options doc covering 7 approaches (A–G) for exposing daemon
+internals (goroutines, memory, sessions, per-method throughput) to OS tools and
+external consumers. Currently PLANNING — no implementation.
+
+Recommended path (if approved):
+- Phase 1: Go runtime stats in Prometheus `/metrics` (30 min)
+- Phase 2: JSON `/status` endpoint (50 min)
+- Phase 3: `gotop` TUI via `pkg/gotop/` (1–3 hr)
+- Phase 4: Process name in `ps` (15 min, bonus)
+
+Rejected/deferred: thread naming (fragile), cgroups v2 (privilege barrier), eBPF (overkill).
+
 ## [2026-05-19] migrate | Move docs/ → wiki/ (branch: `docs/cleanup`)
 
 Moved the last two remaining docs/ files into wiki/:

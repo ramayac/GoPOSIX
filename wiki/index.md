@@ -15,6 +15,7 @@
 - [architecture.md](architecture.md) | System architecture, component flow, Docker images, package map.
 - [performance.md](performance.md) | Performance quick reference — commands, scale, categories, results.
 - [security.md](security.md) | Security model, shell sandbox, deployment posture.
+- [observability_exports.md](observability_exports.md) | Options for exposing daemon metrics to OS tools and external consumers (PLANNING).
 - [self_upgrade.md](self_upgrade.md) | Self-upgrade (`--version`, `--upgrade`).
 
 ## SDK & API
