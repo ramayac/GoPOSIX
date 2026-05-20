@@ -55,9 +55,13 @@ type headInput struct {
 }
 
 func run(args []string, out io.Writer) int {
+	return headRun(args, out, os.Stderr, os.Stdin)
+}
+
+func headRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "head: %v\n", err)
+		fmt.Fprintf(errOut, "head: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -67,7 +71,7 @@ func run(args []string, out io.Writer) int {
 	if cStr := flags.Get("c"); cStr != "" {
 		n, err := strconv.Atoi(cStr)
 		if err != nil || n < 0 {
-			fmt.Fprintf(os.Stderr, "head: illegal byte count -- %s\n", cStr)
+			fmt.Fprintf(errOut, "head: illegal byte count -- %s\n", cStr)
 			return 2
 		}
 		byteCount = n
@@ -76,7 +80,7 @@ func run(args []string, out io.Writer) int {
 		if strings.HasPrefix(nStr, "-") {
 			n, err := strconv.Atoi(nStr[1:])
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "head: illegal line count -- %s\n", nStr)
+				fmt.Fprintf(errOut, "head: illegal line count -- %s\n", nStr)
 				return 2
 			}
 			linesCount = n
@@ -84,7 +88,7 @@ func run(args []string, out io.Writer) int {
 		} else {
 			n, err := strconv.Atoi(nStr)
 			if err != nil || n < 0 {
-				fmt.Fprintf(os.Stderr, "head: illegal line count -- %s\n", nStr)
+				fmt.Fprintf(errOut, "head: illegal line count -- %s\n", nStr)
 				return 2
 			}
 			linesCount = n
@@ -100,16 +104,16 @@ func run(args []string, out io.Writer) int {
 	// Only add stdin from the no-args / Stdin case if Positional is empty or
 	// the first positional is NOT "-" (which would duplicate).
 	if len(flags.Positional) == 0 {
-		inputs = append(inputs, headInput{r: os.Stdin, name: "standard input"})
+		inputs = append(inputs, headInput{r: stdin, name: "standard input"})
 	}
 	for _, path := range flags.Positional {
 		if path == "-" {
-			inputs = append(inputs, headInput{r: os.Stdin, name: "standard input"})
+			inputs = append(inputs, headInput{r: stdin, name: "standard input"})
 			continue
 		}
 		f, err := os.Open(path)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "head: %s: %v\n", path, err)
+			fmt.Fprintf(errOut, "head: %s: %v\n", path, err)
 			exitCode = 1
 			continue
 		}
@@ -121,13 +125,13 @@ func run(args []string, out io.Writer) int {
 		if len(inputs) > 1 {
 			if !jsonMode {
 				if i > 0 {
-					fmt.Println()
+					fmt.Fprintln(out)
 				}
-				fmt.Printf("==> %s <==\n", in.name)
+				fmt.Fprintf(out, "==> %s <==\n", in.name)
 			}
 		}
 
-		var w io.Writer = os.Stdout
+		var w io.Writer = out
 		if jsonMode {
 			w = io.Discard
 		}
@@ -142,7 +146,7 @@ func run(args []string, out io.Writer) int {
 			lines, errR = Run(in.r, w, linesCount)
 		}
 		if errR != nil {
-			fmt.Fprintf(os.Stderr, "head: %v\n", errR)
+			fmt.Fprintf(errOut, "head: %v\n", errR)
 			exitCode = 1
 		}
 		if jsonMode {

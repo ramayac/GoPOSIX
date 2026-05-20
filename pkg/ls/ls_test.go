@@ -13,7 +13,7 @@ func TestRunBasicDir(t *testing.T) {
 	os.WriteFile(filepath.Join(dir, "a.txt"), []byte("hello"), 0644)
 	os.WriteFile(filepath.Join(dir, ".hidden"), []byte("h"), 0644)
 
-	results, err := Run([]string{dir}, false, false, false)
+	results, err := Run([]string{dir}, false, false, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func TestRunShowAll(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, ".dotfile"), []byte("x"), 0644)
 
-	results, err := Run([]string{dir}, true, false, false)
+	results, err := Run([]string{dir}, true, false, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func TestRunAlmostAll(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, ".dotfile"), []byte("x"), 0644)
 
-	results, err := Run([]string{dir}, false, true, false)
+	results, err := Run([]string{dir}, false, true, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func TestRunAlmostAll(t *testing.T) {
 }
 
 func TestRunNonExistent(t *testing.T) {
-	_, err := Run([]string{"/this/path/does/not/exist"}, false, false, false)
+	_, err := Run([]string{"/this/path/does/not/exist"}, false, false, false, false)
 	if err == nil {
 		t.Error("expected error for non-existent path")
 	}
@@ -81,7 +81,7 @@ func TestRunSingleFile(t *testing.T) {
 	f := filepath.Join(dir, "test.txt")
 	os.WriteFile(f, []byte("data"), 0644)
 
-	results, err := Run([]string{f}, false, false, false)
+	results, err := Run([]string{f}, false, false, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestBusyBox_Ls_DefaultFormatOnePerLine(t *testing.T) {
 	os.WriteFile(filepath.Join(dir, "a.txt"), []byte("hi"), 0644)
 	os.WriteFile(filepath.Join(dir, "b.txt"), []byte("hi"), 0644)
 
-	results, err := Run([]string{dir}, false, false, false)
+	results, err := Run([]string{dir}, false, false, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +197,7 @@ func TestBusyBox_Ls_BlocksFlag(t *testing.T) {
 	path := filepath.Join(dir, "f")
 	os.WriteFile(path, []byte("hello"), 0644)
 
-	results, err := Run([]string{dir}, false, false, false)
+	results, err := Run([]string{dir}, false, false, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,3 +317,24 @@ func TestCLI_MultipleDirs(t *testing.T) {
 		t.Fatalf("exit code %d", code)
 	}
 }
+
+func TestCLI_DirectoryMode(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "f.txt"), []byte("x"), 0644)
+
+	// In directoryMode, listing the directory should print the directory name itself
+	// instead of listing its contents ("f.txt").
+	var out bytes.Buffer
+	code := run([]string{"-d", dir}, &out)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	output := strings.TrimSpace(out.String())
+	if !strings.Contains(output, filepath.Base(dir)) {
+		t.Errorf("expected directory name %q, got: %q", filepath.Base(dir), output)
+	}
+	if strings.Contains(output, "f.txt") {
+		t.Error("f.txt should be suppressed in directoryMode (-d)")
+	}
+}
+

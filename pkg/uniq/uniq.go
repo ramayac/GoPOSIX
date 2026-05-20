@@ -112,9 +112,13 @@ func Run(r io.Reader, countMode, duplicatesOnly, uniqueOnly, ignoreCase bool, sk
 }
 
 func run(args []string, out io.Writer) int {
+	return uniqRun(args, out, os.Stderr, os.Stdin)
+}
+
+func uniqRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "uniq: %v\n", err)
+		fmt.Fprintf(errOut, "uniq: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -135,11 +139,11 @@ func run(args []string, out io.Writer) int {
 		fmt.Sscanf(val, "%d", &checkChars)
 	}
 
-	var in io.Reader = os.Stdin
+	var in io.Reader = stdin
 	if len(flags.Positional) > 0 && flags.Positional[0] != "-" {
 		f, err := os.Open(flags.Positional[0])
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "uniq: %v\n", err)
+			fmt.Fprintf(errOut, "uniq: %v\n", err)
 			return 1
 		}
 		defer f.Close()
@@ -151,7 +155,7 @@ func run(args []string, out io.Writer) int {
 		if len(flags.Positional) > 1 && flags.Positional[1] != "-" {
 			f, err := os.Create(flags.Positional[1])
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "uniq: %v\n", err)
+				fmt.Fprintf(errOut, "uniq: %v\n", err)
 				return 1
 			}
 			defer f.Close()
@@ -161,7 +165,7 @@ func run(args []string, out io.Writer) int {
 
 	items, err := Run(in, countMode, duplicatesOnly, uniqueOnly, ignoreCase, skipFields, skipChars, checkChars)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "uniq: %v\n", err)
+		fmt.Fprintf(errOut, "uniq: %v\n", err)
 		return 1
 	}
 

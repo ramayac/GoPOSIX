@@ -23,6 +23,7 @@ type FlagDef struct {
 type FlagSpec struct {
 	Defs               []FlagDef
 	StopAtFirstNonFlag bool // if true, stop parsing at first non-flag argument (echo, printf)
+	PreProcess         func(args []string) ([]string, error)
 
 	compiled *compiledSpec // lazily built on first call
 }
@@ -76,6 +77,13 @@ func errf(code int, format string, args ...interface{}) *FlagError {
 // ParseFlags parses args according to spec.
 // Unknown flags return *FlagError with ExitCode 2.
 func ParseFlags(args []string, spec FlagSpec) (*ParseResult, error) {
+	if spec.PreProcess != nil {
+		var err error
+		args, err = spec.PreProcess(args)
+		if err != nil {
+			return nil, err
+		}
+	}
 	cs := spec.getOrCompile()
 	res := newParseResult()
 	argsLen := len(args)

@@ -31,9 +31,13 @@ type ExecResult struct {
 }
 
 func run(args []string, out io.Writer) int {
+	return xargsRun(args, out, os.Stderr, os.Stdin)
+}
+
+func xargsRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "xargs: %v\n", err)
+		fmt.Fprintf(errOut, "xargs: %v\n", err)
 		return 1
 	}
 
@@ -78,7 +82,7 @@ func run(args []string, out io.Writer) int {
 
 	nullDelim := flags.Has("0")
 
-	scanner := bufio.NewScanner(os.Stdin)
+	scanner := bufio.NewScanner(stdin)
 	// When -I is used, read entire lines (not words).
 	// When -0 is used, split on NUL bytes.
 	if nullDelim {
@@ -149,14 +153,14 @@ func run(args []string, out io.Writer) int {
 
 		cmd := exec.Command(baseCmd, args...)
 		cmd.Stdout = out
-		cmd.Stderr = os.Stderr
+		cmd.Stderr = errOut
 
 		if trace {
 			traceStr := baseCmd
 			for _, a := range args {
 				traceStr += " " + a
 			}
-			fmt.Fprintln(os.Stderr, traceStr)
+			fmt.Fprintln(errOut, traceStr)
 		}
 
 		err = cmd.Run()

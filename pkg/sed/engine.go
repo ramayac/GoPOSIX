@@ -80,10 +80,14 @@ func (e *engineState) printLineRaw(s string) {
 }
 
 func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bool, globalOut io.Writer) int {
+	return runEngineInternal(insts, readers, suppress, inPlace, globalOut, os.Stderr, os.Stdin)
+}
+
+func runEngineInternal(insts []*Instruction, readers []string, suppress bool, inPlace bool, globalOut io.Writer, errOut io.Writer, stdin io.Reader) int {
 	var err error
 	insts, err = compileAst(insts)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "sed: %v\n", err)
+		fmt.Fprintf(errOut, "sed: %v\n", err)
 		return 1
 	}
 	truncateWFiles(insts)
@@ -116,11 +120,11 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 
 		var r io.Reader
 		if path == "-" {
-			r = os.Stdin
+			r = stdin
 		} else {
 			f, err := os.Open(path)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "sed: %s: %v\n", path, err)
+				fmt.Fprintf(errOut, "sed: %s: %v\n", path, err)
 				exitCode = 1
 				continue
 			}
@@ -132,7 +136,7 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 			tmpPath := path + ".tmp"
 			tmpFile, err := os.Create(tmpPath)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "sed: %v\n", err)
+				fmt.Fprintf(errOut, "sed: %v\n", err)
 				exitCode = 1
 				continue
 			}
@@ -209,7 +213,7 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 				} else if err.Error() == "quit_no_print" {
 					return exitCode
 				} else {
-					fmt.Fprintf(os.Stderr, "sed: %v\n", err)
+					fmt.Fprintf(errOut, "sed: %v\n", err)
 					exitCode = 1
 					break
 				}

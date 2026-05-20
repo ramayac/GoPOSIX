@@ -491,9 +491,13 @@ func Run(items []lineItem, keySpecs []keySpec, reverse, numeric, unique, month, 
 }
 
 func run(args []string, out io.Writer) int {
+	return sortRun(args, out, os.Stderr, os.Stdin)
+}
+
+func sortRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "sort: %v\n", err)
+		fmt.Fprintf(errOut, "sort: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -539,15 +543,15 @@ func run(args []string, out io.Writer) int {
 
 	var readers []io.Reader
 	if len(flags.Positional) == 0 {
-		readers = append(readers, os.Stdin)
+		readers = append(readers, stdin)
 	} else {
 		for _, path := range flags.Positional {
 			if path == "-" {
-				readers = append(readers, os.Stdin)
+				readers = append(readers, stdin)
 			} else {
 				f, err := os.Open(path)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "sort: %s: %v\n", path, err)
+					fmt.Fprintf(errOut, "sort: %s: %v\n", path, err)
 					return 1
 				}
 				defer f.Close()
@@ -560,7 +564,7 @@ func run(args []string, out io.Writer) int {
 	for _, r := range readers {
 		items, err := parseLines(r, keySpecs, delimiter, zeroTerm)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "sort: %v\n", err)
+			fmt.Fprintf(errOut, "sort: %v\n", err)
 			return 1
 		}
 		allItems = append(allItems, items...)
@@ -572,7 +576,7 @@ func run(args []string, out io.Writer) int {
 	if outputFile != "" {
 		f, err := os.Create(outputFile)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "sort: %s: %v\n", outputFile, err)
+			fmt.Fprintf(errOut, "sort: %s: %v\n", outputFile, err)
 			return 1
 		}
 		defer f.Close()
