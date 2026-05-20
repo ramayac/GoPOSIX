@@ -15,7 +15,7 @@ func init() {
 	dispatch.Register(dispatch.Command{
 		Name:  "test-hello",
 		Usage: "print a greeting",
-		Run: func(args []string, out io.Writer) int {
+		Run: func(args []string, stdin io.Reader, stdout io.Writer) int {
 			out.Write([]byte("hello"))
 			return 0
 		},
@@ -23,14 +23,14 @@ func init() {
 	dispatch.Register(dispatch.Command{
 		Name:  "test-exit",
 		Usage: "exit with given code",
-		Run: func(args []string, out io.Writer) int {
+		Run: func(args []string, stdin io.Reader, stdout io.Writer) int {
 			return 42
 		},
 	})
 	dispatch.Register(dispatch.Command{
 		Name:  "test-echo-args",
 		Usage: "echo args",
-		Run: func(args []string, out io.Writer) int {
+		Run: func(args []string, stdin io.Reader, stdout io.Writer) int {
 			out.Write([]byte(strings.Join(args, " ")))
 			return 0
 		},

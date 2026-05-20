@@ -324,7 +324,7 @@ var spec = common.FlagSpec{
 
 // --- CLI layer ---
 
-func runTest(args []string, out io.Writer) int {
+func runTest(args []string, stdin io.Reader, stdout io.Writer) int {
 	// Pre-process: extract --json/-j before passing to flag parser
 	// because test's expression language uses single-dash flags (-n, -z, -eq etc.)
 	jsonMode := false
@@ -340,7 +340,7 @@ func runTest(args []string, out io.Writer) int {
 
 	result, err := Evaluate(cleanArgs)
 	if err != nil {
-		common.RenderError("test", 2, "SYNTAX", err.Error(), jsonMode, out)
+		common.RenderError("test", 2, "SYNTAX", err.Error(), jsonMode, stdout)
 		if !jsonMode {
 			fmt.Fprintf(os.Stderr, "test: %v\n", err)
 		}
@@ -353,12 +353,12 @@ func runTest(args []string, out io.Writer) int {
 	}
 
 	if jsonMode {
-		common.Render("test", TestResult{Result: result}, true, out, func() {})
+		common.Render("test", TestResult{Result: result}, true, stdout, func() {})
 	}
 	return exitCode
 }
 
-func runBracket(args []string, out io.Writer) int {
+func runBracket(args []string, stdin io.Reader, stdout io.Writer) int {
 	// Pre-process: extract --json/-j
 	jsonMode := false
 	cleanArgs := make([]string, 0, len(args))
@@ -374,7 +374,7 @@ func runBracket(args []string, out io.Writer) int {
 	// Validate closing ']'
 	if len(cleanArgs) == 0 || cleanArgs[len(cleanArgs)-1] != "]" {
 		msg := "missing ']'"
-		common.RenderError("[", 2, "SYNTAX", msg, jsonMode, out)
+		common.RenderError("[", 2, "SYNTAX", msg, jsonMode, stdout)
 		if !jsonMode {
 			fmt.Fprintf(os.Stderr, "[: %s\n", msg)
 		}
@@ -385,7 +385,7 @@ func runBracket(args []string, out io.Writer) int {
 
 	result, err := Evaluate(exprArgs)
 	if err != nil {
-		common.RenderError("[", 2, "SYNTAX", err.Error(), jsonMode, out)
+		common.RenderError("[", 2, "SYNTAX", err.Error(), jsonMode, stdout)
 		if !jsonMode {
 			fmt.Fprintf(os.Stderr, "[: %v\n", err)
 		}
@@ -398,7 +398,7 @@ func runBracket(args []string, out io.Writer) int {
 	}
 
 	if jsonMode {
-		common.Render("[", TestResult{Result: result}, true, out, func() {})
+		common.Render("[", TestResult{Result: result}, true, stdout, func() {})
 	}
 	return exitCode
 }

@@ -636,11 +636,11 @@ func init() {
 }
 
 // egrepRun prepends -E and delegates to the main grep CLI.
-func egrepRun(args []string, stdout io.Writer) int {
-	return run(append([]string{"-E"}, args...), stdout)
+func egrepRun(args []string, stdin io.Reader, stdout io.Writer) int {
+	return run(append([]string{"-E"}, args...), stdin, stdout)
 }
 
 // fgrepRun prepends -F and delegates to the main grep CLI.
-func fgrepRun(args []string, stdout io.Writer) int {
-	return run(append([]string{"-F"}, args...), stdout)
+func fgrepRun(args []string, stdin io.Reader, stdout io.Writer) int {
+	return run(append([]string{"-F"}, args...), stdin, stdout)
 }

@@ -51,7 +51,7 @@ make validate-schemas
 
 ## Utility Schemas
 
-Schemas are provided for all 76 utilities that support `--json` output:
+Schemas are provided for all 77 utilities that support `--json` output:
 
 | Utility | Data Shape |
 |---------|-----------|
@@ -99,6 +99,7 @@ Schemas are provided for all 76 utilities that support `--json` output:
 | `nohup` | `{"command": ["string"], "output_file": "string", "exit_code": int}` |
 | `od` | `{"records": ["string"]}` |
 | `paste` | `{"records": [["string"]]}` |
+| `patch` | `{"file": "string", "applied": int, "rejected": int, "is_new": bool, "message": "string"}` |
 | `printenv` | `{"vars": {"key": "value", ...}}` |
 | `printf` | `{"output": "string"}` |
 | `ps` | `[{"pid": int, "ppid": int, "user": "string", "cmd": "string", "cpu": "string", "mem": "string"}]` |
@@ -132,7 +133,7 @@ Schemas are provided for all 76 utilities that support `--json` output:
 | `xargs` | `[{"command": "string", "exitCode": int}]` |
 | `yes` | `{"string": "string", "count": int, "truncated": bool}` |
 
-Only `dd` and `patch` do not yet support `--json` output.
+Only `dd` does not yet support `--json` output.
 
 ## Schema Versioning
 

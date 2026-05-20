@@ -947,7 +947,7 @@ func registerLimitWriterCommand() {
 	registerLimitWriterOnce.Do(func() {
 		dispatch.Register(dispatch.Command{
 			Name: "test_limit_writer",
-			Run: func(args []string, out io.Writer) int {
+			Run: func(args []string, stdin io.Reader, stdout io.Writer) int {
 				// write 51 MB of data
 				buf := make([]byte, 1024*1024)
 				for i := 0; i < 51; i++ {

@@ -4,7 +4,7 @@
 
 Append-only timeline of wiki maintenance activity.
 
-## [2026-05-20] sync | JSON schema gap fill — 30 new schemas, doc updated
+## [2026-05-20] sync | JSON schema gap fill — 30 new schemas, doc updated, patch --json
 
 Audited `wiki/json_schema.md` against `test/schemas/` and `pkg/`:
 - Found the doc claimed 42 utilities support `--json` — actual count is 76.
@@ -16,13 +16,20 @@ Audited `wiki/json_schema.md` against `test/schemas/` and `pkg/`:
 
 Created 30 new JSON Schema (draft-07) files in `test/schemas/` covering all
 missing utilities. Updated `wiki/json_schema.md`: count 42→76, 46→76 table rows,
-replaced stale "without --json" list with "Only dd and patch do not yet support
---json output." Cross-check: 76 doc rows ↔ 76 schema files ↔ 76 `--json` flags.
+replaced stale "without --json" list with "Only dd does not yet support --json."
+Cross-check: 76 doc rows ↔ 76 schema files ↔ 76 `--json` flags.
+
+**`patch --json` implemented same session:** Added `--json` flag to flag spec,
+wired `common.Render`/`RenderError` into `patchRun()` for success, hunk-failure
+(data preserved), and parse/IO-error paths. 4 new CLI tests (JSON success, hunk
+failure, stdin error, bad patch file). Coverage: 78.0%, race-clean. `dd` deferred
+(manual operand parsing makes flag injection non-trivial; ~30–60 min).
 
 Created: 30 `test/schemas/*.schema.json` files (awk, cksum, cmp, comm, expand,
 false, fold, join, link, logger, logname, mkfifo, nice, nl, nohup, od, paste,
 sed, sleep, split, strings, sum, tee, tr, true, tty, unexpand, unlink, who, yes).
-Updated: `wiki/json_schema.md`, `wiki/log.md`.
+Updated: `pkg/patch/patch.go`, `pkg/patch/patch_test.go`, `wiki/json_schema.md`,
+`wiki/todos.md`, `wiki/log.md`.
 
 ## [2026-05-20] fix | H6 — Shell os.Chdir() thread-safety + Makefile test-race target (branch: `feat/hardeing-iv-partii`)
 

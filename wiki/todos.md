@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-20 | **BusyBox:** 548 pass / 4 fail / 10 skip | **Coverage:** 76.7%
+> **Last updated:** 2026-05-20 | **BusyBox:** 548 pass / 4 fail / 10 skip | **Coverage:** 76.7% | **--json:** 77/79 (patch ✅, dd deferred)
 
 ## Hardening IV — Remaining (3 HIGH)
 
@@ -10,10 +10,13 @@
 | H4 | Systemic `os.Stderr` hardcoding — 11/79 utilities fixed, ~68 remain | [24_hardening_iv.md](24_hardening_iv.md) |
 | H5 | `rm --no-preserve-root` not in flag spec (one-line fix) | [24_hardening_iv.md](24_hardening_iv.md) |
 
-## Hardening IV — Resolved (24)
+## Hardening IV — Resolved (25)
 
 All MEDIUM (12) and LOW (8) resolved. HIGH resolved: H2, H3, H6, H7.
 See [24_hardening_iv.md](24_hardening_iv.md) for full resolution table.
+
+**Also resolved same session:** `patch --json` — added flag, wired `Render`/`RenderError`.
+4 new CLI tests, 78.0% coverage, race-clean.
 
 ## Remaining Failures (4)
 
@@ -42,6 +45,8 @@ dedicated JSON-RPC sub-tests for their stdin-dependent success paths.)
 ## Deferred
 
 See [deferred.md](deferred.md) for the consolidated list. Key items:
+- `dd --json` — manual `key=value` operand parsing makes flag injection non-trivial.
+  Needs result struct design + operand parser changes. Estimated ~30–60 min.
 - XML output (`--xml`)
 - Multi-tenant sandbox
 - Multi-agent observability
