@@ -28,7 +28,7 @@ func Run(path string) error {
 	return syscall.Unlink(path)
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "unlink: %v\n", err)
@@ -38,7 +38,7 @@ func run(args []string, out io.Writer) int {
 
 	if len(flags.Positional) != 1 {
 		fmt.Fprintln(os.Stderr, "unlink: missing operand")
-		common.RenderError("unlink", 1, "EARGS", "missing operand", jsonMode, out)
+		common.RenderError("unlink", 1, "EARGS", "missing operand", jsonMode, stdout)
 		return 1
 	}
 
@@ -46,12 +46,12 @@ func run(args []string, out io.Writer) int {
 
 	if err := Run(path); err != nil {
 		fmt.Fprintf(os.Stderr, "unlink: %v\n", err)
-		common.RenderError("unlink", 1, "EUNLINK", err.Error(), jsonMode, out)
+		common.RenderError("unlink", 1, "EUNLINK", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
 	result := UnlinkResult{Removed: path}
-	common.Render("unlink", result, jsonMode, out, func() {})
+	common.Render("unlink", result, jsonMode, stdout, func() {})
 	return 0
 }
 

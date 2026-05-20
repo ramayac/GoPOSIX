@@ -30,7 +30,7 @@ func Run(path string, mode os.FileMode) error {
 	return unix.Mkfifo(path, uint32(mode))
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "mkfifo: %v\n", err)
@@ -40,7 +40,7 @@ func run(args []string, out io.Writer) int {
 
 	if len(flags.Positional) == 0 {
 		fmt.Fprintln(os.Stderr, "mkfifo: missing operand")
-		common.RenderError("mkfifo", 1, "EARGS", "missing operand", jsonMode, out)
+		common.RenderError("mkfifo", 1, "EARGS", "missing operand", jsonMode, stdout)
 		return 1
 	}
 
@@ -52,7 +52,7 @@ func run(args []string, out io.Writer) int {
 		parsed, err := strconv.ParseUint(modeStr, 8, 32)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "mkfifo: invalid mode: %s\n", modeStr)
-			common.RenderError("mkfifo", 1, "EMODE", "invalid mode", jsonMode, out)
+			common.RenderError("mkfifo", 1, "EMODE", "invalid mode", jsonMode, stdout)
 			return 1
 		}
 		mode = os.FileMode(parsed)
@@ -60,7 +60,7 @@ func run(args []string, out io.Writer) int {
 
 	if err := Run(path, mode); err != nil {
 		fmt.Fprintf(os.Stderr, "mkfifo: %v\n", err)
-		common.RenderError("mkfifo", 1, "EMKFIFO", err.Error(), jsonMode, out)
+		common.RenderError("mkfifo", 1, "EMKFIFO", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
@@ -68,7 +68,7 @@ func run(args []string, out io.Writer) int {
 		Path: path,
 		Mode: fmt.Sprintf("0%o", mode),
 	}
-	common.Render("mkfifo", result, jsonMode, out, func() {})
+	common.Render("mkfifo", result, jsonMode, stdout, func() {})
 	return 0
 }
 

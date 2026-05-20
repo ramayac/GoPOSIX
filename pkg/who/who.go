@@ -133,7 +133,7 @@ func Run() (WhoResult, error) {
 	return WhoResult{Users: nil, Count: 0}, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "who: %v\n", err)
@@ -146,36 +146,36 @@ func run(args []string, out io.Writer) int {
 	result, err := Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "who: %v\n", err)
-		common.RenderError("who", 1, "EWHO", err.Error(), jsonMode, out)
+		common.RenderError("who", 1, "EWHO", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
 	if quick {
 		// Quick mode: names only + count
 		if jsonMode {
-			common.Render("who", result, true, out, func() {})
+			common.Render("who", result, true, stdout, func() {})
 		} else {
 			names := make([]string, len(result.Users))
 			for i, u := range result.Users {
 				names[i] = u.Name
 			}
 			sort.Strings(names)
-			fmt.Fprintln(out, strings.Join(names, " "))
-			fmt.Fprintf(out, "# users=%d\n", len(names))
+			fmt.Fprintln(stdout, strings.Join(names, " "))
+			fmt.Fprintf(stdout, "# users=%d\n", len(names))
 		}
 		return 0
 	}
 
-	common.Render("who", result, jsonMode, out, func() {
+	common.Render("who", result, jsonMode, stdout, func() {
 		if heading {
-			fmt.Fprintf(out, "%-8s %-12s %-16s %s\n", "NAME", "LINE", "TIME", "COMMENT")
+			fmt.Fprintf(stdout, "%-8s %-12s %-16s %s\n", "NAME", "LINE", "TIME", "COMMENT")
 		}
 		for _, u := range result.Users {
 			comment := u.Host
 			if comment == "" {
 				comment = ""
 			}
-			fmt.Fprintf(out, "%-8s %-12s %-16s %s\n", u.Name, u.Terminal, u.Time, comment)
+			fmt.Fprintf(stdout, "%-8s %-12s %-16s %s\n", u.Name, u.Terminal, u.Time, comment)
 		}
 	})
 	return 0

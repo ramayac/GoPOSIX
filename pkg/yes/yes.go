@@ -28,7 +28,7 @@ var spec = common.FlagSpec{
 }
 
 // run prints a string (default "y") forever until killed.
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "yes: %v\n", err)
@@ -55,7 +55,7 @@ func run(args []string, out io.Writer) int {
 			String:    text,
 			Count:     count,
 			Truncated: true,
-		}, true, out, func() {})
+		}, true, stdout, func() {})
 		return 0
 	}
 
@@ -68,7 +68,7 @@ func run(args []string, out io.Writer) int {
 		case <-sig:
 			return 0
 		default:
-			if _, err := fmt.Fprintln(out, text); err != nil {
+			if _, err := fmt.Fprintln(stdout, text); err != nil {
 				return 0 // broken pipe
 			}
 		}

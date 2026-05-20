@@ -153,7 +153,7 @@ func Run(message, tag, priorityStr string, alsoStderr bool) (LoggerResult, error
 	}, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "logger: %v\n", err)
@@ -180,7 +180,7 @@ func run(args []string, out io.Writer) int {
 		data, err := io.ReadAll(os.Stdin)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "logger: %v\n", err)
-			common.RenderError("logger", 1, "EREAD", err.Error(), jsonMode, out)
+			common.RenderError("logger", 1, "EREAD", err.Error(), jsonMode, stdout)
 			return 1
 		}
 		message = strings.TrimSpace(string(data))
@@ -189,11 +189,11 @@ func run(args []string, out io.Writer) int {
 	result, err := Run(message, tag, priorityStr, alsoStderr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "logger: %v\n", err)
-		common.RenderError("logger", 1, "ELOGGER", err.Error(), jsonMode, out)
+		common.RenderError("logger", 1, "ELOGGER", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
-	common.Render("logger", result, jsonMode, out, func() {})
+	common.Render("logger", result, jsonMode, stdout, func() {})
 	return 0
 }
 

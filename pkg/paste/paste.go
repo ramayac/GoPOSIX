@@ -127,7 +127,7 @@ func parseDelimiters(s string) []string {
 
 // --- CLI Glue ---
 
-func pasteRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
+func pasteRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "paste: %v\n", err)
@@ -206,16 +206,16 @@ func pasteRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	records := Merge(scanners, serial)
 
 	if jsonMode {
-		common.Render("paste", PasteResult{Records: records}, true, out, func() {})
+		common.Render("paste", PasteResult{Records: records}, true, stdout, func() {})
 		return 0
 	}
 
-	fmt.Fprint(out, Format(records, delimiters))
+	fmt.Fprint(stdout, Format(records, delimiters))
 	return 0
 }
 
-func run(args []string, out io.Writer) int {
-	return pasteRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return pasteRun(args, stdout, os.Stderr, os.Stdin)
 }
 
 func init() {

@@ -1,6 +1,6 @@
 # Hardening IV: Architecture, Security & Compliance Gaps
 
-> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (4 remaining, 23 resolved)
+> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (3 remaining, 24 resolved)
 >
 > All items below have been verified against the actual codebase. Items from the
 > original draft that were inaccurate have been corrected or removed (see §Corrections).
@@ -54,12 +54,12 @@
 - **Impact:** Root protection cannot be overridden even when intentionally desired. The flag the error message tells users to use will itself error. Safe but broken as documented.
 - **Action:** Add `{Long: "no-preserve-root", Type: common.FlagBool}` to the `rm` flag spec.
 
-### H6. Shell Sandbox: `os.Chdir()` Is Not Thread-Safe
+### H6. Shell Sandbox: `os.Chdir()` Is Not Thread-Safe [RESOLVED]
 
-- **File:** `internal/shell/interpreter.go` (lines 56, 124)
-- **Issue:** The shell sandbox calls `os.Chdir(hc.Dir)` to set the working directory before executing commands. `os.Chdir` mutates **global process state** — it changes the CWD for the entire daemon process, not just the current goroutine.
+- **File:** `internal/shell/interpreter.go`
+- **Issue:** The shell sandbox called `os.Chdir(hc.Dir)` to set the working directory before executing dispatch commands and after `cd` in scripts. `os.Chdir` mutates **global process state** — it changes the CWD for the entire daemon process, not just the current goroutine.
 - **Impact:** If multiple `goposix.shell.exec` RPC calls run concurrently (which the worker pool enables), they will clobber each other's CWD. This is a data race on the global process state.
-- **Action:** Avoid `os.Chdir`. Instead, set the `Dir` field on `exec.Cmd` or use the shell interpreter's built-in `Dir` option.
+- **Status:** **RESOLVED** — Added `execMu sync.Mutex` serializing all calls to `Exec()`. Process CWD saved at entry and restored on exit, preventing `cd` side-effects from leaking between sequential calls (the daemon tracks CWD per-session, not via process state). Updated `TestCdAndPwd`, `TestCdPersistsAcrossExecCalls`, `TestCdWithExplicitCwd` to verify no CWD leaks. Added `TestConcurrentShellExec` (5 goroutines × 100 iterations, passes `-race`). Added `make test-race` target to Makefile. Future work: eliminate `os.Chdir` entirely by threading a CWD parameter through the `dispatch.Command.Run` signature.
 
 ### H7. Missing Injectable Entry Points Across 7+ Utilities [RESOLVED]
 
@@ -252,17 +252,16 @@ The following items from the original Hardening IV document were found to be **i
 
 | Priority | Total | Resolved | Remaining | Key Themes |
 |----------|:-----:|:--------:|:---------:|------------|
-| 🔴 HIGH   |   7   |    3     |     4     | Security bypass, data races, thread-safety, architectural invariant violations |
+| 🔴 HIGH   |   7   |    4     |     3     | Security bypass, data races, thread-safety, architectural invariant violations |
 | 🟡 MEDIUM |  12   |   12     |     0     | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers (ALL RESOLVED) |
 | 🟢 LOW    |   8   |    8     |     0     | Code smells, goroutine leaks, cosmetic issues (ALL RESOLVED) |
-| **Total** | **27**|   23     |     4     | |
+| **Total** | **27**|   24     |     3     | |
 
-### Remaining Fix Order (4 items)
+### Remaining Fix Order (3 items)
 
 1. **H1**: Fix `setCwd` validation — validate path through `SecurePath` before storing in session.
-2. **H6**: Fix `os.Chdir` thread-safety in shell sandbox (data race on global state).
-3. **H5**: Add `--no-preserve-root` to `rm` flag spec (safe but broken UX).
-4. **H4**: Continue injectable stderr refactor across remaining utilities (11 of ~79 done).
+2. **H5**: Add `--no-preserve-root` to `rm` flag spec (one-line fix).
+3. **H4**: Continue injectable stderr refactor across remaining utilities (11 of ~79 done).
 
 ### Resolved (21 items)
 
@@ -270,6 +269,7 @@ The following items from the original Hardening IV document were found to be **i
 |------|-----------|
 | H2 | `resolveSymlinks()` helper with `EvalSymlinks`, parent walk-up for non-existent paths |
 | H3 | `Get()`/`List()` return deep copies via `Session.copy()`, `Stop()` made idempotent |
+| H6 | `execMu sync.Mutex` serializes `Exec()`, CWD save/restore prevents cd leaks |
 | H7 | Injectable `xxxRun()` entry points for all 11 target utilities |
 | M1 | `PerRequestLimitReader` per-request reset |
 | M2 | `ls -d` / `--directory` flag implemented |

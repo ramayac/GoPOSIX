@@ -199,7 +199,7 @@ func Run(r1, r2 io.Reader, field1, field2 int, delim string, a1, a2 bool, v1, v2
 	return result, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "join: %v\n", err)
@@ -246,7 +246,7 @@ func run(args []string, out io.Writer) int {
 
 	if len(flags.Positional) < 2 {
 		fmt.Fprintln(os.Stderr, "join: missing file operands")
-		common.RenderError("join", 1, "EARGS", "missing file operands", jsonMode, out)
+		common.RenderError("join", 1, "EARGS", "missing file operands", jsonMode, stdout)
 		return 1
 	}
 
@@ -260,7 +260,7 @@ func run(args []string, out io.Writer) int {
 		f, err := os.Open(file1)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "join: %v\n", err)
-			common.RenderError("join", 1, "EOPEN", err.Error(), jsonMode, out)
+			common.RenderError("join", 1, "EOPEN", err.Error(), jsonMode, stdout)
 			return 1
 		}
 		r1 = f
@@ -273,7 +273,7 @@ func run(args []string, out io.Writer) int {
 		f, err := os.Open(file2)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "join: %v\n", err)
-			common.RenderError("join", 1, "EOPEN", err.Error(), jsonMode, out)
+			common.RenderError("join", 1, "EOPEN", err.Error(), jsonMode, stdout)
 			return 1
 		}
 		r2 = f
@@ -283,13 +283,13 @@ func run(args []string, out io.Writer) int {
 	result, err := Run(r1, r2, field1, field2, delim, a1, a2, v1, v2, oSpec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "join: %v\n", err)
-		common.RenderError("join", 1, "EJOIN", err.Error(), jsonMode, out)
+		common.RenderError("join", 1, "EJOIN", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
-	common.Render("join", result, jsonMode, out, func() {
+	common.Render("join", result, jsonMode, stdout, func() {
 		for _, rec := range result.Records {
-			fmt.Fprintln(out, rec["line"])
+			fmt.Fprintln(stdout, rec["line"])
 		}
 	})
 	return 0

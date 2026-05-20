@@ -26,7 +26,7 @@ var spec = common.FlagSpec{
 	},
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ln: %v\n", err)
@@ -55,7 +55,7 @@ func run(args []string, out io.Writer) int {
 	}
 	if linkErr != nil {
 		fmt.Fprintf(os.Stderr, "ln: %v\n", linkErr)
-		common.RenderError("ln", 1, "ELN", linkErr.Error(), jsonMode, out)
+		common.RenderError("ln", 1, "ELN", linkErr.Error(), jsonMode, stdout)
 		return 1
 	}
 
@@ -64,7 +64,7 @@ func run(args []string, out io.Writer) int {
 		Target string `json:"target"`
 		Link   string `json:"link"`
 	}{Target: target, Link: link})
-	common.Render("ln", result, jsonMode, out, func() {})
+	common.Render("ln", result, jsonMode, stdout, func() {})
 	return 0
 }
 

@@ -66,7 +66,7 @@ func Transform(input string, tabWidth int, initialOnly bool) string {
 	return strings.Join(lines, "\n")
 }
 
-func expandRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
+func expandRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, expSpec)
 	if err != nil {
 		fmt.Fprintf(errOut, "expand: %v\n", err)
@@ -103,18 +103,18 @@ func expandRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	}
 
 	if jsonMode {
-		common.Render("expand", ExpandResult{Lines: outLines}, true, out, func() {})
+		common.Render("expand", ExpandResult{Lines: outLines}, true, stdout, func() {})
 		return 0
 	}
 
-	fmt.Fprint(out, strings.Join(outLines, "\n"))
+	fmt.Fprint(stdout, strings.Join(outLines, "\n"))
 	if len(input) > 0 && input[len(input)-1] == '\n' {
-		fmt.Fprint(out, "\n")
+		fmt.Fprint(stdout, "\n")
 	}
 	return 0
 }
 
-func run(args []string, out io.Writer) int { return expandRun(args, out, os.Stderr, os.Stdin) }
+func run(args []string, stdin io.Reader, stdout io.Writer) int { return expandRun(args, stdout, os.Stderr, os.Stdin) }
 func init() {
 	dispatch.Register(dispatch.Command{Name: "expand", Usage: "Convert tabs to spaces", Run: run})
 }

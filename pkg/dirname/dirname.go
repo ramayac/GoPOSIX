@@ -27,7 +27,7 @@ func Run(path string) DirnameResult {
 	return DirnameResult{Result: filepath.Dir(path)}
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "dirname: %v\n", err)
@@ -39,8 +39,8 @@ func run(args []string, out io.Writer) int {
 	}
 	jsonMode := flags.Has("json")
 	result := Run(flags.Positional[0])
-	common.Render("dirname", result, jsonMode, out, func() {
-		fmt.Fprintln(out, result.Result)
+	common.Render("dirname", result, jsonMode, stdout, func() {
+		fmt.Fprintln(stdout, result.Result)
 	})
 	return 0
 }

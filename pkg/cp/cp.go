@@ -107,13 +107,13 @@ func copyRegularFile(src, dst string, si os.FileInfo, preserve bool) error {
 	}
 	defer in.Close()
 
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, si.Mode())
+	stdout, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, si.Mode())
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer stdout.Close()
 
-	if _, err := io.Copy(out, in); err != nil {
+	if _, err := io.Copy(stdout, in); err != nil {
 		return err
 	}
 
@@ -195,7 +195,7 @@ func Run(srcs []string, dst string, recursive bool, preserve bool, mode SymlinkM
 	return result, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cp: %v\n", err)
@@ -314,7 +314,7 @@ func run(args []string, out io.Writer) int {
 		allCopied.Copied = append(allCopied.Copied, result.Copied...)
 	}
 
-	common.Render("cp", allCopied, jsonMode, out, func() {})
+	common.Render("cp", allCopied, jsonMode, stdout, func() {})
 	return exitCode
 }
 

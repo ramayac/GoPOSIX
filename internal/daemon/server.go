@@ -407,6 +407,7 @@ type GoposixParams struct {
 	Flags     []string `json:"flags"`
 	Path      string   `json:"path"`
 	Text      string   `json:"text"`
+	Stdin     string   `json:"stdin"`
 	SessionId string   `json:"sessionId"`
 	RawOutput bool     `json:"rawOutput"` // skip --json, return raw stdout text
 }
@@ -585,12 +586,16 @@ func (s *Server) processRequest(req Request) *Response {
 	var args []string
 	var session *Session
 	var rawOutput bool
+	var stdinReader io.Reader
 
 	if len(req.Params) > 0 {
 		var p GoposixParams
 
 		if err := json.Unmarshal(req.Params, &p); err == nil {
 			rawOutput = p.RawOutput
+			if p.Stdin != "" {
+				stdinReader = strings.NewReader(p.Stdin)
+			}
 			if p.SessionId != "" {
 				session, _ = s.sm.Get(p.SessionId)
 			}
@@ -634,7 +639,7 @@ func (s *Server) processRequest(req Request) *Response {
 	lw := &common.LimitWriter{W: &buf, Limit: 50 * 1024 * 1024}
 
 	// Execute the command
-	exitCode := cmd.Run(args, lw)
+	exitCode := cmd.Run(args, stdinReader, lw)
 	rpcExitCode = exitCode
 
 	// rawOutput: return the raw stdout text directly (used by CLI forwarder).

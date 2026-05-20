@@ -43,7 +43,7 @@ func Run(dirs []string, parents bool) (RmdirResult, error) {
 	return RmdirResult{Removed: removed}, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "rmdir: %v\n", err)
@@ -57,10 +57,10 @@ func run(args []string, out io.Writer) int {
 	result, err := Run(flags.Positional, flags.Has("p"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "rmdir: %v\n", err)
-		common.RenderError("rmdir", 1, "ERMDIR", err.Error(), jsonMode, out)
+		common.RenderError("rmdir", 1, "ERMDIR", err.Error(), jsonMode, stdout)
 		return 1
 	}
-	common.Render("rmdir", result, jsonMode, out, func() {})
+	common.Render("rmdir", result, jsonMode, stdout, func() {})
 	return 0
 }
 

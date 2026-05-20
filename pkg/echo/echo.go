@@ -170,16 +170,16 @@ func parseEchoFlags(args []string) (noNewline, escape, jsonMode bool, words []st
 	return
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	noNewline, escape, jsonMode, words := parseEchoFlags(args)
 
 	result := Run(noNewline, escape, words)
 
-	common.Render("echo", result, jsonMode, out, func() {
+	common.Render("echo", result, jsonMode, stdout, func() {
 		if noNewline {
-			fmt.Fprint(out, result.Text)
+			fmt.Fprint(stdout, result.Text)
 		} else {
-			fmt.Fprintln(out, result.Text)
+			fmt.Fprintln(stdout, result.Text)
 		}
 	})
 	return 0

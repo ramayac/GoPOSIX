@@ -25,7 +25,7 @@ type IDInfo struct {
 	Groups []string `json:"groups"`
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "id: %v\n", err)
@@ -59,22 +59,22 @@ func run(args []string, out io.Writer) int {
 
 	jsonMode := flags.Has("json")
 
-	common.Render("id", info, jsonMode, out, func() {
-		fmt.Fprintf(out, "uid=%d(%s) gid=%d(%s)", uid, u.Username, gid, groupName)
+	common.Render("id", info, jsonMode, stdout, func() {
+		fmt.Fprintf(stdout, "uid=%d(%s) gid=%d(%s)", uid, u.Username, gid, groupName)
 		if len(gids) > 0 {
-			fmt.Fprint(out, " groups=")
+			fmt.Fprint(stdout, " groups=")
 			for i, gg := range gids {
 				gn := gg
 				if goBj, err := user.LookupGroupId(gg); err == nil {
 					gn = goBj.Name
 				}
 				if i > 0 {
-					fmt.Fprint(out, ",")
+					fmt.Fprint(stdout, ",")
 				}
-				fmt.Fprintf(out, "%s(%s)", gg, gn)
+				fmt.Fprintf(stdout, "%s(%s)", gg, gn)
 			}
 		}
-		fmt.Fprintln(out)
+		fmt.Fprintln(stdout)
 	})
 
 	return 0

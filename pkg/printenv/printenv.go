@@ -43,7 +43,7 @@ func Run(names []string) PrintenvResult {
 	return PrintenvResult{Vars: vars}
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "printenv: %v\n", err)
@@ -62,9 +62,9 @@ func run(args []string, out io.Writer) int {
 		}
 	}
 
-	common.Render("printenv", result, jsonMode, out, func() {
+	common.Render("printenv", result, jsonMode, stdout, func() {
 		for k, v := range result.Vars {
-			fmt.Fprintf(out, "%s=%s\n", k, v)
+			fmt.Fprintf(stdout, "%s=%s\n", k, v)
 		}
 	})
 	return exitCode

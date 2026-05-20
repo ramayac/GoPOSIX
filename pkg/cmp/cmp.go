@@ -70,7 +70,7 @@ func Compare(r1, r2 io.Reader, limit int, verbose bool) ([]DiffEntry, bool) {
 	return diffs, len(diffs) == 0
 }
 
-func cmpRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
+func cmpRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, cmpSpec)
 	if err != nil {
 		fmt.Fprintf(errOut, "cmp: %v\n", err)
@@ -150,16 +150,16 @@ func cmpRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 		}
 		if d1[bytePos] != d2[bytePos] {
 			if jsonMode {
-				common.Render("cmp", CmpResult{Equal: false, BytePos: bytePos + 1, LineNum: lineNum, Val1: int(d1[bytePos]), Val2: int(d2[bytePos])}, true, out, func() {})
+				common.Render("cmp", CmpResult{Equal: false, BytePos: bytePos + 1, LineNum: lineNum, Val1: int(d1[bytePos]), Val2: int(d2[bytePos])}, true, stdout, func() {})
 				return 1
 			}
 			if silent {
 				return 1
 			}
 			if listMode {
-				fmt.Fprintf(out, "%d %o %o\n", bytePos+1, d1[bytePos], d2[bytePos])
+				fmt.Fprintf(stdout, "%d %o %o\n", bytePos+1, d1[bytePos], d2[bytePos])
 			} else {
-				fmt.Fprintf(out, "%s %s differ: byte %d, line %d\n", files[0], files[1], bytePos+1, lineNum)
+				fmt.Fprintf(stdout, "%s %s differ: byte %d, line %d\n", files[0], files[1], bytePos+1, lineNum)
 			}
 			return 1
 		}
@@ -169,7 +169,7 @@ func cmpRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	// One file may be longer
 	if len(d1) != len(d2) {
 		if jsonMode {
-			common.Render("cmp", CmpResult{Equal: false, BytePos: bytePos + 1, LineNum: lineNum}, true, out, func() {})
+			common.Render("cmp", CmpResult{Equal: false, BytePos: bytePos + 1, LineNum: lineNum}, true, stdout, func() {})
 			return 1
 		}
 		if silent {
@@ -180,12 +180,12 @@ func cmpRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	}
 
 	if jsonMode {
-		common.Render("cmp", CmpResult{Equal: true}, true, out, func() {})
+		common.Render("cmp", CmpResult{Equal: true}, true, stdout, func() {})
 	}
 	return 0
 }
 
-func run(args []string, out io.Writer) int { return cmpRun(args, out, os.Stderr, os.Stdin) }
+func run(args []string, stdin io.Reader, stdout io.Writer) int { return cmpRun(args, stdout, os.Stderr, os.Stdin) }
 func init() {
 	dispatch.Register(dispatch.Command{Name: "cmp", Usage: "Compare two files byte by byte", Run: run})
 }

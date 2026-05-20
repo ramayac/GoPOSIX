@@ -34,7 +34,7 @@ func Run(path, suffix string) BasenameResult {
 	return BasenameResult{Result: base}
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "basename: %v\n", err)
@@ -51,8 +51,8 @@ func run(args []string, out io.Writer) int {
 		suffix = flags.Positional[1]
 	}
 	result := Run(path, suffix)
-	common.Render("basename", result, jsonMode, out, func() {
-		fmt.Fprintln(out, result.Result)
+	common.Render("basename", result, jsonMode, stdout, func() {
+		fmt.Fprintln(stdout, result.Result)
 	})
 	return 0
 }

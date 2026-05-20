@@ -414,7 +414,7 @@ func indexStr(str, chars string) string {
 	return "0"
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	// Manual flag parsing: only --json/-j is accepted as a flag.
 	// Everything else (including negative numbers) is positional.
 	jsonMode := false
@@ -431,15 +431,15 @@ func run(args []string, out io.Writer) int {
 
 	result, exitCode, err := Eval(tokens)
 	if err != nil {
-		common.RenderError("expr", 2, "SYNTAX", err.Error(), jsonMode, out)
+		common.RenderError("expr", 2, "SYNTAX", err.Error(), jsonMode, stdout)
 		if !jsonMode {
 			fmt.Fprintf(os.Stderr, "expr: %v\n", err)
 		}
 		return 2
 	}
 
-	common.Render("expr", ExprResult{Result: result, ExitCode: exitCode}, jsonMode, out, func() {
-		fmt.Fprintln(out, result)
+	common.Render("expr", ExprResult{Result: result, ExitCode: exitCode}, jsonMode, stdout, func() {
+		fmt.Fprintln(stdout, result)
 	})
 	return exitCode
 }

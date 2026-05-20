@@ -85,11 +85,11 @@ func preprocessOldStyleFlags(args []string) ([]string, error) {
 	return expanded, nil
 }
 
-func run(args []string, out io.Writer) int {
-	return tarRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return tarRun(args, stdout, os.Stderr, os.Stdin)
 }
 
-func tarRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
+func tarRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "tar: %v\n", err)
@@ -113,7 +113,7 @@ func tarRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int
 		if xf != "" {
 			patterns, err := readExcludeFile(xf)
 			if err != nil {
-				common.RenderError("tar", 1, "IO", fmt.Sprintf("%s: %v", xf, err), isJSON, out)
+				common.RenderError("tar", 1, "IO", fmt.Sprintf("%s: %v", xf, err), isJSON, stdout)
 				if !isJSON {
 					fmt.Fprintf(errOut, "tar: %s: %v\n", xf, err)
 				}
@@ -146,7 +146,7 @@ func tarRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int
 		modeCount++
 	}
 	if modeCount != 1 {
-		common.RenderError("tar", 1, "USAGE", "must specify exactly one of -c, -x, or -t", isJSON, out)
+		common.RenderError("tar", 1, "USAGE", "must specify exactly one of -c, -x, or -t", isJSON, stdout)
 		if !isJSON {
 			fmt.Fprintln(errOut, "tar: must specify exactly one of -c, -x, or -t")
 		}
@@ -164,11 +164,11 @@ func tarRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int
 	if dir != "" {
 		curDir, err = os.Getwd()
 		if err != nil {
-			common.RenderError("tar", 1, "DIR", err.Error(), isJSON, out)
+			common.RenderError("tar", 1, "DIR", err.Error(), isJSON, stdout)
 			return 1
 		}
 		if err := os.Chdir(dir); err != nil {
-			common.RenderError("tar", 1, "DIR", err.Error(), isJSON, out)
+			common.RenderError("tar", 1, "DIR", err.Error(), isJSON, stdout)
 			if !isJSON {
 				fmt.Fprintf(errOut, "tar: %v\n", err)
 			}
@@ -178,11 +178,11 @@ func tarRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int
 	}
 
 	if create {
-		return doCreate(file, useGzip, verbose, isJSON, flags.Positional, out, errOut)
+		return doCreate(file, useGzip, verbose, isJSON, flags.Positional, stdout, errOut)
 	} else if extract {
-		return doExtract(file, useGzip, verbose, toStdout, overwrite, isJSON, excludePatterns, flags.Positional, out, errOut, stdin)
+		return doExtract(file, useGzip, verbose, toStdout, overwrite, isJSON, excludePatterns, flags.Positional, stdout, errOut, stdin)
 	} else if list {
-		return doList(file, useGzip, verbose, isJSON, excludePatterns, out, errOut, stdin)
+		return doList(file, useGzip, verbose, isJSON, excludePatterns, stdout, errOut, stdin)
 	}
 
 	return 1
@@ -319,14 +319,14 @@ func createArchiveStream(w io.Writer, targets []string, archiveAbsPath string, v
 	return stats, nil
 }
 
-func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, out io.Writer, errOut io.Writer) int {
+func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, stdout io.Writer, errOut io.Writer) int {
 	var w io.Writer
 	if archive == "-" {
-		w = out
+		w = stdout
 	} else {
 		f, err := os.Create(archive)
 		if err != nil {
-			common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
+			common.RenderError("tar", 1, "IO", err.Error(), isJSON, stdout)
 			if !isJSON {
 				fmt.Fprintf(errOut, "tar: %v\n", err)
 			}
@@ -347,14 +347,14 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 		archiveAbsPath, _ = filepath.Abs(archive)
 	}
 
-	logOut := out
+	logOut := stdout
 	if !verbose || isJSON {
 		logOut = io.Discard
 	}
 
 	stats, err := createArchiveStream(w, targets, archiveAbsPath, verbose && !isJSON, logOut)
 	if err != nil {
-		common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
+		common.RenderError("tar", 1, "IO", err.Error(), isJSON, stdout)
 		if !isJSON {
 			fmt.Fprintf(errOut, "tar: %v\n", err)
 		}
@@ -362,7 +362,7 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 	}
 
 	if isJSON {
-		common.Render("tar", stats, true, out, func() {})
+		common.Render("tar", stats, true, stdout, func() {})
 	}
 	return 0
 }
@@ -516,7 +516,7 @@ func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite bool, exclud
 	return stats, matchedAny, nil
 }
 
-func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON bool, excludePatterns, positional []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
+func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON bool, excludePatterns, positional []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	includeSet := buildIncludeSet(positional)
 
 	var r io.Reader
@@ -525,7 +525,7 @@ func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON boo
 	} else {
 		f, err := os.Open(archive)
 		if err != nil {
-			common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
+			common.RenderError("tar", 1, "IO", err.Error(), isJSON, stdout)
 			if !isJSON {
 				fmt.Fprintf(errOut, "tar: %v\n", err)
 			}
@@ -538,7 +538,7 @@ func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON boo
 	if useGzip {
 		gr, err := gzip.NewReader(r)
 		if err != nil {
-			common.RenderError("tar", 1, "GZIP", err.Error(), isJSON, out)
+			common.RenderError("tar", 1, "GZIP", err.Error(), isJSON, stdout)
 			if !isJSON {
 				fmt.Fprintf(errOut, "tar: %v\n", err)
 			}
@@ -548,14 +548,14 @@ func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON boo
 		r = gr
 	}
 
-	logOut := out
+	logOut := stdout
 	if !verbose || isJSON {
 		logOut = io.Discard
 	}
 
-	stats, matchedAny, err := extractArchiveStream(r, verbose && !isJSON, toStdout, overwrite, excludePatterns, includeSet, logOut, out)
+	stats, matchedAny, err := extractArchiveStream(r, verbose && !isJSON, toStdout, overwrite, excludePatterns, includeSet, logOut, stdout)
 	if err != nil {
-		common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
+		common.RenderError("tar", 1, "IO", err.Error(), isJSON, stdout)
 		if !isJSON {
 			fmt.Fprintf(errOut, "tar: %v\n", err)
 		}
@@ -563,7 +563,7 @@ func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON boo
 	}
 
 	if includeSet != nil && !matchedAny {
-		common.RenderError("tar", 1, "NOT_FOUND", "file not found in archive", isJSON, out)
+		common.RenderError("tar", 1, "NOT_FOUND", "file not found in archive", isJSON, stdout)
 		if !isJSON {
 			for _, p := range positional {
 				fmt.Fprintf(errOut, "tar: %s: Not found in archive\n", p)
@@ -573,7 +573,7 @@ func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON boo
 	}
 
 	if isJSON {
-		common.Render("tar", stats, true, out, func() {})
+		common.Render("tar", stats, true, stdout, func() {})
 	}
 	return 0
 }
@@ -722,14 +722,14 @@ func listArchiveStream(r io.Reader, verbose bool, excludePatterns []string, list
 	return stats, nil
 }
 
-func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
+func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	var r io.Reader
 	if archive == "-" {
 		r = stdin
 	} else {
 		f, err := os.Open(archive)
 		if err != nil {
-			common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
+			common.RenderError("tar", 1, "IO", err.Error(), isJSON, stdout)
 			if !isJSON {
 				fmt.Fprintf(errOut, "tar: %v\n", err)
 			}
@@ -742,7 +742,7 @@ func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []str
 	if useGzip {
 		gr, err := gzip.NewReader(r)
 		if err != nil {
-			common.RenderError("tar", 1, "GZIP", err.Error(), isJSON, out)
+			common.RenderError("tar", 1, "GZIP", err.Error(), isJSON, stdout)
 			if !isJSON {
 				fmt.Fprintf(errOut, "tar: %v\n", err)
 			}
@@ -752,14 +752,14 @@ func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []str
 		r = gr
 	}
 
-	listOut := out
+	listOut := stdout
 	if isJSON {
 		listOut = io.Discard
 	}
 
 	stats, err := listArchiveStream(r, verbose, excludePatterns, listOut)
 	if err != nil {
-		common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
+		common.RenderError("tar", 1, "IO", err.Error(), isJSON, stdout)
 		if !isJSON {
 			fmt.Fprintf(errOut, "tar: %v\n", err)
 		}
@@ -767,7 +767,7 @@ func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []str
 	}
 
 	if isJSON {
-		common.Render("tar", stats, true, out, func() {})
+		common.Render("tar", stats, true, stdout, func() {})
 	}
 	return 0
 }

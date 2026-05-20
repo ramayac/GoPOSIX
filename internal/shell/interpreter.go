@@ -76,7 +76,7 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 		if hc.Dir != "" {
 			os.Chdir(hc.Dir)
 		}
-		exitCode := cmd.Run(args[1:], hc.Stdout)
+		exitCode := cmd.Run(args[1:], hc.Stdin, hc.Stdout)
 		if exitCode != 0 {
 			return interp.NewExitStatus(uint8(exitCode))
 		}

@@ -27,7 +27,7 @@ func Run(src, dst string) error {
 	return os.Link(src, dst)
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "link: %v\n", err)
@@ -37,7 +37,7 @@ func run(args []string, out io.Writer) int {
 
 	if len(flags.Positional) != 2 {
 		fmt.Fprintln(os.Stderr, "link: missing file operand")
-		common.RenderError("link", 1, "EARGS", "missing file operand", jsonMode, out)
+		common.RenderError("link", 1, "EARGS", "missing file operand", jsonMode, stdout)
 		return 1
 	}
 
@@ -46,12 +46,12 @@ func run(args []string, out io.Writer) int {
 
 	if err := Run(src, dst); err != nil {
 		fmt.Fprintf(os.Stderr, "link: %v\n", err)
-		common.RenderError("link", 1, "ELINK", err.Error(), jsonMode, out)
+		common.RenderError("link", 1, "ELINK", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
 	result := LinkResult{Source: src, Target: dst}
-	common.Render("link", result, jsonMode, out, func() {})
+	common.Render("link", result, jsonMode, stdout, func() {})
 	return 0
 }
 

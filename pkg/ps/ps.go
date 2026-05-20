@@ -25,7 +25,7 @@ type ProcessInfo struct {
 	Mem  string `json:"mem"`
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ps: %v\n", err)
@@ -45,10 +45,10 @@ func run(args []string, out io.Writer) int {
 
 	jsonMode := flags.Has("json")
 
-	common.Render("ps", results, jsonMode, out, func() {
-		fmt.Fprintf(out, "  PID TTY          TIME CMD\n")
+	common.Render("ps", results, jsonMode, stdout, func() {
+		fmt.Fprintf(stdout, "  PID TTY          TIME CMD\n")
 		for _, r := range results {
-			fmt.Fprintf(out, "%5d ?        00:00:00 %s\n", r.PID, r.Cmd)
+			fmt.Fprintf(stdout, "%5d ?        00:00:00 %s\n", r.PID, r.Cmd)
 		}
 	})
 

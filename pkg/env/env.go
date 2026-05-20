@@ -46,7 +46,7 @@ func Run(ignoreEnv bool, positional []string) EnvResult {
 	return EnvResult{Vars: vars}
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "env: %v\n", err)
@@ -56,9 +56,9 @@ func run(args []string, out io.Writer) int {
 	ignoreEnv := flags.Has("i")
 	result := Run(ignoreEnv, flags.Positional)
 
-	common.Render("env", result, jsonMode, out, func() {
+	common.Render("env", result, jsonMode, stdout, func() {
 		for k, v := range result.Vars {
-			fmt.Fprintf(out, "%s=%s\n", k, v)
+			fmt.Fprintf(stdout, "%s=%s\n", k, v)
 		}
 	})
 	return 0

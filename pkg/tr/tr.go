@@ -174,11 +174,11 @@ func Run(r io.Reader, w io.Writer, set1, set2 string, deleteFlag, squeezeFlag, c
 	return nil
 }
 
-func run(args []string, out io.Writer) int {
-	return trRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return trRun(args, stdout, os.Stderr, os.Stdin)
 }
 
-func trRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
+func trRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "tr: %v\n", err)
@@ -191,7 +191,7 @@ func trRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int 
 
 	if len(flags.Positional) < 1 {
 		if jsonMode {
-			common.RenderError("tr", 1, "MISSING", "missing operand", true, out)
+			common.RenderError("tr", 1, "MISSING", "missing operand", true, stdout)
 		}
 		fmt.Fprintln(errOut, "tr: missing operand")
 		return 1
@@ -213,7 +213,7 @@ func trRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int 
 		// Read all stdin, process, capture output
 		input, err := io.ReadAll(stdin)
 		if err != nil {
-			common.RenderError("tr", 1, "READ", err.Error(), true, out)
+			common.RenderError("tr", 1, "READ", err.Error(), true, stdout)
 			return 1
 		}
 		bytesIn := int64(len(input))
@@ -221,7 +221,7 @@ func trRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int 
 		var buf bytes.Buffer
 		err = Run(strings.NewReader(string(input)), &buf, set1, set2, deleteFlag, squeezeFlag, complementFlag)
 		if err != nil {
-			common.RenderError("tr", 1, "PROCESS", err.Error(), true, out)
+			common.RenderError("tr", 1, "PROCESS", err.Error(), true, stdout)
 			return 1
 		}
 		bytesOut := int64(buf.Len())
@@ -236,11 +236,11 @@ func trRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int 
 			LineCount: len(lines),
 			BytesIn:   bytesIn,
 			BytesOut:  bytesOut,
-		}, true, out, func() {})
+		}, true, stdout, func() {})
 		return 0
 	}
 
-	err = Run(stdin, out, set1, set2, deleteFlag, squeezeFlag, complementFlag)
+	err = Run(stdin, stdout, set1, set2, deleteFlag, squeezeFlag, complementFlag)
 	if err != nil {
 		fmt.Fprintf(errOut, "tr: %v\n", err)
 		return 1

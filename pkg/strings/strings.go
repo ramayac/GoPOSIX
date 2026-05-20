@@ -74,7 +74,7 @@ func Scan(r io.Reader, minLen int) ([]StringEntry, error) {
 	return entries, nil
 }
 
-func stringsRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
+func stringsRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, strSpec)
 	if err != nil {
 		fmt.Fprintf(errOut, "strings: %v\n", err)
@@ -124,27 +124,27 @@ func stringsRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	}
 
 	if jsonMode {
-		common.Render("strings", StringsResult{Strings: entries}, true, out, func() {})
+		common.Render("strings", StringsResult{Strings: entries}, true, stdout, func() {})
 		return 0
 	}
 
 	for _, e := range entries {
 		if radix == "x" {
-			fmt.Fprintf(out, "%7x ", e.Offset)
+			fmt.Fprintf(stdout, "%7x ", e.Offset)
 		} else if radix == "d" {
-			fmt.Fprintf(out, "%7d ", e.Offset)
+			fmt.Fprintf(stdout, "%7d ", e.Offset)
 		} else if radix == "o" {
-			fmt.Fprintf(out, "%7o ", e.Offset)
+			fmt.Fprintf(stdout, "%7o ", e.Offset)
 		}
 		if printName && len(files) > 0 {
-			fmt.Fprintf(out, "%s: ", files[0])
+			fmt.Fprintf(stdout, "%s: ", files[0])
 		}
-		fmt.Fprintln(out, e.Value)
+		fmt.Fprintln(stdout, e.Value)
 	}
 	return 0
 }
 
-func run(args []string, out io.Writer) int { return stringsRun(args, out, os.Stderr, os.Stdin) }
+func run(args []string, stdin io.Reader, stdout io.Writer) int { return stringsRun(args, stdout, os.Stderr, os.Stdin) }
 func init() {
 	dispatch.Register(dispatch.Command{Name: "strings", Usage: "Extract printable strings from files", Run: run})
 }

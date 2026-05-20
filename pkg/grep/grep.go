@@ -112,13 +112,13 @@ func Run(r io.Reader, filename string, re *regexp.Regexp, fixedPatterns []string
 	return matches, scanner.Err()
 }
 
-func run(args []string, out io.Writer) int {
-	return grepRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return grepRun(args, stdout, os.Stderr, os.Stdin)
 }
 
-// grepRun is the testable core of the grep CLI. All output goes to out or errOut,
+// grepRun is the testable core of the grep CLI. All output goes to stdout or errOut,
 // and stdin is read from stdinR.
-func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
+func grepRun(args []string, stdout, errOut io.Writer, stdinR io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "grep: %v\n", err)
@@ -385,14 +385,14 @@ func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 						})
 					} else {
 						if filesWithMatches {
-							fmt.Fprintln(out, fname)
+							fmt.Fprintln(stdout, fname)
 						} else if !filesWithoutMatch {
-							fmt.Fprintf(out, "Binary file %s matches\n", fname)
+							fmt.Fprintf(stdout, "Binary file %s matches\n", fname)
 						}
 					}
 				} else {
 					if filesWithoutMatch && !jsonMode {
-						fmt.Fprintln(out, fname)
+						fmt.Fprintln(stdout, fname)
 					}
 				}
 				return 0 // continue loop
@@ -436,9 +436,9 @@ func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 						prefix += fmt.Sprintf("%d:", cm.line)
 					}
 					if cm.separator {
-						fmt.Fprintln(out, "--")
+						fmt.Fprintln(stdout, "--")
 					}
-					fmt.Fprintf(out, "%s%s%s\n", prefix, cm.matchMarker, cm.text)
+					fmt.Fprintf(stdout, "%s%s%s\n", prefix, cm.matchMarker, cm.text)
 				}
 				return 0 // continue loop
 			}
@@ -466,7 +466,7 @@ func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 
 			if filesWithMatches {
 				if len(matches) > 0 {
-					fmt.Fprintln(out, fname)
+					fmt.Fprintln(stdout, fname)
 					if exitCode != 2 {
 						exitCode = 0
 					}
@@ -479,7 +479,7 @@ func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 
 			if filesWithoutMatch {
 				if len(matches) == 0 {
-					fmt.Fprintln(out, fname)
+					fmt.Fprintln(stdout, fname)
 					if exitCode != 2 {
 						exitCode = 0
 					}
@@ -504,7 +504,7 @@ func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 				if printPrefix {
 					prefix = fname + ":"
 				}
-				fmt.Fprintf(out, "%s%d\n", prefix, len(matches))
+				fmt.Fprintf(stdout, "%s%d\n", prefix, len(matches))
 				return 0 // continue loop
 			}
 
@@ -518,10 +518,10 @@ func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 				}
 				if onlyMatching {
 					for _, sub := range m.Matches {
-						fmt.Fprintf(out, "%s%s\n", prefix, sub)
+						fmt.Fprintf(stdout, "%s%s\n", prefix, sub)
 					}
 				} else {
-					fmt.Fprintf(out, "%s%s\n", prefix, m.Text)
+					fmt.Fprintf(stdout, "%s%s\n", prefix, m.Text)
 				}
 			}
 			return 0
@@ -532,7 +532,7 @@ func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 	}
 
 	if jsonMode {
-		common.Render("grep", allMatches, true, out, func() {})
+		common.Render("grep", allMatches, true, stdout, func() {})
 	}
 
 	return exitCode
@@ -636,11 +636,11 @@ func init() {
 }
 
 // egrepRun prepends -E and delegates to the main grep CLI.
-func egrepRun(args []string, out io.Writer) int {
-	return run(append([]string{"-E"}, args...), out)
+func egrepRun(args []string, stdout io.Writer) int {
+	return run(append([]string{"-E"}, args...), stdout)
 }
 
 // fgrepRun prepends -F and delegates to the main grep CLI.
-func fgrepRun(args []string, out io.Writer) int {
-	return run(append([]string{"-F"}, args...), out)
+func fgrepRun(args []string, stdout io.Writer) int {
+	return run(append([]string{"-F"}, args...), stdout)
 }

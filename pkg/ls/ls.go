@@ -216,7 +216,7 @@ func sortFiles(files []FileInfo, byTime, bySize, reverse bool) []FileInfo {
 	return files
 }
 
-func printLong(out io.Writer, fi FileInfo, showInode, showBlocks, humanReadable bool) {
+func printLong(stdout io.Writer, fi FileInfo, showInode, showBlocks, humanReadable bool) {
 	prefix := ""
 	if showInode {
 		prefix = fmt.Sprintf("%7d ", fi.Inode)
@@ -232,12 +232,12 @@ func printLong(out io.Writer, fi FileInfo, showInode, showBlocks, humanReadable 
 	if fi.Target != "" {
 		name = fmt.Sprintf("%s -> %s", fi.Name, fi.Target)
 	}
-	fmt.Fprintf(out, "%s%s %3d %-8s %-8s %s %s %s\n",
+	fmt.Fprintf(stdout, "%s%s %3d %-8s %-8s %s %s %s\n",
 		prefix, fi.Mode, fi.Links, fi.Owner, fi.Group,
 		sizeStr, fi.ModTime.Format("Jan _2 15:04"), name)
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ls: %v\n", err)
@@ -261,16 +261,16 @@ func run(args []string, out io.Writer) int {
 	results, err := Run(paths, showAll, almostAll, recursive, directoryMode)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ls: %v\n", err)
-		common.RenderError("ls", 2, "ENOENT", err.Error(), jsonMode, out)
+		common.RenderError("ls", 2, "ENOENT", err.Error(), jsonMode, stdout)
 		return 2
 	}
 
 	if jsonMode {
 		// Flatten to first result for single-path case.
 		if len(results) == 1 {
-			common.Render("ls", results[0], true, out, func() {})
+			common.Render("ls", results[0], true, stdout, func() {})
 		} else {
-			common.Render("ls", results, true, out, func() {})
+			common.Render("ls", results, true, stdout, func() {})
 		}
 		return 0
 	}
@@ -282,7 +282,7 @@ func run(args []string, out io.Writer) int {
 		// System ls: "ls -l file1 dir1" shows "dir1:" header but not "file1:".
 		showHeader := multiPath && !isSingleFile(files, res.Path, directoryMode)
 		if showHeader {
-			fmt.Fprintf(out, "%s:\n", res.Path)
+			fmt.Fprintf(stdout, "%s:\n", res.Path)
 		}
 		// Emit "total NNN" line when -l or -s is active and we're
 		// listing a directory or multiple items (not a single file).
@@ -291,7 +291,7 @@ func run(args []string, out io.Writer) int {
 			for _, fi := range files {
 				totalBlocks += fi.Blocks / 2
 			}
-			fmt.Fprintf(out, "total %d\n", totalBlocks)
+			fmt.Fprintf(stdout, "total %d\n", totalBlocks)
 		}
 		for _, fi := range files {
 			name := fi.Name
@@ -307,30 +307,30 @@ func run(args []string, out io.Writer) int {
 
 			switch {
 			case longFmt:
-				printLong(out, fi, showInode, showBlocks, humanReadable)
+				printLong(stdout, fi, showInode, showBlocks, humanReadable)
 			case onePer:
 				if showInode {
-					fmt.Fprintf(out, "%7d ", fi.Inode)
+					fmt.Fprintf(stdout, "%7d ", fi.Inode)
 				}
 				if showBlocks {
-					fmt.Fprintf(out, "%4d ", fi.Blocks/2)
+					fmt.Fprintf(stdout, "%4d ", fi.Blocks/2)
 				}
-				fmt.Fprintln(out, name)
+				fmt.Fprintln(stdout, name)
 			default:
 				// Default mode: one-per-line when not a terminal (piped).
 				// Multi-column would require terminal width; for busytest
 				// and pipes, one-per-line is the expected behavior.
 				if showInode {
-					fmt.Fprintf(out, "%7d ", fi.Inode)
+					fmt.Fprintf(stdout, "%7d ", fi.Inode)
 				}
 				if showBlocks {
-					fmt.Fprintf(out, "%4d ", fi.Blocks/2)
+					fmt.Fprintf(stdout, "%4d ", fi.Blocks/2)
 				}
-				fmt.Fprintln(out, name)
+				fmt.Fprintln(stdout, name)
 			}
 		}
 		if showHeader {
-			fmt.Fprintln(out)
+			fmt.Fprintln(stdout)
 		}
 	}
 	return 0

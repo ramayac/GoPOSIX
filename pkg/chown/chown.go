@@ -27,7 +27,7 @@ type ChownResp struct {
 	Changed []ChownResult `json:"changed"`
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "chown: %v\n", err)
@@ -66,7 +66,7 @@ func run(args []string, out io.Writer) int {
 	}
 
 	if flags.Has("json") {
-		common.Render("chown", ChownResp{Changed: res}, true, out, func() {})
+		common.Render("chown", ChownResp{Changed: res}, true, stdout, func() {})
 	}
 
 	return exitCode

@@ -99,7 +99,7 @@ func Run(short, domain, fqdn bool) (HostnameResult, error) {
 	return result, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "hostname: %v\n", err)
@@ -113,18 +113,18 @@ func run(args []string, out io.Writer) int {
 	result, err := Run(shortMode, domainMode, fqdnMode)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "hostname: %v\n", err)
-		common.RenderError("hostname", 1, "EHOSTNAME", err.Error(), jsonMode, out)
+		common.RenderError("hostname", 1, "EHOSTNAME", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
-	common.Render("hostname", result, jsonMode, out, func() {
+	common.Render("hostname", result, jsonMode, stdout, func() {
 		if domainMode {
-			fmt.Fprintln(out, result.Domain)
+			fmt.Fprintln(stdout, result.Domain)
 		} else if fqdnMode {
-			fmt.Fprintln(out, result.FQDN)
+			fmt.Fprintln(stdout, result.FQDN)
 		} else {
 			// -s or default: print short hostname
-			fmt.Fprintln(out, result.Name)
+			fmt.Fprintln(stdout, result.Name)
 		}
 	})
 	return 0

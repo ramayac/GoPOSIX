@@ -34,7 +34,7 @@ var spec = common.FlagSpec{
 	},
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "stat: %v\n", err)
@@ -50,18 +50,18 @@ func run(args []string, out io.Writer) int {
 		result, err := Run(p)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "stat: %v\n", err)
-			common.RenderError("stat", 1, "ESTAT", err.Error(), jsonMode, out)
+			common.RenderError("stat", 1, "ESTAT", err.Error(), jsonMode, stdout)
 			exitCode = 1
 			continue
 		}
-		common.Render("stat", result, jsonMode, out, func() {
-			fmt.Fprintf(out, "  File: %s\n", result.Path)
-			fmt.Fprintf(out, "  Size: %-15d Blocks: %-10d  %s\n", result.Size, result.Blocks, result.Mode)
-			fmt.Fprintf(out, "  Inode: %-14d Links: %d\n", result.Inode, result.Links)
-			fmt.Fprintf(out, "  Uid: %-4d  Gid: %-4d\n", result.UID, result.GID)
-			fmt.Fprintf(out, "  Access: %s\n", result.Atime.Format("2006-01-02 15:04:05"))
-			fmt.Fprintf(out, "  Modify: %s\n", result.Mtime.Format("2006-01-02 15:04:05"))
-			fmt.Fprintf(out, "  Change: %s\n", result.Ctime.Format("2006-01-02 15:04:05"))
+		common.Render("stat", result, jsonMode, stdout, func() {
+			fmt.Fprintf(stdout, "  File: %s\n", result.Path)
+			fmt.Fprintf(stdout, "  Size: %-15d Blocks: %-10d  %s\n", result.Size, result.Blocks, result.Mode)
+			fmt.Fprintf(stdout, "  Inode: %-14d Links: %d\n", result.Inode, result.Links)
+			fmt.Fprintf(stdout, "  Uid: %-4d  Gid: %-4d\n", result.UID, result.GID)
+			fmt.Fprintf(stdout, "  Access: %s\n", result.Atime.Format("2006-01-02 15:04:05"))
+			fmt.Fprintf(stdout, "  Modify: %s\n", result.Mtime.Format("2006-01-02 15:04:05"))
+			fmt.Fprintf(stdout, "  Change: %s\n", result.Ctime.Format("2006-01-02 15:04:05"))
 		})
 	}
 	return exitCode

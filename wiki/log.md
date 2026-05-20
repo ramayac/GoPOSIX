@@ -24,6 +24,27 @@ false, fold, join, link, logger, logname, mkfifo, nice, nl, nohup, od, paste,
 sed, sleep, split, strings, sum, tee, tr, true, tty, unexpand, unlink, who, yes).
 Updated: `wiki/json_schema.md`, `wiki/log.md`.
 
+## [2026-05-20] fix | H6 — Shell os.Chdir() thread-safety + Makefile test-race target (branch: `feat/hardeing-iv-partii`)
+
+Resolved H6 (shell os.Chdir not thread-safe):
+- Added `execMu sync.Mutex` serializing all `Exec()` calls. Process CWD saved at
+  entry and restored on exit — `cd` side-effects no longer leak between sequential
+  calls. The daemon tracks CWD per-session via the `cwd` parameter, not via process
+  state, so restoring after each Exec is correct.
+- Updated 3 tests to verify new behavior: `TestCdAndPwd` (CWD restored after),
+  `TestCdPersistsAcrossExecCalls` (cd does NOT leak without explicit cwd),
+  `TestCdWithExplicitCwd` (CWD restored after explicit cwd).
+- Added `TestConcurrentShellExec`: 5 goroutines × 100 cd+pwd iterations, passes
+  under `-race` with zero failures.
+- Added `make test-race` target to Makefile — runs all unit tests with Go race
+  detector. Documented in help output and Makefile comments (~10x slower, dev-only).
+- Documented future work in interpreter.go: eliminate `os.Chdir` entirely by
+  threading a CWD parameter through `dispatch.Command.Run`.
+- Updated `wiki/24_hardening_iv.md`: H6 → RESOLVED. Score: 3 remaining / 24 resolved.
+
+Updated: `internal/shell/interpreter.go`, `internal/shell/interpreter_test.go`,
+`Makefile`, `wiki/24_hardening_iv.md`, `wiki/log.md`, `wiki/todos.md`.
+
 ## [2026-05-20] fix | H3 — Session data race (branch: `feat/hardeing-iv-partii`)
 
 Resolved H3 (session data race on concurrent access):

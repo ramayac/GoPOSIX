@@ -27,7 +27,7 @@ var spec = common.FlagSpec{
 	},
 }
 
-const defaultOutputFile = "nohup.out"
+const defaultOutputFile = "nohup.stdout"
 
 // isTerminal returns true if fd is a terminal.
 func isTerminal(fd uintptr) bool {
@@ -50,7 +50,7 @@ func Run(command []string) (NohupResult, error) {
 
 	result := NohupResult{Command: command}
 
-	// If stdout is a terminal, redirect to nohup.out
+	// If stdout is a terminal, redirect to nohup.stdout
 	if isTerminal(os.Stdout.Fd()) {
 		f, err := os.OpenFile(defaultOutputFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 		if err != nil {
@@ -80,7 +80,7 @@ func Run(command []string) (NohupResult, error) {
 	return result, nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "nohup: %v\n", err)
@@ -90,18 +90,18 @@ func run(args []string, out io.Writer) int {
 
 	if len(flags.Positional) == 0 {
 		fmt.Fprintln(os.Stderr, "nohup: missing operand")
-		common.RenderError("nohup", 1, "EARGS", "missing operand", jsonMode, out)
+		common.RenderError("nohup", 1, "EARGS", "missing operand", jsonMode, stdout)
 		return 1
 	}
 
 	result, err := Run(flags.Positional)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "nohup: %v\n", err)
-		common.RenderError("nohup", 1, "ENOHUP", err.Error(), jsonMode, out)
+		common.RenderError("nohup", 1, "ENOHUP", err.Error(), jsonMode, stdout)
 		return 1
 	}
 
-	common.Render("nohup", result, jsonMode, out, func() {})
+	common.Render("nohup", result, jsonMode, stdout, func() {})
 	return result.ExitCode
 }
 

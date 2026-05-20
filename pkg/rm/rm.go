@@ -92,7 +92,7 @@ func removeAllVerbose(path string, removed *[]string, verbose bool) error {
 	return nil
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "rm: %v\n", err)
@@ -142,7 +142,7 @@ func run(args []string, out io.Writer) int {
 			}
 		}
 	}
-	common.Render("rm", result, jsonMode, out, func() {})
+	common.Render("rm", result, jsonMode, stdout, func() {})
 	return exitCode
 }
 

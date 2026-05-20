@@ -111,11 +111,11 @@ func Run(r io.Reader, countMode, duplicatesOnly, uniqueOnly, ignoreCase bool, sk
 	return items, scanner.Err()
 }
 
-func run(args []string, out io.Writer) int {
-	return uniqRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return uniqRun(args, stdout, os.Stderr, os.Stdin)
 }
 
-func uniqRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
+func uniqRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "uniq: %v\n", err)
@@ -151,7 +151,7 @@ func uniqRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) in
 	}
 
 	if !jsonMode {
-		// out already passed as parameter; use output file if second positional
+		// stdout already passed as parameter; use output file if second positional
 		if len(flags.Positional) > 1 && flags.Positional[1] != "-" {
 			f, err := os.Create(flags.Positional[1])
 			if err != nil {
@@ -159,7 +159,7 @@ func uniqRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) in
 				return 1
 			}
 			defer f.Close()
-			out = f
+			stdout = f
 		}
 	}
 
@@ -170,13 +170,13 @@ func uniqRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) in
 	}
 
 	if jsonMode {
-		common.Render("uniq", items, true, out, func() {})
+		common.Render("uniq", items, true, stdout, func() {})
 	} else {
 		for _, item := range items {
 			if countMode {
-				fmt.Fprintf(out, "%7d %s\n", item.Count, item.Line)
+				fmt.Fprintf(stdout, "%7d %s\n", item.Count, item.Line)
 			} else {
-				fmt.Fprintln(out, item.Line)
+				fmt.Fprintln(stdout, item.Line)
 			}
 		}
 	}

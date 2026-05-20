@@ -63,7 +63,7 @@ func NumberLines(r io.Reader, bodyType string, startNum, width int) ([]string, N
 	return lines, result
 }
 
-func nlRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
+func nlRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	flags, err := common.ParseFlags(args, nlSpec)
 	if err != nil {
 		fmt.Fprintf(errOut, "nl: %v\n", err)
@@ -120,21 +120,21 @@ func nlRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 	}
 
 	if jsonMode {
-		common.Render("nl", NlResult{Lines: result}, true, out, func() {})
+		common.Render("nl", NlResult{Lines: result}, true, stdout, func() {})
 		return 0
 	}
 
 	for _, nl := range result {
 		if nl.Number > 0 {
-			fmt.Fprintf(out, "%*d\t%s\n", width, nl.Number, nl.Text)
+			fmt.Fprintf(stdout, "%*d\t%s\n", width, nl.Number, nl.Text)
 		} else {
-			fmt.Fprintf(out, "%*s%s\n", width+1, "", nl.Text)
+			fmt.Fprintf(stdout, "%*s%s\n", width+1, "", nl.Text)
 		}
 	}
 	return 0
 }
 
-func run(args []string, out io.Writer) int { return nlRun(args, out, os.Stderr, os.Stdin) }
+func run(args []string, stdin io.Reader, stdout io.Writer) int { return nlRun(args, stdout, os.Stderr, os.Stdin) }
 func init() {
 	dispatch.Register(dispatch.Command{Name: "nl", Usage: "Number lines of files", Run: run})
 }

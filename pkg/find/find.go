@@ -48,11 +48,11 @@ type FileInfo struct {
 	Mtime string `json:"mtime"`
 }
 
-func run(args []string, out io.Writer) int {
-	return findRun(args, out, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return findRun(args, stdout, os.Stderr, os.Stdin)
 }
 
-func findRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) int {
+func findRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	var execCmd []string
 	execPlus := false
 
@@ -176,14 +176,14 @@ func findRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) in
 
 	// Execute -exec commands if present.
 	if len(execCmd) > 0 {
-		return runExec(results, execCmd, execPlus, out, errOut)
+		return runExec(results, execCmd, execPlus, stdout, errOut)
 	}
 
 	jsonMode := flags.Has("json")
 
-	common.Render("find", results, jsonMode, out, func() {
+	common.Render("find", results, jsonMode, stdout, func() {
 		for _, r := range results {
-			fmt.Fprintln(out, r.Path)
+			fmt.Fprintln(stdout, r.Path)
 		}
 	})
 
@@ -191,7 +191,7 @@ func findRun(args []string, out io.Writer, errOut io.Writer, stdin io.Reader) in
 }
 
 // runExec executes a command for each matched file (or in batches with +).
-func runExec(results []FileInfo, execCmd []string, execPlus bool, out io.Writer, errOut io.Writer) int {
+func runExec(results []FileInfo, execCmd []string, execPlus bool, stdout io.Writer, errOut io.Writer) int {
 	if len(results) == 0 {
 		return 0
 	}
@@ -201,7 +201,7 @@ func runExec(results []FileInfo, execCmd []string, execPlus bool, out io.Writer,
 		// + mode: batch all paths together in one invocation.
 		args := buildExecArgs(execCmd, results)
 		cmd := exec.Command(args[0], args[1:]...)
-		cmd.Stdout = out
+		cmd.Stdout = stdout
 		cmd.Stderr = errOut
 		err := cmd.Run()
 		if err != nil {
@@ -220,7 +220,7 @@ func runExec(results []FileInfo, execCmd []string, execPlus bool, out io.Writer,
 		for _, r := range results {
 			args := buildExecArgs(execCmd, []FileInfo{r})
 			cmd := exec.Command(args[0], args[1:]...)
-			cmd.Stdout = out
+			cmd.Stdout = stdout
 			cmd.Stderr = errOut
 			cmd.Run() // ignore exit code
 		}

@@ -26,8 +26,8 @@ import (
 	"github.com/ramayac/goposix/internal/shell"
 )
 
-func run(args []string, out io.Writer) int {
-	return shellRun(args, os.Stdin, out, os.Stderr)
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
+	return shellRun(args, os.Stdin, stdout, os.Stderr)
 }
 
 // shellRun is the injectable entry point for testing.

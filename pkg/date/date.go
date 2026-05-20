@@ -182,7 +182,7 @@ func isDigit(b byte) bool {
 	return b >= '0' && b <= '9'
 }
 
-func run(args []string, out io.Writer) int {
+func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	rawArgs, format := splitFormatAndDate(args)
 
 	flags, err := common.ParseFlags(rawArgs, spec)
@@ -232,12 +232,12 @@ func run(args []string, out io.Writer) int {
 		Timezone: zone,
 	}
 
-	common.Render("date", info, jsonMode, out, func() {
+	common.Render("date", info, jsonMode, stdout, func() {
 		if format != "" {
 			outStr := formatDate(now, format)
-			fmt.Fprintln(out, outStr)
+			fmt.Fprintln(stdout, outStr)
 		} else {
-			fmt.Fprintln(out, now.Format(time.UnixDate))
+			fmt.Fprintln(stdout, now.Format(time.UnixDate))
 		}
 	})
 
