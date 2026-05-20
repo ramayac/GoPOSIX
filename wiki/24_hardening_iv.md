@@ -1,6 +1,6 @@
 # Hardening IV: Architecture, Security & Compliance Gaps
 
-> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (5 remaining, 22 resolved)
+> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (4 remaining, 23 resolved)
 >
 > All items below have been verified against the actual codebase. Items from the
 > original draft that were inaccurate have been corrected or removed (see §Corrections).
@@ -33,12 +33,12 @@
 - **Impact:** Symlink-based path traversal in any environment where the daemon user can access symlinks pointing outside the base directory.
 - **Status:** **RESOLVED** — Added `resolveSymlinks()` helper that calls `filepath.EvalSymlinks` on the target path. For paths that do not exist yet (e.g., new file creation), it walks up to the deepest existing parent, resolves its symlinks, and appends the non-existent tail — catching escape symlinks in parent directories. Base directory is also resolved before the prefix comparison. Updated `security.md` to reflect resolution. Backed by symlink-aware unit tests.
 
-### H3. Session Data Race on Concurrent Access
+### H3. Session Data Race on Concurrent Access [RESOLVED]
 
-- **File:** [session.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/session.go#L52-L61)
-- **Issue:** `Get()` and `List()` return `*Session` pointers while briefly holding the mutex, but callers then read `session.CWD` and `session.Env` (a map) **without any lock** (see [server.go L477-479](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L477-L479)). Concurrent `setCwd` or env mutation causes a data race. Concurrent map read/write on `.Env` will **panic** in Go.
+- **File:** [session.go](file:///home/ramayac/git/GoPOSIX/internal/daemon/session.go)
+- **Issue:** `Get()` and `List()` returned raw `*Session` pointers while briefly holding the mutex, but callers then read `session.CWD` and `session.Env` (a map) **without any lock**. Concurrent `setCwd` or env mutation caused a data race. Concurrent map read/write on `.Env` panics in Go.
 - **Impact:** Crash under concurrent multi-session load.
-- **Action:** Return copies of session data (copy CWD string and clone Env map) from `Get()`, or hold a read-lock while the caller uses the session.
+- **Status:** **RESOLVED** — `Get()` and `List()` now return deep copies via `Session.copy()`, cloning the Env map before releasing the mutex. All callers receive their own independent snapshot. Verified with `go test -race` — 4 races detected before fix, 0 after. Also fixed pre-existing `close of closed channel` panic in `SessionManager.Stop()` (now idempotent).
 
 ### H4. Systemic `os.Stderr` Hardcoding Across Utilities
 
@@ -252,24 +252,24 @@ The following items from the original Hardening IV document were found to be **i
 
 | Priority | Total | Resolved | Remaining | Key Themes |
 |----------|:-----:|:--------:|:---------:|------------|
-| 🔴 HIGH   |   7   |    2     |     5     | Security bypass, data races, thread-safety, architectural invariant violations |
+| 🔴 HIGH   |   7   |    3     |     4     | Security bypass, data races, thread-safety, architectural invariant violations |
 | 🟡 MEDIUM |  12   |   12     |     0     | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers (ALL RESOLVED) |
 | 🟢 LOW    |   8   |    8     |     0     | Code smells, goroutine leaks, cosmetic issues (ALL RESOLVED) |
-| **Total** | **27**|   22     |     5     | |
+| **Total** | **27**|   23     |     4     | |
 
-### Remaining Fix Order (5 items)
+### Remaining Fix Order (4 items)
 
 1. **H1**: Fix `setCwd` validation — validate path through `SecurePath` before storing in session.
 2. **H6**: Fix `os.Chdir` thread-safety in shell sandbox (data race on global state).
-3. **H3**: Fix session data race (concurrent map panic risk).
-4. **H5**: Add `--no-preserve-root` to `rm` flag spec (safe but broken UX).
-5. **H4**: Continue injectable stderr refactor across remaining utilities (11 of ~79 done).
+3. **H5**: Add `--no-preserve-root` to `rm` flag spec (safe but broken UX).
+4. **H4**: Continue injectable stderr refactor across remaining utilities (11 of ~79 done).
 
 ### Resolved (21 items)
 
 | Item | Resolution |
 |------|-----------|
 | H2 | `resolveSymlinks()` helper with `EvalSymlinks`, parent walk-up for non-existent paths |
+| H3 | `Get()`/`List()` return deep copies via `Session.copy()`, `Stop()` made idempotent |
 | H7 | Injectable `xxxRun()` entry points for all 11 target utilities |
 | M1 | `PerRequestLimitReader` per-request reset |
 | M2 | `ls -d` / `--directory` flag implemented |

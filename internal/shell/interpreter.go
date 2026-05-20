@@ -63,9 +63,12 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 	}
 
 	openHandler := func(ctx context.Context, path string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
-		base := "/"
-		if cwd != "" {
-			base = cwd
+		base := cwd
+		if base == "" {
+			base, _ = os.Getwd()
+		}
+		if base == "" {
+			base = "/"
 		}
 		securePath, err := common.SecurePath(path, base)
 		if err != nil {

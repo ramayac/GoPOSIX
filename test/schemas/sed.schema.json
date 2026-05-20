@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://goposix.dev/schemas/sed.schema.json",
+  "title": "GoPOSIX sed --json output",
+  "description": "Validates the complete JSON output of goposix sed --json.",
+  "type": "object",
+  "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
+  "properties": {
+    "command": { "type": "string", "const": "sed" },
+    "version": { "type": "string" },
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "exitCode": { "type": "integer" },
+    "data": {"type": "object", "required": ["lines", "lineCount", "changed", "scripts"], "properties": {"lines": {"type": "array", "items": {"type": "string"}}, "lineCount": {"type": "integer"}, "changed": {"type": "boolean"}, "scripts": {"type": "array", "items": {"type": "string"}}}},
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

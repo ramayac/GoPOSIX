@@ -203,3 +203,71 @@ func TestCdToNonexistentDir(t *testing.T) {
 		t.Errorf("host CWD changed unexpectedly: %q -> %q", origCwd, hostCwd)
 	}
 }
+
+// TestRedirectAbsolutePath verifies that > with an absolute path works
+// when cwd is passed explicitly (simulating REPL/invocation with known dir).
+func TestRedirectAbsolutePath(t *testing.T) {
+	tmpDir := t.TempDir()
+	absPath := tmpDir + "/tutu.txt"
+
+	result := Exec("echo hola > "+absPath, tmpDir, nil)
+	if result.ExitCode != 0 {
+		t.Fatalf("redirect to absolute path failed: exit=%d stderr=%q", result.ExitCode, result.Stderr)
+	}
+
+	data, err := os.ReadFile(absPath)
+	if err != nil {
+		t.Fatalf("cannot read output file: %v", err)
+	}
+	got := strings.TrimRight(string(data), "\n")
+	if got != "hola" {
+		t.Errorf("expected 'hola', got %q", got)
+	}
+}
+
+// TestRedirectRelativePath verifies that > with ./relative path works
+// when the cwd is passed explicitly (the original bug: empty cwd defaulted
+// base to "/" making resolves go to root instead of process CWD).
+func TestRedirectRelativePath(t *testing.T) {
+	tmpDir := t.TempDir()
+	relPath := "./tutu.txt"
+	expectedFile := tmpDir + "/tutu.txt"
+
+	result := Exec("echo hola > "+relPath, tmpDir, nil)
+	if result.ExitCode != 0 {
+		t.Fatalf("redirect to ./relative path failed: exit=%d stderr=%q", result.ExitCode, result.Stderr)
+	}
+
+	data, err := os.ReadFile(expectedFile)
+	if err != nil {
+		t.Fatalf("cannot read output file: %v", err)
+	}
+	got := strings.TrimRight(string(data), "\n")
+	if got != "hola" {
+		t.Errorf("expected 'hola', got %q", got)
+	}
+}
+
+// TestRedirectEmptyCwd verifies that > works even when cwd is empty string
+// (the exact bug scenario: non-interactive invocation with cwd="" that used
+// to default base to "/" and fail with permission denied on /tutu.txt).
+func TestRedirectEmptyCwd(t *testing.T) {
+	tmpDir := t.TempDir()
+	origCwd, _ := os.Getwd()
+	defer os.Chdir(origCwd)
+	os.Chdir(tmpDir)
+
+	result := Exec("echo hola > tutu.txt", "", nil)
+	if result.ExitCode != 0 {
+		t.Fatalf("redirect with empty cwd failed: exit=%d stderr=%q", result.ExitCode, result.Stderr)
+	}
+
+	data, err := os.ReadFile(tmpDir + "/tutu.txt")
+	if err != nil {
+		t.Fatalf("cannot read output file: %v", err)
+	}
+	got := strings.TrimRight(string(data), "\n")
+	if got != "hola" {
+		t.Errorf("expected 'hola', got %q", got)
+	}
+}

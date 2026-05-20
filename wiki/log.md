@@ -4,6 +4,24 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-20] fix | H3 — Session data race (branch: `feat/hardeing-iv-partii`)
+
+Resolved H3 (session data race on concurrent access):
+- `Get()` and `List()` now return deep copies via `Session.copy()` — CWD string
+  copied, Env map cloned before mutex release. All callers receive independent
+  snapshots with no shared references.
+- Fixed pre-existing `close of closed channel` panic in `SessionManager.Stop()`
+  — made idempotent with select/default pattern.
+- Added `session_test.go` with `TestSessionManagerConcurrentRace` — 4 data races
+  detected by `go test -race` before fix: string field write vs read, map
+  write vs read (×2), and realistic SetCwd races. Zero races after fix.
+  All daemon tests pass under `-race`.
+- Updated `wiki/24_hardening_iv.md`: H3 → RESOLVED. Score: 4 remaining / 23 resolved.
+
+Updated: `internal/daemon/session.go`, `internal/daemon/session_test.go`,
+`wiki/24_hardening_iv.md`, `wiki/log.md`.
+Created: `internal/daemon/session_test.go`.
+
 ## [2026-05-20] fix | H2 — SecurePath symlink resolution (branch: `feat/hardeing-iv-partii`)
 
 Resolved H2 (SecurePath does not resolve symlinks):
