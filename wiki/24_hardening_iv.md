@@ -2,6 +2,11 @@
 
 > **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (3 remaining, 24 resolved)
 >
+> **This branch (`feat/hardeing-iv-partii`):** Shell redirect fix + Phase 25 daemon stdin support.
+> Shell `openHandler` no longer defaults redirections to `/` when CWD is empty.
+> `dispatch.Command.Run` signature expanded to `(args, stdin io.Reader, stdout io.Writer)`.
+> `GoposixParams` gained `Stdin` field, plumbed through daemon to all 76 utilities.
+>
 > All items below have been verified against the actual codebase. Items from the
 > original draft that were inaccurate have been corrected or removed (see §Corrections).
 
@@ -59,7 +64,9 @@
 - **File:** `internal/shell/interpreter.go`
 - **Issue:** The shell sandbox called `os.Chdir(hc.Dir)` to set the working directory before executing dispatch commands and after `cd` in scripts. `os.Chdir` mutates **global process state** — it changes the CWD for the entire daemon process, not just the current goroutine.
 - **Impact:** If multiple `goposix.shell.exec` RPC calls run concurrently (which the worker pool enables), they will clobber each other's CWD. This is a data race on the global process state.
-- **Status:** **RESOLVED** — Added `execMu sync.Mutex` serializing all calls to `Exec()`. Process CWD saved at entry and restored on exit, preventing `cd` side-effects from leaking between sequential calls (the daemon tracks CWD per-session, not via process state). Updated `TestCdAndPwd`, `TestCdPersistsAcrossExecCalls`, `TestCdWithExplicitCwd` to verify no CWD leaks. Added `TestConcurrentShellExec` (5 goroutines × 100 iterations, passes `-race`). Added `make test-race` target to Makefile. Future work: eliminate `os.Chdir` entirely by threading a CWD parameter through the `dispatch.Command.Run` signature.
+- **Status:** **RESOLVED** — Added `execMu sync.Mutex` serializing all calls to `Exec()`. Process CWD saved at entry and restored on exit, preventing `cd` side-effects from leaking between sequential calls (the daemon tracks CWD per-session, not via process state). Updated `TestCdAndPwd`, `TestCdPersistsAcrossExecCalls`, `TestCdWithExplicitCwd` to verify no CWD leaks. Added `TestConcurrentShellExec` (5 goroutines × 100 iterations, passes `-race`). Added `make test-race` target to Makefile.
+- **Also resolved (this branch):** Shell `openHandler` redirect bug — when `cwd` was empty (non-interactive shell invocations), file redirections like `> tutu.txt` resolved to `/tutu.txt` instead of the process CWD. Fixed by falling back to `os.Getwd()` when no explicit CWD is provided. 3 new tests added.
+- **Also resolved (this branch):** `dispatch.Command.Run` signature expanded to include `stdin io.Reader` — the first step toward threading per-command state. `GoposixParams` gained a `Stdin` field plumbed through the daemon. Future work: eliminate `os.Chdir` entirely by threading a CWD parameter through the `dispatch.Command.Run` signature.
 
 ### H7. Missing Injectable Entry Points Across 7+ Utilities [RESOLVED]
 
