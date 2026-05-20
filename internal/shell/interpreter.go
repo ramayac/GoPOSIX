@@ -106,12 +106,21 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
+	// Save the effective baseline CWD: the explicit cwd we passed in,
+	// or the host process CWD if no explicit cwd was given.  We only
+	// sync back to the host when a cd actually moved away from this
+	// baseline, which avoids accidentally pinning the process CWD to
+	// a temporary directory that was passed as the explicit cwd.
+	baselineCwd := cwd
+	if baselineCwd == "" {
+		baselineCwd, _ = os.Getwd()
+	}
 	err = runner.Run(ctx, prog)
 
 	// Apply any cd changes back to the host process so subsequent
 	// Exec calls (e.g., in an interactive REPL) start from the
 	// correct working directory. mvdan/sh only updates runner.Dir.
-	if runner.Dir != "" {
+	if runner.Dir != "" && runner.Dir != baselineCwd {
 		os.Chdir(runner.Dir)
 	}
 
