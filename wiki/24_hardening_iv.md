@@ -1,6 +1,6 @@
 # Hardening IV: Architecture, Security & Compliance Gaps
 
-> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (9 remaining, 18 resolved)
+> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (6 remaining, 21 resolved)
 >
 > All items below have been verified against the actual codebase. Items from the
 > original draft that were inaccurate have been corrected or removed (see §Corrections).
@@ -62,7 +62,7 @@
 - **Impact:** If multiple `goposix.shell.exec` RPC calls run concurrently (which the worker pool enables), they will clobber each other's CWD. This is a data race on the global process state.
 - **Action:** Avoid `os.Chdir`. Instead, set the `Dir` field on `exec.Cmd` or use the shell interpreter's built-in `Dir` option.
 
-### H7. Missing Injectable Entry Points Across 7+ Utilities
+### H7. Missing Injectable Entry Points Across 7+ Utilities [RESOLVED]
 
 - **Issue:** The `catRun()` pattern (injectable `io.Reader`/`io.Writer` for stdin/stdout/stderr) is the canonical testable pattern per AGENTS.md §4a. The following utilities lack this pattern entirely, hardcoding `os.Stdin` directly in their `run()` function:
   - `sed` — no `sedRun()` ([engine.go L119](file:///home/ramayac/git/GoPOSIX/pkg/sed/engine.go#L119))
@@ -77,7 +77,7 @@
   - `sort` — hardcoded `os.Stdin` ([sort.go L542](file:///home/ramayac/git/GoPOSIX/pkg/sort/sort.go#L542))
   - `uniq` — hardcoded `os.Stdin`
 - **Impact:** These utilities are untestable via the daemon's JSON-RPC path for stdin-dependent operations. Tests that need stdin must swap the global `os.Stdin` (fragile, race-prone). This also means the daemon cannot feed stdin to these utilities at all.
-- **Action:** Refactor each utility to follow the `catRun(args, out, errOut, stdin)` pattern.
+- **Status:** **RESOLVED** — Extracted injectable `xxxRun(args, out, errOut, stdin)` entry points for all 11 target utilities (`sed`, `xargs`, `tr`, `tee`, `head`, `find`, `tar`, `gzip`, `cut`, `sort`, `uniq`). Extracted internal streams and passed them recursively to child/exec processes. Backed by updated unit and BusyBox integration test suites.
 
 ---
 
@@ -90,12 +90,12 @@
 - **Impact:** Persistent connections (Go SDK with connection pooling) will silently drop requests after ~1MB of cumulative traffic. This particularly affects batch-heavy workloads.
 - **Status:** **RESOLVED** — Implemented a custom thread-safe `PerRequestLimitReader` that allows resetting the read budget via `.Reset()` on each request iteration in the persistent connection loop. The maximum request budget is environment-variable configurable via `GOPOSIX_MAX_REQUEST_SIZE`, defaulting to `1048576` (1MB). Added comprehensive unit and integration tests to verify bounds.
 
-### M2. `ls -d` Flag Accepted But Not Implemented
+### M2. `ls -d` Flag Accepted But Not Implemented [RESOLVED]
 
 - **File:** [ls.go L55](file:///home/ramayac/git/GoPOSIX/pkg/ls/ls.go#L55) (defined), [ls.go L240-265](file:///home/ramayac/git/GoPOSIX/pkg/ls/ls.go#L240-L265) (never read)
 - **Issue:** The `-d` / `--directory` flag is declared in the `FlagSpec` but `flags.Has("d")` is never called in `run()`. The `-d` behavior (list directories themselves, not their contents) is silently ignored.
 - **Impact:** `ls -d /tmp` incorrectly lists the contents of `/tmp` instead of showing `/tmp` as a single entry. POSIX non-compliance.
-- **Action:** Implement the `-d` flag behavior in both `Run()` (library) and `run()` (CLI).
+- **Status:** **RESOLVED** — Implemented the `-d` / `--directory` flag in `pkg/ls/ls.go` by short-circuiting directory traversal when `directoryMode` is true, treating directory arguments as plain files for output. Backed by dedicated unit tests.
 
 ### M2a. `grep` — File Handle Leak in Loop [RESOLVED]
 
@@ -148,7 +148,7 @@
 - **Issue:** `Stop()` closes the listener and immediately closes all tracked connections via `conn.Close()`. There is no grace period for in-flight requests to complete. Requests being processed are killed mid-execution without sending error responses to clients.
 - **Status:** **RESOLVED** — Replaced direct connection termination with a graceful draining phase during `Server.Stop()`. It closes the listener, waits for the `connWG` WaitGroup to clear within a configurable timeout (`GOPOSIX_SHUTDOWN_TIMEOUT`, defaulting to `5s`), and only triggers forceful socket termination if in-flight requests exceed the grace window.
 
-### M8. Flag Parsing Friction (Validated)
+### M8. Flag Parsing Friction (Validated) [RESOLVED]
 
 - **Files:** [find.go](file:///home/ramayac/git/GoPOSIX/pkg/find/find.go) (`preprocessArgs()`), [tar.go](file:///home/ramayac/git/GoPOSIX/pkg/tar/tar.go) (`preprocessTarArgs()`), [dd.go](file:///home/ramayac/git/GoPOSIX/pkg/dd/dd.go) (custom `parseArgs()`)
 - **Issue:** Four utilities require custom pre-processing or bypass `common.ParseFlags` entirely:
@@ -157,7 +157,7 @@
   - `dd`: Implements its own `key=value` parser; does not use `ParseFlags` at all.
   - `awk`: Fully manual flag parsing (awk program text can contain `-` chars).
 - **Impact:** Each new utility with non-standard flag syntax requires a bespoke workaround, increasing maintenance burden.
-- **Action:** Consider extending `FlagSpec` with a `PreProcess` hook or alternative parsing modes.
+- **Status:** **RESOLVED** — Added a `PreProcess` function hook to `common.FlagSpec` and integrated it directly in `common.ParseFlags`. Migrated argument preprocessing pipelines for `tar` and `find` into this hook, simplifying architecture and reducing custom pre-parsing code inside utilities. Backed by dedicated unit tests.
 
 ### M9. `date` — Missing 12+ POSIX Format Specifiers [RESOLVED]
 
