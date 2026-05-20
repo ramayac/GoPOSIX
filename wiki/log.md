@@ -4,6 +4,26 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-20] sync | JSON schema gap fill — 30 new schemas, doc updated
+
+Audited `wiki/json_schema.md` against `test/schemas/` and `pkg/`:
+- Found the doc claimed 42 utilities support `--json` — actual count is 76.
+- The doc's "without --json" list (sleep, tee, tr, yes, sed, true, false) was
+  stale: all 7 had gained `--json` flags since the doc was last updated.
+- 23 additional utilities had `--json` support with no schema file and no doc
+  table entry: awk, cksum, cmp, comm, expand, fold, join, link, logger, logname,
+  mkfifo, nice, nl, nohup, od, paste, split, strings, sum, tty, unexpand, unlink, who.
+
+Created 30 new JSON Schema (draft-07) files in `test/schemas/` covering all
+missing utilities. Updated `wiki/json_schema.md`: count 42→76, 46→76 table rows,
+replaced stale "without --json" list with "Only dd and patch do not yet support
+--json output." Cross-check: 76 doc rows ↔ 76 schema files ↔ 76 `--json` flags.
+
+Created: 30 `test/schemas/*.schema.json` files (awk, cksum, cmp, comm, expand,
+false, fold, join, link, logger, logname, mkfifo, nice, nl, nohup, od, paste,
+sed, sleep, split, strings, sum, tee, tr, true, tty, unexpand, unlink, who, yes).
+Updated: `wiki/json_schema.md`, `wiki/log.md`.
+
 ## [2026-05-20] fix | H3 — Session data race (branch: `feat/hardeing-iv-partii`)
 
 Resolved H3 (session data race on concurrent access):

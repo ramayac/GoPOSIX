@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -15,6 +16,17 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
+// execMu serializes shell execution to prevent concurrent os.Chdir() calls
+// from clobbering each other. os.Chdir changes process-global state, not
+// per-goroutine state, so multiple shell.exec RPC calls cannot safely set
+// the working directory concurrently.
+//
+// TODO: Eliminate os.Chdir entirely by threading a CWD parameter through
+// the dispatch.Command.Run signature so every utility resolves paths
+// against an explicit directory instead of relying on the process CWD.
+// This would remove the need for execMu and allow concurrent shell execs.
+var execMu sync.Mutex
+
 type ExecResult struct {
 	Stdout   string `json:"stdout"`
 	Stderr   string `json:"stderr"`
@@ -22,6 +34,15 @@ type ExecResult struct {
 }
 
 func Exec(script string, cwd string, env map[string]string) ExecResult {
+	execMu.Lock()
+	defer execMu.Unlock()
+
+	// Save and restore the process CWD so that sequential Exec calls
+	// (each with their own explicit or session-tracked CWD) do not
+	// leak cd side-effects into the daemon process.
+	origCwd, _ := os.Getwd()
+	defer func() { os.Chdir(origCwd) }()
+
 	var stdout, stderr bytes.Buffer
 
 	// 128MB memory limit per stream
