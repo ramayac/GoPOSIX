@@ -1,7 +1,6 @@
 package common
 
 import (
-
 	"bytes"
 	"encoding/json"
 	"os"

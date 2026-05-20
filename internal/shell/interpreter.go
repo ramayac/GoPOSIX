@@ -23,7 +23,7 @@ type ExecResult struct {
 
 func Exec(script string, cwd string, env map[string]string) ExecResult {
 	var stdout, stderr bytes.Buffer
-	
+
 	// 128MB memory limit per stream
 	lStdout := &common.LimitWriter{W: &stdout, Limit: 128 * 1024 * 1024}
 	lStderr := &common.LimitWriter{W: &stderr, Limit: 128 * 1024 * 1024}
@@ -48,7 +48,7 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 			// path traversal.
 			return interp.DefaultExecHandler(0)(ctx, args)
 		}
-		
+
 		hc := interp.HandlerCtx(ctx)
 		// Sync the shell's working directory to the host process so dispatch
 		// commands (ls, pwd, etc.) see the same directory as cd set.
@@ -79,7 +79,7 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 		interp.ExecHandler(execHandler),
 		interp.OpenHandler(openHandler),
 	}
-	
+
 	if cwd != "" {
 		opts = append(opts, interp.Dir(cwd))
 	}

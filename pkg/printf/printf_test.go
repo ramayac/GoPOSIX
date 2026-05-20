@@ -149,7 +149,7 @@ func TestFormatIntegerSpecifiers(t *testing.T) {
 		{"%d", []string{"42"}, "42"},
 		{"%05d", []string{"42"}, "00042"},
 		{"%+d", []string{"42"}, "+42"},
-		{"%i", []string{"10"}, "10"},   // %i treated as %d
+		{"%i", []string{"10"}, "10"},    // %i treated as %d
 		{"%d", []string{"0xff"}, "255"}, // hex input
 		{"%d", []string{"077"}, "63"},   // octal input
 	}

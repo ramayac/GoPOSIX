@@ -13,7 +13,9 @@ import (
 	"github.com/ramayac/goposix/pkg/common"
 )
 
-type ExpandResult struct{ Lines []string `json:"lines"` }
+type ExpandResult struct {
+	Lines []string `json:"lines"`
+}
 
 var expSpec = common.FlagSpec{
 	Defs: []common.FlagDef{

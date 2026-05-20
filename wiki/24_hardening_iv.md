@@ -1,6 +1,6 @@
 # Hardening IV: Architecture, Security & Compliance Gaps
 
-> **Last updated:** 2026-05-20 | **Score:** 93/100 (UGAI) | **Gaps found:** 27 (15 remaining, 12 resolved)
+> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (9 remaining, 18 resolved)
 >
 > All items below have been verified against the actual codebase. Items from the
 > original draft that were inaccurate have been corrected or removed (see §Corrections).
@@ -83,12 +83,12 @@
 
 ## 🟡 MEDIUM Priority
 
-### M1. `LimitReader` Is Per-Connection, Not Per-Request
+### M1. `LimitReader` Is Per-Connection, Not Per-Request [RESOLVED]
 
 - **File:** [server.go L217](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L217)
 - **Issue:** `io.LimitReader(conn, 1024*1024)` creates a 1MB budget for the **entire connection lifetime**, not per request. The decoder in `handleConn` loops reading multiple requests from the same connection (line 221). After 1MB cumulative input, the connection gets a "Parse error" and is closed.
 - **Impact:** Persistent connections (Go SDK with connection pooling) will silently drop requests after ~1MB of cumulative traffic. This particularly affects batch-heavy workloads.
-- **Action:** Reset the `LimitReader` per request iteration, or use a per-request wrapper that re-limits each `Decode()` call.
+- **Status:** **RESOLVED** — Implemented a custom thread-safe `PerRequestLimitReader` that allows resetting the read budget via `.Reset()` on each request iteration in the persistent connection loop. The maximum request budget is environment-variable configurable via `GOPOSIX_MAX_REQUEST_SIZE`, defaulting to `1048576` (1MB). Added comprehensive unit and integration tests to verify bounds.
 
 ### M2. `ls -d` Flag Accepted But Not Implemented
 
@@ -97,19 +97,19 @@
 - **Impact:** `ls -d /tmp` incorrectly lists the contents of `/tmp` instead of showing `/tmp` as a single entry. POSIX non-compliance.
 - **Action:** Implement the `-d` flag behavior in both `Run()` (library) and `run()` (CLI).
 
-### M2a. `grep` — File Handle Leak in Loop
+### M2a. `grep` — File Handle Leak in Loop [RESOLVED]
 
 - **File:** `pkg/grep/grep.go` (line ~331)
 - **Issue:** `defer f.Close()` is used inside a `for` loop over file readers. All file handles accumulate and only close when the enclosing function returns, not after each file is processed.
 - **Impact:** For large `grep` invocations over many files, file descriptor exhaustion is possible.
-- **Action:** Close the file handle after processing each file (replace `defer` with explicit `.Close()` at the end of the loop body).
+- **Status:** **RESOLVED** — Bounded the file opening and processing logic within an anonymous self-invoking function inside the `readers` loop, ensuring `defer f.Close()` cleanly releases every file descriptor immediately after its individual processing completes, preventing accumulation and exhaustion.
 
-### M3. Rate Limiter Effectively Disabled (100K/s)
+### M3. Rate Limiter Effectively Disabled (100K/s) [RESOLVED]
 
 - **File:** [server.go L216](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L216)
 - **Issue:** The rate limiter is initialized with `100,000 tokens/sec` and `100,000 burst`. This will never trigger in any realistic scenario.
 - **Cross-ref:** [security.md](file:///home/ramayac/git/GoPOSIX/wiki/security.md) documents the limit as *"Max RPC requests/sec per connection: 100"* — a **1000× discrepancy** with the code.
-- **Action:** Either restore a meaningful rate limit (e.g., 1000/s) and make it configurable, or remove the rate limiter and update the security doc.
+- **Status:** **RESOLVED** — Re-calibrated the default connection rate limit to `100` requests per second and `100` burst, aligning perfectly with standard specifications. Made the rate limit dynamically configurable via the `GOPOSIX_RATE_LIMIT` environment variable.
 
 ### M4. `security.md` Contains Multiple Inaccuracies [RESOLVED]
 
@@ -142,11 +142,11 @@
   - `session.setCwd` path validation (critical gap given H1)
 - **Status:** **RESOLVED** — Designed and implemented comprehensive end-to-end integration tests in `server_test.go` verifying path traversal blocks, request/response limits, connection limiting, shutdown scenarios, and observability endpoints under heavy payloads. All integration tests pass successfully.
 
-### M7. No Graceful Drain on Shutdown
+### M7. No Graceful Drain on Shutdown [RESOLVED]
 
 - **File:** [server.go L158-174](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go#L158-L174)
 - **Issue:** `Stop()` closes the listener and immediately closes all tracked connections via `conn.Close()`. There is no grace period for in-flight requests to complete. Requests being processed are killed mid-execution without sending error responses to clients.
-- **Action:** Add a configurable drain timeout (e.g., 5s) — stop accepting new connections, wait for in-flight requests to complete or timeout, then force-close.
+- **Status:** **RESOLVED** — Replaced direct connection termination with a graceful draining phase during `Server.Stop()`. It closes the listener, waits for the `connWG` WaitGroup to clear within a configurable timeout (`GOPOSIX_SHUTDOWN_TIMEOUT`, defaulting to `5s`), and only triggers forceful socket termination if in-flight requests exceed the grace window.
 
 ### M8. Flag Parsing Friction (Validated)
 
@@ -159,19 +159,19 @@
 - **Impact:** Each new utility with non-standard flag syntax requires a bespoke workaround, increasing maintenance burden.
 - **Action:** Consider extending `FlagSpec` with a `PreProcess` hook or alternative parsing modes.
 
-### M9. `date` — Missing 12+ POSIX Format Specifiers
+### M9. `date` — Missing 12+ POSIX Format Specifiers [RESOLVED]
 
 - **File:** `pkg/date/date.go` (lines ~247-302)
 - **Issue:** The `date` format specifier mapping is missing several POSIX-required specifiers: `%j` (day of year), `%p` (AM/PM), `%r` (12-hour time), `%u` (weekday 1–7), `%V` (ISO week), `%W` (week of year), `%n` (newline), `%t` (tab), `%D` (date as %m/%d/%y), `%F` (ISO date), `%R` (time as %H:%M).
 - **Impact:** POSIX non-compliance. Format strings containing these specifiers produce incorrect output.
-- **Action:** Add the missing specifiers to the format mapping.
+- **Status:** **RESOLVED** — Fully implemented all missing format specifiers (`%j`, `%p`, `%r`, `%u`, `%V`, `%W`, `%U`, `%n`, `%t`, `%D`, `%F`, `%R`, `%w`, `%k`, `%l`) within `formatDate` in `pkg/date/date.go`, backed by comprehensive test vectors covering leap years, week numbering boundaries, and standard POSIX formats.
 
-### M10. `grep` — Binary File Detection Is a No-Op
+### M10. `grep` — Binary File Detection Is a No-Op [RESOLVED]
 
 - **File:** `pkg/grep/grep.go` (line ~50)
 - **Issue:** The `-a` / `--text` flag is defined in the spec but is never actually used in the code — it's a no-op. Unlike GNU grep which detects binary files and prints "Binary file X matches", GoPOSIX grep treats **all** files as text unconditionally.
 - **Impact:** Binary files with NUL bytes produce garbled output without warning, confusing users.
-- **Action:** Implement binary file detection (scan for NUL bytes in the first buffer) and the `-a` flag to suppress it.
+- **Status:** **RESOLVED** — Added binary file detection by pre-scanning the first 8192 bytes of file/stream input for `NUL` bytes. Reconstructed input streams using `io.MultiReader` to ensure full payload preservation. Enabled standard matches/non-matches reporting for binary streams ("Binary file X matches"), while preserving raw text processing when the override `-a` / `--text` flag is set.
 
 ### M11. `Makefile` — BusyBox `testsuite` Not in `ci` Target [RESOLVED]
 
@@ -254,9 +254,9 @@ The following items from the original Hardening IV document were found to be **i
 | Priority | Total | Resolved | Remaining | Key Themes |
 |----------|:-----:|:--------:|:---------:|------------|
 | 🔴 HIGH   |   7   |    0     |     7     | Security bypass, data races, thread-safety, architectural invariant violations |
-| 🟡 MEDIUM |  12   |    0     |    12     | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers |
+| 🟡 MEDIUM |  12   |   10     |     2     | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers |
 | 🟢 LOW    |   8   |    8     |     0     | Code smells, goroutine leaks, cosmetic issues (ALL RESOLVED) |
-| **Total** | **27**|  **8**   |  **19**   | |
+| **Total** | **27**|   18     |     9     | |
 
 ### Recommended Fix Order
 

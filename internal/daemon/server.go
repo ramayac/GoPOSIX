@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -164,13 +165,36 @@ func (s *Server) Stop() {
 	if s.listener != nil {
 		s.listener.Close()
 	}
-	// Close all tracked connections to unblock any reads in handleConn.
-	s.connsMu.Lock()
-	for conn := range s.conns {
-		conn.Close()
+
+	// Wait for existing connections to drain with a timeout
+	timeout := 5 * time.Second
+	if timeoutStr := os.Getenv("GOPOSIX_SHUTDOWN_TIMEOUT"); timeoutStr != "" {
+		if t, err := time.ParseDuration(timeoutStr); err == nil {
+			timeout = t
+		} else if sec, err := strconv.Atoi(timeoutStr); err == nil {
+			timeout = time.Duration(sec) * time.Second
+		}
 	}
-	s.connsMu.Unlock()
-	s.connWG.Wait()
+
+	doneChan := make(chan struct{})
+	go func() {
+		s.connWG.Wait()
+		close(doneChan)
+	}()
+
+	select {
+	case <-doneChan:
+		// Drained gracefully
+	case <-time.After(timeout):
+		// Timeout expired, force close all tracked connections
+		s.connsMu.Lock()
+		for conn := range s.conns {
+			conn.Close()
+		}
+		s.connsMu.Unlock()
+		<-doneChan // Wait for them to finish tearing down
+	}
+
 	os.Remove(s.socketPath)
 }
 
@@ -211,15 +235,59 @@ func (s *Server) acceptLoop() {
 	}
 }
 
+type PerRequestLimitReader struct {
+	r     io.Reader
+	limit int64
+	read  int64
+}
+
+func NewPerRequestLimitReader(r io.Reader, limit int64) *PerRequestLimitReader {
+	return &PerRequestLimitReader{
+		r:     r,
+		limit: limit,
+	}
+}
+
+func (pr *PerRequestLimitReader) Read(p []byte) (n int, err error) {
+	if pr.read >= pr.limit {
+		return 0, fmt.Errorf("request payload size limit of %d bytes exceeded", pr.limit)
+	}
+	max := pr.limit - pr.read
+	if int64(len(p)) > max {
+		p = p[:max]
+	}
+	n, err = pr.r.Read(p)
+	pr.read += int64(n)
+	return n, err
+}
+
+func (pr *PerRequestLimitReader) Reset() {
+	pr.read = 0
+}
+
 func (s *Server) handleConn(conn net.Conn) {
 	defer conn.Close()
 
-	rl := NewRateLimiter(100000.0, 100000)
-	limitReader := io.LimitReader(conn, 1024*1024)
+	rateLimit := 100.0
+	if limitStr := os.Getenv("GOPOSIX_RATE_LIMIT"); limitStr != "" {
+		if r, err := strconv.ParseFloat(limitStr, 64); err == nil && r > 0 {
+			rateLimit = r
+		}
+	}
+	rl := NewRateLimiter(rateLimit, int(rateLimit))
+
+	requestLimit := int64(1024 * 1024)
+	if limitStr := os.Getenv("GOPOSIX_MAX_REQUEST_SIZE"); limitStr != "" {
+		if l, err := strconv.ParseInt(limitStr, 10, 64); err == nil && l > 0 {
+			requestLimit = l
+		}
+	}
+	limitReader := NewPerRequestLimitReader(conn, requestLimit)
 
 	// Parse incoming JSON stream. It can be a single object or array.
 	dec := json.NewDecoder(limitReader)
 	for {
+		limitReader.Reset()
 		// Read raw message to check if it's array or object
 		var raw json.RawMessage
 		err := dec.Decode(&raw)

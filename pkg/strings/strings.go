@@ -15,7 +15,9 @@ type StringEntry struct {
 	Offset int    `json:"offset"`
 	Value  string `json:"value"`
 }
-type StringsResult struct{ Strings []StringEntry `json:"strings"` }
+type StringsResult struct {
+	Strings []StringEntry `json:"strings"`
+}
 
 var strSpec = common.FlagSpec{
 	Defs: []common.FlagDef{

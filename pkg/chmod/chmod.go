@@ -50,9 +50,12 @@ func applySymbolicMode(modeStr string, current os.FileMode) (os.FileMode, error)
 	} else {
 		for _, c := range who {
 			switch c {
-			case 'u': whoMask |= os.FileMode(0700)
-			case 'g': whoMask |= os.FileMode(0070)
-			case 'o': whoMask |= os.FileMode(0007)
+			case 'u':
+				whoMask |= os.FileMode(0700)
+			case 'g':
+				whoMask |= os.FileMode(0070)
+			case 'o':
+				whoMask |= os.FileMode(0007)
 			}
 		}
 	}
@@ -63,11 +66,16 @@ func applySymbolicMode(modeStr string, current os.FileMode) (os.FileMode, error)
 	permBits := os.FileMode(0)
 	for _, c := range perms {
 		switch c {
-		case 'r': permBits |= os.FileMode(0444)
-		case 'w': permBits |= os.FileMode(0222)
-		case 'x': permBits |= os.FileMode(0111)
-		case 's': permBits |= os.FileMode(os.ModeSetuid | os.ModeSetgid)
-		case 't': permBits |= os.FileMode(os.ModeSticky)
+		case 'r':
+			permBits |= os.FileMode(0444)
+		case 'w':
+			permBits |= os.FileMode(0222)
+		case 'x':
+			permBits |= os.FileMode(0111)
+		case 's':
+			permBits |= os.FileMode(os.ModeSetuid | os.ModeSetgid)
+		case 't':
+			permBits |= os.FileMode(os.ModeSticky)
 		}
 	}
 

@@ -101,7 +101,7 @@ func TestTarGzip(t *testing.T) {
 	os.WriteFile(testFile, []byte(strings.Repeat("a", 1000)), 0644)
 
 	archiveFile := filepath.Join(tmpDir, "archive.tar.gz")
-	
+
 	// Create with -z
 	var buf bytes.Buffer
 	code := run([]string{"-c", "-z", "-f", archiveFile, "-C", tmpDir, "src"}, &buf)

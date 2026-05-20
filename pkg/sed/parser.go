@@ -288,7 +288,7 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 			}
 			p.next()
 		}
-		
+
 		// Unescape replacement string: convert \& to &, \1 to $1, etc.
 		// Go's regexp uses $1 instead of \1 for backrefs.
 		// Wait, we need to do this properly.
@@ -321,7 +321,7 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 				repl += string(replRaw[i])
 			}
 		}
-		
+
 		inst.Repl = repl
 		p.next() // consume delim
 
@@ -405,13 +405,24 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 		rawText := p.text[start:p.pos]
 		// unescape \n \t \r
 		text := ""
-		for i:=0; i<len(rawText); i++ {
+		for i := 0; i < len(rawText); i++ {
 			if rawText[i] == '\\' && i+1 < len(rawText) {
-				if rawText[i+1] == 'n' { text += "\n"; i++ } else
-				if rawText[i+1] == 't' { text += "\t"; i++ } else
-				if rawText[i+1] == 'r' { text += "\r"; i++ } else
-				if rawText[i+1] == '\n' { i++ } else // escaped newline removed
-				{ text += string(rawText[i+1]); i++ }
+				if rawText[i+1] == 'n' {
+					text += "\n"
+					i++
+				} else if rawText[i+1] == 't' {
+					text += "\t"
+					i++
+				} else if rawText[i+1] == 'r' {
+					text += "\r"
+					i++
+				} else if rawText[i+1] == '\n' {
+					i++
+				} else // escaped newline removed
+				{
+					text += string(rawText[i+1])
+					i++
+				}
 			} else {
 				text += string(rawText[i])
 			}

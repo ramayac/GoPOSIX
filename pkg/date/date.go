@@ -290,6 +290,65 @@ func formatDate(t time.Time, f string) string {
 				b.WriteString(zone)
 			case 's':
 				b.WriteString(strconv.FormatInt(t.Unix(), 10))
+			case 'j':
+				b.WriteString(fmt.Sprintf("%03d", t.YearDay()))
+			case 'p':
+				b.WriteString(t.Format("PM"))
+			case 'r':
+				b.WriteString(t.Format("03:04:05 PM"))
+			case 'u':
+				w := int(t.Weekday())
+				if w == 0 {
+					w = 7
+				}
+				b.WriteString(strconv.Itoa(w))
+			case 'V':
+				_, weekV := t.ISOWeek()
+				b.WriteString(fmt.Sprintf("%02d", weekV))
+			case 'W':
+				yearStart := time.Date(t.Year(), 1, 1, 0, 0, 0, 0, t.Location())
+				startWD := int(yearStart.Weekday())
+				daysBeforeFirstMonday := (8 - startWD) % 7
+				daysSinceYearStart := t.YearDay() - 1
+				var weekW int
+				if daysSinceYearStart < daysBeforeFirstMonday {
+					weekW = 0
+				} else {
+					weekW = 1 + (daysSinceYearStart-daysBeforeFirstMonday)/7
+				}
+				b.WriteString(fmt.Sprintf("%02d", weekW))
+			case 'U':
+				yearStart := time.Date(t.Year(), 1, 1, 0, 0, 0, 0, t.Location())
+				startWD := int(yearStart.Weekday())
+				daysBeforeFirstSunday := (7 - startWD) % 7
+				daysSinceYearStart := t.YearDay() - 1
+				var weekU int
+				if daysSinceYearStart < daysBeforeFirstSunday {
+					weekU = 0
+				} else {
+					weekU = 1 + (daysSinceYearStart-daysBeforeFirstSunday)/7
+				}
+				b.WriteString(fmt.Sprintf("%02d", weekU))
+			case 'n':
+				b.WriteByte('\n')
+			case 't':
+				b.WriteByte('\t')
+			case 'D':
+				b.WriteString(t.Format("01/02/06"))
+			case 'F':
+				b.WriteString(t.Format("2006-01-02"))
+			case 'R':
+				b.WriteString(t.Format("15:04"))
+			case 'w':
+				b.WriteString(strconv.Itoa(int(t.Weekday())))
+			case 'k':
+				b.WriteString(fmt.Sprintf("%2d", t.Hour()))
+			case 'l':
+				hl := t.Hour() % 12
+				if hl == 0 {
+					hl = 12
+				}
+				b.WriteString(fmt.Sprintf("%2d", hl))
 			default:
 				b.WriteByte('%')
 				b.WriteByte(f[i])

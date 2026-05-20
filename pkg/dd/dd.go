@@ -219,10 +219,10 @@ type ddOpts struct {
 	seek   int64
 	status string // none, noxfer, or empty
 
-	convSync     bool
-	convNoerror  bool
-	convNotrunc  bool
-	convFsync    bool
+	convSync        bool
+	convNoerror     bool
+	convNotrunc     bool
+	convFsync       bool
 	iflagCountBytes bool
 }
 

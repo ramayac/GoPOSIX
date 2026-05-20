@@ -111,10 +111,10 @@ func run(args []string, out io.Writer) int {
 	linesCount := 10
 	bytesCount := 0
 	fromStart := false
-	
+
 	nStr := flags.Get("n")
 	cStr := flags.Get("c")
-	
+
 	if len(flags.Positional) > 0 && strings.HasPrefix(flags.Positional[0], "+") {
 		nStr = flags.Positional[0]
 		flags.Positional = flags.Positional[1:]

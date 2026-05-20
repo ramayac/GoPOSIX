@@ -13,8 +13,13 @@ import (
 	"github.com/ramayac/goposix/pkg/common"
 )
 
-type NlLine struct{ Number int `json:"number,omitempty"`; Text string `json:"text"` }
-type NlResult struct{ Lines []NlLine `json:"lines"` }
+type NlLine struct {
+	Number int    `json:"number,omitempty"`
+	Text   string `json:"text"`
+}
+type NlResult struct {
+	Lines []NlLine `json:"lines"`
+}
 
 var nlSpec = common.FlagSpec{
 	Defs: []common.FlagDef{

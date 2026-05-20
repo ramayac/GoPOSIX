@@ -114,10 +114,10 @@ func run(args []string, out io.Writer) int {
 			batches = append(batches, replacedArgs)
 			continue
 		}
-		
+
 		sizeLimitHit := maxSize > 0 && currentSize+len(word)+1 > maxSize && len(currentBatch) > 0
 		argsLimitHit := maxArgs > 0 && len(currentBatch) >= maxArgs
-		
+
 		if sizeLimitHit || argsLimitHit {
 			batches = append(batches, currentBatch)
 			currentBatch = nil

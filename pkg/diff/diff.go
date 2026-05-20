@@ -199,10 +199,10 @@ Outer:
 		prevX := trace[d-1][maxD+prevK]
 		var startX int
 		var isDel bool
-		if prevK == k - 1 { 
+		if prevK == k-1 {
 			startX = prevX + 1
 			isDel = true
-		} else { 
+		} else {
 			startX = prevX
 			isDel = false
 		}
@@ -212,7 +212,7 @@ Outer:
 			y--
 			script = append(script, diffItem{op: opEq, text: a[x]})
 		}
-		
+
 		if isDel {
 			x--
 			script = append(script, diffItem{op: opDel, text: a[x]})
@@ -220,7 +220,7 @@ Outer:
 			y--
 			script = append(script, diffItem{op: opIns, text: b[y]})
 		}
-		
+
 		d--
 	}
 
@@ -241,7 +241,7 @@ Outer:
 // BuildHunks builds unified diff hunks from a diff script with a given number of context lines.
 func BuildHunks(script []diffItem, context int, newline1, newline2 bool) []Hunk {
 	var hunks []Hunk
-	
+
 	i := 0
 	oldLine := 1
 	newLine := 1
@@ -266,7 +266,7 @@ func BuildHunks(script []diffItem, context int, newline1, newline2 bool) []Hunk 
 		if startIdx < 0 {
 			startIdx = 0
 		}
-		
+
 		// Find end of current difference block
 		endIdx := i
 		for endIdx < len(script) {
@@ -282,7 +282,7 @@ func BuildHunks(script []diffItem, context int, newline1, newline2 bool) []Hunk 
 				eqCount++
 				nextDiff++
 			}
-			
+
 			if nextDiff >= len(script) {
 				if eqCount > context {
 					endIdx = nextDiff - eqCount + context
@@ -291,7 +291,7 @@ func BuildHunks(script []diffItem, context int, newline1, newline2 bool) []Hunk 
 				}
 				break
 			}
-			
+
 			if eqCount > 2*context {
 				eqStart := nextDiff - eqCount
 				endIdx = eqStart + context
@@ -308,8 +308,8 @@ func BuildHunks(script []diffItem, context int, newline1, newline2 bool) []Hunk 
 		}
 
 		hunk := Hunk{
-			OldStart: 1, 
-			NewStart: 1, 
+			OldStart: 1,
+			NewStart: 1,
 		}
 
 		hunkOld := 1
@@ -349,7 +349,7 @@ func BuildHunks(script []diffItem, context int, newline1, newline2 bool) []Hunk 
 
 		hunks = append(hunks, hunk)
 		i = endIdx
-		
+
 		// Update oldLine and newLine to the end of the hunk
 		oldLine = hunkOld + hunk.OldLines
 		newLine = hunkNew + hunk.NewLines
@@ -375,7 +375,7 @@ func GenerateDiff(content1, content2 string, contextLines int, ignoreSpace, igno
 	if content2 == "" {
 		lines2 = nil
 	}
-	
+
 	// Normalize for -b (space-change) or -w (all-space)
 	compLines1 := lines1
 	compLines2 := lines2
@@ -391,7 +391,7 @@ func GenerateDiff(content1, content2 string, contextLines int, ignoreSpace, igno
 	// Easiest approach is to run the diff on compLines1 and compLines2,
 	// then post-process the script.
 	script := Diff(compLines1, compLines2)
-	
+
 	// Post-process to fix up the text fields to be the original lines,
 	// since we compared the normalized ones.
 	x := 0
@@ -409,11 +409,11 @@ func GenerateDiff(content1, content2 string, contextLines int, ignoreSpace, igno
 			y++
 		}
 	}
-	
+
 	if ignoreBlankLines {
 		script = filterBlankLineChanges(script)
 	}
-	
+
 	// If the file does not end in a newline, strings.Split produces a trailing empty string,
 	// but we might want to preserve exact lines. We'll leave it as is for simplicity.
 	// If the string is empty, split returns [""] which is one line, except if it's really empty.
@@ -450,7 +450,7 @@ func run(args []string, out io.Writer) int {
 
 	jsonMode := flags.Has("json")
 	files := flags.Positional
-	
+
 	contextLines := 3
 	if flags.Has("U") {
 		c, err := strconv.Atoi(flags.Get("U"))

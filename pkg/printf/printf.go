@@ -26,12 +26,12 @@ type PrintfResult struct {
 
 // runState holds mutable formatting state.
 type runState struct {
-	format string    // escape-processed format string
-	args   []string  // positional arguments
+	format string   // escape-processed format string
+	args   []string // positional arguments
 	out    *strings.Builder
-	argIdx int       // current argument index (cycles)
-	hadErr bool      // any conversion error occurred
-	pos    int       // current position in format string (0-based byte index)
+	argIdx int  // current argument index (cycles)
+	hadErr bool // any conversion error occurred
+	pos    int  // current position in format string (0-based byte index)
 }
 
 // Format interprets a POSIX printf format string with arguments.

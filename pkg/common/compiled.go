@@ -3,9 +3,9 @@ package common
 // compiledSpec is a pre-compiled lookup table for a FlagSpec.
 // Built once per spec, cached on FlagSpec.compiled.
 type compiledSpec struct {
-	shortIdx [128]int8 // byte → index into defs, or -1
-	longIdx  []longEntry
-	defs     []FlagDef
+	shortIdx    [128]int8 // byte → index into defs, or -1
+	longIdx     []longEntry
+	defs        []FlagDef
 	stopAtFirst bool
 }
 

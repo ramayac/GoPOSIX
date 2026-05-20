@@ -3,6 +3,7 @@ package grep
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -314,153 +315,219 @@ func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 	}
 
 	for _, path := range readers {
-		var r io.Reader
-		var fname string
-		if path == "-" {
-			r = stdinR
-			fname = "(standard input)"
-		} else {
-			f, err := os.Open(path)
-			if err != nil {
-				if !suppressErrors {
-					fmt.Fprintf(errOut, "grep: %s: %v\n", path, err)
+		retCode := func() int {
+			var r io.Reader
+			var fname string
+			var f *os.File
+			if path == "-" {
+				r = stdinR
+				fname = "(standard input)"
+			} else {
+				var err error
+				f, err = os.Open(path)
+				if err != nil {
+					if !suppressErrors {
+						fmt.Fprintf(errOut, "grep: %s: %v\n", path, err)
+					}
+					exitCode = 2
+					return 0 // continue loop
 				}
-				exitCode = 2
-				continue
+				defer f.Close()
+				r = f
+				fname = path
 			}
-			defer f.Close()
-			r = f
-			fname = path
-		}
 
-		// 256MB total input cap to prevent OOM on large files
-		r = io.LimitReader(r, 256*1024*1024)
+			// 256MB total input cap to prevent OOM on large files
+			r = io.LimitReader(r, 256*1024*1024)
 
-		// Context mode: scan with context instead of using Run().
-		if hasContext && !countMode && !filesWithMatches && !filesWithoutMatch && !onlyMatching {
-			ctxMatches := scanWithContext(r, re, fixedPatterns, invert, fixed, lineRegexp, beforeCtx, afterCtx)
-			if jsonMode {
-				for _, cm := range ctxMatches {
-					allMatches = append(allMatches, GrepMatch{
-						File: fname,
-						Line: cm.line,
-						Text: cm.text,
-					})
+			isBinary := false
+			if !flags.Has("a") {
+				// Read up to 8192 bytes to check for NUL bytes
+				prefixBuf := make([]byte, 8192)
+				n, readErr := io.ReadFull(r, prefixBuf)
+				if readErr != nil && readErr != io.EOF && readErr != io.ErrUnexpectedEOF {
+					if !suppressErrors {
+						fmt.Fprintf(errOut, "grep: %v\n", readErr)
+					}
+					exitCode = 2
+					return 0 // continue loop
+				}
+				prefix := prefixBuf[:n]
+				for _, b := range prefix {
+					if b == 0 {
+						isBinary = true
+						break
+					}
+				}
+				// Reconstruct reader
+				r = io.MultiReader(bytes.NewReader(prefix), r)
+			}
+
+			if isBinary {
+				matches, err := Run(r, fname, re, fixedPatterns, invert, fixed, lineRegexp)
+				if err != nil {
+					if !suppressErrors {
+						fmt.Fprintf(errOut, "grep: %v\n", err)
+					}
+					exitCode = 2
+				}
+				if len(matches) > 0 {
+					if exitCode != 2 {
+						exitCode = 0
+					}
+					if quiet {
+						return 1 // return 0 from grepRun
+					}
+					if jsonMode {
+						allMatches = append(allMatches, GrepMatch{
+							File: fname,
+							Text: fmt.Sprintf("Binary file %s matches", fname),
+						})
+					} else {
+						if filesWithMatches {
+							fmt.Fprintln(out, fname)
+						} else if !filesWithoutMatch {
+							fmt.Fprintf(out, "Binary file %s matches\n", fname)
+						}
+					}
+				} else {
+					if filesWithoutMatch && !jsonMode {
+						fmt.Fprintln(out, fname)
+					}
+				}
+				return 0 // continue loop
+			}
+
+			// Context mode: scan with context instead of using Run().
+			if hasContext && !countMode && !filesWithMatches && !filesWithoutMatch && !onlyMatching {
+				ctxMatches := scanWithContext(r, re, fixedPatterns, invert, fixed, lineRegexp, beforeCtx, afterCtx)
+				if jsonMode {
+					for _, cm := range ctxMatches {
+						allMatches = append(allMatches, GrepMatch{
+							File: fname,
+							Line: cm.line,
+							Text: cm.text,
+						})
+					}
+					if len(ctxMatches) > 0 {
+						if exitCode != 2 {
+							exitCode = 0
+						}
+						if quiet {
+							return 1 // return 0 from grepRun
+						}
+					}
+					return 0 // continue loop
 				}
 				if len(ctxMatches) > 0 {
 					if exitCode != 2 {
 						exitCode = 0
 					}
 					if quiet {
-						return 0
+						return 1 // return 0 from grepRun
 					}
 				}
-				continue
+				for _, cm := range ctxMatches {
+					prefix := ""
+					if printPrefix {
+						prefix = fname + ":"
+					}
+					if lineNum {
+						prefix += fmt.Sprintf("%d:", cm.line)
+					}
+					if cm.separator {
+						fmt.Fprintln(out, "--")
+					}
+					fmt.Fprintf(out, "%s%s%s\n", prefix, cm.matchMarker, cm.text)
+				}
+				return 0 // continue loop
 			}
-			if len(ctxMatches) > 0 {
+
+			matches, err := Run(r, fname, re, fixedPatterns, invert, fixed, lineRegexp)
+			if err != nil {
+				if !suppressErrors {
+					fmt.Fprintf(errOut, "grep: %v\n", err)
+				}
+				exitCode = 2
+			}
+
+			if jsonMode {
+				allMatches = append(allMatches, matches...)
+				if len(matches) > 0 {
+					if exitCode != 2 {
+						exitCode = 0
+					}
+					if quiet {
+						return 1 // return 0 from grepRun
+					}
+				}
+				return 0 // continue loop
+			}
+
+			if filesWithMatches {
+				if len(matches) > 0 {
+					fmt.Fprintln(out, fname)
+					if exitCode != 2 {
+						exitCode = 0
+					}
+					if quiet {
+						return 1 // return 0 from grepRun
+					}
+				}
+				return 0 // continue loop
+			}
+
+			if filesWithoutMatch {
+				if len(matches) == 0 {
+					fmt.Fprintln(out, fname)
+					if exitCode != 2 {
+						exitCode = 0
+					}
+					if quiet {
+						return 1 // return 0 from grepRun
+					}
+				}
+				return 0 // continue loop
+			}
+
+			if len(matches) > 0 {
 				if exitCode != 2 {
 					exitCode = 0
 				}
 				if quiet {
-					return 0
+					return 1 // return 0 from grepRun
 				}
 			}
-			for _, cm := range ctxMatches {
+
+			if countMode {
+				prefix := ""
+				if printPrefix {
+					prefix = fname + ":"
+				}
+				fmt.Fprintf(out, "%s%d\n", prefix, len(matches))
+				return 0 // continue loop
+			}
+
+			for _, m := range matches {
 				prefix := ""
 				if printPrefix {
 					prefix = fname + ":"
 				}
 				if lineNum {
-					prefix += fmt.Sprintf("%d:", cm.line)
+					prefix += fmt.Sprintf("%d:", m.Line)
 				}
-				if cm.separator {
-					fmt.Fprintln(out, "--")
-				}
-				fmt.Fprintf(out, "%s%s%s\n", prefix, cm.matchMarker, cm.text)
-			}
-			continue
-		}
-
-		matches, err := Run(r, fname, re, fixedPatterns, invert, fixed, lineRegexp)
-		if err != nil {
-			if !suppressErrors {
-				fmt.Fprintf(errOut, "grep: %v\n", err)
-			}
-			exitCode = 2
-		}
-
-		if jsonMode {
-			allMatches = append(allMatches, matches...)
-			if len(matches) > 0 {
-				if exitCode != 2 {
-					exitCode = 0
-				}
-				if quiet {
-					return 0
+				if onlyMatching {
+					for _, sub := range m.Matches {
+						fmt.Fprintf(out, "%s%s\n", prefix, sub)
+					}
+				} else {
+					fmt.Fprintf(out, "%s%s\n", prefix, m.Text)
 				}
 			}
-			continue
-		}
-
-		if filesWithMatches {
-			if len(matches) > 0 {
-				fmt.Fprintln(out, fname)
-				if exitCode != 2 {
-					exitCode = 0
-				}
-				if quiet {
-					return 0
-				}
-			}
-			continue
-		}
-
-		if filesWithoutMatch {
-			if len(matches) == 0 {
-				fmt.Fprintln(out, fname)
-				if exitCode != 2 {
-					exitCode = 0
-				}
-				if quiet {
-					return 0
-				}
-			}
-			continue
-		}
-
-		if len(matches) > 0 {
-			if exitCode != 2 {
-				exitCode = 0
-			}
-			if quiet {
-				return 0
-			}
-		}
-
-		if countMode {
-			prefix := ""
-			if printPrefix {
-				prefix = fname + ":"
-			}
-			fmt.Fprintf(out, "%s%d\n", prefix, len(matches))
-			continue
-		}
-
-		for _, m := range matches {
-			prefix := ""
-			if printPrefix {
-				prefix = fname + ":"
-			}
-			if lineNum {
-				prefix += fmt.Sprintf("%d:", m.Line)
-			}
-			if onlyMatching {
-				for _, sub := range m.Matches {
-					fmt.Fprintf(out, "%s%s\n", prefix, sub)
-				}
-			} else {
-				fmt.Fprintf(out, "%s%s\n", prefix, m.Text)
-			}
+			return 0
+		}()
+		if retCode == 1 {
+			return 0
 		}
 	}
 

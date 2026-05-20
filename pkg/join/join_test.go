@@ -137,8 +137,12 @@ func TestJoinCLI_Basic(t *testing.T) {
 	os.WriteFile(f2, []byte("a x\nb y\n"), 0644)
 	var out bytes.Buffer
 	code := run([]string{f1, f2}, &out)
-	if code != 0 { t.Errorf("exit %d, want 0", code) }
-	if out.String() != "a 1 x\nb 2 y\n" { t.Errorf("got %q", out.String()) }
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if out.String() != "a 1 x\nb 2 y\n" {
+		t.Errorf("got %q", out.String())
+	}
 }
 
 func TestJoinCLI_UnpairedLines(t *testing.T) {
@@ -149,6 +153,10 @@ func TestJoinCLI_UnpairedLines(t *testing.T) {
 	os.WriteFile(f2, []byte("a x\nb y\n"), 0644)
 	var out bytes.Buffer
 	code := run([]string{"-a1", "-a2", f1, f2}, &out)
-	if code != 0 { t.Errorf("exit %d, want 0", code) }
-	if out.Len() == 0 { t.Error("expected output") }
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if out.Len() == 0 {
+		t.Error("expected output")
+	}
 }

@@ -85,7 +85,7 @@ func execute(args []string, out io.Writer, forceDecompress bool, cmdName string)
 	force := flags.Has("f")
 	decompress := forceDecompress || flags.Has("d")
 	level := getCompressionLevel(flags)
-	
+
 	files := flags.Positional
 
 	if len(files) == 0 {
