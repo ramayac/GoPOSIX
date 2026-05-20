@@ -4,6 +4,34 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-20] ingest | Hardening IV Part 1 — injectable streams, compliance gap resolution (branch: `feat/hardening4-part1`)
+
+Three commits merged into `feat/hardening4-part1` for PR #21:
+
+**Commit `4bf739d` — Code readability & maintainability:** 57 files (+1237/-431).
+Formatting/spacing cleanup. Resolved sed regex and state management issues.
+Implemented 13+ missing `date` POSIX format specifiers (`%j`, `%p`, `%r`, `%u`, `%V`,
+`%W`, `%U`, `%n`, `%t`, `%D`, `%F`, `%R`, `%w`, `%k`, `%l`). Added grep binary file
+detection (NUL scan + `-a`/`--text` override). Enhanced JSON output in `sleep`,
+`strings`, `sum`. Hardened CLI test error handling across packages.
+
+**Commit `3f5130f` — Custom error output & input streams:** 17 files (+263/-149).
+Extracted injectable `*_Run()` entry points for 11 utilities (`gzip`, `head`, `ls`,
+`sed`, `sort`, `tar`, `tee`, `tr`, `uniq`, `xargs`, `cut`, `find`) — accepting
+`errW io.Writer` + `stdin io.Reader` (partially addresses H4). Added `PreProcess`
+hook to `common.FlagSpec` for `tar`/`find` argument preprocessing (resolves M8).
+Implemented `ls -d` / `--directory` flag (resolves M2).
+
+**Commit `5eeefae` — Compliance gap status update:** Wiki only (+7/-7).
+Marked H7, M2, M8 as RESOLVED. Header updated from "9 remaining, 18 resolved"
+to "6 remaining, 21 resolved."
+
+**Wiki maintenance:** Fixed stale summary table and recommended fix order in
+`wiki/24_hardening_iv.md` (table showed 18/9, now shows 21/6). Updated
+`wiki/phases.md` to add Hardening IV Part 1 to active work. Fixed log entry.
+
+Updated: `wiki/24_hardening_iv.md`, `wiki/phases.md`, `wiki/log.md`.
+
 ## [2026-05-19] implement | Observability exports — Options A, B, C, D (branch: `feat/observability`)
 
 Implemented four observability options on a shared feature branch:

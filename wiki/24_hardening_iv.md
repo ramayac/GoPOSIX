@@ -253,23 +253,34 @@ The following items from the original Hardening IV document were found to be **i
 
 | Priority | Total | Resolved | Remaining | Key Themes |
 |----------|:-----:|:--------:|:---------:|------------|
-| 🔴 HIGH   |   7   |    0     |     7     | Security bypass, data races, thread-safety, architectural invariant violations |
-| 🟡 MEDIUM |  12   |   10     |     2     | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers |
+| 🔴 HIGH   |   7   |    1     |     6     | Security bypass, data races, thread-safety, architectural invariant violations |
+| 🟡 MEDIUM |  12   |   12     |     0     | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers (ALL RESOLVED) |
 | 🟢 LOW    |   8   |    8     |     0     | Code smells, goroutine leaks, cosmetic issues (ALL RESOLVED) |
-| **Total** | **27**|   18     |     9     | |
+| **Total** | **27**|   21     |     6     | |
 
-### Recommended Fix Order
+### Remaining Fix Order (6 items)
 
-1. **H1 + H2 + M4**: Fix `setCwd` validation and `SecurePath` symlink resolution, update `security.md`. These are security issues.
+1. **H1 + H2**: Fix `setCwd` validation and `SecurePath` symlink resolution, update `security.md`. These are security issues.
 2. **H6**: Fix `os.Chdir` thread-safety in shell sandbox (data race on global state).
 3. **H3**: Fix session data race (concurrent map panic risk).
 4. **H5**: Add `--no-preserve-root` to `rm` flag spec (safe but broken UX).
-5. **H4 + H7**: Introduce injectable stdin/stderr across all utilities (large refactor, can be phased by tier).
-6. **M1**: Fix `LimitReader` per-connection bug.
-7. **M2 + M2a**: Fix `ls -d` and `grep` file handle leak.
-8. **M3 + M4**: Recalibrate rate limiter and audit `security.md`.
-9. **M9 + M10**: Add missing `date` specifiers and `grep` binary detection.
-10. **M11**: Add `testsuite` to `ci` target.
-11. **M5 + M6**: Improve test coverage.
-12. **M7 + M8**: Add graceful drain and evaluate flag parser extensibility.
-13. **L1–L8**: Clean up in a single pass. **[RESOLVED]**
+5. **H4**: Continue injectable stderr refactor across remaining utilities (11 of ~79 done).
+
+### Resolved (21 items)
+
+| Item | Resolution |
+|------|-----------|
+| H7 | Injectable `xxxRun()` entry points for all 11 target utilities |
+| M1 | `PerRequestLimitReader` per-request reset |
+| M2 | `ls -d` / `--directory` flag implemented |
+| M2a | `grep` file handle leak bounded with anonymous function scope |
+| M3 | Rate limiter recalibrated to 100 req/s |
+| M4 | `security.md` inaccuracies audited and corrected |
+| M5 | Test coverage improved (`pkg/common` → 90.0%) |
+| M6 | Daemon integration tests added (path traversal, limits, shutdown, observability) |
+| M7 | Graceful drain on shutdown with configurable timeout |
+| M8 | `PreProcess` hook added to `FlagSpec` for `tar`/`find` |
+| M9 | 13+ missing `date` POSIX format specifiers implemented |
+| M10 | `grep` binary file detection (NUL scan + `-a` override) |
+| M11 | `testsuite` added to `ci` target in Makefile |
+| L1–L8 | All low-priority code smells resolved in a single pass |
