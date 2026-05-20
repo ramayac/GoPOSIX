@@ -1,6 +1,6 @@
 # Hardening IV: Architecture, Security & Compliance Gaps
 
-> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (6 remaining, 21 resolved)
+> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (5 remaining, 22 resolved)
 >
 > All items below have been verified against the actual codebase. Items from the
 > original draft that were inaccurate have been corrected or removed (see §Corrections).
@@ -26,13 +26,12 @@
 - **Impact:** Complete path traversal bypass for any client with socket access.
 - **Action:** Validate the `path` parameter through `SecurePath` (or at minimum verify it exists and is a directory) before storing it in the session.
 
-### H2. `SecurePath` Does Not Resolve Symlinks
+### H2. `SecurePath` Does Not Resolve Symlinks [RESOLVED]
 
-- **File:** [security.go](file:///home/ramayac/git/GoPOSIX/pkg/common/security.go#L24-L28)
-- **Issue:** `SecurePath` uses `filepath.Clean` (lexical) instead of `filepath.EvalSymlinks`. If `/app/data/link` is a symlink to `/etc`, then `SecurePath("/app/data/link/passwd", "/app/data")` passes validation, but the actual file accessed is `/etc/passwd`.
+- **File:** [security.go](file:///home/ramayac/git/GoPOSIX/pkg/common/security.go)
+- **Issue:** `SecurePath` used `filepath.Clean` (lexical) instead of `filepath.EvalSymlinks`. If `/app/data/link` is a symlink to `/etc`, then `SecurePath("/app/data/link/passwd", "/app/data")` passed validation, but the actual file accessed was `/etc/passwd`.
 - **Impact:** Symlink-based path traversal in any environment where the daemon user can access symlinks pointing outside the base directory.
-- **Cross-ref:** [security.md](file:///home/ramayac/git/GoPOSIX/wiki/security.md) claims *"Symlinks are resolved; the resolved target must also be within the allowed path"* — this is **inaccurate**.
-- **Action:** Use `filepath.EvalSymlinks` on the resolved path before the prefix check. Update `security.md` to reflect reality until fixed.
+- **Status:** **RESOLVED** — Added `resolveSymlinks()` helper that calls `filepath.EvalSymlinks` on the target path. For paths that do not exist yet (e.g., new file creation), it walks up to the deepest existing parent, resolves its symlinks, and appends the non-existent tail — catching escape symlinks in parent directories. Base directory is also resolved before the prefix comparison. Updated `security.md` to reflect resolution. Backed by symlink-aware unit tests.
 
 ### H3. Session Data Race on Concurrent Access
 
@@ -253,14 +252,14 @@ The following items from the original Hardening IV document were found to be **i
 
 | Priority | Total | Resolved | Remaining | Key Themes |
 |----------|:-----:|:--------:|:---------:|------------|
-| 🔴 HIGH   |   7   |    1     |     6     | Security bypass, data races, thread-safety, architectural invariant violations |
+| 🔴 HIGH   |   7   |    2     |     5     | Security bypass, data races, thread-safety, architectural invariant violations |
 | 🟡 MEDIUM |  12   |   12     |     0     | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers (ALL RESOLVED) |
 | 🟢 LOW    |   8   |    8     |     0     | Code smells, goroutine leaks, cosmetic issues (ALL RESOLVED) |
-| **Total** | **27**|   21     |     6     | |
+| **Total** | **27**|   22     |     5     | |
 
-### Remaining Fix Order (6 items)
+### Remaining Fix Order (5 items)
 
-1. **H1 + H2**: Fix `setCwd` validation and `SecurePath` symlink resolution, update `security.md`. These are security issues.
+1. **H1**: Fix `setCwd` validation — validate path through `SecurePath` before storing in session.
 2. **H6**: Fix `os.Chdir` thread-safety in shell sandbox (data race on global state).
 3. **H3**: Fix session data race (concurrent map panic risk).
 4. **H5**: Add `--no-preserve-root` to `rm` flag spec (safe but broken UX).
@@ -270,6 +269,7 @@ The following items from the original Hardening IV document were found to be **i
 
 | Item | Resolution |
 |------|-----------|
+| H2 | `resolveSymlinks()` helper with `EvalSymlinks`, parent walk-up for non-existent paths |
 | H7 | Injectable `xxxRun()` entry points for all 11 target utilities |
 | M1 | `PerRequestLimitReader` per-request reset |
 | M2 | `ls -d` / `--directory` flag implemented |

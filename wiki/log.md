@@ -4,6 +4,25 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-20] fix | H2 — SecurePath symlink resolution (branch: `feat/hardeing-iv-partii`)
+
+Resolved H2 (SecurePath does not resolve symlinks):
+- Added `resolveSymlinks()` helper in `pkg/common/security.go` that calls
+  `filepath.EvalSymlinks` on the target path. For paths that do not exist yet
+  (new file creation), walks up to the deepest existing parent, resolves its
+  symlinks, and appends the non-existent tail — catching escape symlinks in
+  intermediate directories.
+- `SecurePath` now resolves symlinks on the base directory before the prefix
+  comparison, and on the target path for the traversal check.
+- Added `TestSecurePathSymlinks` with 10 test cases covering: normal paths,
+  symlinks inside base, symlinks outside base, non-existent files through escape
+  symlinks, deep non-existent paths, and resolved-path verification.
+- Updated `wiki/security.md`: symlinks limitation → symlinks resolved.
+- Updated `wiki/24_hardening_iv.md`: H2 → RESOLVED. Score: 5 remaining / 22 resolved.
+
+Updated: `pkg/common/security.go`, `pkg/common/security_test.go`,
+`wiki/security.md`, `wiki/24_hardening_iv.md`, `wiki/log.md`.
+
 ## [2026-05-20] ingest | Hardening IV Part 1 — injectable streams, compliance gap resolution (branch: `feat/hardening4-part1`)
 
 Three commits merged into `feat/hardening4-part1` for PR #21:

@@ -17,7 +17,7 @@ auth layer.
 
 Scripts can access the filesystem subject to path confinement via `SecurePath`:
 
-- **Symlinks limitation:** `SecurePath` currently uses lexical path cleaning (`filepath.Clean`) and does *not* resolve symlinks at the application level (i.e. it does not call `filepath.EvalSymlinks`). If a symlink in the base directory points to a location outside the base directory, access to the external path may be possible.
+- **Symlinks resolved:** `SecurePath` resolves symlinks via `filepath.EvalSymlinks` on both the base directory and the target path. Symlinks pointing outside the base directory are blocked. For paths that do not exist yet (e.g., new file creation), the deepest existing parent is resolved and checked.
 
 > [!WARNING]
 > **CWD Path Confinement Limitation:** The `session.setCwd` RPC method does not currently validate that the target directory is restricted to a safe subtree before setting it as the session's working directory. Subsequent commands in that session will then use that new directory as their base path for confinement.
