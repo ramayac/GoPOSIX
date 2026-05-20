@@ -108,3 +108,98 @@ func TestSyntaxError(t *testing.T) {
 		t.Errorf("expected exit 127 for syntax error, got %d", result.ExitCode)
 	}
 }
+
+// TestCdAndPwd verifies that cd within a shell script changes the working
+// directory for subsequent commands in the same script, and that the
+// change is synced back to the host process via os.Chdir.
+func TestCdAndPwd(t *testing.T) {
+	origCwd, _ := os.Getwd()
+	defer os.Chdir(origCwd)
+
+	result := Exec("cd /tmp && pwd", "", nil)
+	if result.ExitCode != 0 {
+		t.Fatalf("expected exit 0, got %d: %s", result.ExitCode, result.Stderr)
+	}
+	got := strings.TrimSpace(result.Stdout)
+	if got != "/tmp" {
+		t.Errorf("expected '/tmp', got %q", got)
+	}
+
+	// Verify the host process CWD was synced to /tmp.
+	hostCwd, _ := os.Getwd()
+	if hostCwd != "/tmp" {
+		t.Errorf("host process CWD not synced: expected '/tmp', got %q", hostCwd)
+	}
+}
+
+// TestCdPersistsAcrossExecCalls verifies that a cd in one Exec call
+// persists to subsequent Exec calls when no explicit cwd is passed
+// (the host process CWD carries forward).
+func TestCdPersistsAcrossExecCalls(t *testing.T) {
+	origCwd, _ := os.Getwd()
+	defer os.Chdir(origCwd)
+
+	tmpDir := t.TempDir()
+
+	// First call: cd into tmpDir.
+	result1 := Exec("cd "+tmpDir, "", nil)
+	if result1.ExitCode != 0 {
+		t.Fatalf("cd failed: %s", result1.Stderr)
+	}
+
+	// Second call: pwd should reflect the tmpDir.
+	result2 := Exec("pwd", "", nil)
+	if result2.ExitCode != 0 {
+		t.Fatalf("pwd failed: %s", result2.Stderr)
+	}
+	got := strings.TrimSpace(result2.Stdout)
+	if got != tmpDir {
+		t.Errorf("expected %q, got %q", tmpDir, got)
+	}
+}
+
+// TestCdWithExplicitCwd verifies that cd changes are relative to the
+// explicitly passed cwd, and that the result syncs back correctly.
+func TestCdWithExplicitCwd(t *testing.T) {
+	origCwd, _ := os.Getwd()
+	defer os.Chdir(origCwd)
+
+	tmpDir := t.TempDir()
+	subDir := tmpDir + "/sub"
+	os.Mkdir(subDir, 0755)
+
+	// Pass tmpDir as explicit cwd, then cd into sub.
+	result := Exec("cd sub && pwd", tmpDir, nil)
+	if result.ExitCode != 0 {
+		t.Fatalf("expected exit 0, got %d: %s", result.ExitCode, result.Stderr)
+	}
+	got := strings.TrimSpace(result.Stdout)
+	if got != subDir {
+		t.Errorf("expected %q, got %q", subDir, got)
+	}
+
+	// Host process CWD should now be subDir.
+	hostCwd, _ := os.Getwd()
+	if hostCwd != subDir {
+		t.Errorf("host CWD not synced: expected %q, got %q", subDir, hostCwd)
+	}
+}
+
+// TestCdToNonexistentDir verifies that cd to a nonexistent directory
+// fails gracefully without crashing the interpreter and without changing
+// the host process CWD.
+func TestCdToNonexistentDir(t *testing.T) {
+	origCwd, _ := os.Getwd()
+	defer os.Chdir(origCwd)
+
+	result := Exec("cd /nonexistent/dir/12345", "", nil)
+	if result.ExitCode == 0 {
+		t.Error("expected non-zero exit for cd to nonexistent dir")
+	}
+
+	// Host CWD should NOT have changed.
+	hostCwd, _ := os.Getwd()
+	if hostCwd != origCwd {
+		t.Errorf("host CWD changed unexpectedly: %q -> %q", origCwd, hostCwd)
+	}
+}

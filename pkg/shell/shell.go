@@ -147,7 +147,9 @@ func interactive(stdin io.Reader, stdout, stderr io.Writer) int {
 		if line == "" {
 			continue
 		}
-		result := shell.Exec(line, "", nil)
+		// Pass the process CWD so cd changes persist across commands.
+		cwd, _ := os.Getwd()
+		result := shell.Exec(line, cwd, nil)
 		if result.Stdout != "" {
 			fmt.Fprint(stdout, result.Stdout)
 		}
