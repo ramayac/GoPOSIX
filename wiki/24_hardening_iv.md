@@ -225,7 +225,7 @@
 
 - **File:** [server.go L406, L496, L561](file:///home/ramayac/git/GoPOSIX/internal/daemon/server.go)
 - **Issue:** Several lines have extra indentation (`\t\t` instead of `\t`), suggesting hastily merged code blocks.
-- **Action:** Run `gofmt` on the file.
+- **Action:** Run `gofmt` on the file. And make `gofmt -s` part of the CI linting, update AGENTS.md and Makefile to enforce it.
 
 ### L8. Prometheus Metric Labels Unsanitized
 
