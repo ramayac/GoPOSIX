@@ -82,8 +82,7 @@ for i := 0; i < 10000; i++ {
 (via `docker/Dockerfile.goreleaser.daemon`) as the primary release artifact, with CLI images
 (via `docker/Dockerfile.goreleaser`) as secondary.
 
-**M5 forwarder:** `forwarder.go` exists at repo root with daemon socket detection and
-command forwarding logic. Not yet wired into `cmd/goposix/main.go` (deferred).
+**M5 forwarder:** `forwarder.go` exists at the repo root with daemon socket detection and command forwarding logic. Wiring this mechanism into the entry point is deferred (see [wiki/deferred.md](deferred.md#smart-cli-forwarding-milestone-m5) for design and current status).
 
 ### M2 — Go SDK Quickstart in README (target: immediate)
 
@@ -230,7 +229,7 @@ This gives the CLI image daemon benefits without changing its entrypoint — if 
 | Daemon image breaks existing users | Low | High | Keep `goposix:cli` tag; document migration path |
 | `FROM scratch` purists object | Medium | Low | CLI image still available; daemon is Alpine (7MB base) |
 | SDK hasn't been load-tested beyond 1,000 calls | Medium | Medium | Rate limiter raised; add load test before SCALE=25 benchmarks |
-| Binary size increases with SDK linked into multicall | Low | Low | Only for M5 (deferred); daemon image doesn't link SDK into binary |
+| Binary size increases with SDK linked into multicall | Low | Low | Only for M5 (deferred, see [wiki/deferred.md](deferred.md#smart-cli-forwarding-milestone-m5)); daemon image doesn't link SDK into binary |
 | ARM64 daemon image build breaks | Low | Medium | Multi-arch build already tested in CI |
 | Go SDK breaking changes | Low | High | SDK is already used internally; add integration test for SDK methods |
 

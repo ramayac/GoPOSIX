@@ -3,13 +3,17 @@ package daemon
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"os"
 	"sync"
 	"time"
+
+	"github.com/ramayac/goposix/pkg/common"
 )
 
 type Session struct {
 	ID         string            `json:"sessionId"`
 	CWD        string            `json:"cwd"`
+	BaseDir    string            `json:"baseDir"`
 	Env        map[string]string `json:"env"`
 	LastActive time.Time         `json:"lastActive"`
 }
@@ -19,6 +23,7 @@ func (s *Session) copy() *Session {
 	c := &Session{
 		ID:         s.ID,
 		CWD:        s.CWD,
+		BaseDir:    s.BaseDir,
 		LastActive: s.LastActive,
 	}
 	if s.Env != nil {
@@ -59,6 +64,7 @@ func (sm *SessionManager) Create() *Session {
 	s := &Session{
 		ID:         id,
 		CWD:        "/",
+		BaseDir:    "/",
 		Env:        make(map[string]string),
 		LastActive: time.Now(),
 	}
@@ -84,11 +90,32 @@ func (sm *SessionManager) SetCwd(id string, path string) bool {
 	defer sm.mu.Unlock()
 
 	s, ok := sm.sessions[id]
-	if ok {
-		s.CWD = path
-		s.LastActive = time.Now()
+	if !ok {
+		return false
 	}
-	return ok
+
+	base := "/"
+	if s.BaseDir != "" {
+		base = s.BaseDir
+	}
+
+	securePath, err := common.SecurePath(path, base)
+	if err != nil {
+		return false
+	}
+
+	fi, err := os.Stat(securePath)
+	if err != nil || !fi.IsDir() {
+		return false
+	}
+
+	s.CWD = securePath
+	s.LastActive = time.Now()
+
+	if s.BaseDir == "/" && securePath != "/" {
+		s.BaseDir = securePath
+	}
+	return true
 }
 
 func (sm *SessionManager) Destroy(id string) bool {

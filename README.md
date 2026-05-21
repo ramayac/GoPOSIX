@@ -1,6 +1,6 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX with 96.6% BusyBox test compatibility (590/611).
+A Go-native, single-binary POSIX with 96.9% BusyBox test compatibility (596/615).
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![go vet](https://img.shields.io/badge/go%20vet-passing-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
@@ -61,12 +61,23 @@ make ci           # full pipeline (test + testsuite + coverage + docker)
 
 ### Environment Variables
 
+#### Daemon & CLI Configuration
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `GOPOSIX_SOCKET` | `/var/run/goposix.sock` | Daemon UNIX socket path for CLI forwarding and client SDK connections |
+| `GOPOSIX_DEBUG` | (empty) | Set to `1` to enable verbose JSON-RPC request/response debug logging to stderr |
 | `GOPOSIX_SHELL_TIMEOUT` | `30s` | Shell execution timeout (Go duration format, e.g. `60s`, `5m`) |
 | `GOPOSIX_MAX_REQUEST_SIZE` | `1048576` (1MB) | Max JSON-RPC request size in bytes |
 | `GOPOSIX_RATE_LIMIT` | `100` | Max JSON-RPC requests/sec per connection |
 | `GOPOSIX_SHUTDOWN_TIMEOUT` | `5s` | Graceful shutdown drain timeout |
+
+#### Standard POSIX Environment Variables
+| Variable | Description |
+|----------|-------------|
+| `TZ` | Standard timezone rule parsed dynamically by `date` and `tar` to format and project timestamps |
+| `LOGNAME` | Current login username retrieved by `logname` |
+| `PWD` | Logical working directory used by `readlink` to resolve symlinks component-by-component |
+
 
 ## Daemon Stdin (new in Phase 25)
 
@@ -92,7 +103,7 @@ c.Wc(ctx, []string{"-l"}, client.WithStdin("line1\nline2\nline3\n"))
 See [Performance Quick Reference](wiki/performance.md) and [Benchmarking Plan](wiki/19_performance_benchmarking.md) for full details.
 
 ## Documentation (yes, we have docs and it's decent!)
-- [Go SDK Guide](wiki/sdk.md) — typed client for all 78 utilities
+- [Go SDK Guide](wiki/sdk.md) — typed client for all 79 utilities
 - [RPC API Reference](wiki/rpc_api.md)
 - [JSON-RPC Protocol](wiki/rpc_quickstart.md) — raw socket protocol for non-Go clients
 - [Architecture](wiki/architecture.md)

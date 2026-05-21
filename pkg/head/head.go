@@ -202,5 +202,10 @@ func runBytes(r io.Reader, w io.Writer, n int) ([]string, error) {
 }
 
 func init() {
-	dispatch.Register(dispatch.Command{Name: "head", Usage: "Output the first part of files", Run: run})
+	dispatch.Register(dispatch.Command{
+		Name:           "head",
+		Usage:          "Output the first part of files",
+		Run:            run,
+		RunWithStreams: headRun,
+	})
 }

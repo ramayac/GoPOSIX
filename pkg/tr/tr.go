@@ -250,5 +250,10 @@ func trRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) i
 }
 
 func init() {
-	dispatch.Register(dispatch.Command{Name: "tr", Usage: "Translate, squeeze, and/or delete characters", Run: run})
+	dispatch.Register(dispatch.Command{
+		Name:           "tr",
+		Usage:          "Translate, squeeze, and/or delete characters",
+		Run:            run,
+		RunWithStreams: trRun,
+	})
 }

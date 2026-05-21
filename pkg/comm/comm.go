@@ -238,8 +238,9 @@ func run(args []string, stdin io.Reader, stdout io.Writer) int {
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:  "comm",
-		Usage: "Compare two sorted files line by line",
-		Run:   run,
+		Name:           "comm",
+		Usage:          "Compare two sorted files line by line",
+		Run:            run,
+		RunWithStreams: commRun,
 	})
 }

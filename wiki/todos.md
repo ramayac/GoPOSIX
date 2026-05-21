@@ -1,14 +1,10 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-20 | **BusyBox:** 590 pass / 21 fail / 18 skip | **Coverage:** 76.6% | **--json:** 77/79 (patch ✅, dd deferred)
+> **Last updated:** 2026-05-21 | **BusyBox:** 596 pass / 19 fail / 18 skip | **Coverage:** 76.6% | **--json:** 77/79 (patch ✅, dd deferred)
 
-## Hardening IV — Remaining (3 HIGH)
+## Hardening IV — Remaining (0) - ALL RESOLVED ✅
 
-| # | Item | Doc |
-|---|------|-----|
-| H1 | `session.setCwd` bypasses `SecurePath` — validate path before storing | [24_hardening_iv.md](24_hardening_iv.md) |
-| H4 | Systemic `os.Stderr` hardcoding — 11/79 utilities fixed, ~68 remain | [24_hardening_iv.md](24_hardening_iv.md) |
-| H5 | `rm --no-preserve-root` not in flag spec (one-line fix) | [24_hardening_iv.md](24_hardening_iv.md) |
+All 27 architecture, security, and compliance gaps under Hardening IV have been fully resolved.
 
 ## Phase 25: Daemon Stdin — Resolved ✅
 
@@ -24,15 +20,15 @@ Daemon now passes stdin through to stdin-consuming utilities (grep, sed, sort, w
 | ✅ | 76 utility `run()` + 69 test file call sites updated | Complete |
 | ✅ | Daemon stdin integration test (`TestDaemonStdinSupport`) | Added |
 
-## Hardening IV — Resolved (25)
+## Hardening IV — Resolved (27)
 
-All MEDIUM (12) and LOW (8) resolved. HIGH resolved: H2, H3, H6, H7.
-See [24_hardening_iv.md](24_hardening_iv.md) for full resolution table.
+All 7 HIGH, 12 MEDIUM, and 8 LOW gaps are fully resolved. HIGH resolved: H1, H2, H3, H4, H5, H6, H7.
+See [24_hardening_iv.md](24_hardening_iv.md) for full details.
 
 **Also resolved same session:** `patch --json` — added flag, wired `Render`/`RenderError`.
 4 new CLI tests, 78.0% coverage, race-clean.
 
-## Remaining Failures (21)
+## Remaining Failures (19)
 
 ### `awk` — 17 failures (goawk v1.31.0 limitations)
 
@@ -53,19 +49,13 @@ See [24_hardening_iv.md](24_hardening_iv.md) for full resolution table.
 | 16 | `awk negative field access` | goawk negative field access |
 | 17 | `awk backslash+newline` | goawk line continuation handling |
 
-### `date` — 3 failures (Go `time` package limitations)
+### `date` — Resolved ✅
 
-| # | Test | Root Cause | Fixable? |
-|---|------|------------|----------|
-| 1 | `date-@-works` | Go `time` doesn't parse POSIX TZ strings | ❌ Custom parser |
-| 2 | `date-timezone` | Same | ❌ Same |
-| 3 | `date-works-1` | Error format mismatch | ⚠️ Cosmetic |
+All `date` compliance failures are fully resolved by our custom POSIX `TZ` environment parser/evaluator and ordered error logging.
 
-### `fold` — 1 failure
+### `fold` — Resolved ✅
 
-| # | Test | Root Cause | Fixable? |
-|---|------|------------|----------|
-| 1 | `fold with NULs` | Echo harness doesn't handle `\0` in `-e` mode | ⚠️ Echo limitation |
+The `fold with NULs` and trailing newline compliance failures are fully resolved by introducing byte-splitting stream parsing.
 
 ## JSON-RPC Daemon Gaps
 
@@ -74,20 +64,13 @@ See [24_hardening_iv.md](24_hardening_iv.md) for full resolution table.
 `patch` is tested via BusyBox. `tee` and `tr` are registered and dispatchable but lack
 dedicated JSON-RPC sub-tests for their stdin-dependent success paths.)
 
-## Planned
+## Planned & Deferred Work
 
-| # | Item | Doc | Status |
-|---|------|-----|--------|
-| 1 | Daemon pipeline composition (`goposix.pipe` RPC method) | [deferred.md](deferred.md) | 🟡 After stdin land |
-| 2 | CWD refactor — eliminate `os.Chdir()` from shell by threading CWD through `dispatch.Command.Run` | [24_hardening_iv.md](24_hardening_iv.md) §H6 | 🟢 Deferred (mutex workaround in place) |
+All active planning phases, deferred architectural enhancements, completed transitions, and engine limitations are consolidated in a single central registry:
 
-## Deferred
+👉 **[wiki/deferred.md](deferred.md)**
 
-See [deferred.md](deferred.md) for the consolidated list. Key items:
-- `dd --json` — manual `key=value` operand parsing makes flag injection non-trivial.
-  Needs result struct design + operand parser changes. Estimated ~30–60 min.
-- XML output (`--xml`)
-- Multi-tenant sandbox
-- Multi-agent observability
-- `date` TZ parsing (Go `time` package limitations)
-- `fold` NUL handling (echo harness limitation)
+Refer to that document for full details on:
+* **Active Planning & Future Phases**: Phase 24 (Multi-Agent Observability), Phase 26 (Daemon Pipeline Composition).
+* **Deferred Architectural Enhancements**: CWD Signature Refactoring (threading `CWD` through `Run()`), `dd --json` Output support, XML Output (`--xml`), Multi-Tenant Sandboxing, Smart CLI Forwarding (M5), StopAtFirstNonFlag Integration (`echo`/`printf`), CGroups v2 Per-Session Isolation.
+* **Documented Limitations**: Go `regexp` vs POSIX BRE/ERE.

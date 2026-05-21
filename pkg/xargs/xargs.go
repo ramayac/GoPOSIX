@@ -206,5 +206,10 @@ func scanNulls(data []byte, atEOF bool) (advance int, token []byte, err error) {
 }
 
 func init() {
-	dispatch.Register(dispatch.Command{Name: "xargs", Usage: "Build and execute command lines from standard input", Run: run})
+	dispatch.Register(dispatch.Command{
+		Name:           "xargs",
+		Usage:          "Build and execute command lines from standard input",
+		Run:            run,
+		RunWithStreams: xargsRun,
+	})
 }

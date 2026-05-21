@@ -258,5 +258,10 @@ func cutRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) 
 }
 
 func init() {
-	dispatch.Register(dispatch.Command{Name: "cut", Usage: "Remove sections from each line of files", Run: run})
+	dispatch.Register(dispatch.Command{
+		Name:           "cut",
+		Usage:          "Remove sections from each line of files",
+		Run:            run,
+		RunWithStreams: cutRun,
+	})
 }

@@ -6,7 +6,7 @@
 package fold
 
 import (
-	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -36,29 +36,45 @@ var spec = common.FlagSpec{
 // Fold wraps text read from r to the given width.
 // Returns the folded text with newlines.
 func Fold(r io.Reader, width int, byteMode, spaceBreak bool) (string, error) {
-	var result strings.Builder
-	scanner := bufio.NewScanner(r)
-	first := true
-	for scanner.Scan() {
-		if !first {
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return "", err
+	}
+	if len(data) == 0 {
+		return "", nil
+	}
+
+	// Determine trailing newline
+	hasTrailingNL := data[len(data)-1] == '\n'
+	if hasTrailingNL {
+		data = data[:len(data)-1]
+	}
+
+	// Split by newline. Note: bytes.Split handles embedded NULs perfectly.
+	lines := bytes.Split(data, []byte{'\n'})
+
+	var result bytes.Buffer
+	for i, line := range lines {
+		if i > 0 {
 			result.WriteByte('\n')
 		}
-		first = false
-		line := scanner.Text()
-		result.Write(foldLine(line, width, byteMode, spaceBreak))
+		result.Write(foldLine(string(line), width, byteMode, spaceBreak))
 	}
-	// If last line was empty, preserve the trailing newline.
-	// Scanner.Text() returns "" for empty lines, so we detect EOF.
-	return result.String(), scanner.Err()
+
+	if hasTrailingNL {
+		result.WriteByte('\n')
+	}
+
+	return result.String(), nil
 }
 
 // foldLine wraps a single line.
 func foldLine(line string, width int, byteMode, spaceBreak bool) []byte {
 	if len(line) == 0 {
-		return []byte{'\n'}
+		return []byte{}
 	}
 	if width <= 0 {
-		return append([]byte(line), '\n')
+		return []byte(line)
 	}
 
 	// In byte mode, work with raw bytes. Otherwise, work with runes.
@@ -219,7 +235,10 @@ func foldRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 }
 
 func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return foldRun(args, stdout, os.Stderr, os.Stdin)
+	if stdin == nil {
+		stdin = os.Stdin
+	}
+	return foldRun(args, stdout, os.Stderr, stdin)
 }
 
 func init() {

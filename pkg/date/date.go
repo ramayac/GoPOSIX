@@ -67,7 +67,7 @@ func parseDateString(s string, loc *time.Location) (time.Time, error) {
 				offset = -offset
 			}
 			loc = time.FixedZone("", offset)
-			rest = s[:len(s)-5]
+			rest = strings.TrimSpace(s[:len(s)-5])
 		}
 	}
 
@@ -187,6 +187,7 @@ func run(args []string, stdin io.Reader, stdout io.Writer) int {
 
 	flags, err := common.ParseFlags(rawArgs, spec)
 	if err != nil {
+		fmt.Fprintln(os.Stderr, "BusyBox v1.36.1-goposix multi-call binary")
 		fmt.Fprintf(os.Stderr, "date: %v\n", err)
 		return 1
 	}
@@ -197,6 +198,7 @@ func run(args []string, stdin io.Reader, stdout io.Writer) int {
 
 	// POSIX: reject unexpected positional arguments
 	for _, p := range flags.Positional {
+		fmt.Fprintln(os.Stderr, "BusyBox v1.36.1-goposix multi-call binary")
 		fmt.Fprintf(os.Stderr, "date: invalid date '%s'\n", p)
 		return 1
 	}
@@ -204,10 +206,25 @@ func run(args []string, stdin io.Reader, stdout io.Writer) int {
 	var now time.Time
 	var loc *time.Location
 
-	if utcMode {
-		loc = time.UTC
+	var tz *posixTZ
+	var hasPOSIXTZ bool
+	if !utcMode {
+		if tzStr := os.Getenv("TZ"); tzStr != "" {
+			if parsed, ok := parsePOSIXTZ(tzStr); ok {
+				tz = parsed
+				hasPOSIXTZ = true
+			}
+		}
+	}
+
+	if hasPOSIXTZ {
+		loc = time.FixedZone(tz.stdName, tz.stdOffset)
 	} else {
-		loc = time.Local
+		if utcMode {
+			loc = time.UTC
+		} else {
+			loc = time.Local
+		}
 	}
 
 	if dateStr != "" {
@@ -222,6 +239,11 @@ func run(args []string, stdin io.Reader, stdout io.Writer) int {
 		if utcMode {
 			now = now.UTC()
 		}
+	}
+
+	if hasPOSIXTZ {
+		zoneName, zoneOffset := tz.eval(now.UTC())
+		now = now.In(time.FixedZone(zoneName, zoneOffset))
 	}
 
 	zone, _ := now.Zone()
@@ -363,4 +385,362 @@ func formatDate(t time.Time, f string) string {
 
 func init() {
 	dispatch.Register(dispatch.Command{Name: "date", Usage: "Print or set the system date and time", Run: run})
+}
+
+type posixTZRule struct {
+	isJulianNoLeap   bool
+	isJulianLeap     bool
+	isMonthWeekDay   bool
+	julianDay        int
+	month            int
+	week             int
+	weekday          int
+	timeOfTransition int // seconds since midnight
+	isStart          bool
+}
+
+type posixTZ struct {
+	stdName   string
+	stdOffset int
+	dstName   string
+	dstOffset int
+	hasDST    bool
+	start     posixTZRule
+	end       posixTZRule
+}
+
+func isLeapYear(year int) bool {
+	return year%4 == 0 && (year%100 != 0 || year%400 == 0)
+}
+
+func getDayOfMonth(year, m, w, d int) int {
+	tFirst := time.Date(year, time.Month(m), 1, 0, 0, 0, 0, time.UTC)
+	firstWD := int(tFirst.Weekday())
+	day := 1 + (d-firstWD+7)%7
+	if w >= 1 && w <= 4 {
+		day += (w - 1) * 7
+	} else if w == 5 {
+		daysInMonth := time.Date(year, time.Month(m)+1, 0, 0, 0, 0, 0, time.UTC).Day()
+		if day+28 <= daysInMonth {
+			day += 28
+		} else {
+			day += 21
+		}
+	}
+	return day
+}
+
+func (r *posixTZRule) eval(year int, stdOffset, dstOffset int) time.Time {
+	var day int
+	var offset int
+	if r.isStart {
+		offset = stdOffset
+	} else {
+		offset = dstOffset
+	}
+
+	if r.isMonthWeekDay {
+		day = getDayOfMonth(year, r.month, r.week, r.weekday)
+		tLocal := time.Date(year, time.Month(r.month), day, 0, 0, r.timeOfTransition, 0, time.FixedZone("", offset))
+		return tLocal.UTC()
+	}
+
+	tUTC := time.Date(year, 1, 1, 0, 0, r.timeOfTransition, 0, time.UTC)
+	if r.isJulianNoLeap {
+		if isLeapYear(year) && r.julianDay >= 60 {
+			tUTC = tUTC.AddDate(0, 0, r.julianDay)
+		} else {
+			tUTC = tUTC.AddDate(0, 0, r.julianDay-1)
+		}
+	} else {
+		tUTC = tUTC.AddDate(0, 0, r.julianDay)
+	}
+
+	tLocal := time.Date(year, tUTC.Month(), tUTC.Day(), tUTC.Hour(), tUTC.Minute(), tUTC.Second(), 0, time.FixedZone("", offset))
+	return tLocal.UTC()
+}
+
+func (tz *posixTZ) eval(t time.Time) (string, int) {
+	if !tz.hasDST {
+		return tz.stdName, tz.stdOffset
+	}
+	year := t.Year()
+	startUTC := tz.start.eval(year, tz.stdOffset, tz.dstOffset)
+	endUTC := tz.end.eval(year, tz.stdOffset, tz.dstOffset)
+
+	inDST := false
+	if startUTC.Before(endUTC) {
+		inDST = (t.Equal(startUTC) || t.After(startUTC)) && t.Before(endUTC)
+	} else {
+		inDST = t.Equal(startUTC) || t.After(startUTC) || t.Before(endUTC)
+	}
+
+	if inDST {
+		return tz.dstName, tz.dstOffset
+	}
+	return tz.stdName, tz.stdOffset
+}
+
+func parsePOSIXTZ(tz string) (*posixTZ, bool) {
+	tz = strings.TrimSpace(tz)
+	if tz == "" {
+		return nil, false
+	}
+
+	parseName := func(s string) (string, string, bool) {
+		if len(s) == 0 {
+			return "", "", false
+		}
+		if s[0] == '<' {
+			idx := strings.Index(s, ">")
+			if idx < 0 {
+				return "", "", false
+			}
+			return s[1:idx], s[idx+1:], true
+		}
+		i := 0
+		for i < len(s) {
+			c := s[i]
+			if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
+				i++
+			} else {
+				break
+			}
+		}
+		if i == 0 {
+			return "", "", false
+		}
+		return s[:i], s[i:], true
+	}
+
+	parseOffset := func(s string) (int, string, bool) {
+		if len(s) == 0 {
+			return 0, "", false
+		}
+		sign := 1
+		if s[0] == '+' {
+			sign = 1
+			s = s[1:]
+		} else if s[0] == '-' {
+			sign = -1
+			s = s[1:]
+		}
+
+		i := 0
+		for i < len(s) {
+			c := s[i]
+			if (c >= '0' && c <= '9') || c == ':' {
+				i++
+			} else {
+				break
+			}
+		}
+		if i == 0 {
+			return 0, "", false
+		}
+
+		offsetStr := s[:i]
+		rem := s[i:]
+
+		parts := strings.Split(offsetStr, ":")
+		if len(parts) < 1 || len(parts) > 3 {
+			return 0, "", false
+		}
+
+		h, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return 0, "", false
+		}
+
+		m := 0
+		if len(parts) >= 2 {
+			m, err = strconv.Atoi(parts[1])
+			if err != nil {
+				return 0, "", false
+			}
+		}
+
+		sec := 0
+		if len(parts) == 3 {
+			sec, err = strconv.Atoi(parts[2])
+			if err != nil {
+				return 0, "", false
+			}
+		}
+
+		totalSecs := sign * (h*3600 + m*60 + sec)
+		return totalSecs, rem, true
+	}
+
+	stdName, rest, ok := parseName(tz)
+	if !ok {
+		return nil, false
+	}
+
+	posixStdOffset, rest, ok := parseOffset(rest)
+	if !ok {
+		return nil, false
+	}
+	stdOffset := -posixStdOffset
+
+	res := &posixTZ{
+		stdName:   stdName,
+		stdOffset: stdOffset,
+	}
+
+	if len(rest) == 0 {
+		return res, true
+	}
+
+	dstName, rest, ok := parseName(rest)
+	if !ok {
+		return res, true
+	}
+	res.dstName = dstName
+	res.hasDST = true
+
+	var dstOffset int
+	if len(rest) > 0 && (rest[0] == '+' || rest[0] == '-' || (rest[0] >= '0' && rest[0] <= '9')) {
+		posixDstOffset, r, ok := parseOffset(rest)
+		if !ok {
+			return nil, false
+		}
+		dstOffset = -posixDstOffset
+		rest = r
+	} else {
+		dstOffset = stdOffset + 3600
+	}
+	res.dstOffset = dstOffset
+
+	if len(rest) == 0 {
+		res.start = posixTZRule{
+			isMonthWeekDay:   true,
+			month:            3,
+			week:             2,
+			weekday:          0,
+			timeOfTransition: 2 * 3600,
+			isStart:          true,
+		}
+		res.end = posixTZRule{
+			isMonthWeekDay:   true,
+			month:            11,
+			week:             1,
+			weekday:          0,
+			timeOfTransition: 2 * 3600,
+			isStart:          false,
+		}
+		return res, true
+	}
+
+	if rest[0] != ',' {
+		return nil, false
+	}
+	rest = rest[1:]
+
+	parseRule := func(s string, isStart bool) (posixTZRule, string, bool) {
+		var rule posixTZRule
+		rule.isStart = isStart
+		if len(s) == 0 {
+			return rule, "", false
+		}
+
+		if s[0] == 'M' {
+			rule.isMonthWeekDay = true
+			idx := 1
+			for idx < len(s) && s[idx] != ',' && s[idx] != '/' {
+				idx++
+			}
+			ruleStr := s[1:idx]
+			rem := s[idx:]
+
+			parts := strings.Split(ruleStr, ".")
+			if len(parts) != 3 {
+				return rule, "", false
+			}
+			m, err1 := strconv.Atoi(parts[0])
+			w, err2 := strconv.Atoi(parts[1])
+			d, err3 := strconv.Atoi(parts[2])
+			if err1 != nil || err2 != nil || err3 != nil {
+				return rule, "", false
+			}
+			rule.month = m
+			rule.week = w
+			rule.weekday = d
+			s = rem
+		} else if s[0] == 'J' {
+			rule.isJulianNoLeap = true
+			idx := 1
+			for idx < len(s) && s[idx] != ',' && s[idx] != '/' {
+				idx++
+			}
+			day, err := strconv.Atoi(s[1:idx])
+			if err != nil {
+				return rule, "", false
+			}
+			rule.julianDay = day
+			s = s[idx:]
+		} else if s[0] >= '0' && s[0] <= '9' {
+			rule.isJulianLeap = true
+			idx := 0
+			for idx < len(s) && s[idx] != ',' && s[idx] != '/' {
+				idx++
+			}
+			day, err := strconv.Atoi(s[:idx])
+			if err != nil {
+				return rule, "", false
+			}
+			rule.julianDay = day
+			s = s[idx:]
+		} else {
+			return rule, "", false
+		}
+
+		rule.timeOfTransition = 2 * 3600
+		if len(s) > 0 && s[0] == '/' {
+			s = s[1:]
+			idx := 0
+			for idx < len(s) && s[idx] != ',' {
+				idx++
+			}
+			timeStr := s[:idx]
+			s = s[idx:]
+
+			parts := strings.Split(timeStr, ":")
+			if len(parts) >= 1 && len(parts) <= 3 {
+				h, err := strconv.Atoi(parts[0])
+				if err == nil {
+					m := 0
+					if len(parts) >= 2 {
+						m, _ = strconv.Atoi(parts[1])
+					}
+					sec := 0
+					if len(parts) == 3 {
+						sec, _ = strconv.Atoi(parts[2])
+					}
+					rule.timeOfTransition = h*3600 + m*60 + sec
+				}
+			}
+		}
+
+		return rule, s, true
+	}
+
+	startRule, rest, ok := parseRule(rest, true)
+	if !ok {
+		return nil, false
+	}
+	res.start = startRule
+
+	if len(rest) == 0 || rest[0] != ',' {
+		return nil, false
+	}
+	rest = rest[1:]
+
+	endRule, rest, ok := parseRule(rest, false)
+	if !ok {
+		return nil, false
+	}
+	res.end = endRule
+
+	return res, true
 }

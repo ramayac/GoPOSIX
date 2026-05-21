@@ -121,5 +121,10 @@ func teeRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) 
 }
 
 func init() {
-	dispatch.Register(dispatch.Command{Name: "tee", Usage: "Read from standard input and write to standard output and files", Run: run})
+	dispatch.Register(dispatch.Command{
+		Name:           "tee",
+		Usage:          "Read from standard input and write to standard output and files",
+		Run:            run,
+		RunWithStreams: teeRun,
+	})
 }

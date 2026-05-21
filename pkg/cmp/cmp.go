@@ -187,5 +187,5 @@ func cmpRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 
 func run(args []string, stdin io.Reader, stdout io.Writer) int { return cmpRun(args, stdout, os.Stderr, os.Stdin) }
 func init() {
-	dispatch.Register(dispatch.Command{Name: "cmp", Usage: "Compare two files byte by byte", Run: run})
+	dispatch.Register(dispatch.Command{Name: "cmp", Usage: "Compare two files byte by byte", Run: run, RunWithStreams: cmpRun})
 }

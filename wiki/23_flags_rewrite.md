@@ -26,8 +26,7 @@ type compiledSpec struct {
 }
 ```
 
-Also added `FlagSpec.StopAtFirstNonFlag` so `echo` and `printf` can use the standard
-parser instead of manual flag loops (deferred — their custom parsers still work).
+Also added `FlagSpec.StopAtFirstNonFlag` to allow utilities like `echo` and `printf` to use the standard parser instead of manual flag loops (deferred, see [wiki/deferred.md](deferred.md#stopatfirstnonflag-integration-for-echoprintf) for details).
 
 ## Files
 

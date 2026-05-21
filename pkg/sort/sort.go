@@ -656,5 +656,10 @@ func cmpFloat(a, b float64) int {
 }
 
 func init() {
-	dispatch.Register(dispatch.Command{Name: "sort", Usage: "Sort lines of text files", Run: run})
+	dispatch.Register(dispatch.Command{
+		Name:           "sort",
+		Usage:          "Sort lines of text files",
+		Run:            run,
+		RunWithStreams: sortRun,
+	})
 }

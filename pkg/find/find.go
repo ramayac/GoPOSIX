@@ -244,5 +244,10 @@ func buildExecArgs(execCmd []string, files []FileInfo) []string {
 }
 
 func init() {
-	dispatch.Register(dispatch.Command{Name: "find", Usage: "Search for files in a directory hierarchy", Run: run})
+	dispatch.Register(dispatch.Command{
+		Name:           "find",
+		Usage:          "Search for files in a directory hierarchy",
+		Run:            run,
+		RunWithStreams: findRun,
+	})
 }

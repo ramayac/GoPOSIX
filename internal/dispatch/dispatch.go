@@ -10,10 +10,12 @@ import (
 
 // Command is a single registered utility.
 type Command struct {
-	Name  string
-	Usage string
-	Run   func(args []string, stdin io.Reader, stdout io.Writer) int // returns POSIX exit code
+	Name           string
+	Usage          string
+	Run            func(args []string, stdin io.Reader, stdout io.Writer) int // returns POSIX exit code
+	RunWithStreams func(args []string, out, errOut io.Writer, stdin io.Reader) int
 }
+
 
 var registry = map[string]Command{}
 
