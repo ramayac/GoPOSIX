@@ -1,6 +1,6 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX with 96.6% BusyBox test compatibility (590/611).
+A Go-native, single-binary POSIX with 96.9% BusyBox test compatibility (596/615).
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![go vet](https://img.shields.io/badge/go%20vet-passing-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
@@ -92,7 +92,7 @@ c.Wc(ctx, []string{"-l"}, client.WithStdin("line1\nline2\nline3\n"))
 See [Performance Quick Reference](wiki/performance.md) and [Benchmarking Plan](wiki/19_performance_benchmarking.md) for full details.
 
 ## Documentation (yes, we have docs and it's decent!)
-- [Go SDK Guide](wiki/sdk.md) — typed client for all 78 utilities
+- [Go SDK Guide](wiki/sdk.md) — typed client for all 79 utilities
 - [RPC API Reference](wiki/rpc_api.md)
 - [JSON-RPC Protocol](wiki/rpc_quickstart.md) — raw socket protocol for non-Go clients
 - [Architecture](wiki/architecture.md)
