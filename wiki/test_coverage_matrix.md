@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-19 | **BusyBox:** 548 pass / 4 fail / 10 skip | **Branch:** `main`
+> **Last updated:** 2026-05-21 | **BusyBox:** 596 pass / 19 fail / 18 skip | **Branch:** `feat/hardening-partii`
 >
 > Canonical per-utility test status for all 77 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -47,7 +47,7 @@
 | `touch` | 82.6% | 3 | ✅ 3/3 | ✅ |
 | `ln` | 81.5% | 6 | ✅ 6/6 | ✅ |
 | `stat` | 100.0% | — | — | ✅ |
-| `readlink` | 81.2% | 6 | ✅ 6/6 | ✅ |
+| `readlink` | 81.2% | 6 | ⚠️ 3/6 (3 fail) | ✅ |
 | `basename` | 85.7% | 2 | ✅ 2/2 | ✅ |
 | `dirname` | 85.7% | 7 | ✅ 7/7 | ✅ |
 
@@ -73,7 +73,7 @@
 | `ps` | 84.6% | — | — | ✅ |
 | `kill` | 73.1% | — | — | ✅ |
 | `sleep` | 78.1% | — | — | ✅ |
-| `date` | 76.4% | 7 | ⚠️ 4/7 (3 fail) | ✅ |
+| `date` | 71.0% | 7 | ✅ 7/7 | ✅ |
 | `id` | 87.1% | 4 | ✅ 4/4 | ✅ |
 | `chmod` | 68.3% | — | — | ✅ |
 | `chown` | 71.8% | — | — | ✅ |
@@ -95,7 +95,7 @@
 | `test` / `[` | 82.9% | — | — | ❌ |
 | `printf` | 65.6% | 26 | ✅ 26/26 | ✅ |
 | `expr` | 82.6% | 2 | ✅ 2/2 | ✅ |
-| `awk` | 88.1% | 53 | ✅ 3+ recommended | ✅ |
+| `awk` | 88.1% | 53 | ⚠️ 37/53 (16 fail) | ✅ |
 | `shell` | 60.8% | — | — | ✅ |
 
 ## Tier 6 — Post-MVP (Phase 15–16, 18.3)
@@ -108,7 +108,7 @@
 | `unexpand` | 81.9% | 24 | ✅ 24/24 | ✅ |
 | `comm` | 70.1% | 9 | ✅ 9/9 | ✅ |
 | `paste` | 76.9% | 5 | ✅ 5/5 | ✅ |
-| `fold` | 92.0% | 5 | ⚠️ 4/5 (1 fail) | ✅ |
+| `fold` | 91.8% | 4 | ✅ 4/4 | ✅ |
 | `sum` | 100.0% | 4 | ✅ 4/4 | ✅ |
 | `nl` | 73.5% | 4 | ✅ 4/4 | ✅ |
 | `expand` | 79.7% | 3 | ✅ 3/3 | ✅ |
@@ -153,21 +153,21 @@
 |-------|-------|--------|
 | Total packages | 78 | 77 utilities + client SDK |
 | Unit tests passing | 78/78 | 100% |
-| BusyBox tests run | 552 | 541 applicable + 11 extra (run from 548 passing + 4 failing) |
-| BusyBox passed | 548 | 99.3% (548 of 552) |
-| BusyBox failed | 4 | 3 date (Go TZ limits + cosmetic) + 1 fold (NUL handling) |
-| BusyBox skipped | 10 | External deps (bzip2, xz, uudecode) |
+| BusyBox tests run | 615 | 615 total applicable tests |
+| BusyBox passed | 596 | 96.9% (596 of 615) |
+| BusyBox failed | 19 | 16 awk (goawk limits) + 3 readlink |
+| BusyBox skipped | 18 | External deps (bzip2, xz, uudecode, tar, etc.) |
 | Daemon internal coverage | 64.6% | +28.7% from Phase 18 |
-| JSON-RPC daemon tests | 73/77 | 95% (4 gaps: daemon, tee, testcmd, truefalse; patch skipped) |
+| JSON-RPC daemon tests | 75/77 | 97.4% (2 gaps: tee, tr; patch/daemon skipped) |
 | Packages below 70% unit coverage | 8 | See [20_hardening_ii.md](20_hardening_ii.md) §20.13 for details |
 
 ## Remaining Gaps
 
 | # | Gap | Count |
 |---|-----|-------|
-| 1 | date BusyBox failures | 3 (Go TZ limits + cosmetic) |
-| 2 | fold NUL | 1 (echo harness limitation) |
-| 3 | JSON-RPC daemon tests missing | 4 utilities (daemon, tee, testcmd, truefalse); patch skipped |
+| 1 | awk BusyBox failures | 16 (goawk v1.31.0 limitations) |
+| 2 | readlink BusyBox failures | 3 (canonical path resolution limits) |
+| 3 | JSON-RPC daemon tests missing | 2 utilities (tee, tr) |
 | 4 | Unit coverage < 60% | 1 package: `client` (55.4%) |
 
 ## Notes

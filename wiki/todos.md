@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-21 | **BusyBox:** 592 pass / 20 fail / 18 skip | **Coverage:** 76.6% | **--json:** 77/79 (patch ✅, dd deferred)
+> **Last updated:** 2026-05-21 | **BusyBox:** 596 pass / 19 fail / 18 skip | **Coverage:** 76.6% | **--json:** 77/79 (patch ✅, dd deferred)
 
 ## Hardening IV — Remaining (0) - ALL RESOLVED ✅
 
@@ -28,7 +28,7 @@ See [24_hardening_iv.md](24_hardening_iv.md) for full details.
 **Also resolved same session:** `patch --json` — added flag, wired `Render`/`RenderError`.
 4 new CLI tests, 78.0% coverage, race-clean.
 
-## Remaining Failures (21)
+## Remaining Failures (19)
 
 ### `awk` — 17 failures (goawk v1.31.0 limitations)
 
@@ -49,19 +49,13 @@ See [24_hardening_iv.md](24_hardening_iv.md) for full details.
 | 16 | `awk negative field access` | goawk negative field access |
 | 17 | `awk backslash+newline` | goawk line continuation handling |
 
-### `date` — 3 failures (Go `time` package limitations)
+### `date` — Resolved ✅
 
-| # | Test | Root Cause | Fixable? |
-|---|------|------------|----------|
-| 1 | `date-@-works` | Go `time` doesn't parse POSIX TZ strings | ❌ Custom parser |
-| 2 | `date-timezone` | Same | ❌ Same |
-| 3 | `date-works-1` | Error format mismatch | ⚠️ Cosmetic |
+All `date` compliance failures are fully resolved by our custom POSIX `TZ` environment parser/evaluator and ordered error logging.
 
-### `fold` — 1 failure
+### `fold` — Resolved ✅
 
-| # | Test | Root Cause | Fixable? |
-|---|------|------------|----------|
-| 1 | `fold with NULs` | Echo harness doesn't handle `\0` in `-e` mode | ⚠️ Echo limitation |
+The `fold with NULs` and trailing newline compliance failures are fully resolved by introducing byte-splitting stream parsing.
 
 ## JSON-RPC Daemon Gaps
 

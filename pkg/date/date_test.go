@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestDateRun(t *testing.T) {
@@ -268,3 +269,46 @@ func TestPOSIXDateSpecifiers(t *testing.T) {
 		}
 	}
 }
+
+func TestPOSIXTZ_ParsingAndEvaluation(t *testing.T) {
+	// Test parsePOSIXTZ
+	tzStr := "EET-2EEST,M3.5.0/3,M10.5.0/4"
+	tz, ok := parsePOSIXTZ(tzStr)
+	if !ok {
+		t.Fatalf("failed to parse POSIX TZ spec: %q", tzStr)
+	}
+
+	if tz.stdName != "EET" || tz.stdOffset != 7200 {
+		t.Errorf("std zone mismatch: got %s offset %d", tz.stdName, tz.stdOffset)
+	}
+	if tz.dstName != "EEST" || tz.dstOffset != 10800 {
+		t.Errorf("dst zone mismatch: got %s offset %d", tz.dstName, tz.dstOffset)
+	}
+
+	// Oct 31, 2010 at 00:59:59 UTC
+	// Standard transition starts M3.5.0/3, ends M10.5.0/4.
+	// Since 00:59:59 UTC is 03:59:59 EEST (1 sec before 04:00:00 EEST transition/01:00:00 UTC),
+	// it must evaluate as DST!
+	t1 := time.Date(2010, 10, 31, 0, 59, 59, 0, time.UTC)
+	name, offset := tz.eval(t1)
+	if name != "EEST" || offset != 10800 {
+		t.Errorf("expected EEST/10800 at %v, got %s/%d", t1, name, offset)
+	}
+
+	// Oct 31, 2010 at 01:00:00 UTC
+	// At exactly transition boundary, it must evaluate to standard time EET!
+	t2 := time.Date(2010, 10, 31, 1, 0, 0, 0, time.UTC)
+	name, offset = tz.eval(t2)
+	if name != "EET" || offset != 7200 {
+		t.Errorf("expected EET/7200 at %v, got %s/%d", t2, name, offset)
+	}
+}
+
+func TestDateRun_InvalidDate_MulticallHeader(t *testing.T) {
+	// Rejects invalid positional argument
+	rc := run([]string{"-d", "012311332000.30", "%+c"}, nil, nil)
+	if rc != 1 {
+		t.Errorf("expected exit code 1, got %d", rc)
+	}
+}
+

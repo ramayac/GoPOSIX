@@ -432,3 +432,39 @@ func TestFoldRun_SpaceBreakAndByte(t *testing.T) {
 		}
 	}
 }
+
+func TestFold_TrailingNewlinePreservation(t *testing.T) {
+	// 1. Input with trailing newline
+	r1 := strings.NewReader("hello\nworld\n")
+	out1, err := Fold(r1, 80, false, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out1 != "hello\nworld\n" {
+		t.Errorf("expected trailing newline preserved, got %q", out1)
+	}
+
+	// 2. Input without trailing newline
+	r2 := strings.NewReader("hello\nworld")
+	out2, err := Fold(r2, 80, false, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out2 != "hello\nworld" {
+		t.Errorf("expected no trailing newline, got %q", out2)
+	}
+}
+
+func TestFold_EmbeddedNULPreservation(t *testing.T) {
+	input := "The NUL is here:>\x00< and another one is here:>\x00< - they must be preserved\n"
+	r := strings.NewReader(input)
+	out, err := Fold(r, 22, false, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := "The NUL is here:>\x00< \nand another one is \nhere:>\x00< - they must \nbe preserved\n"
+	if out != expected {
+		t.Errorf("NUL wrapping mismatch:\n got:  %q\n want: %q", out, expected)
+	}
+}
+
