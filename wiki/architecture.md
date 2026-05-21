@@ -61,7 +61,7 @@ Other wins: `grep` on 100MB file is 0.16s vs BusyBox 0.86s (5.4× faster, RE2 vs
                     ┌───────────┼───────────┐
                     ▼           ▼           ▼
               ┌─────────┐ ┌─────────┐ ┌─────────┐
-              │ pkg/ls  │ │ pkg/cat │ │ pkg/... │  (77 utilities)
+              │ pkg/ls  │ │ pkg/cat │ │ pkg/... │  (79 utilities)
               └────┬────┘ └────┬────┘ └────┬────┘
                    │           │           │
                    └───────────┼───────────┘
@@ -88,7 +88,7 @@ GoPOSIX/
 │   ├── client/          Go JSON-RPC client (connection pool, retry, typed helpers)
 │   ├── daemon/          Daemon bootstrap + CLI entry point
 │   ├── shell/           Shell CLI wrapper
-│   └── <utility>/       40+ POSIX utility implementations (ls, cat, grep, sed, ...)
+│   └── <utility>/       79 POSIX utility implementations (ls, cat, grep, sed, ...)
 ├── docker/              Dockerfiles
 │   ├── Dockerfile       Default: daemon (FROM scratch, ~10 MB)
 │   ├── Dockerfile.cli   CLI-only (FROM scratch, ~10 MB)
@@ -126,7 +126,7 @@ to preserve directory ownership in `FROM scratch`. The daemon socket lives at
 | `pkg/client` | Go SDK for JSON-RPC clients. Connection pooling, batch requests, exponential backoff, typed wrappers for every utility. |
 | `pkg/<util>` | One package per POSIX utility. Library layer (testable `Run()`) + CLI layer (`run()`) wired via `init()` → dispatch. |
 
-## Utilities Implemented (78)
+## Utilities Implemented (79)
 
 `awk`, `basename`, `cat`, `chgrp`, `chmod`, `chown`, `cp`, `cut`, `date`, `df`, `diff`, `dirname`,
 `du`, `echo`, `env`, `expr`, `find`, `grep`, `gzip`, `head`, `hostname`, `id`, `kill`,

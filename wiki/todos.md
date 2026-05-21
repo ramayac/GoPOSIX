@@ -72,5 +72,5 @@ All active planning phases, deferred architectural enhancements, completed trans
 
 Refer to that document for full details on:
 * **Active Planning & Future Phases**: Phase 24 (Multi-Agent Observability), Phase 26 (Daemon Pipeline Composition).
-* **Deferred Architectural Enhancements**: CWD Signature Refactoring (threading `CWD` through `Run()`), `dd --json` Output support, XML Output (`--xml`), Multi-Tenant Sandboxing.
+* **Deferred Architectural Enhancements**: CWD Signature Refactoring (threading `CWD` through `Run()`), `dd --json` Output support, XML Output (`--xml`), Multi-Tenant Sandboxing, Smart CLI Forwarding (M5), StopAtFirstNonFlag Integration (`echo`/`printf`), CGroups v2 Per-Session Isolation.
 * **Documented Limitations**: Go `regexp` vs POSIX BRE/ERE.

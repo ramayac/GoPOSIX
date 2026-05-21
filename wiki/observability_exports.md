@@ -225,23 +225,7 @@ an independent consumer of that contract — separate repo, separate release cyc
 
 ### Option F: CGroups v2 Per-Session Isolation (DEFERRED)
 
-Put each daemon session in its own Linux cgroup. The kernel then tracks memory,
-CPU, and I/O per session — visible in `systemd-cgtop` or `/sys/fs/cgroup/`.
-
-```
-$ systemd-cgtop
-Control Group                    Tasks   %CPU   Memory
-/sys/fs/cgroup/goposix.session.a1b2    1   0.2    4.3M
-/sys/fs/cgroup/goposix.session.c3d4    3   1.1   12.7M
-```
-
-| What | Value |
-|------|-------|
-| **Effort** | High — cgroup management (mkdir, echo pid, cleanup on session destroy), requires root/CAP_SYS_ADMIN or pre-delegated subtree |
-| **Portability** | Linux only, cgroups v2 required. Docker: needs `--privileged` or explicit `--cgroup-parent` + cgroupfs mounts. Scratch container: extra setup. |
-| **Value** | Elegant in theory, fragile in practice. Kernel-enforced isolation is the gold standard, but most deployments won't grant the privileges. |
-
-**Verdict:** Defer. Revisit when per-session resource quotas (Phase 23) are on the table — cgroups are the enforcement mechanism, not just an observability tool.
+Put each daemon session in its own Linux cgroup to track and enforce resource isolation (CPU, memory, tasks, and I/O) on a per-session basis. This feature is deferred (see [wiki/deferred.md](deferred.md#cgroups-v2-per-session-isolation) for full details on architectural design and blockers).
 
 ---
 
@@ -268,7 +252,7 @@ eBPF programs attached to the Go binary using USDT probes.
 | **C** | Nothing (Prometheus) | 30 min | ❌ | **All** | **High** | ✅ |
 | **D** | JSON `/status` endpoint | 50 min | ❌ | **All** | **High** | ✅ |
 | E | Self-contained TUI | 1–3 hr | bubbletea | All | High | EXTERNAL |
-| F | `systemd-cgtop` per-session | High | cgroup mgmt | Linux only | Med | DEFERRED |
+| F | `systemd-cgtop` per-session | High | cgroup mgmt | Linux only | Med | [DEFERRED](deferred.md#cgroups-v2-per-session-isolation) |
 | G | Nothing (eBPF toolchain) | Very high | eBPF | Linux only | Zero | REJECTED |
 
 ---

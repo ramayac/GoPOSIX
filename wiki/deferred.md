@@ -54,6 +54,34 @@ This document serves as the single canonical registry for all active planning ph
 
 ---
 
+### Smart CLI Forwarding (Milestone M5)
+* **Status:** DEFERRED
+* **Reference Document:** [wiki/22_hardening_iii.md](22_hardening_iii.md)
+* **Details:**
+  Adds dynamic entry point routing to the multicall binary via `forwarder.go`. When executing a command, the CLI binary checks for an active daemon socket (e.g., `/var/run/goposix.sock`). If the socket is active, the CLI bypasses Go runtime cold-start/dispatch latency by automatically and transparently forwarding the command, environment, and standard I/O streams directly to the running daemon.
+  * **Current Status:** The core detection and JSON-RPC forwarding logic is fully implemented in `forwarder.go` at the repository root. However, wiring this routing mechanism into the main entry point `cmd/goposix/main.go` remains deferred to avoid routing complications in custom environments and wait-loop synchronization issues during initial startup.
+
+---
+
+### StopAtFirstNonFlag Integration for `echo`/`printf`
+* **Status:** DEFERRED
+* **Reference Document:** [wiki/23_flags_rewrite.md](23_flags_rewrite.md)
+* **Details:**
+  Refactoring the custom `echo` and `printf` commands to utilize the standard POSIX-compliant flag parser (`common.ParseFlags`) instead of using specialized manual argument scanning loops.
+  * **Target Architecture:** Leveraging the newly added `FlagSpec.StopAtFirstNonFlag` capability of the unified zero-allocation flag scanner. This will ensure standard flag parsing conformance and eliminate bespoke argument parsing code from utility codebases. Currently deferred because the existing custom manual loops are robust and fully pass the BusyBox compliance suite.
+
+---
+
+### CGroups v2 Per-Session Isolation
+* **Status:** DEFERRED
+* **Reference Document:** [wiki/observability_exports.md](observability_exports.md)
+* **Details:**
+  Leveraging Linux cgroups v2 control group structures to isolate and restrict resource usage (CPU, memory, tasks, and I/O) on a per-session basis for daemon operations.
+  * **Target Architecture:** Move each daemon execution session into a dedicated cgroup (e.g., `/sys/fs/cgroup/goposix.session.<id>`). This allows system administrators to monitor resource usage via tools like `systemd-cgtop` or enforce strict resource quotas.
+  * **Challenges / Blockers:** Highly complex cgroup management lifecycle (directories creation, PID migration, cleanup), requires system root privileges or pre-delegated user subtrees (not viable in most container configurations), and lacks portability (Linux cgroups v2 only). Deferred until Phase 23 (Multi-Tenant Sandbox Confinement) is revisited.
+
+---
+
 ## 🏆 Completed Transitions
 
 ### Daemon Stdin Support (Phase 25)
