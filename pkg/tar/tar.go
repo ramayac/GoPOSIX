@@ -773,5 +773,10 @@ func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []str
 }
 
 func init() {
-	dispatch.Register(dispatch.Command{Name: "tar", Usage: "tar archive utility", Run: run})
+	dispatch.Register(dispatch.Command{
+		Name:           "tar",
+		Usage:          "tar archive utility",
+		Run:            run,
+		RunWithStreams: tarRun,
+	})
 }

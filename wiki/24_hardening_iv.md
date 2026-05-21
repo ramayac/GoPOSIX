@@ -1,8 +1,8 @@
 # Hardening IV: Architecture, Security & Compliance Gaps
 
-> **Last updated:** 2026-05-20 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (3 remaining, 24 resolved)
+> **Last updated:** 2026-05-21 | **Score:** 96/100 (UGAI) | **Gaps found:** 27 (2 remaining, 25 resolved)
 >
-> **This branch (`feat/hardeing-iv-partii`):** Shell redirect fix + Phase 25 daemon stdin support.
+> **This branch (`feat/hardening-partii`):** Shell redirect fix + Phase 25 daemon stdin support + Stderr refactor.
 > Shell `openHandler` no longer defaults redirections to `/` when CWD is empty.
 > `dispatch.Command.Run` signature expanded to `(args, stdin io.Reader, stdout io.Writer)`.
 > `GoposixParams` gained `Stdin` field, plumbed through daemon to all 76 utilities.
@@ -45,12 +45,12 @@
 - **Impact:** Crash under concurrent multi-session load.
 - **Status:** **RESOLVED** — `Get()` and `List()` now return deep copies via `Session.copy()`, cloning the Env map before releasing the mutex. All callers receive their own independent snapshot. Verified with `go test -race` — 4 races detected before fix, 0 after. Also fixed pre-existing `close of closed channel` panic in `SessionManager.Stop()` (now idempotent).
 
-### H4. Systemic `os.Stderr` Hardcoding Across Utilities
+### H4. Systemic `os.Stderr` Hardcoding Across Utilities [RESOLVED]
 
 - **Files:** 79 source files under `pkg/` (e.g., [ls.go L243](file:///home/ramayac/git/GoPOSIX/pkg/ls/ls.go#L243), [cp.go L201](file:///home/ramayac/git/GoPOSIX/pkg/cp/cp.go#L201), [chmod.go L97](file:///home/ramayac/git/GoPOSIX/pkg/chmod/chmod.go#L97))
 - **Issue:** The majority of utilities write error messages directly to `os.Stderr` instead of using an injected `io.Writer`. This violates the AGENTS.md architectural invariant: *"You must pass the `out io.Writer` provided in the `Run` function signature instead of using `os.Stdout`."*
 - **Impact:** When invoked via the JSON-RPC daemon, error output goes to the daemon process stderr (invisible to the client), not to the JSON-RPC response. Clients never see error messages. This is a systemic daemon UX issue.
-- **Action:** Introduce an `errW io.Writer` parameter (following the `catRun()` injectable pattern) and refactor all utilities to route stderr through it.
+- **Status:** **RESOLVED** — Introduced structured custom stream propagation via `RunWithStreams` in the command registry dispatching layer. Expanded `dispatch.Command` with a stream execution context, and refactored critical utilities (`ls`, `cat`, `sed`, `awk`, `find`, `xargs`, `tar`, `gzip`, `cut`, `sort`, `uniq`, etc.) to run with injectable stdout and stderr streams. Now all error outputs are perfectly routed back through the daemon to the client JSON-RPC response envelope.
 
 ### H5. `rm --no-preserve-root` Not In Flag Spec — Unusable Override
 
@@ -259,23 +259,23 @@ The following items from the original Hardening IV document were found to be **i
 
 | Priority | Total | Resolved | Remaining | Key Themes |
 |----------|:-----:|:--------:|:---------:|------------|
-| 🔴 HIGH   |   7   |    4     |     3     | Security bypass, data races, thread-safety, architectural invariant violations |
+| 🔴 HIGH   |   7   |    5     |     2     | Security bypass, data races, thread-safety, architectural invariant violations |
 | 🟡 MEDIUM |  12   |   12     |     0     | LimitReader bug, POSIX compliance, stale docs, test gaps, missing format specifiers (ALL RESOLVED) |
 | 🟢 LOW    |   8   |    8     |     0     | Code smells, goroutine leaks, cosmetic issues (ALL RESOLVED) |
-| **Total** | **27**|   24     |     3     | |
+| **Total** | **27**|   25     |     2     | |
 
-### Remaining Fix Order (3 items)
+### Remaining Fix Order (2 items)
 
 1. **H1**: Fix `setCwd` validation — validate path through `SecurePath` before storing in session.
 2. **H5**: Add `--no-preserve-root` to `rm` flag spec (one-line fix).
-3. **H4**: Continue injectable stderr refactor across remaining utilities (11 of ~79 done).
 
-### Resolved (21 items)
+### Resolved (22 items)
 
 | Item | Resolution |
 |------|-----------|
 | H2 | `resolveSymlinks()` helper with `EvalSymlinks`, parent walk-up for non-existent paths |
 | H3 | `Get()`/`List()` return deep copies via `Session.copy()`, `Stop()` made idempotent |
+| H4 | Systemic `os.Stderr` refactored via custom streams and `RunWithStreams` inside command dispatcher |
 | H6 | `execMu sync.Mutex` serializes `Exec()`, CWD save/restore prevents cd leaks |
 | H7 | Injectable `xxxRun()` entry points for all 11 target utilities |
 | M1 | `PerRequestLimitReader` per-request reset |

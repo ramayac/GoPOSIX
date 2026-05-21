@@ -31,7 +31,10 @@ type ExecResult struct {
 	Stdout   string `json:"stdout"`
 	Stderr   string `json:"stderr"`
 	ExitCode uint8  `json:"exitCode"`
+	CWD      string `json:"cwd"`
 }
+
+var chdirMu sync.Mutex
 
 func Exec(script string, cwd string, env map[string]string) ExecResult {
 	execMu.Lock()
@@ -73,10 +76,19 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 		hc := interp.HandlerCtx(ctx)
 		// Sync the shell's working directory to the host process so dispatch
 		// commands (ls, pwd, etc.) see the same directory as cd set.
-		if hc.Dir != "" {
-			os.Chdir(hc.Dir)
-		}
-		exitCode := cmd.Run(args[1:], hc.Stdin, hc.Stdout)
+		var exitCode int
+		func() {
+			chdirMu.Lock()
+			defer chdirMu.Unlock()
+			if hc.Dir != "" {
+				os.Chdir(hc.Dir)
+			}
+			if cmd.RunWithStreams != nil {
+				exitCode = cmd.RunWithStreams(args[1:], hc.Stdout, hc.Stderr, hc.Stdin)
+			} else {
+				exitCode = cmd.Run(args[1:], hc.Stdin, hc.Stdout)
+			}
+		}()
 		if exitCode != 0 {
 			return interp.NewExitStatus(uint8(exitCode))
 		}
@@ -141,11 +153,9 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 	}
 	err = runner.Run(ctx, prog)
 
-	// Apply any cd changes back to the host process so subsequent
-	// Exec calls (e.g., in an interactive REPL) start from the
-	// correct working directory. mvdan/sh only updates runner.Dir.
-	if runner.Dir != "" && runner.Dir != baselineCwd {
-		os.Chdir(runner.Dir)
+	finalCwd := runner.Dir
+	if finalCwd == "" {
+		finalCwd = baselineCwd
 	}
 
 	exitCode := uint8(0)
@@ -162,5 +172,6 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 		Stdout:   stdout.String(),
 		Stderr:   stderr.String(),
 		ExitCode: exitCode,
+		CWD:      finalCwd,
 	}
 }

@@ -42,14 +42,16 @@ var spec = common.FlagSpec{
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:  "gzip",
-		Usage: "gzip [FILE]...",
-		Run:   runGzip,
+		Name:           "gzip",
+		Usage:          "gzip [FILE]...",
+		Run:            runGzip,
+		RunWithStreams: gzipRun,
 	})
 	dispatch.Register(dispatch.Command{
-		Name:  "gunzip",
-		Usage: "gunzip [FILE]...",
-		Run:   runGunzip,
+		Name:           "gunzip",
+		Usage:          "gunzip [FILE]...",
+		Run:            runGunzip,
+		RunWithStreams: gunzipRun,
 	})
 }
 

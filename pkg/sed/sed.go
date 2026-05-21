@@ -118,5 +118,10 @@ func sedRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) 
 }
 
 func init() {
-	dispatch.Register(dispatch.Command{Name: "sed", Usage: "Stream editor for filtering and transforming text", Run: run})
+	dispatch.Register(dispatch.Command{
+		Name:           "sed",
+		Usage:          "Stream editor for filtering and transforming text",
+		Run:            run,
+		RunWithStreams: sedRun,
+	})
 }

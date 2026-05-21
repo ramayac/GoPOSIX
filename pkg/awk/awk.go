@@ -203,6 +203,7 @@ func init() {
 		Name: "awk",
 		Usage: "awk [-F fs] [-v var=value] [-f progfile] [--json] 'program' [file ...]\n" +
 			"Pattern-directed scanning and processing language",
-		Run: run,
+		Run:            run,
+		RunWithStreams: awkRun,
 	})
 }

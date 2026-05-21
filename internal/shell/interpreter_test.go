@@ -111,8 +111,8 @@ func TestSyntaxError(t *testing.T) {
 }
 
 // TestCdAndPwd verifies that cd within a shell script changes the working
-// directory for subsequent commands in the same script. The process CWD
-// is restored after Exec() returns (guarded by execMu).
+// directory for subsequent commands in the same script, and that the
+// change is returned as virtual CWD in result.CWD, leaving the host CWD untouched.
 func TestCdAndPwd(t *testing.T) {
 	origCwd, _ := os.Getwd()
 
@@ -125,17 +125,21 @@ func TestCdAndPwd(t *testing.T) {
 		t.Errorf("expected '/tmp', got %q", got)
 	}
 
-	// Process CWD must be restored after Exec returns (no cd leak).
+	// Verify the virtual CWD was returned correctly.
+	if result.CWD != "/tmp" {
+		t.Errorf("expected virtual CWD '/tmp', got %q", result.CWD)
+	}
+
+	// Verify the host process CWD was NOT mutated.
 	hostCwd, _ := os.Getwd()
 	if hostCwd != origCwd {
-		t.Errorf("host process CWD leaked: expected %q, got %q", origCwd, hostCwd)
+		t.Errorf("host process CWD was mutated: %q -> %q", origCwd, hostCwd)
 	}
 }
 
-// TestCdPersistsAcrossExecCalls verifies that cd in one Exec call does NOT
-// leak to a subsequent call without explicit cwd (the process CWD is restored
-// after each Exec). For cross-call CWD persistence, use the session's cwd
-// parameter or pass an explicit cwd to each call.
+// TestCdPersistsAcrossExecCalls verifies that cd in one Exec call returns
+// the updated CWD, which can then be passed to a subsequent Exec call to persist state,
+// but does NOT leak to a subsequent call without explicit cwd (no cd leak).
 func TestCdPersistsAcrossExecCalls(t *testing.T) {
 	origCwd, _ := os.Getwd()
 
@@ -146,31 +150,39 @@ func TestCdPersistsAcrossExecCalls(t *testing.T) {
 	if result1.ExitCode != 0 {
 		t.Fatalf("cd failed: %s", result1.Stderr)
 	}
+	if result1.CWD != tmpDir {
+		t.Errorf("expected virtual CWD %q, got %q", tmpDir, result1.CWD)
+	}
 
-	// Second call without explicit cwd: pwd returns original CWD (not leaked).
-	result2 := Exec("pwd", "", nil)
+	// Second call: pass the returned CWD as the start directory. pwd should reflect it.
+	result2 := Exec("pwd", result1.CWD, nil)
 	if result2.ExitCode != 0 {
 		t.Fatalf("pwd failed: %s", result2.Stderr)
 	}
-	got := strings.TrimSpace(result2.Stdout)
-	if got != origCwd {
-		t.Errorf("cd leaked across calls: expected %q, got %q", origCwd, got)
+	got2 := strings.TrimSpace(result2.Stdout)
+	if got2 != tmpDir {
+		t.Errorf("expected %q, got %q", tmpDir, got2)
 	}
 
-	// With explicit cwd, cd persists as expected.
-	result3 := Exec("cd "+tmpDir+" && pwd", tmpDir, nil)
+	// Third call without explicit cwd: pwd returns original CWD (not leaked).
+	result3 := Exec("pwd", "", nil)
 	if result3.ExitCode != 0 {
-		t.Fatalf("cd+pwd with explicit cwd failed: %s", result3.Stderr)
+		t.Fatalf("pwd failed: %s", result3.Stderr)
 	}
 	got3 := strings.TrimSpace(result3.Stdout)
-	if got3 != tmpDir {
-		t.Errorf("expected %q, got %q", tmpDir, got3)
+	if got3 != origCwd {
+		t.Errorf("cd leaked across calls: expected %q, got %q", origCwd, got3)
+	}
+
+	// Verify host CWD was NOT mutated.
+	hostCwd, _ := os.Getwd()
+	if hostCwd != origCwd {
+		t.Errorf("host process CWD was mutated: %q -> %q", origCwd, hostCwd)
 	}
 }
 
 // TestCdWithExplicitCwd verifies that cd changes are relative to the
-// explicitly passed cwd inside the script, and that the process CWD
-// is restored after Exec returns.
+// explicitly passed cwd, and that the result returns the isolated virtual CWD.
 func TestCdWithExplicitCwd(t *testing.T) {
 	origCwd, _ := os.Getwd()
 
@@ -188,23 +200,32 @@ func TestCdWithExplicitCwd(t *testing.T) {
 		t.Errorf("expected %q, got %q", subDir, got)
 	}
 
-	// Process CWD must be restored after Exec returns.
+	// Virtual CWD should be subDir.
+	if result.CWD != subDir {
+		t.Errorf("expected virtual CWD %q, got %q", subDir, result.CWD)
+	}
+
+	// Host process CWD should NOT have mutated.
 	hostCwd, _ := os.Getwd()
 	if hostCwd != origCwd {
-		t.Errorf("host CWD leaked: expected %q, got %q", origCwd, hostCwd)
+		t.Errorf("host CWD was mutated: %q -> %q", origCwd, hostCwd)
 	}
 }
 
 // TestCdToNonexistentDir verifies that cd to a nonexistent directory
 // fails gracefully without crashing the interpreter and without changing
-// the host process CWD.
+// the host process CWD or virtual CWD.
 func TestCdToNonexistentDir(t *testing.T) {
 	origCwd, _ := os.Getwd()
-	defer os.Chdir(origCwd)
 
 	result := Exec("cd /nonexistent/dir/12345", "", nil)
 	if result.ExitCode == 0 {
 		t.Error("expected non-zero exit for cd to nonexistent dir")
+	}
+
+	// Virtual CWD should remain the baseline (origCwd in this case).
+	if result.CWD != origCwd {
+		t.Errorf("expected virtual CWD %q, got %q", origCwd, result.CWD)
 	}
 
 	// Host CWD should NOT have changed.

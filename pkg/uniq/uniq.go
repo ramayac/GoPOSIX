@@ -185,5 +185,10 @@ func uniqRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader)
 }
 
 func init() {
-	dispatch.Register(dispatch.Command{Name: "uniq", Usage: "Report or omit repeated lines", Run: run})
+	dispatch.Register(dispatch.Command{
+		Name:           "uniq",
+		Usage:          "Report or omit repeated lines",
+		Run:            run,
+		RunWithStreams: uniqRun,
+	})
 }

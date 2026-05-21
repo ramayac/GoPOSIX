@@ -215,6 +215,7 @@ func init() {
 	dispatch.Register(dispatch.Command{
 		Name:  "cat",
 		Usage: "Concatenate and print files",
-		Run:   run,
+		Run:            run,
+		RunWithStreams: catRun,
 	})
 }

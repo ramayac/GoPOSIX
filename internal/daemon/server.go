@@ -560,6 +560,9 @@ func (s *Server) processRequest(req Request) *Response {
 				}
 			}
 			res := shell.Exec(p.Script, cwd, env)
+			if p.SessionId != "" && res.CWD != "" {
+				s.sm.SetCwd(p.SessionId, res.CWD)
+			}
 			return &Response{JSONRPC: "2.0", ID: req.ID, Result: res}
 		}
 		return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Invalid params"}}
@@ -639,7 +642,16 @@ func (s *Server) processRequest(req Request) *Response {
 	lw := &common.LimitWriter{W: &buf, Limit: 50 * 1024 * 1024}
 
 	// Execute the command
-	exitCode := cmd.Run(args, stdinReader, lw)
+	var exitCode int
+	if cmd.RunWithStreams != nil {
+		runStdin := stdinReader
+		if runStdin == nil {
+			runStdin = strings.NewReader("")
+		}
+		exitCode = cmd.RunWithStreams(args, lw, lw, runStdin)
+	} else {
+		exitCode = cmd.Run(args, stdinReader, lw)
+	}
 	rpcExitCode = exitCode
 
 	// rawOutput: return the raw stdout text directly (used by CLI forwarder).
