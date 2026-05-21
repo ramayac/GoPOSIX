@@ -64,20 +64,13 @@ The `fold with NULs` and trailing newline compliance failures are fully resolved
 `patch` is tested via BusyBox. `tee` and `tr` are registered and dispatchable but lack
 dedicated JSON-RPC sub-tests for their stdin-dependent success paths.)
 
-## Planned
+## Planned & Deferred Work
 
-| # | Item | Doc | Status |
-|---|------|-----|--------|
-| 1 | Daemon pipeline composition (`goposix.pipe` RPC method) | [deferred.md](deferred.md) | 🟡 After stdin land |
-| 2 | CWD refactor — eliminate `os.Chdir()` from shell by threading CWD through `dispatch.Command.Run` | [24_hardening_iv.md](24_hardening_iv.md) §H6 | 🟢 Deferred (mutex workaround in place) |
+All active planning phases, deferred architectural enhancements, completed transitions, and engine limitations are consolidated in a single central registry:
 
-## Deferred
+👉 **[wiki/deferred.md](deferred.md)**
 
-See [deferred.md](deferred.md) for the consolidated list. Key items:
-- `dd --json` — manual `key=value` operand parsing makes flag injection non-trivial.
-  Needs result struct design + operand parser changes. Estimated ~30–60 min.
-- XML output (`--xml`)
-- Multi-tenant sandbox
-- Multi-agent observability
-- `date` TZ parsing (Go `time` package limitations)
-- `fold` NUL handling (echo harness limitation)
+Refer to that document for full details on:
+* **Active Planning & Future Phases**: Phase 24 (Multi-Agent Observability), Phase 26 (Daemon Pipeline Composition).
+* **Deferred Architectural Enhancements**: CWD Signature Refactoring (threading `CWD` through `Run()`), `dd --json` Output support, XML Output (`--xml`), Multi-Tenant Sandboxing.
+* **Documented Limitations**: Go `regexp` vs POSIX BRE/ERE.

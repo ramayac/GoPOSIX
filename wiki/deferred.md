@@ -1,84 +1,72 @@
-# Deferred Items
+# Deferred & Future Work
 
-> **Date:** 2026-05-19 | **Summary of all deferred/planned future work for GoPOSIX**
-
----
-
-## XML Output (`--xml`)
-
-Structured XML envelope mirroring the existing `--json` format. The JSON envelope
-already covers all machine-readable use cases. XML would require ~2,000 LOC across
-77 utilities + an XML test suite. No consumer has requested it.
-
-**Status:** DEFERRED (design complete, not implemented)
+This document serves as the single canonical registry for all active planning phases, deferred architectural enhancements, completed transitions, and documented engine limitations for GoPOSIX.
 
 ---
 
-## Multi-Tenant Sandbox (Phase 23)
+## 📅 Active Planning & Future Phases
 
-Per-session filesystem isolation, command allowlists, resource quotas, and subprocess
-sandboxing. Deferred because the primary use case is single-tenant, multi-agent
-collaboration on a shared filesystem. Workspace isolation would break the shared-repo
-model. Will revisit when an untrusted-user use case emerges.
-
-**Status:** DEFERRED
-
----
-
-## Multi-Agent Observability (Phase 24)
-
-**Doc:** [24_multi_agent_observability.md](24_multi_agent_observability.md) — concrete design, ~376 lines
-
-Agent-aware sessions, per-agent audit trail, file-level read/write tracking, and
-per-agent metrics. Single-tenant but multi-agent — all agents share the same filesystem
-but need attribution for debugging. This is the most likely next active phase.
-
-**Status:** PLANNING
+### Multi-Agent Observability (Phase 24)
+* **Status:** PLANNING
+* **Reference Document:** [wiki/24_multi_agent_observability.md](24_multi_agent_observability.md)
+* **Details:**
+  Adds agent-aware sessions, per-agent audit trails, fine-grained file-level read/write tracking, and performance metrics. Designed for multi-agent collaboration environments sharing a common sandbox workspace directory, allowing developers/agents to audit who performed what filesystem mutations.
 
 ---
 
-## Daemon Stdin Support (Phase 25 — ACTIVE)
-
-**Doc:** [25_daemon_stdin.md](25_daemon_stdin.md)
-
-Add a `stdin` field to the JSON-RPC `GoposixParams` struct so the Go SDK can pass
-input to stdin-consuming utilities (grep, sed, sort, wc, tr, head, tail, cut, tee,
-uniq, fold, expand, nl, paste, join, comm, diff, patch, cksum, md5sum, sha256sum,
-sum, od, strings, and others — 40+ utilities total).
-
-The utilities already accept injectable `io.Reader` for stdin via their `*Run()`
-variants (e.g., `catRun(args, out, errOut, stdin)`). The gap is purely in the
-dispatch interface (`Command.Run` has no stdin parameter) and the daemon protocol
-(`GoposixParams` has no `stdin` field).
-
-**Performance note:** Not a performance play. JSON-RPC round-trip overhead cancels
-any savings from avoiding temp files for small inputs. The benefit is capability:
-40+ utilities are unreachable via the Go SDK today because they require stdin.
-
-**Status:** PLANNING (implementation in `feat/daemon-stdin`)
+### Daemon Pipeline Composition (Phase 26)
+* **Status:** PLANNING (Deferred to `feat/daemon-pipeline` after Phase 25/Hardening stability)
+* **Details:**
+  Introduces a new `goposix.pipe` RPC method. It accepts an array of command specifications (commands with flags) and chains them together server-side using standard Go `io.Pipe()`. This allows single-RPC invocation of pipeline operations (e.g., `tar cf - . | gzip > out.tar.gz`) where intermediate payloads are too large or heavy to serialize back and forth through JSON-RPC connection round-trips.
 
 ---
 
-## Daemon Pipeline Composition (Phase 26 — PLANNED)
+## ⏸️ Deferred Architectural Enhancements
 
-New `goposix.pipe` RPC method that accepts a pipeline specification (array of
-commands with flags) and wires them together server-side via `io.Pipe()`. Enables
-single-RPC execution of chains like `tar cf - . | gzip > /tmp/out.tar.gz` where
-intermediate data is too large to serialize through JSON-RPC.
-
-**Performance note:** In-process chaining in the Go SDK (e.g., `c.Ls()` → filter
-in Go → `len(results)`) is faster than server-side pipes for most cases. This
-feature exists for (a) pipelines with prohibitively large intermediate data and
-(b) drop-in compatibility when porting shell scripts to the SDK.
-
-**Status:** PLANNING (deferred to `feat/daemon-pipeline` after stdin land)
+### CWD Signature Refactoring (Global State Elimination)
+* **Status:** DEFERRED (Workaround active)
+* **Reference Issue:** [wiki/24_hardening_iv.md](24_hardening_iv.md) §H6
+* **Details:**
+  The shell sandbox currently uses `os.Chdir(hc.Dir)` to mutate the process working directory before execution. Since CWD is a global process state, concurrent execution could lead to directory clobbering.
+  * **Current Workaround:** Thread-safety is achieved using a global `execMu sync.Mutex` in `internal/shell/interpreter.go` that serializes all executions and performs CWD save/restore.
+  * **Target Architecture:** Eliminate `os.Chdir()` and the mutex bottleneck entirely by expanding the `dispatch.Command.Run` signature to accept a CWD parameter (e.g. `(args, stdin io.Reader, stdout io.Writer, stderr io.Writer, cwd string)`). This requires updating all 79 utility implementations to perform path resolutions relative to the passed `cwd` rather than using OS-level relative lookups.
 
 ---
 
-## Known Limitations (Won't Fix)
+### `dd` Structured Output (`--json`)
+* **Status:** DEFERRED
+* **Details:**
+  POSIX standard `dd` relies on non-standard `key=value` operands (e.g., `if=input_file of=output_file bs=1M count=5`) rather than standard single/double dash flags. As a result, `dd` bypasses the unified `common.ParseFlags` entirely. Integrating `--json` support requires designing a custom output schema representing byte copy metrics and retrofitting the custom operand parser to securely support output redirection without breaking BSD/POSIX compatibility.
 
-| Issue | Root Cause |
-|-------|------------|
-| `date` TZ parsing (3 BusyBox failures) | Go `time` package doesn't parse POSIX TZ strings |
-| `fold` NUL handling (1 BusyBox failure) | Echo harness `\0` escape limitation |
-| Go `regexp` ≠ POSIX BRE | RE2 engine, no backreferences — documented, by design |
+---
+
+### XML Output Support (`--xml`)
+* **Status:** DEFERRED
+* **Details:**
+  Proposed to mirror the existing structured `--json` output envelopes. However, the `--json` option already covers all programmatically driven consumer cases. Adding `--xml` would require ~2,000 lines of redundant encoding logic across 77 utilities plus full compliance test matrices with no active consumer demand.
+
+---
+
+### Multi-Tenant Sandbox Confinement (Phase 23)
+* **Status:** DEFERRED
+* **Details:**
+  Provides isolated per-session virtual filesystems, command execution allowlists, strict resource quotas (memory, open file descriptors), and subprocess sandboxing. Deferred because GoPOSIX's primary target is single-tenant, multi-agent cooperative development on a shared workspace. Confinement boundaries are currently enforced globally at the session base level, which is optimal for cooperative runtimes.
+
+---
+
+## 🏆 Completed Transitions
+
+### Daemon Stdin Support (Phase 25)
+* **Status:** COMPLETED (Implemented & Merged)
+* **Details:**
+  Expanded the command registry `dispatch.Command.Run` signature to include `stdin io.Reader` and added the `GoposixParams.Stdin` field to JSON-RPC envelopes. Plumbed stdin streams directly through the daemon to 40+ stdin-consuming utilities (grep, sed, tr, wc, sort, cut, etc.). Backed by comprehensive integration and unit tests.
+
+---
+
+## ⚠️ Documented Engine Limitations (Won't Fix)
+
+| Issue | Root Cause | Rationale |
+|-------|------------|-----------|
+| Go `regexp` ≠ POSIX BRE/ERE | Go standard `regexp` uses the RE2 engine which guarantees $O(N)$ execution time but explicitly lacks support for backreferences and lookaheads. | Essential for container security. Backreferences allow writing regexes that trigger catastrophic backtracking ($O(2^N)$ time complexity), which is a common vector for ReDoS (Regular Expression Denial of Service) attacks. Secure-by-default design choice. |
+
+*(Note: Prior limits regarding `date` TZ parsing and `fold` trailing newlines/NUL preservation have been fully resolved by our custom POSIX parsers and stream-splitting implementations).*
