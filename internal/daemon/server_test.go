@@ -811,7 +811,8 @@ func TestIntegration_ObservabilityEndpoints(t *testing.T) {
 }
 
 func TestIntegration_PathTraversalRejection(t *testing.T) {
-	socket := filepath.Join(t.TempDir(), "traversal.sock")
+	tempDir := t.TempDir()
+	socket := filepath.Join(tempDir, "traversal.sock")
 	s := NewServer(socket, 2, "")
 	if err := s.Start(); err != nil {
 		t.Fatalf("Start: %v", err)
@@ -840,12 +841,20 @@ func TestIntegration_PathTraversalRejection(t *testing.T) {
 	resMap := resp.Result.(map[string]interface{})
 	sessID := resMap["sessionId"].(string)
 
-	// 2. Set CWD to a dummy directory under /tmp
-	paramsSet, _ := json.Marshal(GoposixParams{SessionId: sessID, Path: "/tmp/mysandbox"})
+	// 2. Set CWD to a physical directory under tempDir
+	sandboxDir := filepath.Join(tempDir, "mysandbox")
+	if err := os.MkdirAll(sandboxDir, 0755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+
+	paramsSet, _ := json.Marshal(GoposixParams{SessionId: sessID, Path: sandboxDir})
 	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.session.setCwd", Params: paramsSet, ID: "2"})
 	var resp2 Response
 	if err := dec.Decode(&resp2); err != nil {
 		t.Fatalf("decode session.setCwd: %v", err)
+	}
+	if resp2.Error != nil {
+		t.Fatalf("unexpected error setting valid CWD: %v", resp2.Error)
 	}
 
 	// 3. Attempt path traversal with echo
@@ -892,22 +901,46 @@ func TestIntegration_SessionSetCwdPathValidation(t *testing.T) {
 	resMap := resp1.Result.(map[string]interface{})
 	sessID := resMap["sessionId"].(string)
 
-	// Set CWD to /etc (arbitrary path - H1 gap)
+	// 1. Try to set CWD to a non-existent directory -> should fail!
+	paramsBad, _ := json.Marshal(GoposixParams{SessionId: sessID, Path: "/tmp/nonexistent-goposix-dir-random"})
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.session.setCwd", Params: paramsBad, ID: "2"})
+	var respBad Response
+	dec.Decode(&respBad)
+	if respBad.Error == nil {
+		t.Fatal("expected error setting CWD to non-existent directory, got nil")
+	}
+
+	// 2. Set CWD to /etc (valid directory, allowed since session starts at "/") -> should succeed!
 	paramsSet, _ := json.Marshal(GoposixParams{SessionId: sessID, Path: "/etc"})
-	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.session.setCwd", Params: paramsSet, ID: "2"})
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.session.setCwd", Params: paramsSet, ID: "3"})
 	var resp2 Response
 	dec.Decode(&resp2)
 	if resp2.Error != nil {
-		t.Fatalf("unexpected error setting arbitrary CWD: %v", resp2.Error)
+		t.Fatalf("unexpected error setting valid CWD to /etc: %v", resp2.Error)
 	}
 
-	// Verify that the CWD in the session is indeed /etc
+	// Verify that the CWD in the session is indeed /etc and BaseDir is locked to /etc
 	sess, ok := s.sm.Get(sessID)
 	if !ok {
 		t.Fatal("session not found")
 	}
 	if sess.CWD != "/etc" {
-		t.Errorf("CWD = %q, want /etc (H1 gap)", sess.CWD)
+		t.Errorf("CWD = %q, want /etc", sess.CWD)
+	}
+	if sess.BaseDir != "/etc" {
+		t.Errorf("BaseDir = %q, want /etc", sess.BaseDir)
+	}
+
+	// 3. Attempt to set CWD to a path outside the locked /etc boundary (e.g. /tmp) -> should fail!
+	paramsEscape, _ := json.Marshal(GoposixParams{SessionId: sessID, Path: "/tmp"})
+	enc.Encode(Request{JSONRPC: "2.0", Method: "goposix.session.setCwd", Params: paramsEscape, ID: "4"})
+	var respEscape Response
+	dec.Decode(&respEscape)
+	if respEscape.Error == nil {
+		t.Fatal("expected escape CWD to /tmp to fail, got nil")
+	}
+	if !strings.Contains(respEscape.Error.Message, "Path traversal detected") {
+		t.Errorf("expected path traversal error message, got: %q", respEscape.Error.Message)
 	}
 }
 

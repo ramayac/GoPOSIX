@@ -1,14 +1,10 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-20 | **BusyBox:** 590 pass / 21 fail / 18 skip | **Coverage:** 76.6% | **--json:** 77/79 (patch ✅, dd deferred)
+> **Last updated:** 2026-05-21 | **BusyBox:** 592 pass / 20 fail / 18 skip | **Coverage:** 76.6% | **--json:** 77/79 (patch ✅, dd deferred)
 
-## Hardening IV — Remaining (3 HIGH)
+## Hardening IV — Remaining (0) - ALL RESOLVED ✅
 
-| # | Item | Doc |
-|---|------|-----|
-| H1 | `session.setCwd` bypasses `SecurePath` — validate path before storing | [24_hardening_iv.md](24_hardening_iv.md) |
-| H4 | Systemic `os.Stderr` hardcoding — 11/79 utilities fixed, ~68 remain | [24_hardening_iv.md](24_hardening_iv.md) |
-| H5 | `rm --no-preserve-root` not in flag spec (one-line fix) | [24_hardening_iv.md](24_hardening_iv.md) |
+All 27 architecture, security, and compliance gaps under Hardening IV have been fully resolved.
 
 ## Phase 25: Daemon Stdin — Resolved ✅
 
@@ -24,10 +20,10 @@ Daemon now passes stdin through to stdin-consuming utilities (grep, sed, sort, w
 | ✅ | 76 utility `run()` + 69 test file call sites updated | Complete |
 | ✅ | Daemon stdin integration test (`TestDaemonStdinSupport`) | Added |
 
-## Hardening IV — Resolved (25)
+## Hardening IV — Resolved (27)
 
-All MEDIUM (12) and LOW (8) resolved. HIGH resolved: H2, H3, H6, H7.
-See [24_hardening_iv.md](24_hardening_iv.md) for full resolution table.
+All 7 HIGH, 12 MEDIUM, and 8 LOW gaps are fully resolved. HIGH resolved: H1, H2, H3, H4, H5, H6, H7.
+See [24_hardening_iv.md](24_hardening_iv.md) for full details.
 
 **Also resolved same session:** `patch --json` — added flag, wired `Render`/`RenderError`.
 4 new CLI tests, 78.0% coverage, race-clean.

@@ -509,11 +509,17 @@ func (s *Server) processRequest(req Request) *Response {
 			Path      string `json:"path"`
 		}
 		if err := json.Unmarshal(req.Params, &p); err == nil {
+			if _, ok := s.sm.Get(p.SessionId); !ok {
+				rpcError = "Invalid session"
+				return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Invalid session"}}
+			}
 			if s.sm.SetCwd(p.SessionId, p.Path) {
 				return &Response{JSONRPC: "2.0", ID: req.ID, Result: true}
 			}
+			rpcError = "Path traversal detected or directory does not exist"
+			return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Path traversal detected or directory does not exist"}}
 		}
-		return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Invalid session"}}
+		return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Invalid params"}}
 	}
 
 	if req.Method == "goposix.session.list" {
