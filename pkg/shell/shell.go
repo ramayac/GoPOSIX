@@ -174,9 +174,9 @@ func init() {
 		Usage: "Execute shell scripts or interactive shell",
 		Run:   run,
 	})
-	// NOTE: "sh" is intentionally NOT registered.
-	// Registering "sh" would cause --list-commands to generate a sh -> goposix
-	// symlink, shadowing the system /bin/sh and breaking the BusyBox test
-	// harness (which runs test cases via "sh -x -e testcase").
-	// GoPOSIXOS can manually create this symlink if needed.
+	dispatch.Register(dispatch.Command{
+		Name:  "sh",
+		Usage: "Execute shell scripts or interactive shell (alias)",
+		Run:   run,
+	})
 }

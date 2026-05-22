@@ -46,6 +46,9 @@ func ListAll() []Command {
 // Used by the Dockerfile symlink-generator stage via: goposix --list-commands
 func ListCommands() {
 	for _, c := range ListAll() {
+		if c.Name == "sh" {
+			continue
+		}
 		fmt.Fprintln(os.Stdout, c.Name)
 	}
 }
