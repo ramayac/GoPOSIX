@@ -87,7 +87,7 @@ func Run(r io.Reader, w io.Writer, linesCount int, bytesCount int, fromStart boo
 	return lines, scanner.Err()
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	// Preprocess: convert traditional "-N" (where N is a number) to "-n N"
 	cleanArgs := make([]string, 0, len(args))
 	for i := 0; i < len(args); i++ {

@@ -170,7 +170,7 @@ func parseEchoFlags(args []string) (noNewline, escape, jsonMode bool, words []st
 	return
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	noNewline, escape, jsonMode, words := parseEchoFlags(args)
 
 	result := Run(noNewline, escape, words)

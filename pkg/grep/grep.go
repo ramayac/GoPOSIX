@@ -112,13 +112,13 @@ func Run(r io.Reader, filename string, re *regexp.Regexp, fixedPatterns []string
 	return matches, scanner.Err()
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return grepRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return grepRun(args, stdout, stderr, stdin, cwd)
 }
 
 // grepRun is the testable core of the grep CLI. All output goes to stdout or errOut,
 // and stdin is read from stdinR.
-func grepRun(args []string, stdout, errOut io.Writer, stdinR io.Reader) int {
+func grepRun(args []string, stdout, errOut io.Writer, stdinR io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "grep: %v\n", err)
@@ -636,11 +636,11 @@ func init() {
 }
 
 // egrepRun prepends -E and delegates to the main grep CLI.
-func egrepRun(args []string, stdin io.Reader, stdout io.Writer) int {
-	return run(append([]string{"-E"}, args...), stdin, stdout)
+func egrepRun(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return run(append([]string{"-E"}, args...), stdin, stdout, stderr, cwd)
 }
 
 // fgrepRun prepends -F and delegates to the main grep CLI.
-func fgrepRun(args []string, stdin io.Reader, stdout io.Writer) int {
-	return run(append([]string{"-F"}, args...), stdin, stdout)
+func fgrepRun(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return run(append([]string{"-F"}, args...), stdin, stdout, stderr, cwd)
 }

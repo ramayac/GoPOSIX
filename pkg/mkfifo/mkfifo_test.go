@@ -12,7 +12,7 @@ func TestMkfifoCreate(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "testpipe")
 
-	code := run([]string{path}, nil, io.Discard)
+	code := run([]string{path}, nil, io.Discard, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -30,7 +30,7 @@ func TestMkfifoCustomMode(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "testpipe")
 
-	code := run([]string{"-m", "0644", path}, nil, io.Discard)
+	code := run([]string{"-m", "0644", path}, nil, io.Discard, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -49,14 +49,14 @@ func TestMkfifoExisting(t *testing.T) {
 	path := filepath.Join(dir, "existing")
 	os.WriteFile(path, []byte("data"), 0644)
 
-	code := run([]string{path}, nil, io.Discard)
+	code := run([]string{path}, nil, io.Discard, io.Discard, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for existing file, got %d", code)
 	}
 }
 
 func TestMkfifoMissingOperand(t *testing.T) {
-	code := run([]string{}, nil, io.Discard)
+	code := run([]string{}, nil, io.Discard, io.Discard, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing operand, got %d", code)
 	}
@@ -66,7 +66,7 @@ func TestMkfifoInvalidMode(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "testpipe")
 
-	code := run([]string{"-m", "999", path}, nil, io.Discard)
+	code := run([]string{"-m", "999", path}, nil, io.Discard, io.Discard, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for invalid mode, got %d", code)
 	}
@@ -77,7 +77,7 @@ func TestMkfifoJson(t *testing.T) {
 	path := filepath.Join(dir, "jsonpipe")
 
 	var buf bytes.Buffer
-	code := run([]string{"--json", "-m", "0600", path}, nil, &buf)
+	code := run([]string{"--json", "-m", "0600", path}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}

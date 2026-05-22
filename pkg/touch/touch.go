@@ -63,7 +63,7 @@ func Run(paths []string, ts time.Time, noCreate bool) (TouchResult, error) {
 	return result, nil
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "touch: %v\n", err)

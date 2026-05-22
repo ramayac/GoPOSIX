@@ -148,7 +148,7 @@ func readLines(r io.Reader) ([]string, error) {
 
 // --- CLI Glue ---
 
-func commRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
+func commRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "comm: %v\n", err)
@@ -232,15 +232,14 @@ func commRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	return 0
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return commRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return commRun(args, stdout, stderr, stdin, cwd)
 }
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "comm",
-		Usage:          "Compare two sorted files line by line",
-		Run:            run,
-		RunWithStreams: commRun,
+		Name:  "comm",
+		Usage: "Compare two sorted files line by line",
+		Run:   run,
 	})
 }

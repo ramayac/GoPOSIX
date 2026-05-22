@@ -8,7 +8,7 @@ import (
 
 func TestSleepMissingArgs(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{}, nil, &out)
+	rc := run([]string{}, nil, &out, &out, "")
 	if rc != 1 {
 		t.Errorf("expected 1, got %d", rc)
 	}
@@ -16,7 +16,7 @@ func TestSleepMissingArgs(t *testing.T) {
 
 func TestSleepGoDuration(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"1ms"}, nil, &out)
+	rc := run([]string{"1ms"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -24,7 +24,7 @@ func TestSleepGoDuration(t *testing.T) {
 
 func TestSleepFloat(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"0.001"}, nil, &out)
+	rc := run([]string{"0.001"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -32,7 +32,7 @@ func TestSleepFloat(t *testing.T) {
 
 func TestSleepJSON(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"--json", "0.001"}, nil, &out)
+	rc := run([]string{"--json", "0.001"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -51,7 +51,7 @@ func TestSleepJSON(t *testing.T) {
 
 func TestSleepJSONShortFlag(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"--json", "1ms"}, nil, &out)
+	rc := run([]string{"--json", "1ms"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}

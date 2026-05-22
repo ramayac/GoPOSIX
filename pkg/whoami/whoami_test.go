@@ -20,7 +20,7 @@ func TestRunReturnsUser(t *testing.T) {
 
 func TestRunCLI(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{}, nil, &buf)
+	code := run([]string{}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -31,7 +31,7 @@ func TestRunCLI(t *testing.T) {
 
 func TestRunCLIJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json"}, nil, &buf)
+	code := run([]string{"--json"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -45,7 +45,7 @@ func TestRunCLIJSON(t *testing.T) {
 
 func TestRunCLI_UnknownFlag(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--no-such-flag"}, nil, &buf)
+	code := run([]string{"--no-such-flag"}, nil, &buf, &buf, "")
 	if code != 2 {
 		t.Errorf("expected exit 2 for unknown flag, got %d", code)
 	}

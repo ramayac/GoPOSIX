@@ -62,7 +62,7 @@ func Run(r io.Reader, sysv bool) (int, int) {
 	return sumBSD(data)
 }
 
-func sumRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
+func sumRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "sum: %v\n", err)
@@ -124,7 +124,9 @@ func sumRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	return 0
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int { return sumRun(args, stdout, os.Stderr, os.Stdin) }
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return sumRun(args, stdout, stderr, stdin, cwd)
+}
 func init() {
 	dispatch.Register(dispatch.Command{Name: "sum", Usage: "Compute checksum and block count", Run: run})
 }

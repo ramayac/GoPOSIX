@@ -50,7 +50,7 @@ func Run() (TtyResult, error) {
 	return TtyResult{IsTTY: true, Path: path}, nil
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tty: %v\n", err)

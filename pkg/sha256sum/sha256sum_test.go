@@ -41,7 +41,7 @@ func TestRunHashSingleFile(t *testing.T) {
 	os.WriteFile(testFile, []byte("hello\n"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{testFile}, nil, &buf)
+	code := run([]string{testFile}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -63,7 +63,7 @@ func TestRunHashMultipleFiles(t *testing.T) {
 	os.WriteFile(f2, []byte("bbb"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{f1, f2}, nil, &buf)
+	code := run([]string{f1, f2}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -76,7 +76,7 @@ func TestRunHashMultipleFiles(t *testing.T) {
 
 func TestRunHashNonexistent(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"/nonexistent_12345"}, nil, &buf)
+	code := run([]string{"/nonexistent_12345"}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Errorf("exit code %d, want 1", code)
 	}
@@ -88,7 +88,7 @@ func TestRunHashJSON(t *testing.T) {
 	os.WriteFile(testFile, []byte("hello\n"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"--json", testFile}, nil, &buf)
+	code := run([]string{"--json", testFile}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -119,7 +119,7 @@ func TestRunCheckMode(t *testing.T) {
 	os.WriteFile(checksumFile, []byte("5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03  "+testFile+"\n"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"-c", checksumFile}, nil, &buf)
+	code := run([]string{"-c", checksumFile}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -140,7 +140,7 @@ func TestRunCheckModeFailed(t *testing.T) {
 	os.WriteFile(checksumFile, []byte("0000000000000000000000000000000000000000000000000000000000000000  "+testFile+"\n"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"-c", checksumFile}, nil, &buf)
+	code := run([]string{"-c", checksumFile}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Errorf("exit code %d, want 1", code)
 	}
@@ -152,7 +152,7 @@ func TestRunCheckModeFailed(t *testing.T) {
 
 func TestRunCheckNoFile(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"-c"}, nil, &buf)
+	code := run([]string{"-c"}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Errorf("exit code %d, want 1", code)
 	}
@@ -164,7 +164,7 @@ func TestRunCheckEmptyFile(t *testing.T) {
 	os.WriteFile(checksumFile, []byte("# just a comment\n\n"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"-c", checksumFile}, nil, &buf)
+	code := run([]string{"-c", checksumFile}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Errorf("exit code %d, want 1 for empty checksum file", code)
 	}
@@ -176,7 +176,7 @@ func TestRunCheckBadFormat(t *testing.T) {
 	os.WriteFile(checksumFile, []byte("this line has no spaces\n"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"-c", checksumFile}, nil, &buf)
+	code := run([]string{"-c", checksumFile}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Errorf("exit code %d, want 1 for bad format", code)
 	}
@@ -190,7 +190,7 @@ func TestRunCheckJSON(t *testing.T) {
 	os.WriteFile(checksumFile, []byte("5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03  "+testFile+"\n"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"-c", "--json", checksumFile}, nil, &buf)
+	code := run([]string{"-c", "--json", checksumFile}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -201,7 +201,7 @@ func TestRunCheckJSON(t *testing.T) {
 
 func TestRunHashUnknownFlag(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--bad-flag"}, nil, &buf)
+	code := run([]string{"--bad-flag"}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Errorf("exit code %d, want 1 for unknown flag", code)
 	}

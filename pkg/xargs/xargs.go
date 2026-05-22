@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -30,11 +29,11 @@ type ExecResult struct {
 	ExitCode int    `json:"exitCode"`
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return xargsRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return xargsRun(args, stdout, stderr, stdin, cwd)
 }
 
-func xargsRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func xargsRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "xargs: %v\n", err)
@@ -207,9 +206,8 @@ func scanNulls(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "xargs",
-		Usage:          "Build and execute command lines from standard input",
-		Run:            run,
-		RunWithStreams: xargsRun,
+		Name:  "xargs",
+		Usage: "Build and execute command lines from standard input",
+		Run:   run,
 	})
 }

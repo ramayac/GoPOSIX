@@ -179,7 +179,7 @@ func foldLineRunes(line string, width int, spaceBreak bool) []byte {
 
 // --- CLI Glue ---
 
-func foldRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
+func foldRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "fold: %v\n", err)
@@ -234,11 +234,11 @@ func foldRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	return 0
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	if stdin == nil {
 		stdin = os.Stdin
 	}
-	return foldRun(args, stdout, os.Stderr, stdin)
+	return foldRun(args, stdout, stderr, stdin, cwd)
 }
 
 func init() {

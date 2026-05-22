@@ -30,11 +30,11 @@ var spec = common.FlagSpec{
 	},
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return sedRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return sedRun(args, stdout, stderr, stdin, cwd)
 }
 
-func sedRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func sedRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "sed: %v\n", err)
@@ -119,9 +119,8 @@ func sedRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) 
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "sed",
-		Usage:          "Stream editor for filtering and transforming text",
-		Run:            run,
-		RunWithStreams: sedRun,
+		Name:  "sed",
+		Usage: "Stream editor for filtering and transforming text",
+		Run:   run,
 	})
 }

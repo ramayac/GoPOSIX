@@ -94,7 +94,7 @@ func TestNl_JsonOutput(t *testing.T) {
 func TestNlRun_Stdin(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	r := strings.NewReader("hello\nworld\n")
-	rc := nlRun([]string{"-b", "a"}, &outBuf, &errBuf, r)
+	rc := nlRun([]string{"-b", "a"}, &outBuf, &errBuf, r, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0. stderr: %s", rc, errBuf.String())
 	}
@@ -108,7 +108,7 @@ func TestNlRun_Stdin(t *testing.T) {
 func TestNlRun_Json(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	r := strings.NewReader("test\n")
-	rc := nlRun([]string{"-b", "a", "--json"}, &outBuf, &errBuf, r)
+	rc := nlRun([]string{"-b", "a", "--json"}, &outBuf, &errBuf, r, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d", rc)
 	}

@@ -13,7 +13,7 @@ func TestUnlinkFile(t *testing.T) {
 	f := filepath.Join(dir, "testfile")
 	os.WriteFile(f, []byte("data"), 0644)
 
-	code := run([]string{f}, nil, io.Discard)
+	code := run([]string{f}, nil, io.Discard, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -29,7 +29,7 @@ func TestUnlinkSymlink(t *testing.T) {
 	os.WriteFile(target, []byte("data"), 0644)
 	os.Symlink(target, link)
 
-	code := run([]string{link}, nil, io.Discard)
+	code := run([]string{link}, nil, io.Discard, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -42,7 +42,7 @@ func TestUnlinkSymlink(t *testing.T) {
 }
 
 func TestUnlinkNonexistent(t *testing.T) {
-	code := run([]string{"/tmp/goposix_nonexistent_test_file"}, nil, io.Discard)
+	code := run([]string{"/tmp/goposix_nonexistent_test_file"}, nil, io.Discard, io.Discard, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for nonexistent, got %d", code)
 	}
@@ -53,14 +53,14 @@ func TestUnlinkDirectory(t *testing.T) {
 	d := filepath.Join(dir, "testdir")
 	os.Mkdir(d, 0755)
 
-	code := run([]string{d}, nil, io.Discard)
+	code := run([]string{d}, nil, io.Discard, io.Discard, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for directory, got %d", code)
 	}
 }
 
 func TestUnlinkMissingOperand(t *testing.T) {
-	code := run([]string{}, nil, io.Discard)
+	code := run([]string{}, nil, io.Discard, io.Discard, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing operand, got %d", code)
 	}
@@ -72,7 +72,7 @@ func TestUnlinkJson(t *testing.T) {
 	os.WriteFile(f, []byte("data"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"--json", f}, nil, &buf)
+	code := run([]string{"--json", f}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}

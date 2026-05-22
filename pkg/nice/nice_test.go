@@ -8,7 +8,7 @@ import (
 
 func TestNiceDefaultAdjustment(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"true"}, nil, &buf)
+	code := run([]string{"true"}, nil, &buf, &buf, "")
 	// setpriority may fail with EPERM in test environments
 	if code != 0 {
 		t.Logf("nice requires CAP_SYS_NICE (exit %d), skipping", code)
@@ -18,7 +18,7 @@ func TestNiceDefaultAdjustment(t *testing.T) {
 
 func TestNiceCustomAdjustment(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"-n", "5", "true"}, nil, &buf)
+	code := run([]string{"-n", "5", "true"}, nil, &buf, &buf, "")
 	// setpriority may fail with EPERM in test environments without CAP_SYS_NICE
 	if code != 0 {
 		t.Logf("nice requires CAP_SYS_NICE (exit %d), skipping", code)
@@ -28,21 +28,21 @@ func TestNiceCustomAdjustment(t *testing.T) {
 
 func TestNiceCommandExitCode(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"false"}, nil, &buf)
+	code := run([]string{"false"}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 from false, got %d", code)
 	}
 }
 
 func TestNiceMissingCommand(t *testing.T) {
-	code := run([]string{}, nil, io.Discard)
+	code := run([]string{}, nil, io.Discard, io.Discard, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing command, got %d", code)
 	}
 }
 
 func TestNiceInvalidAdjustment(t *testing.T) {
-	code := run([]string{"-n", "abc", "true"}, nil, io.Discard)
+	code := run([]string{"-n", "abc", "true"}, nil, io.Discard, io.Discard, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for invalid adjustment, got %d", code)
 	}
@@ -50,7 +50,7 @@ func TestNiceInvalidAdjustment(t *testing.T) {
 
 func TestNiceJson(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json", "-n", "5", "true"}, nil, &buf)
+	code := run([]string{"--json", "-n", "5", "true"}, nil, &buf, &buf, "")
 	// setpriority may fail with EPERM
 	if code != 0 {
 		t.Logf("nice requires CAP_SYS_NICE (exit %d), skipping", code)

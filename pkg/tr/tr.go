@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"unicode/utf8"
 
@@ -174,11 +173,11 @@ func Run(r io.Reader, w io.Writer, set1, set2 string, deleteFlag, squeezeFlag, c
 	return nil
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return trRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return trRun(args, stdout, stderr, stdin, cwd)
 }
 
-func trRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func trRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "tr: %v\n", err)
@@ -251,9 +250,8 @@ func trRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) i
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "tr",
-		Usage:          "Translate, squeeze, and/or delete characters",
-		Run:            run,
-		RunWithStreams: trRun,
+		Name:  "tr",
+		Usage: "Translate, squeeze, and/or delete characters",
+		Run:   run,
 	})
 }

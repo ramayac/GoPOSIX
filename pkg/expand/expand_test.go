@@ -112,7 +112,7 @@ func TestExpand_Empty(t *testing.T) {
 func TestExpandRun_Stdin(t *testing.T) {
 	var out, errOut strings.Builder
 	stdin := strings.NewReader("\thello\n")
-	rc := expandRun([]string{}, &out, &errOut, stdin)
+	rc := expandRun([]string{}, &out, &errOut, stdin, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -125,7 +125,7 @@ func TestExpandRun_Stdin(t *testing.T) {
 func TestExpandRun_JsonFlag(t *testing.T) {
 	var out, errOut strings.Builder
 	stdin := strings.NewReader("\thello\n")
-	rc := expandRun([]string{"--json"}, &out, &errOut, stdin)
+	rc := expandRun([]string{"--json"}, &out, &errOut, stdin, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}

@@ -145,7 +145,7 @@ func TestPasteCLI_Basic(t *testing.T) {
 	os.WriteFile(f1, []byte("a\nb\n"), 0644)
 	os.WriteFile(f2, []byte("1\n2\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{f1, f2}, nil, &out)
+	code := run([]string{f1, f2}, nil, &out, &out, "")
 	if code != 0 {
 		t.Errorf("exit %d, want 0", code)
 	}
@@ -159,7 +159,7 @@ func TestPasteCLI_Serialize(t *testing.T) {
 	f1 := filepath.Join(dir, "f1")
 	os.WriteFile(f1, []byte("a\nb\nc\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-s", f1}, nil, &out)
+	code := run([]string{"-s", f1}, nil, &out, &out, "")
 	if code != 0 {
 		t.Errorf("exit %d, want 0", code)
 	}
@@ -175,7 +175,7 @@ func TestPasteCLI_CustomDelimiter(t *testing.T) {
 	os.WriteFile(f1, []byte("a\nb\n"), 0644)
 	os.WriteFile(f2, []byte("1\n2\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-d:", f1, f2}, nil, &out)
+	code := run([]string{"-d:", f1, f2}, nil, &out, &out, "")
 	if code != 0 {
 		t.Errorf("exit %d, want 0", code)
 	}

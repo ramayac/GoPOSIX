@@ -185,11 +185,11 @@ func Run(r io.Reader, fields, delimiter, chars, bytesList string, onlyDelimited,
 	return lines, scanner.Err()
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return cutRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return cutRun(args, stdout, stderr, stdin, cwd)
 }
 
-func cutRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func cutRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "cut: %v\n", err)
@@ -259,9 +259,8 @@ func cutRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) 
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "cut",
-		Usage:          "Remove sections from each line of files",
-		Run:            run,
-		RunWithStreams: cutRun,
+		Name:  "cut",
+		Usage: "Remove sections from each line of files",
+		Run:   run,
 	})
 }

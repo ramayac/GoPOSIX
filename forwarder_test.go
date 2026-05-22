@@ -1,8 +1,14 @@
 package goposix
 
 import (
+	"bytes"
 	"os"
+	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/ramayac/goposix/internal/daemon"
+	_ "github.com/ramayac/goposix/pkg/echo"
 )
 
 func TestSocketExists(t *testing.T) {
@@ -43,5 +49,63 @@ func TestTryForwardNoDaemon(t *testing.T) {
 	code := TryForward()
 	if code != -1 {
 		t.Errorf("TryForward with no daemon should return -1, got %d", code)
+	}
+}
+
+func startTestDaemon(t *testing.T) string {
+	socketPath := filepath.Join(t.TempDir(), "goposix.sock")
+
+	// Start daemon in background
+	go func() {
+		err := daemon.RunDaemon(socketPath, 2, "")
+		if err != nil {
+			t.Logf("daemon exited: %v", err)
+		}
+	}()
+
+	// Wait for socket to be created
+	for i := 0; i < 50; i++ {
+		if _, err := os.Stat(socketPath); err == nil {
+			return socketPath
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("daemon socket not created in time")
+	return ""
+}
+
+func TestTryForward_Integration(t *testing.T) {
+	// Spin up a test daemon
+	socketPath := startTestDaemon(t)
+
+	// Set socket environment variable
+	os.Setenv("GOPOSIX_SOCKET", socketPath)
+	defer os.Unsetenv("GOPOSIX_SOCKET")
+
+	// Set hooks
+	origStdinFn := isStdinPipedFn
+	isStdinPipedFn = func() bool { return false }
+	defer func() { isStdinPipedFn = origStdinFn }()
+
+	var buf bytes.Buffer
+	origStdout := stdoutWriter
+	stdoutWriter = &buf
+	defer func() { stdoutWriter = origStdout }()
+
+	// Mock arguments to invoke `echo hello m5`
+	origArgs := os.Args
+	os.Args = []string{"goposix", "echo", "hello", "m5"}
+	defer func() { os.Args = origArgs }()
+
+	// Execute TryForward
+	exitCode := TryForward()
+	if exitCode != 0 {
+		t.Errorf("expected exit code 0, got %d", exitCode)
+	}
+
+	// Verify the captured stdout matches the expected echo output
+	expected := "hello m5\n"
+	if buf.String() != expected {
+		t.Errorf("expected stdout %q, got %q", expected, buf.String())
 	}
 }

@@ -17,7 +17,7 @@ func TestRunReturnsHostname(t *testing.T) {
 
 func TestRunCLI(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{}, nil, &buf)
+	code := run([]string{}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -25,7 +25,7 @@ func TestRunCLI(t *testing.T) {
 
 func TestRunCLIJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json"}, nil, &buf)
+	code := run([]string{"--json"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -74,7 +74,7 @@ func TestBusyBox_Hostname_ShortFlag(t *testing.T) {
 
 func TestBusyBox_Hostname_DomainCLI(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"-d"}, nil, &buf)
+	code := run([]string{"-d"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -86,7 +86,7 @@ func TestBusyBox_Hostname_DomainCLI(t *testing.T) {
 
 func TestBusyBox_Hostname_FQDNCLI(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"-f"}, nil, &buf)
+	code := run([]string{"-f"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}

@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -16,17 +15,6 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-// execMu serializes shell execution to prevent concurrent os.Chdir() calls
-// from clobbering each other. os.Chdir changes process-global state, not
-// per-goroutine state, so multiple shell.exec RPC calls cannot safely set
-// the working directory concurrently.
-//
-// TODO: Eliminate os.Chdir entirely by threading a CWD parameter through
-// the dispatch.Command.Run signature so every utility resolves paths
-// against an explicit directory instead of relying on the process CWD.
-// This would remove the need for execMu and allow concurrent shell execs.
-var execMu sync.Mutex
-
 type ExecResult struct {
 	Stdout   string `json:"stdout"`
 	Stderr   string `json:"stderr"`
@@ -34,18 +22,8 @@ type ExecResult struct {
 	CWD      string `json:"cwd"`
 }
 
-var chdirMu sync.Mutex
-
 func Exec(script string, cwd string, env map[string]string) ExecResult {
-	execMu.Lock()
-	defer execMu.Unlock()
-
-	// Save and restore the process CWD so that sequential Exec calls
-	// (each with their own explicit or session-tracked CWD) do not
-	// leak cd side-effects into the daemon process.
-	origCwd, _ := os.Getwd()
-	defer func() { os.Chdir(origCwd) }()
-
+	// CWD is now context-relative! No os.Chdir() or serialization locks needed!
 	var stdout, stderr bytes.Buffer
 
 	// 128MB memory limit per stream
@@ -66,29 +44,17 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 		cmd, ok := dispatch.Lookup(cmdName)
 		if !ok {
 			// Fall back to system exec for commands not registered in dispatch.
-			// In production (FROM scratch), there are no system binaries, so this
-			// is a no-op. In testing/debug environments, it allows standard Unix
-			// commands to work. SecurePath confinement in openHandler prevents
-			// path traversal.
 			return interp.DefaultExecHandler(0)(ctx, args)
 		}
 
 		hc := interp.HandlerCtx(ctx)
-		// Sync the shell's working directory to the host process so dispatch
-		// commands (ls, pwd, etc.) see the same directory as cd set.
-		var exitCode int
-		func() {
-			chdirMu.Lock()
-			defer chdirMu.Unlock()
-			if hc.Dir != "" {
-				os.Chdir(hc.Dir)
-			}
-			if cmd.RunWithStreams != nil {
-				exitCode = cmd.RunWithStreams(args[1:], hc.Stdout, hc.Stderr, hc.Stdin)
-			} else {
-				exitCode = cmd.Run(args[1:], hc.Stdin, hc.Stdout)
-			}
-		}()
+		// If hc.Dir is empty, fall back to the execution cwd.
+		dir := hc.Dir
+		if dir == "" {
+			dir = cwd
+		}
+
+		exitCode := cmd.Run(args[1:], hc.Stdin, hc.Stdout, hc.Stderr, dir)
 		if exitCode != 0 {
 			return interp.NewExitStatus(uint8(exitCode))
 		}
@@ -142,11 +108,6 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	// Save the effective baseline CWD: the explicit cwd we passed in,
-	// or the host process CWD if no explicit cwd was given.  We only
-	// sync back to the host when a cd actually moved away from this
-	// baseline, which avoids accidentally pinning the process CWD to
-	// a temporary directory that was passed as the explicit cwd.
 	baselineCwd := cwd
 	if baselineCwd == "" {
 		baselineCwd, _ = os.Getwd()

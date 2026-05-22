@@ -9,7 +9,7 @@ import (
 
 func TestShellInlineScript(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := shellRun([]string{"-c", "echo hello"}, nil, &stdout, &stderr)
+	code := shellRun([]string{"-c", "echo hello"}, nil, &stdout, &stderr, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d (stderr: %q)", code, stderr.String())
 	}
@@ -20,7 +20,7 @@ func TestShellInlineScript(t *testing.T) {
 
 func TestShellInlineScriptStderr(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := shellRun([]string{"-c", "echo error >&2"}, nil, &stdout, &stderr)
+	code := shellRun([]string{"-c", "echo error >&2"}, nil, &stdout, &stderr, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -31,7 +31,7 @@ func TestShellInlineScriptStderr(t *testing.T) {
 
 func TestShellInlineScriptExitCode(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := shellRun([]string{"-c", "exit 42"}, nil, &stdout, &stderr)
+	code := shellRun([]string{"-c", "exit 42"}, nil, &stdout, &stderr, "")
 	if code != 42 {
 		t.Errorf("expected exit 42, got %d", code)
 	}
@@ -39,7 +39,7 @@ func TestShellInlineScriptExitCode(t *testing.T) {
 
 func TestShellMissingCArgument(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := shellRun([]string{"-c"}, nil, &stdout, &stderr)
+	code := shellRun([]string{"-c"}, nil, &stdout, &stderr, "")
 	if code != 2 {
 		t.Errorf("expected exit 2 for missing -c argument, got %d", code)
 	}
@@ -47,7 +47,7 @@ func TestShellMissingCArgument(t *testing.T) {
 
 func TestShellHelp(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := shellRun([]string{"--help"}, nil, &stdout, &stderr)
+	code := shellRun([]string{"--help"}, nil, &stdout, &stderr, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -64,7 +64,7 @@ func TestShellScriptFile(t *testing.T) {
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := shellRun([]string{scriptPath}, nil, &stdout, &stderr)
+	code := shellRun([]string{scriptPath}, nil, &stdout, &stderr, "")
 	if code != 7 {
 		t.Errorf("expected exit 7, got %d (stderr: %q)", code, stderr.String())
 	}
@@ -75,7 +75,7 @@ func TestShellScriptFile(t *testing.T) {
 
 func TestShellScriptFileNotFound(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := shellRun([]string{"/nonexistent/script.sh"}, nil, &stdout, &stderr)
+	code := shellRun([]string{"/nonexistent/script.sh"}, nil, &stdout, &stderr, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing file, got %d", code)
 	}
@@ -87,7 +87,7 @@ func TestShellScriptFileNotFound(t *testing.T) {
 func TestShellPipeMode(t *testing.T) {
 	stdin := bytes.NewBufferString("echo hello from pipe\n")
 	var stdout, stderr bytes.Buffer
-	code := shellRun([]string{}, stdin, &stdout, &stderr)
+	code := shellRun([]string{}, stdin, &stdout, &stderr, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d (stderr: %q)", code, stderr.String())
 	}
@@ -102,7 +102,7 @@ func TestShellShebangSpaceQuirk(t *testing.T) {
 	// The dispatch layer strips the command name, but the space may
 	// still be present in args[0] for symlink-mode invocation.
 	var stdout, stderr bytes.Buffer
-	code := shellRun([]string{" shell", "-c", "echo shebang works"}, nil, &stdout, &stderr)
+	code := shellRun([]string{" shell", "-c", "echo shebang works"}, nil, &stdout, &stderr, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d (stderr: %q)", code, stderr.String())
 	}
@@ -113,7 +113,7 @@ func TestShellShebangSpaceQuirk(t *testing.T) {
 
 func TestShellMultipleCommands(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := shellRun([]string{"-c", "echo one && echo two"}, nil, &stdout, &stderr)
+	code := shellRun([]string{"-c", "echo one && echo two"}, nil, &stdout, &stderr, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -125,7 +125,7 @@ func TestShellMultipleCommands(t *testing.T) {
 func TestShellEmptyStdin(t *testing.T) {
 	stdin := bytes.NewBufferString("")
 	var stdout, stderr bytes.Buffer
-	code := shellRun([]string{}, stdin, &stdout, &stderr)
+	code := shellRun([]string{}, stdin, &stdout, &stderr, "")
 	if code != 0 {
 		t.Errorf("expected exit 0 for empty stdin, got %d (stderr: %q)", code, stderr.String())
 	}

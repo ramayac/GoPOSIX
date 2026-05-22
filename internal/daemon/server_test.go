@@ -980,7 +980,7 @@ func registerLimitWriterCommand() {
 	registerLimitWriterOnce.Do(func() {
 		dispatch.Register(dispatch.Command{
 			Name: "test_limit_writer",
-			Run: func(args []string, stdin io.Reader, stdout io.Writer) int {
+			Run: func(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 				// write 51 MB of data
 				buf := make([]byte, 1024*1024)
 				for i := 0; i < 51; i++ {
@@ -1143,7 +1143,7 @@ func TestDaemonStdinSupport(t *testing.T) {
 	// Register a test command that reads stdin and echoes it back.
 	dispatch.Register(dispatch.Command{
 		Name: "test-stdin-echo",
-		Run: func(args []string, stdin io.Reader, stdout io.Writer) int {
+		Run: func(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 			data, _ := io.ReadAll(stdin)
 			stdout.Write(data)
 			return 0

@@ -199,7 +199,7 @@ func Run(r1, r2 io.Reader, field1, field2 int, delim string, a1, a2 bool, v1, v2
 	return result, nil
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "join: %v\n", err)

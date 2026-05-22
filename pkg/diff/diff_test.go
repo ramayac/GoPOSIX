@@ -68,7 +68,7 @@ func TestRunCLI(t *testing.T) {
 	os.WriteFile(f2, []byte("a\nx\nc\n"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"-u", f1, f2}, nil, &buf)
+	code := run([]string{"-u", f1, f2}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Errorf("exit code %d, want 1", code)
 	}
@@ -89,7 +89,7 @@ func TestRunCLIJSON(t *testing.T) {
 	os.WriteFile(f2, []byte("a\nx\nc\n"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"--json", f1, f2}, nil, &buf)
+	code := run([]string{"--json", f1, f2}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Errorf("exit code %d, want 1", code)
 	}
@@ -250,7 +250,7 @@ func TestCLI_BasicDiff(t *testing.T) {
 	os.WriteFile(a, []byte("hello\n"), 0644)
 	os.WriteFile(b, []byte("world\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{a, b}, nil, &out)
+	code := run([]string{a, b}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for diff, got %d", code)
 	}
@@ -263,7 +263,7 @@ func TestCLI_Identical(t *testing.T) {
 	os.WriteFile(a, []byte("same\n"), 0644)
 	os.WriteFile(b, []byte("same\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{a, b}, nil, &out)
+	code := run([]string{a, b}, nil, &out, &out, "")
 	if code != 0 {
 		t.Errorf("expected exit 0 for same files, got %d", code)
 	}
@@ -276,7 +276,7 @@ func TestCLI_ContextLines(t *testing.T) {
 	os.WriteFile(a, []byte("line1\nline2\nline3\n"), 0644)
 	os.WriteFile(b, []byte("line1\nCHANGED\nline3\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-U", "1", a, b}, nil, &out)
+	code := run([]string{"-U", "1", a, b}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 1, got %d", code)
 	}
@@ -287,7 +287,7 @@ func TestCLI_JSON(t *testing.T) {
 	a := filepath.Join(dir, "a.txt")
 	os.WriteFile(a, []byte("hello\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"--json", a, a}, nil, &out)
+	code := run([]string{"--json", a, a}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -298,7 +298,7 @@ func TestCLI_JSON(t *testing.T) {
 
 func TestCLI_MissingFile(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"/nonexistent/a", "/nonexistent/b"}, nil, &out)
+	code := run([]string{"/nonexistent/a", "/nonexistent/b"}, nil, &out, &out, "")
 	if code != 2 {
 		t.Errorf("expected exit 2, got %d", code)
 	}
@@ -306,7 +306,7 @@ func TestCLI_MissingFile(t *testing.T) {
 
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, nil, &out)
+	code := run([]string{"--nonexistent"}, nil, &out, &out, "")
 	if code != 2 {
 		t.Errorf("expected exit 2, got %d", code)
 	}
@@ -319,7 +319,7 @@ func TestDiff_EmptyFileVsNonEmpty(t *testing.T) {
 	os.WriteFile(a, []byte(""), 0644)
 	os.WriteFile(b, []byte("hello\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{a, b}, nil, &out)
+	code := run([]string{a, b}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 (files differ), got %d", code)
 	}
@@ -335,7 +335,7 @@ func TestDiff_TwoEmptyFiles(t *testing.T) {
 	os.WriteFile(a, []byte(""), 0644)
 	os.WriteFile(b, []byte(""), 0644)
 	var out bytes.Buffer
-	code := run([]string{a, b}, nil, &out)
+	code := run([]string{a, b}, nil, &out, &out, "")
 	if code != 0 {
 		t.Errorf("expected exit 0 (identical), got %d", code)
 	}
@@ -348,7 +348,7 @@ func TestDiff_IgnoreWhitespace(t *testing.T) {
 	os.WriteFile(a, []byte("hello   world\n"), 0644)
 	os.WriteFile(b, []byte("hello world\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-w", a, b}, nil, &out)
+	code := run([]string{"-w", a, b}, nil, &out, &out, "")
 	if code != 0 {
 		t.Errorf("expected exit 0 with -w, got %d", code)
 	}
@@ -361,7 +361,7 @@ func TestDiff_IgnoreBlankLines(t *testing.T) {
 	os.WriteFile(a, []byte("hello\n\nworld\n"), 0644)
 	os.WriteFile(b, []byte("hello\nworld\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-B", a, b}, nil, &out)
+	code := run([]string{"-B", a, b}, nil, &out, &out, "")
 	if code != 0 {
 		t.Errorf("expected exit 0 with -B, got %d", code)
 	}
@@ -374,7 +374,7 @@ func TestDiff_CrLfLineEndings(t *testing.T) {
 	os.WriteFile(a, []byte("hello\r\nworld\n"), 0644)
 	os.WriteFile(b, []byte("hello\nworld\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{a, b}, nil, &out)
+	code := run([]string{a, b}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 (differ), got %d", code)
 	}
@@ -387,7 +387,7 @@ func TestDiff_BinaryWarning(t *testing.T) {
 	os.WriteFile(a, []byte("text\n"), 0644)
 	os.WriteFile(b, []byte("text\x00binary\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{a, b}, nil, &out)
+	code := run([]string{a, b}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 (differ), got %d", code)
 	}
@@ -404,7 +404,7 @@ func TestDiff_RecursiveDirs(t *testing.T) {
 	os.WriteFile(filepath.Join(dirA, "diff.txt"), []byte("a\n"), 0644)
 	os.WriteFile(filepath.Join(dirB, "diff.txt"), []byte("b\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-r", dirA, dirB}, nil, &out)
+	code := run([]string{"-r", dirA, dirB}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 (dirs differ), got %d", code)
 	}
@@ -419,7 +419,7 @@ func TestDiff_RecursiveDirsIdentical(t *testing.T) {
 	os.WriteFile(filepath.Join(dirA, "f.txt"), []byte("same\n"), 0644)
 	os.WriteFile(filepath.Join(dirB, "f.txt"), []byte("same\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-r", dirA, dirB}, nil, &out)
+	code := run([]string{"-r", dirA, dirB}, nil, &out, &out, "")
 	if code != 0 {
 		t.Errorf("expected exit 0 (identical dirs), got %d", code)
 	}
@@ -432,7 +432,7 @@ func TestDiff_NewFile(t *testing.T) {
 	os.WriteFile(a, []byte(""), 0644)
 	os.WriteFile(b, []byte("hello\n"), 0644)
 	var out bytes.Buffer
-	code := run([]string{"-N", a, b}, nil, &out)
+	code := run([]string{"-N", a, b}, nil, &out, &out, "")
 	// -N treats absent files as empty
 	if code != 1 {
 		t.Errorf("expected exit 1 (files differ), got %d", code)

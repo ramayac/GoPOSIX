@@ -16,6 +16,8 @@ import (
 	_ "github.com/ramayac/goposix/pkg/printf"
 	_ "github.com/ramayac/goposix/pkg/sort"
 	_ "github.com/ramayac/goposix/pkg/tail"
+	_ "github.com/ramayac/goposix/pkg/tee"
+	_ "github.com/ramayac/goposix/pkg/tr"
 	_ "github.com/ramayac/goposix/pkg/uniq"
 	_ "github.com/ramayac/goposix/pkg/wc"
 )
@@ -406,3 +408,250 @@ func TestTier2_Printf(t *testing.T) {
 		}
 	})
 }
+
+func TestTier2_Tee(t *testing.T) {
+	socket := startDaemon(t)
+	c := client.Dial(socket, 5*time.Second)
+
+	tmp := t.TempDir()
+	f1 := filepath.Join(tmp, "tee_1.txt")
+	f2 := filepath.Join(tmp, "tee_2.txt")
+	stdinVal := "tee test input\nline 2\n"
+
+	t.Run("tee writes to stdout and files in structured JSON mode", func(t *testing.T) {
+		var result ResultWrapper
+		err := c.Call(context.Background(), "goposix.tee",
+			map[string]interface{}{
+				"flags": []interface{}{f1, f2},
+				"stdin": stdinVal,
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		data, ok := result.Data.(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected map data, got %T", result.Data)
+		}
+		if bytesWritten, ok := data["bytesWritten"]; !ok || int64(bytesWritten.(float64)) != int64(len(stdinVal)) {
+			t.Errorf("expected bytesWritten %d, got %v", len(stdinVal), bytesWritten)
+		}
+
+		// Verify file 1 content
+		b1, err := os.ReadFile(f1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(b1) != stdinVal {
+			t.Errorf("expected file 1 to have %q, got %q", stdinVal, string(b1))
+		}
+
+		// Verify file 2 content
+		b2, err := os.ReadFile(f2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(b2) != stdinVal {
+			t.Errorf("expected file 2 to have %q, got %q", stdinVal, string(b2))
+		}
+	})
+
+	t.Run("tee -a appends to existing files", func(t *testing.T) {
+		extraStdin := "appended line\n"
+		var result ResultWrapper
+		err := c.Call(context.Background(), "goposix.tee",
+			map[string]interface{}{
+				"flags": []interface{}{"-a", f1},
+				"stdin": extraStdin,
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+
+		b1, err := os.ReadFile(f1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected := stdinVal + extraStdin
+		if string(b1) != expected {
+			t.Errorf("expected file 1 to have %q, got %q", expected, string(b1))
+		}
+	})
+
+	t.Run("tee rawOutput returns raw stdout content", func(t *testing.T) {
+		f3 := filepath.Join(tmp, "tee_3.txt")
+		stdinValRaw := "raw stdout test\n"
+		var result struct {
+			ExitCode int    `json:"exitCode"`
+			Stdout   string `json:"stdout"`
+		}
+		err := c.Call(context.Background(), "goposix.tee",
+			map[string]interface{}{
+				"rawOutput": true,
+				"flags":     []interface{}{f3},
+				"stdin":     stdinValRaw,
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		if result.Stdout != stdinValRaw {
+			t.Errorf("expected raw stdout %q, got %q", stdinValRaw, result.Stdout)
+		}
+
+		b3, err := os.ReadFile(f3)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(b3) != stdinValRaw {
+			t.Errorf("expected file 3 to have %q, got %q", stdinValRaw, string(b3))
+		}
+	})
+}
+
+func TestTier2_Tr(t *testing.T) {
+	socket := startDaemon(t)
+	c := client.Dial(socket, 5*time.Second)
+
+	t.Run("tr translates characters in structured JSON mode", func(t *testing.T) {
+		var result ResultWrapper
+		err := c.Call(context.Background(), "goposix.tr",
+			map[string]interface{}{
+				"flags": []interface{}{"a-z", "A-Z"},
+				"stdin": "hello world\n",
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		data, ok := result.Data.(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected map data, got %T", result.Data)
+		}
+		lines, ok := data["lines"].([]interface{})
+		if !ok || len(lines) == 0 {
+			t.Fatalf("expected lines in result, got %v", data["lines"])
+		}
+		if lines[0] != "HELLO WORLD" {
+			t.Errorf("expected translated line 'HELLO WORLD', got %q", lines[0])
+		}
+	})
+
+	t.Run("tr -d deletes characters in structured JSON mode", func(t *testing.T) {
+		var result ResultWrapper
+		err := c.Call(context.Background(), "goposix.tr",
+			map[string]interface{}{
+				"flags": []interface{}{"-d", "aeiou"},
+				"stdin": "beautiful day\n",
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		data, ok := result.Data.(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected map data, got %T", result.Data)
+		}
+		lines, ok := data["lines"].([]interface{})
+		if !ok || len(lines) == 0 {
+			t.Fatalf("expected lines in result, got %v", data["lines"])
+		}
+		if lines[0] != "btfl dy" {
+			t.Errorf("expected 'btfl dy', got %q", lines[0])
+		}
+	})
+
+	t.Run("tr -s squeezes repeating characters", func(t *testing.T) {
+		var result ResultWrapper
+		err := c.Call(context.Background(), "goposix.tr",
+			map[string]interface{}{
+				"flags": []interface{}{"-s", "o"},
+				"stdin": "helloooo world\n",
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		data, ok := result.Data.(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected map data, got %T", result.Data)
+		}
+		lines, ok := data["lines"].([]interface{})
+		if !ok || len(lines) == 0 {
+			t.Fatalf("expected lines in result, got %v", data["lines"])
+		}
+		if lines[0] != "hello world" {
+			t.Errorf("expected squeezed 'hello world', got %q", lines[0])
+		}
+	})
+
+	t.Run("tr -c complements translation", func(t *testing.T) {
+		var result ResultWrapper
+		err := c.Call(context.Background(), "goposix.tr",
+			map[string]interface{}{
+				"flags": []interface{}{"-c", "a", "x"},
+				"stdin": "abaca",
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		data, ok := result.Data.(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected map data, got %T", result.Data)
+		}
+		lines, ok := data["lines"].([]interface{})
+		if !ok || len(lines) == 0 {
+			t.Fatalf("expected lines in result, got %v", data["lines"])
+		}
+		if lines[0] != "axaxa" {
+			t.Errorf("expected complemented 'axaxa', got %q", lines[0])
+		}
+	})
+
+	t.Run("tr rawOutput mode", func(t *testing.T) {
+		var result struct {
+			ExitCode int    `json:"exitCode"`
+			Stdout   string `json:"stdout"`
+		}
+		err := c.Call(context.Background(), "goposix.tr",
+			map[string]interface{}{
+				"rawOutput": true,
+				"flags":     []interface{}{"a-z", "A-Z"},
+				"stdin":     "hello raw\n",
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		if result.Stdout != "HELLO RAW\n" {
+			t.Errorf("expected 'HELLO RAW\\n', got %q", result.Stdout)
+		}
+	})
+}
+

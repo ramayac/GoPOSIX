@@ -144,7 +144,7 @@ func TestIsPrintable(t *testing.T) {
 func TestStringsRun_Stdin(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello\x00world_padding")
-	rc := stringsRun([]string{"-n", "5"}, &outBuf, &errBuf, in)
+	rc := stringsRun([]string{"-n", "5"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -160,7 +160,7 @@ func TestStringsRun_Stdin(t *testing.T) {
 func TestStringsRun_Json(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello\x00world")
-	rc := stringsRun([]string{"--json"}, &outBuf, &errBuf, in)
+	rc := stringsRun([]string{"--json"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -183,7 +183,7 @@ func TestStringsRun_File(t *testing.T) {
 	f.Close()
 
 	var outBuf, errBuf bytes.Buffer
-	rc := stringsRun([]string{f.Name()}, &outBuf, &errBuf, nil)
+	rc := stringsRun([]string{f.Name()}, &outBuf, &errBuf, nil, "")
 	if rc != 0 {
 		t.Logf("stderr: %s", errBuf.String())
 		t.Errorf("exit code: got %d, want 0", rc)
@@ -200,7 +200,7 @@ func TestStringsRun_RadixFlag(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	// "12345" = 0x3132333435, starts at offset 0
 	in := strings.NewReader("xxxxx")
-	rc := stringsRun([]string{"-t", "x", "-n", "3"}, &outBuf, &errBuf, in)
+	rc := stringsRun([]string{"-t", "x", "-n", "3"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0\nstderr: %s", rc, errBuf.String())
 	}

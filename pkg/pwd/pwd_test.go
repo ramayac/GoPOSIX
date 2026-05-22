@@ -29,7 +29,7 @@ func TestRunPhysical(t *testing.T) {
 }
 func TestCLI_Basic(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{}, nil, &out)
+	code := run([]string{}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -39,7 +39,7 @@ func TestCLI_Basic(t *testing.T) {
 }
 func TestCLI_JSON(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--json"}, nil, &out)
+	code := run([]string{"--json"}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -49,7 +49,7 @@ func TestCLI_JSON(t *testing.T) {
 }
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, nil, &out)
+	code := run([]string{"--nonexistent"}, nil, &out, &out, "")
 	if code != 2 {
 		t.Errorf("exit %d, want 2", code)
 	}

@@ -314,12 +314,12 @@ func parseInt64(s string) (int64, error) {
 // CLI glue
 // ---------------------------------------------------------------------------
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return ddRun(args, os.Stdin, stdout, os.Stderr)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return ddRun(args, stdin, stdout, stderr, cwd)
 }
 
 // ddRun is the testable entry point for the dd CLI.
-func ddRun(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+func ddRun(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	return Run(args, stdin, stdout, stderr)
 }
 

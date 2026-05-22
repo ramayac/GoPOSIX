@@ -9,7 +9,7 @@ import (
 
 func TestChgrpMissingArgs(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{}, nil, &out)
+	rc := run([]string{}, nil, &out, &out, "")
 	if rc != 1 {
 		t.Errorf("expected 1, got %d", rc)
 	}
@@ -20,7 +20,7 @@ func TestChgrpJSON(t *testing.T) {
 	f, _ := os.CreateTemp("", "chgrp")
 	defer os.Remove(f.Name())
 
-	rc := run([]string{"--json", "0", f.Name()}, nil, &out)
+	rc := run([]string{"--json", "0", f.Name()}, nil, &out, &out, "")
 	// Might fail if not root, so we just check it runs and outputs json
 	_ = rc
 	if !strings.Contains(out.String(), "command") {

@@ -127,7 +127,7 @@ func parseDelimiters(s string) []string {
 
 // --- CLI Glue ---
 
-func pasteRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
+func pasteRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "paste: %v\n", err)
@@ -214,8 +214,8 @@ func pasteRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	return 0
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return pasteRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return pasteRun(args, stdout, stderr, stdin, cwd)
 }
 
 func init() {

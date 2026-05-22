@@ -189,7 +189,7 @@ func TestFold_Runes_TabExpansion(t *testing.T) {
 func TestFoldRun_Stdin(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello")
-	rc := foldRun([]string{}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -201,7 +201,7 @@ func TestFoldRun_Stdin(t *testing.T) {
 func TestFoldRun_Width(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("abcdef")
-	rc := foldRun([]string{"-w", "3"}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{"-w", "3"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -214,7 +214,7 @@ func TestFoldRun_Width(t *testing.T) {
 func TestFoldRun_WidthLongFlag(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("abcdef")
-	rc := foldRun([]string{"--width", "3"}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{"--width", "3"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -227,7 +227,7 @@ func TestFoldRun_WidthLongFlag(t *testing.T) {
 func TestFoldRun_Json(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello\nworld")
-	rc := foldRun([]string{"--json"}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{"--json"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -239,7 +239,7 @@ func TestFoldRun_Json(t *testing.T) {
 func TestFoldRun_ByteMode(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("abcdefghij")
-	rc := foldRun([]string{"-b", "-w", "5"}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{"-b", "-w", "5"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -252,7 +252,7 @@ func TestFoldRun_ByteMode(t *testing.T) {
 func TestFoldRun_SpacesFlag(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello world")
-	rc := foldRun([]string{"-s", "-w", "7"}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{"-s", "-w", "7"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -266,7 +266,7 @@ func TestFoldRun_SpacesFlag(t *testing.T) {
 func TestFoldRun_SpacesLongFlag(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello world")
-	rc := foldRun([]string{"--spaces", "-w", "7"}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{"--spaces", "-w", "7"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -284,7 +284,7 @@ func TestFoldRun_FromFile(t *testing.T) {
 	}
 
 	var outBuf, errBuf bytes.Buffer
-	rc := foldRun([]string{fpath}, &outBuf, &errBuf, nil)
+	rc := foldRun([]string{fpath}, &outBuf, &errBuf, nil, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -303,7 +303,7 @@ func TestFoldRun_NestedDirs(t *testing.T) {
 	}
 
 	var outBuf, errBuf bytes.Buffer
-	rc := foldRun([]string{fpath}, &outBuf, &errBuf, nil)
+	rc := foldRun([]string{fpath}, &outBuf, &errBuf, nil, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -314,7 +314,7 @@ func TestFoldRun_NestedDirs(t *testing.T) {
 
 func TestFoldRun_FileNotFound(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
-	rc := foldRun([]string{"/nonexistent/fold_file"}, &outBuf, &errBuf, nil)
+	rc := foldRun([]string{"/nonexistent/fold_file"}, &outBuf, &errBuf, nil, "")
 	if rc != 1 {
 		t.Errorf("exit code: got %d, want 1 for missing file", rc)
 	}
@@ -328,7 +328,7 @@ func TestFoldRun_MultiFile(t *testing.T) {
 	os.WriteFile(f2, []byte("world"), 0644)
 
 	var outBuf, errBuf bytes.Buffer
-	rc := foldRun([]string{f1, f2}, &outBuf, &errBuf, nil)
+	rc := foldRun([]string{f1, f2}, &outBuf, &errBuf, nil, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -340,7 +340,7 @@ func TestFoldRun_MultiFile(t *testing.T) {
 func TestFoldRun_StdinDash(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello")
-	rc := foldRun([]string{"-"}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{"-"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -351,7 +351,7 @@ func TestFoldRun_StdinDash(t *testing.T) {
 
 func TestFoldRun_Dispatch(t *testing.T) {
 	var outBuf bytes.Buffer
-	rc := run([]string{}, nil, &outBuf)
+	rc := run([]string{}, nil, &outBuf, &outBuf, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -359,7 +359,7 @@ func TestFoldRun_Dispatch(t *testing.T) {
 
 func TestFoldRun_BadFlag(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
-	rc := foldRun([]string{"--nonexistent"}, &outBuf, &errBuf, strings.NewReader(""))
+	rc := foldRun([]string{"--nonexistent"}, &outBuf, &errBuf, strings.NewReader(""), "")
 	if rc != 2 {
 		t.Errorf("exit code: got %d, want 2 for bad flag", rc)
 	}
@@ -368,7 +368,7 @@ func TestFoldRun_BadFlag(t *testing.T) {
 func TestFoldRun_InvalidWidth(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello")
-	rc := foldRun([]string{"-w", "invalid"}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{"-w", "invalid"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0 (invalid width defaults to 80)", rc)
 	}
@@ -381,7 +381,7 @@ func TestFoldRun_InvalidWidth(t *testing.T) {
 func TestFoldRun_ZeroWidth(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello")
-	rc := foldRun([]string{"-w", "0"}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{"-w", "0"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -394,7 +394,7 @@ func TestFoldRun_ZeroWidth(t *testing.T) {
 func TestFoldRun_NegativeWidth(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello")
-	rc := foldRun([]string{"-w", "-5"}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{"-w", "-5"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -407,7 +407,7 @@ func TestFoldRun_NegativeWidth(t *testing.T) {
 func TestFoldRun_MultipleLines(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("line1\nline2\nline3")
-	rc := foldRun([]string{"-w", "80"}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{"-w", "80"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -420,7 +420,7 @@ func TestFoldRun_MultipleLines(t *testing.T) {
 func TestFoldRun_SpaceBreakAndByte(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello world foo")
-	rc := foldRun([]string{"-b", "-s", "-w", "8"}, &outBuf, &errBuf, in)
+	rc := foldRun([]string{"-b", "-s", "-w", "8"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -467,4 +467,3 @@ func TestFold_EmbeddedNULPreservation(t *testing.T) {
 		t.Errorf("NUL wrapping mismatch:\n got:  %q\n want: %q", out, expected)
 	}
 }
-

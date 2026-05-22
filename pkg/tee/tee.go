@@ -35,11 +35,11 @@ func (c *countingWriter) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return teeRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return teeRun(args, stdout, stderr, stdin, cwd)
 }
 
-func teeRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func teeRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "tee: %v\n", err)
@@ -122,9 +122,8 @@ func teeRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) 
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "tee",
-		Usage:          "Read from standard input and write to standard output and files",
-		Run:            run,
-		RunWithStreams: teeRun,
+		Name:  "tee",
+		Usage: "Read from standard input and write to standard output and files",
+		Run:   run,
 	})
 }

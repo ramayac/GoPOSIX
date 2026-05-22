@@ -93,12 +93,12 @@ func RunCapture(source string, files []string, fieldSep string, vars []string,
 //	awk [-F fs] [-v var=value] [-f progfile] [--json] -f progfile [file ...]
 //
 // At least one of 'program' (positional) or '-f progfile' must be provided.
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return awkRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return awkRun(args, stdout, stderr, stdin, cwd)
 }
 
 // awkRun is the injectable entry point for testing.
-func awkRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
+func awkRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	// Manual flag parsing: awk program text can contain anything,
 	// including strings starting with "-". Only -F, -v, -f, and --json
 	// are recognized as flags. Everything else is positional.
@@ -203,7 +203,6 @@ func init() {
 		Name: "awk",
 		Usage: "awk [-F fs] [-v var=value] [-f progfile] [--json] 'program' [file ...]\n" +
 			"Pattern-directed scanning and processing language",
-		Run:            run,
-		RunWithStreams: awkRun,
+		Run: run,
 	})
 }

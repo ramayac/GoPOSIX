@@ -85,11 +85,11 @@ func preprocessOldStyleFlags(args []string) ([]string, error) {
 	return expanded, nil
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return tarRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return tarRun(args, stdout, stderr, stdin, cwd)
 }
 
-func tarRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func tarRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "tar: %v\n", err)
@@ -774,9 +774,8 @@ func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []str
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "tar",
-		Usage:          "tar archive utility",
-		Run:            run,
-		RunWithStreams: tarRun,
+		Name:  "tar",
+		Usage: "tar archive utility",
+		Run:   run,
 	})
 }

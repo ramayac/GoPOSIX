@@ -100,7 +100,7 @@ func Run(r io.Reader, w io.Writer, numberAll, numberNonBlank, squeezeBlank bool)
 // catRun is the injectable CLI entry point for cat. It mirrors the POSIX
 // cat command: it parses flags, opens files, reads stdin, and writes to stdout.
 // errOut receives error messages. stdin is the reader for "-" and default stdin.
-func catRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
+func catRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "cat: %v\n", err)
@@ -181,8 +181,8 @@ func catRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	return 0
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return catRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return catRun(args, stdout, stderr, stdin, cwd)
 }
 
 // catRunVis handles cat -v and/or cat -e: per-line vis transformation.
@@ -215,7 +215,6 @@ func init() {
 	dispatch.Register(dispatch.Command{
 		Name:  "cat",
 		Usage: "Concatenate and print files",
-		Run:            run,
-		RunWithStreams: catRun,
+		Run:   run,
 	})
 }

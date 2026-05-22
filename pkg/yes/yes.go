@@ -28,7 +28,7 @@ var spec = common.FlagSpec{
 }
 
 // run prints a string (default "y") forever until killed.
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "yes: %v\n", err)

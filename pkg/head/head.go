@@ -54,11 +54,11 @@ type headInput struct {
 	closer io.Closer // non-nil for files that need closing
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return headRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return headRun(args, stdout, stderr, stdin, cwd)
 }
 
-func headRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func headRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "head: %v\n", err)
@@ -203,9 +203,8 @@ func runBytes(r io.Reader, w io.Writer, n int) ([]string, error) {
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "head",
-		Usage:          "Output the first part of files",
-		Run:            run,
-		RunWithStreams: headRun,
+		Name:  "head",
+		Usage: "Output the first part of files",
+		Run:   run,
 	})
 }

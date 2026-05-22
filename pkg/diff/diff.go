@@ -441,7 +441,7 @@ func GenerateDiff(content1, content2 string, contextLines int, ignoreSpace, igno
 	return differ, hunks
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "diff: %v\n", err)

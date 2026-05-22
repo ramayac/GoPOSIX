@@ -423,7 +423,7 @@ func TestSedJSONSubstitute(t *testing.T) {
 	f.Close()
 
 	var out bytes.Buffer
-	code := run([]string{"--json", "s/world/goposix/", f.Name()}, nil, &out)
+	code := run([]string{"--json", "s/world/goposix/", f.Name()}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -454,7 +454,7 @@ func TestSedJSONShortFlag(t *testing.T) {
 	f.Close()
 
 	var out bytes.Buffer
-	code := run([]string{"--json", "s/a/b/", f.Name()}, nil, &out)
+	code := run([]string{"--json", "s/a/b/", f.Name()}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -473,7 +473,7 @@ func TestSedJSONMultiFile(t *testing.T) {
 
 	var out bytes.Buffer
 	// p prints explicitly + default print with no -n = double output per line
-	code := run([]string{"--json", "-n", "p", f.Name()}, nil, &out)
+	code := run([]string{"--json", "-n", "p", f.Name()}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -790,7 +790,7 @@ func TestEngine_CondBranch(t *testing.T) {
 func TestCLI_SuppressDefault(t *testing.T) {
 	f := makeTempFile(t, "hello\nworld\n")
 	var out bytes.Buffer
-	code := run([]string{"-n", "s/hello/hi/p", f}, nil, &out)
+	code := run([]string{"-n", "s/hello/hi/p", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -802,7 +802,7 @@ func TestCLI_SuppressDefault(t *testing.T) {
 func TestCLI_ExpressionFlag(t *testing.T) {
 	f := makeTempFile(t, "hello\n")
 	var out bytes.Buffer
-	code := run([]string{"-e", "s/hello/hi/", f}, nil, &out)
+	code := run([]string{"-e", "s/hello/hi/", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -814,7 +814,7 @@ func TestCLI_ExpressionFlag(t *testing.T) {
 func TestCLI_MultipleExpressions(t *testing.T) {
 	f := makeTempFile(t, "foo bar\n")
 	var out bytes.Buffer
-	code := run([]string{"-e", "s/foo/FIRST/", "-e", "s/bar/SECOND/", f}, nil, &out)
+	code := run([]string{"-e", "s/foo/FIRST/", "-e", "s/bar/SECOND/", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -827,7 +827,7 @@ func TestCLI_ScriptFile(t *testing.T) {
 	data := makeTempFile(t, "hello\n")
 	script := makeTempFile(t, "s/hello/hi/")
 	var out bytes.Buffer
-	code := run([]string{"-f", script, data}, nil, &out)
+	code := run([]string{"-f", script, data}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -838,7 +838,7 @@ func TestCLI_ScriptFile(t *testing.T) {
 
 func TestCLI_Version(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--version"}, nil, &out)
+	code := run([]string{"--version"}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -849,7 +849,7 @@ func TestCLI_Version(t *testing.T) {
 
 func TestCLI_NoExpression(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{}, nil, &out)
+	code := run([]string{}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing command, got %d", code)
 	}
@@ -858,7 +858,7 @@ func TestCLI_NoExpression(t *testing.T) {
 func TestCLI_JsonWithInPlace(t *testing.T) {
 	f := makeTempFile(t, "hello\n")
 	var out bytes.Buffer
-	code := run([]string{"--json", "--in-place", "s/h/H/", f}, nil, &out)
+	code := run([]string{"--json", "--in-place", "s/h/H/", f}, nil, &out, &out, "")
 	if code != 2 {
 		t.Errorf("expected exit 2 for --json + --in-place, got %d", code)
 	}
@@ -866,7 +866,7 @@ func TestCLI_JsonWithInPlace(t *testing.T) {
 
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, nil, &out)
+	code := run([]string{"--nonexistent"}, nil, &out, &out, "")
 	if code != 2 {
 		t.Errorf("expected exit 2 for bad flag, got %d", code)
 	}

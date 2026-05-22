@@ -6,10 +6,11 @@ import (
 	"os"
 	"strconv"
 
+	"io"
+
 	"github.com/ramayac/goposix/internal/daemon"
 	"github.com/ramayac/goposix/internal/dispatch"
 	"github.com/ramayac/goposix/pkg/common"
-	"io"
 )
 
 var spec = common.FlagSpec{
@@ -20,7 +21,7 @@ var spec = common.FlagSpec{
 	},
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "daemon: %v\n", err)

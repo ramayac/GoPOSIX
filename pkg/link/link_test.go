@@ -15,7 +15,7 @@ func TestLinkCreatesHardLink(t *testing.T) {
 	dst := filepath.Join(dir, "dst")
 	os.WriteFile(src, []byte("data"), 0644)
 
-	code := run([]string{src, dst}, nil, io.Discard)
+	code := run([]string{src, dst}, nil, io.Discard, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}
@@ -36,7 +36,7 @@ func TestLinkCreatesHardLink(t *testing.T) {
 
 func TestLinkNonexistentSource(t *testing.T) {
 	dir := t.TempDir()
-	code := run([]string{filepath.Join(dir, "nonexistent"), filepath.Join(dir, "dst")}, nil, io.Discard)
+	code := run([]string{filepath.Join(dir, "nonexistent"), filepath.Join(dir, "dst")}, nil, io.Discard, io.Discard, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for nonexistent source, got %d", code)
 	}
@@ -49,14 +49,14 @@ func TestLinkExistingTarget(t *testing.T) {
 	os.WriteFile(src, []byte("data"), 0644)
 	os.WriteFile(dst, []byte("old"), 0644)
 
-	code := run([]string{src, dst}, nil, io.Discard)
+	code := run([]string{src, dst}, nil, io.Discard, io.Discard, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for existing target, got %d", code)
 	}
 }
 
 func TestLinkMissingOperand(t *testing.T) {
-	code := run([]string{"/x"}, nil, io.Discard)
+	code := run([]string{"/x"}, nil, io.Discard, io.Discard, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing operand, got %d", code)
 	}
@@ -69,7 +69,7 @@ func TestLinkJson(t *testing.T) {
 	os.WriteFile(src, []byte("data"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"--json", src, dst}, nil, &buf)
+	code := run([]string{"--json", src, dst}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d", code)
 	}

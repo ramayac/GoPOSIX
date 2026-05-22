@@ -25,7 +25,7 @@ type ProcessInfo struct {
 	Mem  string `json:"mem"`
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ps: %v\n", err)

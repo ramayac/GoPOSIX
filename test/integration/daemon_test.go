@@ -21,6 +21,7 @@ import (
 )
 
 func TestDaemonConcurrent(t *testing.T) {
+	t.Setenv("GOPOSIX_RATE_LIMIT", "10000")
 	socket := filepath.Join(t.TempDir(), "goposix.sock")
 
 	// Start server in background

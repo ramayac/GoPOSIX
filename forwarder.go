@@ -9,12 +9,16 @@ package goposix
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 )
+
+var isStdinPipedFn = isStdinPiped
+var stdoutWriter io.Writer = os.Stdout
 
 // socketExists reports whether the daemon socket path exists.
 func socketExists(path string) bool {
@@ -125,7 +129,7 @@ func forwardToDaemon(socketPath string, argv []string) int {
 	}
 
 	// Print the command's stdout.
-	os.Stdout.WriteString(resp.Result.Stdout)
+	fmt.Fprint(stdoutWriter, resp.Result.Stdout)
 
 	return resp.Result.ExitCode
 }
@@ -145,7 +149,7 @@ func TryForward() int {
 
 	// Don't forward when stdin is piped — the daemon can't handle stdin
 	// streaming through JSON-RPC. Cold start handles this correctly.
-	if isStdinPiped() {
+	if isStdinPipedFn() {
 		return -1
 	}
 

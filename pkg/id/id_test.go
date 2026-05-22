@@ -8,7 +8,7 @@ import (
 
 func TestIdRun(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{}, nil, &out)
+	rc := run([]string{}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -19,7 +19,7 @@ func TestIdRun(t *testing.T) {
 
 func TestIdJSON(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"--json"}, nil, &out)
+	rc := run([]string{"--json"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
