@@ -3,6 +3,7 @@ package posixjson_test
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/hostid"
 	_ "github.com/ramayac/goposix/pkg/printenv"
 	_ "github.com/ramayac/goposix/pkg/sha3sum"
+	_ "github.com/ramayac/goposix/pkg/tree"
 	_ "github.com/ramayac/goposix/pkg/xargs"
 )
 
@@ -345,6 +347,53 @@ func TestTier5_Sha3sum(t *testing.T) {
 		expected := "a8009a7a528d87778c356da3a55d964719e818666a04e4f960c9e2439e35f138"
 		if hash != expected {
 			t.Errorf("expected hash %q, got %q", expected, hash)
+		}
+	})
+}
+
+func TestTier5_Tree(t *testing.T) {
+	socket := startDaemon(t)
+	c := client.Dial(socket, 5*time.Second)
+
+	t.Run("lists directory tree over JSON-RPC", func(t *testing.T) {
+		// Create a quick temp dir to list
+		tmpDir, err := os.MkdirTemp("", "daemon_tree_test")
+		if err != nil {
+			t.Fatalf("failed to create temp dir: %v", err)
+		}
+		defer os.RemoveAll(tmpDir)
+		_ = os.WriteFile(filepath.Join(tmpDir, "file1.txt"), []byte("data"), 0644)
+
+		var result ResultWrapper
+		err = c.Call(context.Background(), "goposix.tree",
+			map[string]interface{}{
+				"flags": []interface{}{"--json", tmpDir},
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		data, ok := result.Data.(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected map data, got %T", result.Data)
+		}
+		trees, ok := data["trees"].([]interface{})
+		if !ok {
+			t.Fatalf("expected 'trees' list, got %v", data)
+		}
+		if len(trees) != 1 {
+			t.Fatalf("expected 1 tree root, got %d", len(trees))
+		}
+		rootNode, ok := trees[0].(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected root node map, got %T", trees[0])
+		}
+		name, _ := rootNode["name"].(string)
+		if name != tmpDir {
+			t.Errorf("expected root name %q, got %q", tmpDir, name)
 		}
 	})
 }

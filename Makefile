@@ -40,6 +40,7 @@ PKG_DIRS   := . \
               ./pkg/comm/... \
               ./pkg/mv/... \
               ./pkg/touch/... \
+              ./pkg/tree/... \
               ./pkg/ln/... \
               ./pkg/stat/... \
               ./pkg/readlink/... \

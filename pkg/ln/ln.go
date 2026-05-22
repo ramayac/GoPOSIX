@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/ramayac/goposix/internal/dispatch"
 	"github.com/ramayac/goposix/pkg/common"
@@ -42,6 +43,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	target := flags.Positional[0]
 	link := flags.Positional[1]
+
+	if fi, err := os.Stat(link); err == nil && fi.IsDir() {
+		link = filepath.Join(link, filepath.Base(target))
+	}
 
 	if force {
 		os.Remove(link)

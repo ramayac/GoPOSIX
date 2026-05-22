@@ -85,6 +85,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/tee"
 	_ "github.com/ramayac/goposix/pkg/testcmd"
 	_ "github.com/ramayac/goposix/pkg/touch"
+	_ "github.com/ramayac/goposix/pkg/tree"
 	_ "github.com/ramayac/goposix/pkg/tr"
 	_ "github.com/ramayac/goposix/pkg/truefalse"
 	_ "github.com/ramayac/goposix/pkg/tty"
