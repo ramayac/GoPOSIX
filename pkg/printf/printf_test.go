@@ -625,3 +625,26 @@ func TestFormat_BConv_AllEscapes(t *testing.T) {
 		}
 	}
 }
+
+func TestFormat_WidthAndFlags(t *testing.T) {
+	// %-10s: left-justified string
+	s, _ := Format("%-10s", []string{"hi"})
+	if !strings.Contains(s, "hi") {
+		t.Errorf("expected 'hi' in output, got %q", s)
+	}
+}
+
+func TestFormat_ZeroPadFloat(t *testing.T) {
+	s, _ := Format("%010.3f", []string{"1.5"})
+	if !strings.Contains(s, "1.500") {
+		t.Errorf("expected 1.500 in output, got %q", s)
+	}
+}
+
+func TestFormat_CharConv(t *testing.T) {
+	s, _ := Format("%c", []string{"hello"})
+	// %c prints first character: 'h'
+	if !strings.Contains(s, "h") {
+		t.Errorf("expected 'h' in output, got %q", s)
+	}
+}

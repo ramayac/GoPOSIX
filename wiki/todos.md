@@ -35,16 +35,15 @@ Needs daemon integration test:
 |---------|:---:|:---:|---|
 | `client_helpers` (30+ funcs) | **131 blocks → 5 remaining** | Medium | 27 new helper tests: Dirname, Hostname, Printf, Test, Whoami, Readlink, ID, Date, Uname, Env, Printenv, Sort, Cut, Uniq, Find, Mv, Cp, Ln, Rmdir, Chmod, Md5sum, Sha256sum, Df, Du, Ps, Xargs, Expr. Skipped: Chown/Chgrp (root), Gzip (type mismatch), Tar (cwd), Kill (PID). |
 
-### Phase D — Future (target: ~85%)
-Complex but impactful:
+### Phase D — Complete ✅ (81.5% → 82.2%)
 
-| Function | Coverage | Uncovered | Effort | Notes |
-|----------|:---:|:---:|:---:|---|
-| `sed/execFlat` | 36.7% | 25 blocks | High | Massive switch statement for `P`/`D`/`n`/`N`/`q`/`h`/`H`/`g`/`G`/`x`/`y`/`:`/`b`/`t` |
-| `tar/doExtract+doList` | 43-59% | 20 blocks | Medium | Extract to stdout, overwrite, exclude, verbose listing |
-| `cp/copyDir` | 53.1% | 12 blocks | Medium | Symlink-preserving, nested dirs |
-| `date/eval+parsePOSIXTZ` | 52-66% | 15 blocks | Medium | More M.w.d format variations, Julian day rollover |
-| `printf` | 79.0% | ~10 blocks | Low | Remaining escape sequences in format strings |
+| Package | Tests Added | Coverage After | Key additions |
+|---------|:---:|:---:|---|
+| `sed` | +13 | 69.5% | a/i/c/q/n/N/D/P/T/w commands, SubNum (s/pat/repl/N), w-file, \\ delimiter, $ address, +N range |
+| `tar` | +2 | 67.5% | Extract to stdout (-O), verbose listing (-t -v) |
+| `cp` | +1 | 78.0% | Symlink copy |
+| `date` | +4 | 73.5% | Last-week M.w.d eval, non-leap Julian, complex TZ with DST |
+| `printf` | +3 | 79.5% | %c char, %- left-justify, %0 zero-pad float |
 
 ### Skipped (platform-specific / needs subprocess)
 

@@ -413,3 +413,46 @@ func TestPosixTZ_Eval_MonthWeekDay(t *testing.T) {
 	}
 	_ = r.eval(2024, -18000, -14400)
 }
+
+func TestPosixTZ_Eval_LastWeek(t *testing.T) {
+	// M3.5.0 = last Sunday in March (week=5 means last)
+	r := &posixTZRule{
+		isStart:          true,
+		isMonthWeekDay:   true,
+		month:            3,
+		week:             5,
+		weekday:          0,
+		timeOfTransition: 7200,
+	}
+	_ = r.eval(2024, -18000, -14400)
+}
+
+func TestPosixTZ_Eval_NonLeapJulian(t *testing.T) {
+	r := &posixTZRule{
+		isStart:          false,
+		isJulianNoLeap:   true,
+		julianDay:        59,
+		timeOfTransition: 7200,
+	}
+	_ = r.eval(2023, -18000, -14400)
+}
+
+func TestParsePOSIXTZ_StandardOnly(t *testing.T) {
+	// Simple TZ with just name and offset: "EST5"
+	tz, ok := parsePOSIXTZ("EST5")
+	if ok {
+		if tz.stdName != "EST" {
+			t.Errorf("expected EST, got %q", tz.stdName)
+		}
+	}
+}
+
+func TestParsePOSIXTZ_Complex(t *testing.T) {
+	// Full TZ: "NZST-12:00:00NZDT-13:00:00,M10.1.0,M3.3.0"
+	tz, ok := parsePOSIXTZ("NZST-12:00:00NZDT-13:00:00,M10.1.0,M3.3.0")
+	if ok {
+		if !tz.hasDST {
+			t.Error("expected DST for complex TZ")
+		}
+	}
+}

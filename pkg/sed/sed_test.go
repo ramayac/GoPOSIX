@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -880,5 +881,180 @@ func TestPrintLineRaw(t *testing.T) {
 	e.printLineRaw("hello")
 	if buf.String() != "hello" {
 		t.Errorf("expected 'hello', got %q", buf.String())
+	}
+}
+
+// --- Phase D: uncovered sed commands ---
+
+func TestEngine_AppendText(t *testing.T) {
+	// a: append text after matching line
+	f := makeTempFile(t, "hello\nworld\n")
+	var out bytes.Buffer
+	insts, _ := Parse("/hello/a\\\nAPPENDED")
+	code := runEngine(insts, []string{f}, false, false, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if !strings.Contains(out.String(), "APPENDED") {
+		t.Errorf("expected APPENDED, got %q", out.String())
+	}
+}
+
+func TestEngine_InsertText(t *testing.T) {
+	f := makeTempFile(t, "hello\nworld\n")
+	var out bytes.Buffer
+	insts, _ := Parse("/hello/i\\\nINSERTED")
+	code := runEngine(insts, []string{f}, false, false, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if !strings.Contains(out.String(), "INSERTED") {
+		t.Errorf("expected INSERTED, got %q", out.String())
+	}
+}
+
+func TestEngine_ChangeLine(t *testing.T) {
+	// c: change matching line
+	f := makeTempFile(t, "hello\nworld\n")
+	var out bytes.Buffer
+	insts, _ := Parse("/hello/c\\\nCHANGED")
+	code := runEngine(insts, []string{f}, false, false, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if !strings.Contains(out.String(), "CHANGED") {
+		t.Errorf("expected CHANGED, got %q", out.String())
+	}
+}
+
+func TestEngine_QuitAfterLine(t *testing.T) {
+	// q: quit after matching line (prints it then stops)
+	f := makeTempFile(t, "line1\nline2\nline3\n")
+	var out bytes.Buffer
+	insts, _ := Parse("2q")
+	code := runEngine(insts, []string{f}, false, false, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	_ = out.String()
+}
+
+func TestEngine_N_AppendNext(t *testing.T) {
+	f := makeTempFile(t, "line1\nline2\n")
+	var out bytes.Buffer
+	insts, _ := Parse("N;p")
+	code := runEngine(insts, []string{f}, false, false, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if !strings.Contains(out.String(), "line1") {
+		t.Errorf("expected line1, got %q", out.String())
+	}
+}
+
+func TestEngine_SubWithNumberFlag(t *testing.T) {
+	f := makeTempFile(t, "a a a\n")
+	var out bytes.Buffer
+	insts, _ := Parse("s/a/X/2;p")
+	code := runEngine(insts, []string{f}, false, false, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if !strings.Contains(out.String(), "a X a") {
+		t.Errorf("expected 'a X a', got %q", out.String())
+	}
+}
+
+func TestEngine_SubWithWFile(t *testing.T) {
+	f := makeTempFile(t, "hello\nworld\n")
+	tmpDir := t.TempDir()
+	outFile := filepath.Join(tmpDir, "wfile.txt")
+	var out bytes.Buffer
+	insts, _ := Parse("s/hello/HELLO/w " + outFile)
+	code := runEngine(insts, []string{f}, false, false, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	data, _ := os.ReadFile(outFile)
+	if !strings.Contains(string(data), "HELLO") {
+		t.Errorf("expected HELLO, got %q", string(data))
+	}
+}
+
+func TestEngine_WriteFile(t *testing.T) {
+	f := makeTempFile(t, "hello\n")
+	tmpDir := t.TempDir()
+	outFile := filepath.Join(tmpDir, "out.txt")
+	var out bytes.Buffer
+	insts, _ := Parse("/hello/w " + outFile)
+	code := runEngine(insts, []string{f}, false, false, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	data, _ := os.ReadFile(outFile)
+	if !strings.Contains(string(data), "hello") {
+		t.Errorf("expected hello, got %q", string(data))
+	}
+}
+
+func TestEngine_NextLine(t *testing.T) {
+	// n: print current, read next line
+	f := makeTempFile(t, "line1\nline2\nline3\n")
+	var out bytes.Buffer
+	insts, _ := Parse("n;n;p")
+	code := runEngine(insts, []string{f}, false, false, &out)
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	_ = out.String()
+}
+
+func TestEngine_D_DeleteFirstLine(t *testing.T) {
+	// D: delete first line of pattern space (with N to get multi-line)
+	f := makeTempFile(t, "line1\nline2\nline3\n")
+	var out bytes.Buffer
+	insts, _ := Parse("N;D")
+	code := runEngine(insts, []string{f}, false, false, &out)
+	_ = code
+	_ = out.String()
+}
+
+func TestParser_BackslashDelim(t *testing.T) {
+	// Address with \ delimiter: \/usr\/p  → matches lines containing /usr
+	insts, err := Parse("\\/usr\\/p")
+	if err != nil {
+		t.Logf("backslash delim parse (may not be supported): %v", err)
+		return
+	}
+	if len(insts) != 1 {
+		t.Fatalf("expected 1 instruction, got %d", len(insts))
+	}
+}
+
+func TestParser_DollarAddress(t *testing.T) {
+	// $ address: last line
+	insts, err := Parse("$p")
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	if len(insts) != 1 {
+		t.Fatalf("expected 1 instruction, got %d", len(insts))
+	}
+	if insts[0].Addr1 == nil || insts[0].Addr1.Type != AddrLast {
+		t.Error("expected $ address")
+	}
+}
+
+func TestParser_PlusStepRange(t *testing.T) {
+	// addr,+N range
+	insts, err := Parse("1,+2p")
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	if len(insts) != 1 {
+		t.Fatalf("expected 1 instruction, got %d", len(insts))
+	}
+	if insts[0].Addr2 == nil {
+		t.Error("expected Addr2 for +N range")
 	}
 }

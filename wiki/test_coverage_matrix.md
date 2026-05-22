@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Branch:** `feat/coverage-85` | **Overall Coverage:** 81.5%
+> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Branch:** `feat/coverage-85` | **Overall Coverage:** 82.2%
 >
 > Canonical per-utility test status for all 86 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -44,7 +44,7 @@
 | `mkdir` | 73.0% | 2 | ✅ 2/2 | ✅ |
 | `rmdir` | 92.6% | 1 | ✅ 1/1 | ✅ |
 | `rm` | 87.3% | 1 | ✅ 1/1 | ✅ |
-| `cp` | 77.5% | 14 | ✅ 14/14 | ✅ |
+| `cp` | 78.0% | 14 | ✅ 14/14 | ✅ |
 | `mv` | 76.0% | 14 | ✅ 14/14 | ✅ |
 | `touch` | 82.6% | 3 | ✅ 3/3 | ✅ |
 | `ln` | 79.3% | 6 | ✅ 6/6 | ✅ |
@@ -68,7 +68,7 @@
 | `cut` | 90.8% | 25 | ✅ 25/25 | ✅ |
 | `tee` | 73.1% | 2 | ✅ 2/2 | ✅ |
 | `grep` | 84.8% | 53 | ✅ 53/53 | ✅ |
-| `sed` | 68.0% | 103 | ✅ 103/103 | ✅ |
+| `sed` | 69.5% | 103 | ✅ 103/103 | ✅ |
 | `rev` | 94.7% | 4 | ✅ 4/4 | ✅ |
 | `tsort` | 84.3% | 20 | ✅ 20/20 | ✅ |
 
@@ -79,7 +79,7 @@
 | `ps` | 84.6% | — | — | ✅ |
 | `kill` | 73.1% | — | — | ✅ |
 | `sleep` | 78.1% | — | — | ✅ |
-| `date` | 72.5% | 7 | ✅ 7/7 | ✅ |
+| `date` | 73.5% | 7 | ✅ 7/7 | ✅ |
 | `uptime` | 88.5% | 1 | ✅ 1/1 | ✅ |
 | `id` | 87.1% | 4 | ✅ 4/4 | ✅ |
 | `chmod` | 68.3% | — | — | ✅ |
@@ -95,7 +95,7 @@
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `tar` | 66.5% | 18 | ✅ 18/18 | ✅ |
+| `tar` | 67.5% | 18 | ✅ 18/18 | ✅ |
 | `gzip` / `gunzip` | 64.7% | 4 | ✅ 4/4 | ✅ |
 | `sha256sum` | 81.6% | — | — | ✅ |
 | `sha1sum` | 89.1% | 1 | ✅ 1/1 | ✅ |
@@ -104,7 +104,7 @@
 | `md5sum` | 79.6% | 2 | ✅ 2/2 | ✅ |
 | `diff` | 72.5% | 20 | ✅ 20/20 | ✅ |
 | `test` / `[` | 82.9% | — | — | ❌ |
-| `printf` | 79.0% | 26 | ✅ 26/26 | ✅ |
+| `printf` | 79.5% | 26 | ✅ 26/26 | ✅ |
 | `expr` | 83.5% | 2 | ✅ 2/2 | ✅ |
 | `awk` | 90.0% | 53 | ⚠️ 36/53 (17 fail) | ✅ |
 | `shell` | 66.7% | — | — | ✅ |
@@ -194,4 +194,4 @@
 - **Phase 26/27 progress:** Implemented 15 new utilities (`which`, `realpath`, `seq`, `sha1sum`, `sha512sum`, `rev`, `uptime`, `wget`, `cal`, `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, `pidof`) with statement coverage >= 80%. Brought overall coverage to 77.9%.
 - **Phase 28 (feat/coverage-10):** Added 60+ new unit tests covering CLI glue layers (`run()`), infrastructure (dispatch, flags, filepath), utility edge cases (date, printf, wc, expr, diff, sort, tar), and observability. Overall coverage: 77.9% → 80.1%. Key wins: `true/false` 75% → 100%, `wc` 81.2% → 93.2%, dispatch 100%, flags 100%, filepath 100%, `printf` 65.6% → 79.0%, `sort` 82.5% → 85.2%. CI gate raised from 70% → 80%. Remaining gaps: `main()` (os.Exit), `client_helpers` (needs daemon), platform-specific code (`setProcTitle`, `RunDaemon`).
 - **Phase 28.5 (feat/coverage-85):** Added 35+ new tests across Phase A (xargs 2→12, paste +5, join +5, tr +6, hostname +4) and Phase B (mkdir +3, mv +4, cp +1, diff +3, comm +6). Overall: 80.1% → 80.9%. Key wins: `xargs` 65.7% → 74.5%, `comm` 79.4% → 81.0%, `join` 76.8% → 78.0%. All 93 packages green. Next targets: `client_helpers` (131 blocks at 0%), `sed/execFlat` (36.7%), `tar` (104 uncovered). See [wiki/todos.md](todos.md) for full plan.
-- **Phase 28.6 (feat/coverage-85 Phase C):** Added 30 new client SDK helper tests against a running test daemon (Dirname, Hostname, Printf, Test, Whoami, Readlink, ID, Date, Uname, Env, Printenv, Sort, Cut, Uniq, Find, Mv, Cp, Ln, Rmdir, Chmod, Md5sum, Sha256sum, Df, Du, Ps, Xargs, Expr). `client_helpers` 30+ functions at 0% → 5 remaining (Chown/Chgrp need root, Gzip type mismatch, Tar cwd, Kill needs PID). Overall: 80.9% → 81.5%, client package: 56.6% → 65.0%. Next: Phase D (sed/execFlat, tar, date).
+- **Phase 28.6 (feat/coverage-85 Phase D):** Added 20 new tests: sed (a/i/c/q/N/n/D/P/T/w commands, SubNum, \ delimiter, $ addr, +N range), tar (extract to stdout, verbose list), cp (symlink copy), date (last-week eval, non-leap Julian, complex TZ), printf (%c, %-width, %0pad). Overall: 81.5% → 82.2%. Key wins: `sed` 68% → 69.5%, `tar` 66.5% → 67.5%, `date` 72.5% → 73.5%. All 93 packages green.

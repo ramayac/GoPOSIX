@@ -264,3 +264,17 @@ func TestCLI_RecursiveDir(t *testing.T) {
 		t.Error("nested file not copied")
 	}
 }
+
+func TestCLI_CopySymlink(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "target")
+	link := filepath.Join(dir, "link")
+	dst := filepath.Join(dir, "copied_link")
+	os.WriteFile(src, []byte("data"), 0644)
+	os.Symlink(src, link)
+	var out bytes.Buffer
+	code := run([]string{link, dst}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+}
