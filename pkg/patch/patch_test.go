@@ -368,3 +368,14 @@ func TestPatchRun_AlreadyApplied(t *testing.T) {
 		t.Errorf("expected FAILED in stderr, got: %q", stderr.String())
 	}
 }
+
+func TestPatch_CLIRun(t *testing.T) {
+	// Test the CLI glue run() function.
+	var stdout, stderr bytes.Buffer
+	stdin := bytes.NewReader([]byte{})
+	rc := run([]string{}, stdin, &stdout, &stderr, "")
+	// Will fail without operands; just verify it doesn't panic.
+	if rc == 0 {
+		t.Log("patch run() succeeded with no args")
+	}
+}

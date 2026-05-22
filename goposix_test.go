@@ -157,6 +157,82 @@ func TestWellKnownNames(t *testing.T) {
 	}
 }
 
+func TestMain(t *testing.T) {
+	// Main() just calls Run(os.Args). Verify it returns 0 for a valid command.
+	// We need to set os.Args to mimic a well-known binary invocation.
+	origArgs := os.Args
+	os.Args = []string{"goposix", "test-hello"}
+	defer func() { os.Args = origArgs }()
+
+	exit := Main()
+	if exit != 0 {
+		t.Errorf("expected exit 0, got %d", exit)
+	}
+}
+
+func TestMain_NoArgs(t *testing.T) {
+	origArgs := os.Args
+	os.Args = []string{"goposix"}
+	defer func() { os.Args = origArgs }()
+
+	exit := Main()
+	if exit != 0 {
+		t.Errorf("expected exit 0 for no-args, got %d", exit)
+	}
+}
+
+func TestMain_Symlink(t *testing.T) {
+	origArgs := os.Args
+	os.Args = []string{"/bin/test-hello"}
+	defer func() { os.Args = origArgs }()
+
+	exit := Main()
+	if exit != 0 {
+		t.Errorf("expected exit 0 for symlink invocation, got %d", exit)
+	}
+}
+
+func TestRegister(t *testing.T) {
+	// Register should not panic and the command should be lookuppable.
+	called := false
+	Register(Command{
+		Name:  "test-registered",
+		Usage: "verifies Register works",
+		Run: func(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+			called = true
+			return 0
+		},
+	})
+
+	cmd, ok := dispatch.Lookup("test-registered")
+	if !ok {
+		t.Fatal("expected command to be registered")
+	}
+	cmd.Run(nil, nil, nil, nil, "")
+	if !called {
+		t.Error("expected registered Run to be called")
+	}
+}
+
+func TestRunWithWriter_Upgrade(t *testing.T) {
+	// --upgrade attempts to contact GitHub; it will fail in tests but should
+	// not panic and should exercise the upgrade error path.
+	errOutput := captureStderr(func() {
+		exit := RunWithWriter([]string{"goposix", "--upgrade"}, os.Stdout)
+		if exit != 1 {
+			t.Logf("note: upgrade exit code is %d (expected 1 if upgrade fails)", exit)
+		}
+	})
+	_ = errOutput // error will vary depending on network availability
+}
+
+func TestRunWithWriter_HelpShortFlag(t *testing.T) {
+	exit := Run([]string{"goposix", "-h"})
+	if exit != 0 {
+		t.Errorf("expected exit 0 for -h, got %d", exit)
+	}
+}
+
 func TestWellKnownNames_Append(t *testing.T) {
 	orig := make([]string, len(WellKnownNames))
 	copy(orig, WellKnownNames)

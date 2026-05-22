@@ -156,3 +156,53 @@ func TestDd_WriteError(t *testing.T) {
 		t.Errorf("exit code %d, want 1 (write error)", code)
 	}
 }
+
+func TestParseInt64(t *testing.T) {
+	tests := []struct {
+		s       string
+		want    int64
+		wantErr bool
+	}{
+		{"0", 0, false},
+		{"1", 1, false},
+		{"10", 10, false},
+		{"1b", 512, false},
+		{"2B", 1024, false},
+		{"1k", 1024, false},
+		{"2K", 2048, false},
+		{"1m", 1024 * 1024, false},
+		{"2M", 2 * 1024 * 1024, false},
+		{"1w", 2, false},
+		{"2W", 4, false},
+		{"ffx", 255, false},
+		{"10x", 16, false},
+		{"", 0, true},
+		{"abc", 0, true},
+		{" 1k ", 1024, false},
+	}
+	for _, tt := range tests {
+		got, err := parseInt64(tt.s)
+		if tt.wantErr {
+			if err == nil {
+				t.Errorf("parseInt64(%q): expected error", tt.s)
+			}
+		} else {
+			if err != nil {
+				t.Errorf("parseInt64(%q): unexpected error: %v", tt.s, err)
+			}
+			if got != tt.want {
+				t.Errorf("parseInt64(%q) = %d, want %d", tt.s, got, tt.want)
+			}
+		}
+	}
+}
+
+func TestDd_CLIRun(t *testing.T) {
+	// Test the CLI glue run() function.
+	var outBuf, errBuf bytes.Buffer
+	stdin := bytes.NewBufferString("test\n")
+	rc := run([]string{}, stdin, &outBuf, &errBuf, "")
+	if rc != 0 {
+		t.Errorf("exit code: got %d, want 0", rc)
+	}
+}

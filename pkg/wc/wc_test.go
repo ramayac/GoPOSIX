@@ -232,3 +232,32 @@ func TestCLI_BadFlag(t *testing.T) {
 		t.Errorf("expected exit 2, got %d", code)
 	}
 }
+
+func TestCountScanner(t *testing.T) {
+	// Test the scanner-based counting function.
+	input := "line1\nline2\nword count test\n"
+	result, err := CountScanner(strings.NewReader(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// 3 lines, 5 words, 28 bytes (CountScanner does not count chars)
+	if result.Lines != 3 {
+		t.Errorf("expected 3 lines, got %d", result.Lines)
+	}
+	if result.Words != 5 {
+		t.Errorf("expected 5 words, got %d", result.Words)
+	}
+	if result.Bytes != len(input) {
+		t.Errorf("expected %d bytes, got %d", len(input), result.Bytes)
+	}
+}
+
+func TestCountScanner_Empty(t *testing.T) {
+	result, err := CountScanner(strings.NewReader(""))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Lines != 0 || result.Words != 0 || result.Bytes != 0 {
+		t.Errorf("expected all zeros, got %+v", result)
+	}
+}

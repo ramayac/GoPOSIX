@@ -178,6 +178,39 @@ func TestEvalSubstr(t *testing.T) {
 	}
 }
 
+func TestEvalSubstr_OutOfBounds(t *testing.T) {
+	// start beyond string length
+	result, _, err := Eval([]string{"substr", "hi", "10", "3"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != "" {
+		t.Errorf("expected empty, got %q", result)
+	}
+}
+
+func TestEvalSubstr_PositionZero(t *testing.T) {
+	// pos < 1 should be clamped to 1
+	result, _, err := Eval([]string{"substr", "hello", "0", "3"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != "hel" {
+		t.Errorf("got %q, want %q", result, "hel")
+	}
+}
+
+func TestEvalSubstr_PositionNegative(t *testing.T) {
+	// pos < 1 should be clamped to 1
+	result, _, err := Eval([]string{"substr", "hello", "-5", "3"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != "hel" {
+		t.Errorf("got %q, want %q", result, "hel")
+	}
+}
+
 func TestEvalIndex(t *testing.T) {
 	result, _, err := Eval([]string{"index", "hello", "lo"})
 	if err != nil {

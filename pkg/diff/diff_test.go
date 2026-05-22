@@ -215,11 +215,29 @@ func TestJoinPreserving(t *testing.T) {
 }
 
 func TestMinMax(t *testing.T) {
+	// a < b case (covered)
 	if min(3, 5) != 3 {
 		t.Error("min(3,5) should be 3")
 	}
+	// b < a case (uncovered)
+	if min(5, 3) != 3 {
+		t.Error("min(5,3) should be 3")
+	}
+	// equal case
+	if min(3, 3) != 3 {
+		t.Error("min(3,3) should be 3")
+	}
+	// a > b case (covered)
 	if max(3, 5) != 5 {
 		t.Error("max(3,5) should be 5")
+	}
+	// b > a case (uncovered)
+	if max(5, 3) != 5 {
+		t.Error("max(5,3) should be 5")
+	}
+	// equal case
+	if max(3, 3) != 3 {
+		t.Error("max(3,3) should be 3")
 	}
 }
 

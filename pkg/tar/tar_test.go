@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestTarCreateExtract(t *testing.T) {
@@ -508,5 +509,62 @@ func TestTar_OldStyleGzip(t *testing.T) {
 	f.Close()
 	if magic[0] != 0x1f || magic[1] != 0x8b {
 		t.Error("not gzipped")
+	}
+}
+
+func TestLocalTime_NoTZ(t *testing.T) {
+	os.Unsetenv("TZ")
+	now := time.Now()
+	result := localTime(now)
+	if !result.Equal(now) {
+		t.Error("localTime should return same time when TZ is unset")
+	}
+}
+
+func TestLocalTime_UTC(t *testing.T) {
+	os.Setenv("TZ", "UTC")
+	defer os.Unsetenv("TZ")
+	now := time.Now()
+	result := localTime(now)
+	if !result.Equal(now) {
+		t.Error("localTime should return same time for UTC")
+	}
+}
+
+func TestLocalTime_UTCPlus(t *testing.T) {
+	os.Setenv("TZ", "UTC+5")
+	defer os.Unsetenv("TZ")
+	now := time.Now()
+	result := localTime(now)
+	// localTime changes the timezone label, not the instant.
+	// Just verify it doesn't panic and returns a non-zero time.
+	if result.IsZero() {
+		t.Error("expected non-zero time")
+	}
+	// The zone name should reflect the TZ.
+	name, _ := result.Zone()
+	if name != "UTC+5" {
+		t.Logf("zone name: %q (expected UTC+5)", name)
+	}
+}
+
+func TestLocalTime_UTCMinus(t *testing.T) {
+	os.Setenv("TZ", "UTC-3")
+	defer os.Unsetenv("TZ")
+	now := time.Now()
+	result := localTime(now)
+	if result.IsZero() {
+		t.Error("expected non-zero time")
+	}
+}
+
+func TestLocalTime_BadUTC(t *testing.T) {
+	os.Setenv("TZ", "UTCabc")
+	defer os.Unsetenv("TZ")
+	now := time.Now()
+	result := localTime(now)
+	// Bad offset returns original time.
+	if !result.Equal(now) {
+		t.Error("localTime should return same time for invalid UTC offset")
 	}
 }

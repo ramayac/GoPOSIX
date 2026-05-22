@@ -7,6 +7,39 @@ import (
 	"time"
 )
 
+func TestIsDigit(t *testing.T) {
+	if !isDigit('5') {
+		t.Error("expected '5' to be digit")
+	}
+	if !isDigit('0') {
+		t.Error("expected '0' to be digit")
+	}
+	if !isDigit('9') {
+		t.Error("expected '9' to be digit")
+	}
+	if isDigit('a') {
+		t.Error("expected 'a' not to be digit")
+	}
+	if isDigit('-') {
+		t.Error("expected '-' not to be digit")
+	}
+}
+
+func TestIsLeapYear(t *testing.T) {
+	// Typical leap years.
+	for _, y := range []int{2000, 2004, 2008, 2012, 2016, 2020, 2024, 2400} {
+		if !isLeapYear(y) {
+			t.Errorf("expected %d to be leap year", y)
+		}
+	}
+	// Non-leap years.
+	for _, y := range []int{1900, 2001, 2002, 2003, 2005, 2006, 2007, 2100} {
+		if isLeapYear(y) {
+			t.Errorf("expected %d NOT to be leap year", y)
+		}
+	}
+}
+
 func TestDateRun(t *testing.T) {
 	var out bytes.Buffer
 	rc := run([]string{"-u"}, nil, &out, &out, "")
@@ -310,4 +343,73 @@ func TestDateRun_InvalidDate_MulticallHeader(t *testing.T) {
 	if rc != 1 {
 		t.Errorf("expected exit code 1, got %d", rc)
 	}
+}
+
+func TestParsePOSIXTZ_AngleBrackets(t *testing.T) {
+	// TZ with angle-bracket names: "<UTC+5>-5"
+	tz, ok := parsePOSIXTZ("<UTC+5>-5")
+	if !ok {
+		t.Fatal("expected valid TZ")
+	}
+	if tz.stdName != "UTC+5" {
+		t.Errorf("expected stdName UTC+5, got %q", tz.stdName)
+	}
+	if tz.stdOffset != 5*3600 {
+		t.Errorf("expected stdOffset 18000 (POSIX -5 = UTC+5 = east), got %d", tz.stdOffset)
+	}
+}
+
+func TestParsePOSIXTZ_Empty(t *testing.T) {
+	_, ok := parsePOSIXTZ("")
+	if ok {
+		t.Error("empty TZ should not be valid")
+	}
+}
+
+func TestParsePOSIXTZ_DST(t *testing.T) {
+	// Standard POSIX TZ with DST: "EST5EDT,M3.2.0/2,M11.1.0/2"
+	tz, ok := parsePOSIXTZ("EST5EDT,M3.2.0/2,M11.1.0/2")
+	if ok {
+		if tz.stdName != "EST" {
+			t.Errorf("expected stdName EST, got %q", tz.stdName)
+		}
+		if !tz.hasDST {
+			t.Error("expected DST")
+		}
+	}
+}
+
+func TestParsePOSIXTZ_NoDST(t *testing.T) {
+	// Simple offset: "UTC-5"
+	tz, ok := parsePOSIXTZ("UTC-5")
+	if ok {
+		if tz.hasDST {
+			t.Error("UTC-5 should not have DST")
+		}
+	}
+}
+
+func TestPosixTZ_Eval_JulianNoLeap(t *testing.T) {
+	// Rule with isJulianNoLeap, testing leap year handling.
+	r := &posixTZRule{
+		isStart:       false,
+		isJulianNoLeap: true,
+		julianDay:     60,
+		timeOfTransition: 7200,
+	}
+	// In a leap year (2024), day >= 60 subtracts 0, in non-leap subtracts 1.
+	_ = r.eval(2024, -18000, -14400)
+	_ = r.eval(2023, -18000, -14400)
+}
+
+func TestPosixTZ_Eval_MonthWeekDay(t *testing.T) {
+	r := &posixTZRule{
+		isStart:          true,
+		isMonthWeekDay:   true,
+		month:            3,
+		week:             2,
+		weekday:          0,
+		timeOfTransition: 7200,
+	}
+	_ = r.eval(2024, -18000, -14400)
 }

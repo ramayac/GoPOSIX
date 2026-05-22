@@ -1,7 +1,10 @@
 package dispatch
 
 import (
+	"bytes"
 	"io"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -68,5 +71,74 @@ func TestListAllEmpty(t *testing.T) {
 	all := ListAll()
 	if len(all) != 0 {
 		t.Errorf("expected 0 commands, got %d", len(all))
+	}
+}
+
+func TestListCommands(t *testing.T) {
+	old := registry
+	registry = map[string]Command{}
+	defer func() { registry = old }()
+
+	Register(Command{Name: "alpha", Usage: "first", Run: func([]string, io.Reader, io.Writer, io.Writer, string) int { return 0 }})
+	Register(Command{Name: "beta", Usage: "second", Run: func([]string, io.Reader, io.Writer, io.Writer, string) int { return 0 }})
+	Register(Command{Name: "sh", Usage: "shell (filtered)", Run: func([]string, io.Reader, io.Writer, io.Writer, string) int { return 0 }})
+
+	// Redirect stdout.
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	ListCommands()
+
+	w.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	buf.ReadFrom(r)
+	out := buf.String()
+
+	// alpha and beta should appear; sh should be filtered out.
+	if !strings.Contains(out, "alpha") {
+		t.Error("expected 'alpha' in ListCommands output")
+	}
+	if !strings.Contains(out, "beta") {
+		t.Error("expected 'beta' in ListCommands output")
+	}
+	if strings.Contains(out, "sh") {
+		t.Error("'sh' should be filtered from ListCommands output")
+	}
+}
+
+func TestPrintHelp(t *testing.T) {
+	old := registry
+	registry = map[string]Command{}
+	defer func() { registry = old }()
+
+	Register(Command{Name: "test-cmd", Usage: "a test command", Run: func([]string, io.Reader, io.Writer, io.Writer, string) int { return 0 }})
+
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	PrintHelp("mybin")
+
+	w.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	buf.ReadFrom(r)
+	out := buf.String()
+
+	if !strings.Contains(out, "mybin") {
+		t.Error("expected binary name in help output")
+	}
+	if !strings.Contains(out, "test-cmd") {
+		t.Error("expected command name in help output")
+	}
+	if !strings.Contains(out, "a test command") {
+		t.Error("expected usage string in help output")
+	}
+	if !strings.Contains(out, "Usage:") {
+		t.Error("expected 'Usage:' in help output")
 	}
 }

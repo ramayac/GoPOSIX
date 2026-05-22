@@ -766,3 +766,28 @@ func TestGrepBinaryHandling(t *testing.T) {
 		}
 	}
 }
+
+func TestEgrepRun(t *testing.T) {
+	// egrepRun prepends -E and delegates to run().
+	var outBuf, errBuf bytes.Buffer
+	code := egrepRun([]string{"hello"}, strings.NewReader("hello world\nbye\n"), &outBuf, &errBuf, "")
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+	if outBuf.String() != "hello world\n" {
+		t.Errorf("got %q, want %q", outBuf.String(), "hello world\n")
+	}
+}
+
+func TestFgrepRun(t *testing.T) {
+	// fgrepRun prepends -F and delegates to run().
+	var outBuf, errBuf bytes.Buffer
+	code := fgrepRun([]string{"he.lo"}, strings.NewReader("he.lo world\nhello\n"), &outBuf, &errBuf, "")
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+	// With -F (fixed strings), "he.lo" is literal, not a regex.
+	if outBuf.String() != "he.lo world\n" {
+		t.Errorf("got %q, want %q", outBuf.String(), "he.lo world\n")
+	}
+}
