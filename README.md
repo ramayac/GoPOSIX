@@ -20,7 +20,7 @@ Last year (2025) I started to learn Go-lang, and then LLMs got *really good* in 
 During that time I got this notion that AI waste time formating output, so I started doing --json output in a lot of my work scripts and tools (to save some time for my robot friends).
 Eventually all of these random ideas boiled to the conclusion that **I should** make a complete implementation of POSIX utilities in Go, with a JSON output and a Go SDK, and then benchmark it against BusyBox. It's the "natural conclusion" ... right?
 
-Also deepseek-v4-pro had an very agressive [75% discount until 2026/05/31 15:59 UTC](https://api-docs.deepseek.com/quick_start/pricing), and I wanted to try [pi.dev](https://pi.dev) instead of Antigravity/ClaudeCode.
+Also deepseek-v4-pro had an very agressive [75% discount](https://api-docs.deepseek.com/quick_start/pricing)!, and I wanted to try [pi.dev](https://pi.dev) instead of Antigravity/ClaudeCode (I ended up using `agy` for some auditing).
 
 All things kind of aligned in the last month so here we are now.
 
