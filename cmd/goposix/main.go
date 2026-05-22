@@ -11,6 +11,7 @@ import (
 	// Import all utilities to trigger their init() registrations.
 	_ "github.com/ramayac/goposix/pkg/awk"
 	_ "github.com/ramayac/goposix/pkg/basename"
+	_ "github.com/ramayac/goposix/pkg/cal"
 	_ "github.com/ramayac/goposix/pkg/cat"
 	_ "github.com/ramayac/goposix/pkg/chgrp"
 	_ "github.com/ramayac/goposix/pkg/chmod"

@@ -41,6 +41,7 @@ PKG_DIRS   := . \
               ./pkg/stat/... \
               ./pkg/readlink/... \
               ./pkg/basename/... \
+              ./pkg/cal/... \
               ./pkg/dirname/... \
               ./pkg/head/... \
               ./pkg/tail/... \
