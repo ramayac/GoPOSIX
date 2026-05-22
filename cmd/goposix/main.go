@@ -58,6 +58,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/od"
 	_ "github.com/ramayac/goposix/pkg/paste"
 	_ "github.com/ramayac/goposix/pkg/patch"
+	_ "github.com/ramayac/goposix/pkg/pidof"
 	_ "github.com/ramayac/goposix/pkg/printenv"
 	_ "github.com/ramayac/goposix/pkg/printf"
 	_ "github.com/ramayac/goposix/pkg/ps"

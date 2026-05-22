@@ -20,6 +20,40 @@ func (w *errorWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+func TestFormatNum(t *testing.T) {
+	tests := []struct {
+		val       float64
+		prec      int
+		intWidth  int
+		eqWidth   bool
+		expected  string
+	}{
+		// Non-equal-width, positive float
+		{3.5, 2, 3, false, "3.50"},
+		// Equal-width, positive, no decimal
+		{5.0, 0, 3, true, "005"},
+		// Equal-width, positive, with decimal
+		{3.3, 1, 3, true, "003.3"},
+		// Equal-width, negative, with decimal (covers sign stripping)
+		{-3.3, 1, 3, true, "-003.3"},
+		// Equal-width, negative, no decimal
+		{-42.0, 0, 4, true, "-0042"},
+		// Non-equal-width, negative
+		{-3.5, 2, 3, false, "-3.50"},
+		// Equal-width, no padding needed (int part >= width)
+		{150.0, 0, 3, true, "150"},
+		// Equal-width, zero value
+		{0.0, 0, 3, true, "000"},
+	}
+	for _, tc := range tests {
+		got := formatNum(tc.val, tc.prec, tc.intWidth, tc.eqWidth)
+		if got != tc.expected {
+			t.Errorf("formatNum(%f, %d, %d, %v) = %q, want %q",
+				tc.val, tc.prec, tc.intWidth, tc.eqWidth, got, tc.expected)
+		}
+	}
+}
+
 func TestSeqParsing(t *testing.T) {
 	// Test parseNum helper
 	val, prec, width, err := parseNum("003.50")

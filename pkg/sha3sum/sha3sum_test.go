@@ -2,11 +2,18 @@ package sha3sum
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+type errorReader struct{}
+
+func (e errorReader) Read(p []byte) (int, error) {
+	return 0, errors.New("mock read failure")
+}
 
 func TestHashFile(t *testing.T) {
 	input := "The quick brown fox jumps over the lazy dog"
@@ -20,6 +27,24 @@ func TestHashFile(t *testing.T) {
 	}
 	if hash != expected224 {
 		t.Errorf("HashFile(224) expected %s, got %s", expected224, hash)
+	}
+
+	// 384
+	_, err = HashFile(strings.NewReader(input), "384")
+	if err != nil {
+		t.Fatalf("unexpected error for 384: %v", err)
+	}
+
+	// 512
+	_, err = HashFile(strings.NewReader(input), "512")
+	if err != nil {
+		t.Fatalf("unexpected error for 512: %v", err)
+	}
+
+	// HashFile error path
+	_, err = HashFile(errorReader{}, "224")
+	if err == nil {
+		t.Error("expected error from failing reader")
 	}
 
 	// Invalid algorithm
@@ -192,5 +217,36 @@ func TestSha3sumRun(t *testing.T) {
 	gotExit = run([]string{"-c", "-"}, stdinCheck, &stdout, &stderr, "")
 	if gotExit != 0 {
 		t.Errorf("expected exit 0 for stdin check mode, got %d", gotExit)
+	}
+
+	// 15. Algorithm 384 and 512 hashing
+	stdout.Reset()
+	stderr.Reset()
+	gotExit = run([]string{"-a", "384", file1}, nil, &stdout, &stderr, "")
+	if gotExit != 0 {
+		t.Errorf("run -a 384 expected exit 0, got %d", gotExit)
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	gotExit = run([]string{"-a", "512", file1}, nil, &stdout, &stderr, "")
+	if gotExit != 0 {
+		t.Errorf("run -a 512 expected exit 0, got %d", gotExit)
+	}
+
+	// 16. Check mode with -a flag restricting algorithm
+	stdout.Reset()
+	stderr.Reset()
+	gotExit = run([]string{"-c", "-a", "224", checkFile}, nil, &stdout, &stderr, "")
+	if gotExit != 0 {
+		t.Errorf("check with -a 224 expected exit 0, got %d. stderr: %s", gotExit, stderr.String())
+	}
+
+	// 17. Check mode--nonexistent check file
+	stdout.Reset()
+	stderr.Reset()
+	gotExit = run([]string{"-c", "/nonexistent_check_sha3file"}, nil, &stdout, &stderr, "")
+	if gotExit != 1 {
+		t.Errorf("expected exit 1 for nonexistent check file, got %d", gotExit)
 	}
 }

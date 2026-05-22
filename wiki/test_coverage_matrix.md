@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-22 | **BusyBox:** 639 pass / 20 fail / 18 skip | **Branch:** `feat/missing-tools`
+> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Branch:** `feat/missing-tools`
 >
 > Canonical per-utility test status for all 86 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -53,6 +53,7 @@
 | `realpath` | 94.7% | 10 | ⚠️ 7/10 (3 fail) | ✅ |
 | `basename` | 85.7% | 2 | ✅ 2/2 | ✅ |
 | `dirname` | 85.7% | 7 | ✅ 7/7 | ✅ |
+| `tree` | 98.0% | 4 | ✅ 1/4 (3 skip) | ✅ |
 
 ## Tier 3 — Text Processing
 
@@ -69,6 +70,7 @@
 | `grep` | 85.9% | 53 | ✅ 53/53 | ✅ |
 | `sed` | 67.0% | 103 | ✅ 103/103 | ✅ |
 | `rev` | 94.7% | 4 | ✅ 4/4 | ✅ |
+| `tsort` | 84.3% | 20 | ✅ 20/20 | ✅ |
 
 ## Tier 4 — System & Process
 
@@ -87,6 +89,7 @@
 | `du` | 83.9% | 6 | ✅ 6/6 | ✅ |
 | `find` | 89.5% | 13 | ✅ 13/13 | ✅ |
 | `xargs` | 65.3% | 12 | ✅ 12/12 | ✅ |
+| `pidof` | 92.6% | 4 | ✅ 3/4 (1 skip) | ✅ |
 
 ## Tier 5 — Advanced / Agent Features
 
@@ -97,6 +100,7 @@
 | `sha256sum` | 69.4% | — | — | ✅ |
 | `sha1sum` | 89.1% | 1 | ✅ 1/1 | ✅ |
 | `sha512sum` | 89.1% | — | — | ✅ |
+| `sha3sum` | 89.4% | 2 | ✅ 2/2 | ✅ |
 | `md5sum` | 65.3% | 2 | ✅ 2/2 | ✅ |
 | `diff` | 71.0% | 20 | ✅ 20/20 | ✅ |
 | `test` / `[` | 82.9% | — | — | ❌ |
@@ -163,14 +167,14 @@
 
 | Suite | Count | Status |
 |-------|-------|--------|
-| Total packages | 89 | 88 utilities + client SDK |
-| Unit tests passing | 89/89 | 100% |
-| BusyBox tests run | 673 | 673 total applicable tests |
-| BusyBox passed | 653 | 97.0% (653 of 673) |
+| Total packages | 93 | 92 utilities + client SDK |
+| Unit tests passing | 93/93 | 100% |
+| BusyBox tests run | 699 | 699 total applicable tests |
+| BusyBox passed | 679 | 97.1% (679 of 699) |
 | BusyBox failed | 20 | 17 awk (goawk limits) + 3 realpath (symlinked environment mismatch) |
-| BusyBox skipped | 18 | External deps (bzip2, xz, uudecode, tar, etc.) |
+| BusyBox skipped | 22 | External deps (bzip2, xz, uudecode, tar, tree unicode, pidof init, etc.) |
 | Daemon internal coverage | 64.6% | +28.7% from Phase 18 |
-| JSON-RPC daemon tests | 77/88 | 87.5% (10 gaps: 2 original [tee, tr] + 8 new; patch/daemon skipped) |
+| JSON-RPC daemon tests | 81/92 | 88.0% (11 gaps: patch/daemon skipped) |
 | Packages below 70% unit coverage | 8 | See [20_hardening_ii.md](20_hardening_ii.md) §20.13 for details |
 
 ## Remaining Gaps
@@ -179,7 +183,7 @@
 |---|-----|-------|
 | 1 | awk BusyBox failures | 17 (goawk v1.31.0 limitations) |
 | 2 | realpath BusyBox failures | 3 (canonical path resolution limits in symlinked workspace) |
-| 3 | JSON-RPC daemon tests missing | 10 utilities (2 original [tee, tr] + 8 new) |
+| 3 | JSON-RPC daemon tests missing | 11 utilities |
 | 4 | Unit coverage < 60% | 1 package: `client` (55.4%) |
 
 ## Notes
@@ -187,4 +191,4 @@
 - **BusyBox skipped (10):** All tar tests requiring bzip2/xz/uudecode (external deps)
 - **Coverage gate:** CI enforces ≥70% overall (run `make cover-gate` for current; target ≥75% per Phase 20)
 - **Tier 7 stubs:** Implemented as functional stubs; need hardening and BusyBox-style compliance tests
-- **Phase 26 progress:** Implemented 9 new utilities (`which`, `realpath`, `seq`, `sha1sum`, `sha512sum`, `rev`, `uptime`, `wget`, `cal`) with statement coverage >= 80%. Brought overall coverage to 77.7%.
+- **Phase 26/27 progress:** Implemented 15 new utilities (`which`, `realpath`, `seq`, `sha1sum`, `sha512sum`, `rev`, `uptime`, `wget`, `cal`, `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, `pidof`) with statement coverage >= 80%. Brought overall coverage to 77.9%.

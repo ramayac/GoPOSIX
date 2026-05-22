@@ -14,6 +14,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/expr"
 	_ "github.com/ramayac/goposix/pkg/factor"
 	_ "github.com/ramayac/goposix/pkg/hostid"
+	_ "github.com/ramayac/goposix/pkg/pidof"
 	_ "github.com/ramayac/goposix/pkg/printenv"
 	_ "github.com/ramayac/goposix/pkg/sha3sum"
 	_ "github.com/ramayac/goposix/pkg/tree"
@@ -433,4 +434,62 @@ func TestTier5_Tsort(t *testing.T) {
 		}
 	})
 }
+
+func TestTier5_Pidof(t *testing.T) {
+	// Start a background process
+	// Let's check imports of tier5_misc_test.go or use exec.Command directly.
+	// Oh, we can import os/exec or use os.StartProcess, or wait:
+	// Let's see what is imported in tier5_misc_test.go. We can check by running go test, if exec is not imported, let's import it or use a separate import.
+	// Let's see what imports are present in tier5_misc_test.go: context, os, path/filepath, testing, time.
+	// We can start a sleep 15 process. Since we only have 'os' imported, let's use os.StartProcess or just add "os/exec" to imports. Wait, instead of adding exec to imports at the top, we can use os.StartProcess which doesn't require any new imports!
+	// Wait, let's check:
+	// proc, err := os.StartProcess("/bin/sleep", []string{"sleep", "15"}, &os.ProcAttr{})
+	// That's standard and works perfectly on Linux!
+	proc, err := os.StartProcess("/bin/sleep", []string{"sleep", "15"}, &os.ProcAttr{
+		Files: []*os.File{os.Stdin, os.Stdout, os.Stderr},
+	})
+	if err != nil {
+		t.Skip("skipping /proc dependent test: cannot start sleep")
+		return
+	}
+	defer proc.Kill()
+
+	socket := startDaemon(t)
+	c := client.Dial(socket, 5*time.Second)
+
+	t.Run("find pid over JSON-RPC", func(t *testing.T) {
+		var result ResultWrapper
+		err := c.Call(context.Background(), "goposix.pidof",
+			map[string]interface{}{
+				"flags": []interface{}{"--json", "sleep"},
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		data, ok := result.Data.(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected map data, got %T", result.Data)
+		}
+		pids, ok := data["pids"].([]interface{})
+		if !ok {
+			t.Fatalf("expected 'pids' list, got %v", data)
+		}
+		found := false
+		targetPid := float64(proc.Pid)
+		for _, p := range pids {
+			if p.(float64) == targetPid {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("expected to find PID %v in %v", targetPid, pids)
+		}
+	})
+}
+
 

@@ -3,11 +3,18 @@ package sha1sum
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+type errorReader struct{}
+
+func (e errorReader) Read(p []byte) (int, error) {
+	return 0, errors.New("mock read failure")
+}
 
 func TestHashFile(t *testing.T) {
 	r := strings.NewReader("")
@@ -18,6 +25,13 @@ func TestHashFile(t *testing.T) {
 	expected := "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 	if hash != expected {
 		t.Errorf("got %q, want %q", hash, expected)
+	}
+}
+
+func TestHashFileError(t *testing.T) {
+	_, err := HashFile(errorReader{})
+	if err == nil {
+		t.Error("expected error from failing reader")
 	}
 }
 
