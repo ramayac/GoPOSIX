@@ -11,6 +11,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/dirname"
 	_ "github.com/ramayac/goposix/pkg/env"
 	_ "github.com/ramayac/goposix/pkg/expr"
+	_ "github.com/ramayac/goposix/pkg/hostid"
 	_ "github.com/ramayac/goposix/pkg/printenv"
 	_ "github.com/ramayac/goposix/pkg/xargs"
 )
@@ -226,3 +227,36 @@ func TestTier5_Xargs(t *testing.T) {
 		t.Logf("xargs data: %v", result.Data)
 	})
 }
+
+func TestTier5_Hostid(t *testing.T) {
+	socket := startDaemon(t)
+	c := client.Dial(socket, 5*time.Second)
+
+	t.Run("hostid outputs a valid 8-character hex string", func(t *testing.T) {
+		var result ResultWrapper
+		err := c.Call(context.Background(), "goposix.hostid",
+			map[string]interface{}{
+				"flags": []interface{}{},
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		data, ok := result.Data.(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected map data, got %T", result.Data)
+		}
+		hostid, ok := data["hostid"].(string)
+		if !ok {
+			t.Fatalf("expected 'hostid' key in data, got %v", data)
+		}
+		if len(hostid) != 8 {
+			t.Errorf("expected 8-character hostid, got %q (len %d)", hostid, len(hostid))
+		}
+		t.Logf("JSON-RPC hostid returned: %s", hostid)
+	})
+}
+

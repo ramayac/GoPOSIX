@@ -20,6 +20,7 @@ PKG_DIRS   := . \
               ./pkg/truefalse/... \
               ./pkg/whoami/... \
               ./pkg/hostname/... \
+              ./pkg/hostid/... \
               ./pkg/uname/... \
               ./pkg/pwd/... \
               ./pkg/printenv/... \

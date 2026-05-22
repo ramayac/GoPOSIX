@@ -38,6 +38,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/gzip"
 	_ "github.com/ramayac/goposix/pkg/head"
 	_ "github.com/ramayac/goposix/pkg/hostname"
+	_ "github.com/ramayac/goposix/pkg/hostid"
 	_ "github.com/ramayac/goposix/pkg/id"
 	_ "github.com/ramayac/goposix/pkg/join"
 	_ "github.com/ramayac/goposix/pkg/kill"

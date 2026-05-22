@@ -28,6 +28,7 @@
 | `yes` | 80.0% | — | — | ✅ |
 | `whoami` | 68.4% | — | — | ✅ |
 | `hostname` | 74.5% | 4 | ✅ 4/4 | ✅ |
+| `hostid` | 96.3% | 1 | ✅ 1/1 | ✅ |
 | `uname` | 76.7% | — | — | ✅ |
 | `pwd` | 78.3% | 1 | ✅ 1/1 | ✅ |
 | `printenv` | 100.0% | — | — | ✅ |
@@ -160,14 +161,14 @@
 
 | Suite | Count | Status |
 |-------|-------|--------|
-| Total packages | 87 | 86 utilities + client SDK |
-| Unit tests passing | 87/87 | 100% |
-| BusyBox tests run | 659 | 659 total applicable tests |
-| BusyBox passed | 639 | 97.0% (639 of 659) |
+| Total packages | 88 | 87 utilities + client SDK |
+| Unit tests passing | 88/88 | 100% |
+| BusyBox tests run | 660 | 660 total applicable tests |
+| BusyBox passed | 640 | 97.0% (640 of 660) |
 | BusyBox failed | 20 | 17 awk (goawk limits) + 3 realpath (symlinked environment mismatch) |
 | BusyBox skipped | 18 | External deps (bzip2, xz, uudecode, tar, etc.) |
 | Daemon internal coverage | 64.6% | +28.7% from Phase 18 |
-| JSON-RPC daemon tests | 75/86 | 87.2% (11 gaps: 2 original [tee, tr] + 9 new; patch/daemon skipped) |
+| JSON-RPC daemon tests | 76/87 | 87.4% (10 gaps: 2 original [tee, tr] + 8 new; patch/daemon skipped) |
 | Packages below 70% unit coverage | 8 | See [20_hardening_ii.md](20_hardening_ii.md) §20.13 for details |
 
 ## Remaining Gaps
@@ -176,7 +177,7 @@
 |---|-----|-------|
 | 1 | awk BusyBox failures | 17 (goawk v1.31.0 limitations) |
 | 2 | realpath BusyBox failures | 3 (canonical path resolution limits in symlinked workspace) |
-| 3 | JSON-RPC daemon tests missing | 11 utilities (2 original [tee, tr] + 9 new) |
+| 3 | JSON-RPC daemon tests missing | 10 utilities (2 original [tee, tr] + 8 new) |
 | 4 | Unit coverage < 60% | 1 package: `client` (55.4%) |
 
 ## Notes

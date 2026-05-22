@@ -40,6 +40,14 @@ We follow a strict, systematic process for implementing the utilities in **Categ
 - `[x]` **`wget`**: Non-interactive network file downloader.
 - `[x]` **`cal`**: Renders an ASCII calendar for a given month/year.
 
+### Tier 3 Progress Tracker (ONE by ONE)
+- `[x]` **`hostid`**: Prints a unique 32-bit hexadecimal identifier for the host.
+- `[ ]` **`factor`**: Prime factorization mathematical parser.
+- `[ ]` **`sha3sum`**: Computes and verifies SHA-3 digests.
+- `[ ]` **`tree`**: Displays directory structures as a nested indented tree.
+- `[ ]` **`tsort`**: Performs a topological sort on standard input.
+- `[ ]` **`pidof`**: Finds the process ID of a running program by name.
+
 ---
 
 ## 1. High-Level Summary Matrix
@@ -203,10 +211,11 @@ For our implementation progress in the `feat/missing-tools` branch, we follow th
 ### Completed Phases ✅
 * **Tier 1 (Trivial & Quick Wins)**: `which`, `realpath`, `seq`, `sha1sum`, and `sha512sum` are 100% complete and verified.
 * **Tier 2 (Mid-Level Complexity)**: `rev`, `uptime`, `wget`, and `cal` are 100% complete and verified.
+* **Tier 3 (Trivial & Quick Wins)**: `hostid` is 100% complete and verified.
 
 ### Pending Phases ⏳
-* **Tier 3 (Trivial & Quick Wins - 6 Utilities)**:
-  - `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, and `pidof`.
+* **Tier 3 (Trivial & Quick Wins - 5 Utilities)**:
+  - `factor`, `sha3sum`, `tree`, `tsort`, and `pidof`.
 * **Tier 4 (Mid-Level Complexity - 10 Utilities)**:
   - `bunzip2`, `bzcat`, `unlzma`, `uncompress`, `unzip`, `uuencode`, `taskset`, `start-stop-daemon`, `cryptpw`, and `makedevs`.
 * **Tier 5 (High Complexity & Privileged Utilities - 11 Utilities)**:
