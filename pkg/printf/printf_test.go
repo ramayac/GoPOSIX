@@ -506,3 +506,122 @@ func TestFormat_Float(t *testing.T) {
 		t.Errorf("got %q, want 3.140000", got)
 	}
 }
+
+func TestFormat_Uint_Invalid(t *testing.T) {
+	// %u with non-numeric input should produce "0" and error.
+	s, hadErr := Format("%u", []string{"abc"})
+	if !hadErr {
+		t.Error("expected error for invalid uint input")
+	}
+	_ = s
+}
+
+func TestFormat_Float_Invalid(t *testing.T) {
+	s, hadErr := Format("%f", []string{"not-a-number"})
+	if !hadErr {
+		t.Error("expected error for invalid float input")
+	}
+	_ = s
+}
+
+func TestFormat_Uint_Suffix(t *testing.T) {
+	// %u with trailing chars: "42abc" — should error but still output 42.
+	s, hadErr := Format("%u", []string{"42abc"})
+	if !hadErr {
+		t.Error("expected error for uint input with trailing chars")
+	}
+	if !strings.Contains(s, "42") {
+		t.Errorf("expected 42 in output, got %q", s)
+	}
+}
+
+func TestFormat_Float_Suffix(t *testing.T) {
+	s, hadErr := Format("%f", []string{"3.14xyz"})
+	if !hadErr {
+		t.Error("expected error for float input with trailing chars")
+	}
+	if !strings.Contains(s, "3.14") {
+		t.Errorf("expected 3.14 in output, got %q", s)
+	}
+}
+
+func TestFormat_Uint_WidthAndPrecision(t *testing.T) {
+	// %u with width — just verify it doesn't crash.
+	s, _ := Format("%8u", []string{"42"})
+	if !strings.Contains(s, "42") {
+		t.Errorf("expected 42 in output, got %q", s)
+	}
+}
+
+func TestFormat_Float_Precision(t *testing.T) {
+	got := fmtStr("%.2f", []string{"3.14159"})
+	if got != "3.14" {
+		t.Errorf("got %q, want 3.14", got)
+	}
+}
+
+func TestFormat_Float_WidthAndPrecision(t *testing.T) {
+	// %8.2f — just verify it doesn't crash and contains the number.
+	s, _ := Format("%8.2f", []string{"3.14159"})
+	if !strings.Contains(s, "3.14") {
+		t.Errorf("expected 3.14 in output, got %q", s)
+	}
+}
+
+func TestFormat_Uint_Large(t *testing.T) {
+	s, _ := Format("%u", []string{"4294967295"})
+	if !strings.Contains(s, "4294967295") {
+		t.Errorf("expected 4294967295 in output, got %q", s)
+	}
+}
+
+func TestFormat_Float_Negative(t *testing.T) {
+	got := fmtStr("%f", []string{"-2.5"})
+	if got != "-2.500000" {
+		t.Errorf("got %q, want -2.500000", got)
+	}
+}
+
+func TestFormat_Float_Zero(t *testing.T) {
+	got := fmtStr("%f", []string{"0"})
+	if got != "0.000000" {
+		t.Errorf("got %q, want 0.000000", got)
+	}
+}
+
+func TestFormat_BConv_AllEscapes(t *testing.T) {
+	// %b with various escape sequences.
+	tests := []struct {
+		in, want string
+	}{
+		{`\n`, "\n"},
+		{`\t`, "\t"},
+		{`\\`, "\\"},
+		{`\a`, "\a"},
+		{`\b`, "\b"},
+		{`\f`, "\f"},
+		{`\v`, "\v"},
+		{`\r`, "\r"},
+		{`\0`, "\x00"},
+		{`\0101`, "A"},
+		{`\c`, `\c`},  // \c is NOT truncated in %b args (only in format string)
+		{`hello\nworld`, "hello\nworld"},
+	}
+	for _, tt := range tests {
+		s, hadErr := Format("%b", []string{tt.in})
+		if hadErr {
+			t.Errorf("%%b(%q): unexpected error", tt.in)
+		}
+		if tt.want == "\x00" {
+			if !strings.Contains(s, string([]byte{0})) {
+				t.Errorf("%%b(%q): expected NUL byte, got %q", tt.in, s)
+			}
+		} else if tt.want == "" {
+			if s != "" {
+				t.Errorf("%%b(%q): expected empty (\\c truncation), got %q", tt.in, s)
+			}
+		} else if s != tt.want {
+			t.Errorf("%%b(%q) = %q, want %q", tt.in, s, tt.want)
+		}
+	}
+}

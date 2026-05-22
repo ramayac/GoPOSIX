@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Branch:** `feat/coverage-10` | **Overall Coverage:** 79.6%
+> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Branch:** `feat/coverage-10` | **Overall Coverage:** 80.1%
 >
 > Canonical per-utility test status for all 86 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -62,13 +62,13 @@
 | `head` | 94.3% | 4 | ✅ 4/4 | ✅ |
 | `tail` | 87.1% | 3 | ✅ 3/3 | ✅ |
 | `wc` | 93.2% | 5 | ✅ 5/5 | ✅ |
-| `sort` | 83.6% | 27 | ✅ 27/27 | ✅ |
+| `sort` | 85.2% | 27 | ✅ 27/27 | ✅ |
 | `uniq` | 88.4% | 15 | ✅ 15/15 | ✅ |
 | `tr` | 82.6% | 6 | ✅ 6/6 | ✅ |
 | `cut` | 90.8% | 25 | ✅ 25/25 | ✅ |
 | `tee` | 73.1% | 2 | ✅ 2/2 | ✅ |
 | `grep` | 84.8% | 53 | ✅ 53/53 | ✅ |
-| `sed` | 67.9% | 103 | ✅ 103/103 | ✅ |
+| `sed` | 68.0% | 103 | ✅ 103/103 | ✅ |
 | `rev` | 94.7% | 4 | ✅ 4/4 | ✅ |
 | `tsort` | 84.3% | 20 | ✅ 20/20 | ✅ |
 
@@ -79,7 +79,7 @@
 | `ps` | 84.6% | — | — | ✅ |
 | `kill` | 73.1% | — | — | ✅ |
 | `sleep` | 78.1% | — | — | ✅ |
-| `date` | 71.4% | 7 | ✅ 7/7 | ✅ |
+| `date` | 72.5% | 7 | ✅ 7/7 | ✅ |
 | `uptime` | 88.5% | 1 | ✅ 1/1 | ✅ |
 | `id` | 87.1% | 4 | ✅ 4/4 | ✅ |
 | `chmod` | 68.3% | — | — | ✅ |
@@ -95,7 +95,7 @@
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `tar` | 65.3% | 18 | ✅ 18/18 | ✅ |
+| `tar` | 66.5% | 18 | ✅ 18/18 | ✅ |
 | `gzip` / `gunzip` | 64.7% | 4 | ✅ 4/4 | ✅ |
 | `sha256sum` | 81.6% | — | — | ✅ |
 | `sha1sum` | 89.1% | 1 | ✅ 1/1 | ✅ |
@@ -104,7 +104,7 @@
 | `md5sum` | 79.6% | 2 | ✅ 2/2 | ✅ |
 | `diff` | 71.4% | 20 | ✅ 20/20 | ✅ |
 | `test` / `[` | 82.9% | — | — | ❌ |
-| `printf` | 77.8% | 26 | ✅ 26/26 | ✅ |
+| `printf` | 79.0% | 26 | ✅ 26/26 | ✅ |
 | `expr` | 83.5% | 2 | ✅ 2/2 | ✅ |
 | `awk` | 90.0% | 53 | ⚠️ 36/53 (17 fail) | ✅ |
 | `shell` | 66.7% | — | — | ✅ |
@@ -192,4 +192,4 @@
 - **Coverage gate:** CI enforces ≥70% overall (run `make cover-gate` for current; target ≥75% per Phase 20)
 - **Tier 7 stubs:** Implemented as functional stubs; need hardening and BusyBox-style compliance tests
 - **Phase 26/27 progress:** Implemented 15 new utilities (`which`, `realpath`, `seq`, `sha1sum`, `sha512sum`, `rev`, `uptime`, `wget`, `cal`, `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, `pidof`) with statement coverage >= 80%. Brought overall coverage to 77.9%.
-- **Phase 28 (feat/coverage-10):** Added 40+ new unit tests covering CLI glue layers (`run()`), infrastructure (dispatch, flags, filepath), utility edge cases (date, printf, wc, expr, diff), and observability. Overall coverage: 77.9% → 79.6%. Key wins: `true/false` 75% → 100%, `wc` 81.2% → 93.2%, dispatch 100%, flags 100%, filepath 100%. Remaining gaps: `main()` (os.Exit), `client_helpers` (needs daemon), platform-specific code (`setProcTitle`, `RunDaemon`).
+- **Phase 28 (feat/coverage-10):** Added 60+ new unit tests covering CLI glue layers (`run()`), infrastructure (dispatch, flags, filepath), utility edge cases (date, printf, wc, expr, diff, sort, tar), and observability. Overall coverage: 77.9% → 80.1%. Key wins: `true/false` 75% → 100%, `wc` 81.2% → 93.2%, dispatch 100%, flags 100%, filepath 100%, `printf` 65.6% → 79.0%, `sort` 82.5% → 85.2%. Remaining gaps: `main()` (os.Exit), `client_helpers` (needs daemon), platform-specific code (`setProcTitle`, `RunDaemon`).

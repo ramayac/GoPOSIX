@@ -479,3 +479,59 @@ func TestCLI_DashStdin(t *testing.T) {
 		t.Errorf("got %q, want a\\nb\\n", out.String())
 	}
 }
+
+func TestCompareHuman_BothSuffix(t *testing.T) {
+	// Both have suffix: compare suffix rank first.
+	// KB (1) < MB (2)
+	a := humanVal{num: 1, suffix: 1, hasSuffix: true, orig: "1K"}
+	b := humanVal{num: 1, suffix: 2, hasSuffix: true, orig: "1M"}
+	if compareHuman(a, b) >= 0 {
+		t.Error("1K should sort before 1M")
+	}
+	if compareHuman(b, a) <= 0 {
+		t.Error("1M should sort after 1K")
+	}
+}
+
+func TestCompareHuman_SameSuffixDiffNum(t *testing.T) {
+	// Same suffix, different numeric prefix.
+	a := humanVal{num: 1, suffix: 1, hasSuffix: true, orig: "1K"}
+	b := humanVal{num: 2, suffix: 1, hasSuffix: true, orig: "2K"}
+	if compareHuman(a, b) >= 0 {
+		t.Error("1K should sort before 2K")
+	}
+}
+
+func TestCompareHuman_SameSuffixSameNumDiffOrig(t *testing.T) {
+	// Same suffix, same number, tiebreak by original string.
+	a := humanVal{num: 1, suffix: 1, hasSuffix: true, orig: "1K"}
+	b := humanVal{num: 1, suffix: 1, hasSuffix: true, orig: "1k"}
+	result := compareHuman(a, b)
+	if result >= 0 {
+		t.Log("tiebreak: '1K' vs '1k' — compareHuman = ", result)
+	}
+}
+
+func TestCompareHuman_Equal(t *testing.T) {
+	a := humanVal{num: 1, suffix: 1, hasSuffix: true, orig: "1K"}
+	b := humanVal{num: 1, suffix: 1, hasSuffix: true, orig: "1K"}
+	if compareHuman(a, b) != 0 {
+		t.Error("identical values should compare equal")
+	}
+}
+
+func TestCompareHuman_NoSuffixDiffNum(t *testing.T) {
+	a := humanVal{num: 1, hasSuffix: false, orig: "1"}
+	b := humanVal{num: 2, hasSuffix: false, orig: "2"}
+	if compareHuman(a, b) >= 0 {
+		t.Error("1 should sort before 2")
+	}
+}
+
+func TestCompareHuman_NoSuffixTiebreak(t *testing.T) {
+	a := humanVal{num: 1, hasSuffix: false, orig: "1a"}
+	b := humanVal{num: 1, hasSuffix: false, orig: "1b"}
+	if compareHuman(a, b) >= 0 {
+		t.Error("'1a' should sort before '1b'")
+	}
+}

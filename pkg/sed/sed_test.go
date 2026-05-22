@@ -871,3 +871,14 @@ func TestCLI_BadFlag(t *testing.T) {
 		t.Errorf("expected exit 2 for bad flag, got %d", code)
 	}
 }
+
+func TestPrintLineRaw(t *testing.T) {
+	// printLineRaw writes string directly to output.
+	// Create a minimal engineState to test.
+	var buf bytes.Buffer
+	e := &engineState{out: &buf}
+	e.printLineRaw("hello")
+	if buf.String() != "hello" {
+		t.Errorf("expected 'hello', got %q", buf.String())
+	}
+}
