@@ -226,7 +226,7 @@ cover-pct:
 
 .PHONY: cover-pkg
 cover-pkg:
-	@echo "=== Per-package coverage (target: ≥70%) ==="
+	@echo "=== Per-package coverage (target: ≥80%) ==="
 	@CGO_ENABLED=0 go test -cover $(PKG_DIRS) 2>&1 | grep -E 'coverage:|FAIL' | while read line; do \
 		pct=$$(echo "$$line" | grep -oP '\d+\.\d+%' | head -1 | tr -d '%'); \
 		if [ -n "$$pct" ]; then \
@@ -239,7 +239,7 @@ cover-pkg:
 	done
 
 # CI coverage gate: fails if overall coverage < threshold.
-COVERAGE_THRESHOLD := 70
+COVERAGE_THRESHOLD := 80
 .PHONY: cover-gate
 cover-gate:
 	@echo "Checking coverage ≥ $(COVERAGE_THRESHOLD)%..."
