@@ -1,6 +1,6 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX userland with 92+ tools. Runs as a persistent JSON-RPC daemon or multicall CLI, with >97.1% BusyBox test compatibility (679/699 tests pass).
+A Go-native, single-binary POSIX userland with 92+ tools. Runs as a persistent JSON-RPC daemon or multicall CLI, a typed Go SDK and >97.1% BusyBox test compatibility (679/699 tests pass).
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ramayac/goposix.svg)](https://pkg.go.dev/github.com/ramayac/goposix)
@@ -9,7 +9,6 @@ A Go-native, single-binary POSIX userland with 92+ tools. Runs as a persistent J
 [![Go Version](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go)](https://go.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/image-%3C10MB-blue?logo=docker)](https://github.com/ramayac/goposix/pkgs/container/goposix)
-
 
 ## Why?
 
@@ -20,7 +19,7 @@ Last year (2025) I started to learn Go-lang, and then LLMs got *really good* in 
 During that time I got this notion that AI waste time formating output, so I started doing --json output in a lot of my work scripts and tools (to save some time for my robot friends).
 Eventually all of these random ideas boiled to the conclusion that **I should** make a complete implementation of POSIX utilities in Go, with a JSON output and a Go SDK, and then benchmark it against BusyBox. It's the "natural conclusion" ... right?
 
-Also deepseek-v4-pro had an very agressive [75% discount until 2026/05/31 15:59 UTC](https://api-docs.deepseek.com/quick_start/pricing), and I wanted to try [pi.dev](https://pi.dev) instead of Antigravity/ClaudeCode.
+Also deepseek-v4-pro had an very agressive [75% discount](https://api-docs.deepseek.com/quick_start/pricing)!, and I wanted to try [pi.dev](https://pi.dev) instead of Antigravity/ClaudeCode (I ended up using `agy` for some auditing).
 
 All things kind of aligned in the last month so here we are now.
 
@@ -39,14 +38,17 @@ I want to be very clear about this:
 
 Finally: let's not kid ourselves, this project is 90% wiring the AI to do the heavy lifting, 10% is steering it in the right direction, the fact that I was able to "solo dev" this with an LLM, reproducing close to 99% of BusyBox's behavior in a completely different language shows that POSIX utilities are, at their core, text transformers with very well-defined contracts (do one thing and do it well).
 
-## Quickstart!
+## Does it work?
 
-See [wiki/sdk.md](wiki/sdk.md) for the full Go SDK guide and [wiki/usage.md](wiki/usage.md) for CLI usage and Docker recipes.
+Yes! yes it does! see how GoPOSIX replaces BusyBox in Alpine here: **[docker/Dockerfile](docker/Dockerfile)** (target: `alpine-mvp`).
+
+## Quickstart
+
+See **[wiki/sdk.md](wiki/sdk.md)** for the full Go SDK guide and **[wiki/usage.md](wiki/usage.md)** for CLI usage and Docker recipes.
 
 ### CLI (secondary)
 
 ```bash
-# One-shot CLI invocation.
 docker pull ghcr.io/ramayac/goposix:cli
 docker run --rm ghcr.io/ramayac/goposix:cli ls --json /
 ```
@@ -63,6 +65,7 @@ make ci           # full pipeline (test + testsuite + coverage + docker)
 ### Environment Variables
 
 #### Daemon & CLI Configuration
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `GOPOSIX_SOCKET` | `/var/run/goposix.sock` | Daemon UNIX socket path for CLI forwarding and client SDK connections |
@@ -73,58 +76,52 @@ make ci           # full pipeline (test + testsuite + coverage + docker)
 | `GOPOSIX_SHUTDOWN_TIMEOUT` | `5s` | Graceful shutdown drain timeout |
 
 #### Standard POSIX Environment Variables
+
 | Variable | Description |
 |----------|-------------|
 | `TZ` | Standard timezone rule parsed dynamically by `date` and `tar` to format and project timestamps |
 | `LOGNAME` | Current login username retrieved by `logname` |
 | `PWD` | Logical working directory used by `readlink` to resolve symlinks component-by-component |
 
+## Daemon Stdin
 
-## Daemon Stdin (new in Phase 25)
-
-The JSON-RPC daemon now accepts a `stdin` field in request params, enabling
-stdin-consuming utilities (grep, sed, sort, wc, tr, head, tail, cut, tee, uniq,
-and 30+ others) to receive input directly through the Go SDK without temp files.
+The JSON-RPC daemon accepts a `stdin` field in request params, enabling stdin-consuming utilities (grep, sed, sort, wc, tr, head, tail, cut, tee, uniq, and 30+ others) to receive input directly through the Go SDK without temp files.
 
 ```go
-// Now possible: pass stdin through the daemon
+// Pass stdin through the daemon
 c.Grep(ctx, []string{"foo"}, client.WithStdin("line1\nline2\nfoo\n"))
 c.Wc(ctx, []string{"-l"}, client.WithStdin("line1\nline2\nline3\n"))
 ```
 
-## Performance Highlights
+## Performance
 
-| Metric | GoPOSIX | BusyBox | Ratio |
-|--------|:------:|:------:|:-----:|
-| Per-call latency (Go SDK, persistent) | **60µs** | 680µs (fork+exec) | **11× faster** |
-| `grep` on 100MB file | **0.16s** | 0.86s | **5.4× faster** (RE2 vs POSIX ERE) |
-| Binary size | 10 MB | 800 KB | 12.5× larger |
-| Cold start | 7ms | <1ms | Not bad, but not great |
+| Metric | GoPOSIX | BusyBox |
+|--------|:------:|:------:|
+| Per-call latency (Go SDK, persistent) | **~60µs** | ~680µs (fork+exec) |
+| Large-file grep | **significantly faster** | baseline |
+| Binary size | ~10 MB | ~800 KB |
+| Cold start | ~7ms | <1ms |
 
-See [Performance Quick Reference](wiki/performance.md) and [Benchmarking Plan](wiki/19_performance_benchmarking.md) for full details.
+> Numbers above are approximate. For reproducible benchmarks with scale factors and full methodology, see **[wiki/performance.md](wiki/performance.md)**.
 
-## Documentation (yes, we have docs and it's decent!)
-- [Go SDK Guide](wiki/sdk.md) — typed client for all 79 utilities
+## Documentation
+
+- [Go SDK Guide](wiki/sdk.md) — typed client for all utilities
 - [RPC API Reference](wiki/rpc_api.md)
 - [JSON-RPC Protocol](wiki/rpc_quickstart.md) — raw socket protocol for non-Go clients
 - [Architecture](wiki/architecture.md)
 - [Security Model](wiki/security.md)
-- [JSON Schema](wiki/json_schema.md)
+- [JSON Schema](wiki/json_schema.md) — `--json` output schemas for every utility
 - [Test Coverage & Compliance Matrix](wiki/test_coverage_matrix.md)
 - [POSIX FAQ](wiki/posix_faq.md)
-- [Awesome-Go Submission Plan](wiki/25_awesome_go_submission.md) — preparation checklists and compliance status
-
+- [Performance Quick Reference](wiki/performance.md)
 
 ## Quick Project Principles
 
 - **Multicall Binary:** Single binary dispatched via symlink or subcommand (`goposix ls`).
-- **Daemon-First:** The default image starts the persistent JSON-RPC daemon. Use the Go SDK for
-  programmatic access (60µs/call). CLI is available as a secondary interface (`goposix:cli`).
+- **Daemon-First:** The default image starts the persistent JSON-RPC daemon. Use the Go SDK for programmatic access. CLI is available as a secondary interface (`goposix:cli`).
 - **No CGO:** Static compilation for `FROM scratch` containers (`CGO_ENABLED=0`).
-- **Little Dependencies:** Only 3 external Go modules: `mvdan.cc/sh/v3` (shell interpreter),
-  `golang.org/x/sys` (cross-platform syscalls), `golang.org/x/term` (terminal detection).
-  No external libraries for flag parsing, output, or utility logic.
-- **`--json` Only:** Structured output via `--json` long flag only — no short-form (`-j`) collision with POSIX flags (ouch!)
-- **POSIX Flag Parsing:** Custom parser in `pkg/common/flags.go` with escape hatches for free-form utilities.
+- **Little Dependencies:** Only 3 external Go modules: `mvdan.cc/sh/v3` (shell interpreter), `golang.org/x/sys` (cross-platform syscalls), `golang.org/x/term` (terminal detection). No external libraries for flag parsing, output, or utility logic.
+- **`--json` Only:** Structured output via `--json` long flag only — no short-form (`-j`) collision with POSIX flags.
+- **POSIX Flag Parsing:** Custom parser in `pkg/common/flags.go` with escape hatches for free-form utilities (echo, printf, expr).
 
-Does it work? yes it does, see how I replace busybox with goposix in alpine in this [docker file](docker/Dockerfile).

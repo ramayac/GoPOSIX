@@ -16,12 +16,12 @@ make build
 
 # Version
 ./goposix --version
-# → goposix version 1.0.6
+# → goposix version (latest)
 
 # Self-upgrade
 ./goposix --upgrade
-# → upgrading goposix from 0.1.0 to 1.0.6...
-# → goposix upgraded to 1.0.6
+# → upgrading goposix from <old> to <new>...
+# → goposix upgraded to <new>
 
 # Run a command
 ./goposix ls -la /
@@ -29,10 +29,7 @@ make build
 ./goposix cat /etc/hostname
 ```
 
-### Docker (CLI image)
-
-```bash
-# Build the CLI image (~10 MB, FROM scratch)
+### Docker (CLI image — FROM scratch, ~10 MB)
 docker build -t goposix:cli -f docker/Dockerfile.cli .
 
 # One-shot invocation
@@ -220,7 +217,7 @@ Every utility supports `--json` for structured, machine-readable output:
 ```json
 {
   "command": "ls",
-  "version": "1.0.6",
+  "version": "<latest>",
   "schemaVersion": "1.0",
   "exitCode": 0,
   "data": {

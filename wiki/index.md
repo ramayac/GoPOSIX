@@ -4,7 +4,7 @@
 
 - [README.md](README.md) | Purpose, rules, and shell-first navigation.
 - [usage.md](usage.md) | Usage guide: CLI, daemon, Docker Compose, Go SDK, recipes.
-- [schema.md](schema.md) | Required structure and maintenance contract.
+- [schema.md](schema.md) | Wiki structure contract (not to be confused with [json_schema.md](json_schema.md) for `--json` output schemas).
 - [phases.md](phases.md) | Project roadmap, current state, and phase index.
 - [repo-map.md](repo-map.md) | Current repo architecture and exclusions.
 - [log.md](log.md) | Append-only timeline of wiki maintenance.
@@ -54,6 +54,11 @@
 - [operations/ingest.md](operations/ingest.md) | How to absorb a repo change into the wiki.
 - [operations/query.md](operations/query.md) | How to answer questions from the wiki first.
 - [operations/lint.md](operations/lint.md) | How to health-check and repair wiki drift.
+
+## Deploy
+
+- [alpine_plan.md](alpine_plan.md) | Alpine integration blueprint (daemon mode, BusyBox override, tradeoffs).
+- [alpine_integration.md](alpine_integration.md) | → redirects to [alpine_plan.md](alpine_plan.md).
 
 ## Deploy
 
