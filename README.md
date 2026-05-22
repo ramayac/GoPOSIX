@@ -112,6 +112,8 @@ See [Performance Quick Reference](wiki/performance.md) and [Benchmarking Plan](w
 - [JSON Schema](wiki/json_schema.md)
 - [Test Coverage & Compliance Matrix](wiki/test_coverage_matrix.md)
 - [POSIX FAQ](wiki/posix_faq.md)
+- [Awesome-Go Submission Plan](wiki/25_awesome_go_submission.md) — preparation checklists and compliance status
+
 
 ## Quick Project Principles
 
