@@ -29,10 +29,10 @@ We follow a strict, systematic process for implementing the utilities in **Categ
 5. **UPDATE**: Update this document (`wiki/26_missing_tools.md`) to mark the completed utility as `[x] Implemented`, and update other wiki documentation if needed.
 
 ### Tier 1 Progress Tracker (ONE by ONE)
-- `[ ]` **`which`**: Locates commands in the user's `PATH`.
-- `[ ]` **`realpath`**: Resolves relative, absolute, and symlinked paths to absolute canonical paths.
-- `[ ]` **`seq`**: Formatted loop printing numeric sequences.
-- `[ ]` **`sha1sum` / `sha512sum`**: Computes and verifies SHA-1 and SHA-512 cryptographic digests.
+- `[x]` **`which`**: Locates commands in the user's `PATH`.
+- `[x]` **`realpath`**: Resolves relative, absolute, and symlinked paths to absolute canonical paths.
+- `[x]` **`seq`**: Formatted loop printing numeric sequences.
+- `[x]` **`sha1sum` / `sha512sum`**: Computes and verifies SHA-1 and SHA-512 cryptographic digests.
 
 ---
 

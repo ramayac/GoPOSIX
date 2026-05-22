@@ -72,7 +72,9 @@ PKG_DIRS   := . \
               ./pkg/chmod/... \
               ./pkg/chown/... \
               ./pkg/chgrp/... \
+              ./pkg/sha1sum/... \
               ./pkg/sha256sum/... \
+              ./pkg/sha512sum/... \
               ./pkg/tar/... \
               ./internal/shell/... \
               ./pkg/shell/... \
