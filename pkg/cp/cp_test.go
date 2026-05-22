@@ -246,3 +246,35 @@ func TestBusyBox_CP_UnreadableFile(t *testing.T) {
 		t.Error("destination should not have been created")
 	}
 }
+
+func TestCLI_RecursiveDir(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "srcdir")
+	dst := filepath.Join(dir, "dstdir")
+	os.MkdirAll(src, 0755)
+	os.WriteFile(filepath.Join(src, "file.txt"), []byte("content"), 0644)
+	var out bytes.Buffer
+	// cp -r srcdir dstdir
+	code := run([]string{"-r", src, dst}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("exit %d, want 0. stderr: %s", code, out.String())
+	}
+	// Check nested file copied.
+	if _, err := os.Stat(filepath.Join(dst, "file.txt")); err != nil {
+		t.Error("nested file not copied")
+	}
+}
+
+func TestCLI_CopySymlink(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "target")
+	link := filepath.Join(dir, "link")
+	dst := filepath.Join(dir, "copied_link")
+	os.WriteFile(src, []byte("data"), 0644)
+	os.Symlink(src, link)
+	var out bytes.Buffer
+	code := run([]string{link, dst}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+}

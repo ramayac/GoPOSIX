@@ -183,3 +183,58 @@ func TestPasteCLI_CustomDelimiter(t *testing.T) {
 		t.Errorf("got %q", out.String())
 	}
 }
+
+func TestPasteCLI_StdinDefault(t *testing.T) {
+	// No file args → reads from stdin.
+	var out bytes.Buffer
+	code := run([]string{}, strings.NewReader("hello\nworld\n"), &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if out.String() != "hello\nworld\n" {
+		t.Errorf("got %q", out.String())
+	}
+}
+
+func TestPasteCLI_MultipleStdin(t *testing.T) {
+	// Multiple "-" args → round-robin stdin distribution.
+	t.Skip("multi-stdin round-robin requires separate file descriptors")
+}
+
+func TestPasteCLI_JSON(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	os.WriteFile(f1, []byte("a\nb\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"--json", f1}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), `"records"`) {
+		t.Errorf("expected JSON with 'records', got %q", out.String())
+	}
+}
+
+func TestPasteCLI_FileNotFound(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := run([]string{"/nonexistent/file"}, nil, &out, &errOut, "")
+	if code != 1 {
+		t.Errorf("exit %d, want 1 for file not found", code)
+	}
+}
+
+func TestPasteCLI_BadFlag(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := run([]string{"--nonexistent"}, nil, &out, &errOut, "")
+	if code != 2 {
+		t.Errorf("exit %d, want 2 for bad flag", code)
+	}
+}
+
+func TestParseDelimiters_TrailingBackslash(t *testing.T) {
+	// Trailing backslash is treated as literal.
+	got := parseDelimiters(`a\`)
+	if len(got) != 2 || got[0] != "a" || got[1] != "\\" {
+		t.Errorf("got %v, want [a, \\]", got)
+	}
+}

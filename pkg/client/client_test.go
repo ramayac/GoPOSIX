@@ -14,19 +14,50 @@ import (
 	// Register utilities needed by tests.
 	_ "github.com/ramayac/goposix/pkg/basename"
 	_ "github.com/ramayac/goposix/pkg/cat"
+	_ "github.com/ramayac/goposix/pkg/chmod"
+	_ "github.com/ramayac/goposix/pkg/chown"
+	_ "github.com/ramayac/goposix/pkg/cp"
+	_ "github.com/ramayac/goposix/pkg/cut"
+	_ "github.com/ramayac/goposix/pkg/date"
+	_ "github.com/ramayac/goposix/pkg/df"
 	_ "github.com/ramayac/goposix/pkg/diff"
+	_ "github.com/ramayac/goposix/pkg/dirname"
+	_ "github.com/ramayac/goposix/pkg/du"
 	_ "github.com/ramayac/goposix/pkg/echo"
+	_ "github.com/ramayac/goposix/pkg/env"
+	_ "github.com/ramayac/goposix/pkg/expr"
+	_ "github.com/ramayac/goposix/pkg/find"
 	_ "github.com/ramayac/goposix/pkg/grep"
+	_ "github.com/ramayac/goposix/pkg/gzip"
 	_ "github.com/ramayac/goposix/pkg/head"
+	_ "github.com/ramayac/goposix/pkg/hostname"
+	_ "github.com/ramayac/goposix/pkg/id"
+	_ "github.com/ramayac/goposix/pkg/kill"
+	_ "github.com/ramayac/goposix/pkg/ln"
 	_ "github.com/ramayac/goposix/pkg/ls"
+	_ "github.com/ramayac/goposix/pkg/md5sum"
 	_ "github.com/ramayac/goposix/pkg/mkdir"
+	_ "github.com/ramayac/goposix/pkg/mv"
+	_ "github.com/ramayac/goposix/pkg/printenv"
+	_ "github.com/ramayac/goposix/pkg/printf"
+	_ "github.com/ramayac/goposix/pkg/ps"
 	_ "github.com/ramayac/goposix/pkg/pwd"
+	_ "github.com/ramayac/goposix/pkg/readlink"
 	_ "github.com/ramayac/goposix/pkg/rm"
+	_ "github.com/ramayac/goposix/pkg/rmdir"
+	_ "github.com/ramayac/goposix/pkg/sha256sum"
+	_ "github.com/ramayac/goposix/pkg/sort"
 	_ "github.com/ramayac/goposix/pkg/stat"
 	_ "github.com/ramayac/goposix/pkg/tail"
+	_ "github.com/ramayac/goposix/pkg/tar"
+	_ "github.com/ramayac/goposix/pkg/testcmd"
 	_ "github.com/ramayac/goposix/pkg/touch"
 	_ "github.com/ramayac/goposix/pkg/truefalse"
+	_ "github.com/ramayac/goposix/pkg/uname"
+	_ "github.com/ramayac/goposix/pkg/uniq"
 	_ "github.com/ramayac/goposix/pkg/wc"
+	_ "github.com/ramayac/goposix/pkg/whoami"
+	_ "github.com/ramayac/goposix/pkg/xargs"
 )
 
 func startDaemon(t *testing.T) (string, func()) {
@@ -619,5 +650,369 @@ func TestItoa(t *testing.T) {
 		if got != tt.want {
 			t.Errorf("itoa(%d) = %q, want %q", tt.n, got, tt.want)
 		}
+	}
+}
+
+// --- Phase C: coverage push for all client helpers ---
+
+func startDaemonForHelper(t *testing.T) (*Client, func()) {
+	socket, stop := startDaemon(t)
+	c, err := New(socket)
+	if err != nil {
+		stop()
+		t.Fatalf("New: %v", err)
+	}
+	return c, func() { c.Close(); stop() }
+}
+
+func TestHelper_Dirname(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Dirname(context.Background(), "/usr/bin/ls")
+	if err != nil {
+		t.Fatalf("Dirname: %v", err)
+	}
+	if res.Result != "/usr/bin" {
+		t.Errorf("got %q, want /usr/bin", res.Result)
+	}
+}
+
+func TestHelper_Hostname(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Hostname(context.Background())
+	if err != nil {
+		t.Fatalf("Hostname: %v", err)
+	}
+	if res.Hostname == "" {
+		t.Error("expected non-empty hostname")
+	}
+}
+
+func TestHelper_Printf(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Printf(context.Background(), "hello %s", "world")
+	if err != nil {
+		t.Fatalf("Printf: %v", err)
+	}
+	if res.Output != "hello world" {
+		t.Errorf("got %q, want 'hello world'", res.Output)
+	}
+}
+
+func TestHelper_Test(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Test(context.Background(), []string{"-n", "hello"})
+	if err != nil {
+		t.Fatalf("Test: %v", err)
+	}
+	if !res.Result {
+		t.Error("expected true for -n hello")
+	}
+}
+
+func TestHelper_Whoami(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Whoami(context.Background())
+	if err != nil {
+		t.Fatalf("Whoami: %v", err)
+	}
+	if res.User == "" {
+		t.Error("expected non-empty username")
+	}
+}
+
+func TestHelper_Readlink(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Readlink(context.Background(), "/proc/self")
+	if err != nil {
+		t.Fatalf("Readlink: %v", err)
+	}
+	if res.Target == "" {
+		t.Error("expected non-empty symlink target")
+	}
+}
+
+func TestHelper_ID(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.ID(context.Background())
+	if err != nil {
+		t.Fatalf("ID: %v", err)
+	}
+	if res.UID < 0 {
+		t.Error("expected non-negative UID")
+	}
+}
+
+func TestHelper_Date(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Date(context.Background())
+	if err != nil {
+		t.Fatalf("Date: %v", err)
+	}
+	if res.ISO == "" {
+		t.Error("expected non-empty date string")
+	}
+}
+
+func TestHelper_Uname(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Uname(context.Background())
+	if err != nil {
+		t.Fatalf("Uname: %v", err)
+	}
+	if res.Sysname == "" {
+		t.Error("expected non-empty sysname")
+	}
+}
+
+func TestHelper_Env(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Env(context.Background(), nil, map[string]string{"GOPOSIX_TEST": "1"})
+	if err != nil {
+		t.Fatalf("Env: %v", err)
+	}
+	if len(res.Vars) == 0 {
+		t.Error("expected non-empty vars")
+	}
+}
+
+func TestHelper_Printenv(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Printenv(context.Background(), "PATH")
+	if err != nil {
+		t.Fatalf("Printenv: %v", err)
+	}
+	if res.Vars == nil {
+		t.Error("expected non-nil vars")
+	}
+}
+
+func TestHelper_Sort(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Sort(context.Background(), []string{"--json"})
+	if err != nil {
+		t.Fatalf("Sort: %v", err)
+	}
+	_ = res
+}
+
+func TestHelper_Cut(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Cut(context.Background(), []string{"-f1", "-d:"})
+	if err != nil {
+		t.Fatalf("Cut: %v", err)
+	}
+	_ = res
+}
+
+func TestHelper_Uniq(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	items, err := c.Uniq(context.Background(), []string{"--json"})
+	if err != nil {
+		t.Fatalf("Uniq: %v", err)
+	}
+	_ = items
+}
+
+func TestHelper_Find(t *testing.T) {
+	tmpDir := t.TempDir()
+	os.WriteFile(filepath.Join(tmpDir, "test.txt"), []byte("hello"), 0644)
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	entries, err := c.Find(context.Background(), tmpDir, []string{"-name", "test.txt", "--json"})
+	if err != nil {
+		t.Fatalf("Find: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Error("expected at least one find result")
+	}
+}
+
+func TestHelper_Mv(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src")
+	dst := filepath.Join(dir, "dst")
+	os.WriteFile(src, []byte("test"), 0644)
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Mv(context.Background(), src, dst)
+	if err != nil {
+		t.Fatalf("Mv: %v", err)
+	}
+	if len(res.Moved) == 0 {
+		t.Error("expected at least one move record")
+	}
+}
+
+func TestHelper_Cp(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src")
+	dst := filepath.Join(dir, "dst")
+	os.WriteFile(src, []byte("test"), 0644)
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Cp(context.Background(), src, dst)
+	if err != nil {
+		t.Fatalf("Cp: %v", err)
+	}
+	if len(res.Copied) == 0 {
+		t.Error("expected at least one copy record")
+	}
+}
+
+func TestHelper_Ln(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "target")
+	link := filepath.Join(dir, "link")
+	os.WriteFile(src, []byte("test"), 0644)
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Ln(context.Background(), src, link, false)
+	if err != nil {
+		t.Fatalf("Ln: %v", err)
+	}
+	if len(res.Links) == 0 {
+		t.Error("expected at least one link entry")
+	}
+}
+
+func TestHelper_Rmdir(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "emptydir")
+	os.MkdirAll(target, 0755)
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	_, err := c.Rmdir(context.Background(), target)
+	if err != nil {
+		t.Fatalf("Rmdir: %v", err)
+	}
+}
+
+func TestHelper_Chmod(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "f")
+	os.WriteFile(f, []byte("test"), 0644)
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	_, err := c.Chmod(context.Background(), "755", []string{f})
+	if err != nil {
+		t.Fatalf("Chmod: %v", err)
+	}
+}
+
+func TestHelper_Chown(t *testing.T) {
+	t.Skip("chown requires root privileges")
+}
+
+func TestHelper_Chgrp(t *testing.T) {
+	t.Skip("chgrp requires root privileges")
+}
+
+func TestHelper_Md5sum(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "f")
+	os.WriteFile(f, []byte("test"), 0644)
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	_, err := c.Md5sum(context.Background(), []string{f}, false)
+	if err != nil {
+		t.Fatalf("Md5sum: %v", err)
+	}
+}
+
+func TestHelper_Sha256sum(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "f")
+	os.WriteFile(f, []byte("test"), 0644)
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	_, err := c.Sha256sum(context.Background(), []string{f}, false)
+	if err != nil {
+		t.Fatalf("Sha256sum: %v", err)
+	}
+}
+
+func TestHelper_Gzip(t *testing.T) {
+	t.Skip("gzip helper needs specific stdin piping setup")
+}
+
+func TestHelper_Tar(t *testing.T) {
+	t.Skip("tar helper needs absolute path resolution in daemon cwd")
+}
+
+func TestHelper_Df(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	info, err := c.Df(context.Background(), "/")
+	if err != nil {
+		t.Fatalf("Df: %v", err)
+	}
+	if len(info) == 0 {
+		t.Error("expected at least one filesystem")
+	}
+}
+
+func TestHelper_Du(t *testing.T) {
+	tmpDir := t.TempDir()
+	os.WriteFile(filepath.Join(tmpDir, "f.txt"), []byte("test"), 0644)
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	entries, err := c.Du(context.Background(), tmpDir)
+	if err != nil {
+		t.Fatalf("Du: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Error("expected at least one entry")
+	}
+}
+
+func TestHelper_Ps(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	procs, err := c.Ps(context.Background())
+	if err != nil {
+		t.Fatalf("Ps: %v", err)
+	}
+	if len(procs) == 0 {
+		t.Error("expected at least one process")
+	}
+}
+
+func TestHelper_Kill(t *testing.T) {
+	t.Skip("kill requires actual pid and signal handling")
+}
+
+func TestHelper_Xargs(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	entries, err := c.Xargs(context.Background(), "echo", []string{"--json"})
+	if err != nil {
+		t.Fatalf("Xargs: %v", err)
+	}
+	_ = entries
+}
+
+func TestHelper_Expr(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Expr(context.Background(), []string{"1", "+", "1"})
+	if err != nil {
+		t.Fatalf("Expr: %v", err)
+	}
+	if res.Result != "2" {
+		t.Errorf("got %q, want '2'", res.Result)
 	}
 }

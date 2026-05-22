@@ -2,6 +2,7 @@ package hostname
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 )
 
@@ -93,5 +94,39 @@ func TestBusyBox_Hostname_FQDNCLI(t *testing.T) {
 	out := buf.String()
 	if out == "" {
 		t.Error("expected fqdn output")
+	}
+}
+
+func TestRunCLI_Domain(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-d"}, nil, &buf, &buf, "")
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+	if buf.Len() == 0 {
+		t.Error("expected domain output")
+	}
+}
+
+func TestRunCLI_IP(t *testing.T) {
+	t.Skip("hostname -i uses DNS lookup not always available")
+}
+
+func TestRunCLI_JSON(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--json"}, nil, &buf, &buf, "")
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+	if !strings.Contains(buf.String(), `"hostname"`) {
+		t.Errorf("expected JSON with 'hostname', got %q", buf.String())
+	}
+}
+
+func TestRunCLI_BadFlag(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--nonexistent"}, nil, &buf, &buf, "")
+	if code != 2 {
+		t.Errorf("exit %d, want 2", code)
 	}
 }

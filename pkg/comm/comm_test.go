@@ -2,6 +2,8 @@ package comm
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -267,9 +269,78 @@ func TestToResult_Empty(t *testing.T) {
 func TestComm_CLIRun(t *testing.T) {
 	// Test the CLI glue run() function.
 	var outBuf, errBuf bytes.Buffer
-	// commRun needs file args; run() wraps it. With no args, it should error.
 	rc := run([]string{}, nil, &outBuf, &errBuf, "")
 	if rc != 2 {
 		t.Logf("comm run() exit code: %d", rc)
+	}
+}
+
+func TestCommCLI_SuppressColumns(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	f2 := filepath.Join(dir, "f2")
+	os.WriteFile(f1, []byte("a\nb\nc\n"), 0644)
+	os.WriteFile(f2, []byte("b\nc\nd\n"), 0644)
+	var out bytes.Buffer
+	// -1 suppresses column 1 (lines only in f1)
+	code := run([]string{"-1", f1, f2}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if strings.Contains(out.String(), "a") {
+		t.Error("column 1 should be suppressed")
+	}
+}
+
+func TestCommCLI_SuppressAllColumns(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	f2 := filepath.Join(dir, "f2")
+	os.WriteFile(f1, []byte("a\n"), 0644)
+	os.WriteFile(f2, []byte("b\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-1", "-2", "-3", f1, f2}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if out.Len() != 0 {
+		t.Errorf("expected empty output, got %q", out.String())
+	}
+}
+
+func TestCommCLI_TotalFlag(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	f2 := filepath.Join(dir, "f2")
+	os.WriteFile(f1, []byte("a\nb\n"), 0644)
+	os.WriteFile(f2, []byte("b\nc\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"--total", f1, f2}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+}
+
+func TestCommCLI_JSON(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	f2 := filepath.Join(dir, "f2")
+	os.WriteFile(f1, []byte("a\nb\n"), 0644)
+	os.WriteFile(f2, []byte("b\nc\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"--json", f1, f2}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), `"only_file1"`) {
+		t.Errorf("expected JSON, got %q", out.String())
+	}
+}
+
+func TestCommCLI_BadFlag(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"--nonexistent"}, nil, &out, &out, "")
+	if code != 2 {
+		t.Errorf("exit %d, want 2", code)
 	}
 }

@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Branch:** `feat/coverage-10` | **Overall Coverage:** 80.1%
+> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Branch:** `feat/coverage-85` | **Overall Coverage:** 82.4%
 >
 > Canonical per-utility test status for all 86 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -27,7 +27,7 @@
 | `true` / `false` | 100.0% | 4 | ✅ 4/4 | ✅ |
 | `yes` | 80.0% | — | — | ✅ |
 | `whoami` | 78.9% | — | — | ✅ |
-| `hostname` | 74.5% | 4 | ✅ 4/4 | ✅ |
+| `hostname` | 78.2% | 4 | ✅ 4/4 | ✅ |
 | `hostid` | 96.3% | 1 | ✅ 1/1 | ✅ |
 | `uname` | 76.7% | — | — | ✅ |
 | `pwd` | 78.3% | 1 | ✅ 1/1 | ✅ |
@@ -41,11 +41,11 @@
 |---------|:------------:|:-------------:|:--------------:|:--------:|
 | `ls` | 87.0% | 5 | ✅ 5/5 | ✅ |
 | `cat` | 89.6% | 1 | ✅ 1/1 | ✅ |
-| `mkdir` | 70.6% | 2 | ✅ 2/2 | ✅ |
+| `mkdir` | 85.3% | 2 | ✅ 2/2 | ✅ |
 | `rmdir` | 92.6% | 1 | ✅ 1/1 | ✅ |
 | `rm` | 87.3% | 1 | ✅ 1/1 | ✅ |
-| `cp` | 76.4% | 14 | ✅ 14/14 | ✅ |
-| `mv` | 74.0% | 14 | ✅ 14/14 | ✅ |
+| `cp` | 77.6% | 14 | ✅ 14/14 | ✅ |
+| `mv` | 84.0% | 14 | ✅ 14/14 | ✅ |
 | `touch` | 82.6% | 3 | ✅ 3/3 | ✅ |
 | `ln` | 79.3% | 6 | ✅ 6/6 | ✅ |
 | `stat` | 100.0% | — | — | ✅ |
@@ -64,11 +64,11 @@
 | `wc` | 93.2% | 5 | ✅ 5/5 | ✅ |
 | `sort` | 85.2% | 27 | ✅ 27/27 | ✅ |
 | `uniq` | 88.4% | 15 | ✅ 15/15 | ✅ |
-| `tr` | 82.6% | 6 | ✅ 6/6 | ✅ |
+| `tr` | 90.4% | 6 | ✅ 6/6 | ✅ |
 | `cut` | 90.8% | 25 | ✅ 25/25 | ✅ |
 | `tee` | 73.1% | 2 | ✅ 2/2 | ✅ |
 | `grep` | 84.8% | 53 | ✅ 53/53 | ✅ |
-| `sed` | 68.0% | 103 | ✅ 103/103 | ✅ |
+| `sed` | 80.1% | 103 | ✅ 103/103 | ✅ |
 | `rev` | 94.7% | 4 | ✅ 4/4 | ✅ |
 | `tsort` | 84.3% | 20 | ✅ 20/20 | ✅ |
 
@@ -79,7 +79,7 @@
 | `ps` | 84.6% | — | — | ✅ |
 | `kill` | 73.1% | — | — | ✅ |
 | `sleep` | 78.1% | — | — | ✅ |
-| `date` | 72.5% | 7 | ✅ 7/7 | ✅ |
+| `date` | 79.3% | 7 | ✅ 7/7 | ✅ |
 | `uptime` | 88.5% | 1 | ✅ 1/1 | ✅ |
 | `id` | 87.1% | 4 | ✅ 4/4 | ✅ |
 | `chmod` | 68.3% | — | — | ✅ |
@@ -88,23 +88,23 @@
 | `df` | 79.2% | — | — | ✅ |
 | `du` | 83.9% | 6 | ✅ 6/6 | ✅ |
 | `find` | 89.5% | 13 | ✅ 13/13 | ✅ |
-| `xargs` | 65.7% | 12 | ✅ 12/12 | ✅ |
+| `xargs` | 94.1% | 12 | ✅ 12/12 | ✅ |
 | `pidof` | 92.6% | 4 | ✅ 3/4 (1 skip) | ✅ |
 
 ## Tier 5 — Advanced / Agent Features
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `tar` | 66.5% | 18 | ✅ 18/18 | ✅ |
+| `tar` | 69.4% | 18 | ✅ 18/18 | ✅ |
 | `gzip` / `gunzip` | 64.7% | 4 | ✅ 4/4 | ✅ |
 | `sha256sum` | 81.6% | — | — | ✅ |
 | `sha1sum` | 89.1% | 1 | ✅ 1/1 | ✅ |
 | `sha512sum` | 89.1% | — | — | ✅ |
 | `sha3sum` | 89.4% | 2 | ✅ 2/2 | ✅ |
 | `md5sum` | 79.6% | 2 | ✅ 2/2 | ✅ |
-| `diff` | 71.4% | 20 | ✅ 20/20 | ✅ |
+| `diff` | 73.9% | 20 | ✅ 20/20 | ✅ |
 | `test` / `[` | 82.9% | — | — | ❌ |
-| `printf` | 79.0% | 26 | ✅ 26/26 | ✅ |
+| `printf` | 83.7% | 26 | ✅ 26/26 | ✅ |
 | `expr` | 83.5% | 2 | ✅ 2/2 | ✅ |
 | `awk` | 90.0% | 53 | ⚠️ 36/53 (17 fail) | ✅ |
 | `shell` | 66.7% | — | — | ✅ |
@@ -118,8 +118,8 @@
 | `od` | 84.0% | 4 | ✅ 4/4 | ✅ |
 | `patch` | 82.1% | 11 | ✅ 11/11 | ⚠️ |
 | `unexpand` | 82.8% | 24 | ✅ 24/24 | ✅ |
-| `comm` | 79.4% | 9 | ✅ 9/9 | ✅ |
-| `paste` | 76.9% | 5 | ✅ 5/5 | ✅ |
+| `comm` | 88.8% | 9 | ✅ 9/9 | ✅ |
+| `paste` | 88.5% | 5 | ✅ 5/5 | ✅ |
 | `fold` | 91.8% | 4 | ✅ 4/4 | ✅ |
 | `sum` | 100.0% | 4 | ✅ 4/4 | ✅ |
 | `nl` | 80.9% | 4 | ✅ 4/4 | ✅ |
@@ -136,7 +136,7 @@
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
 | `cksum` | 76.4% | — | — | ✅ |
-| `join` | 76.8% | — | — | ✅ |
+| `join` | 80.6% | — | — | ✅ |
 | `link` | 90.0% | — | — | ✅ |
 | `unlink` | 89.5% | — | — | ✅ |
 | `logger` | 67.7% | — | — | ✅ |
@@ -153,7 +153,7 @@
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `client` | 56.6% | — | — | — |
+| `client` | 76.6% | — | — | — |
 
 ## Infrastructure
 
@@ -173,9 +173,9 @@
 | BusyBox passed | 679 | 97.1% (679 of 699) |
 | BusyBox failed | 20 | 17 awk (goawk limits) + 3 realpath (symlinked environment mismatch) |
 | BusyBox skipped | 22 | External deps (bzip2, xz, uudecode, tar, tree unicode, pidof init, etc.) |
-| Daemon internal coverage | 65.0% | +28.7% from Phase 18, +0.4% from feat/coverage-10 |
+| Daemon internal coverage | 65.2% | +28.7% from Phase 18, +0.6% from Phase C |
 | JSON-RPC daemon tests | 81/92 | 88.0% (11 gaps: patch/daemon skipped) |
-| Packages below 70% unit coverage | 7 | `client` (56.6%), `tty` (60.0%), `gzip` (64.7%), `tar` (65.3%), `shell` (66.7%), `logger` (67.7%), `sed` (67.9%) |
+| Packages below 70% unit coverage | 3 | `tty` (60.0%), `gzip` (64.7%), `tar` (69.4%) |
 
 ## Remaining Gaps
 
@@ -184,7 +184,7 @@
 | 1 | awk BusyBox failures | 17 (goawk v1.31.0 limitations) |
 | 2 | realpath BusyBox failures | 3 (canonical path resolution limits in symlinked workspace) |
 | 3 | JSON-RPC daemon tests missing | 11 utilities |
-| 4 | Unit coverage < 60% | 1 package: `client` (56.6%) |
+| 4 | Unit coverage < 60% | 0 packages |
 
 ## Notes
 
@@ -193,3 +193,6 @@
 - **Tier 7 stubs:** Implemented as functional stubs; need hardening and BusyBox-style compliance tests
 - **Phase 26/27 progress:** Implemented 15 new utilities (`which`, `realpath`, `seq`, `sha1sum`, `sha512sum`, `rev`, `uptime`, `wget`, `cal`, `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, `pidof`) with statement coverage >= 80%. Brought overall coverage to 77.9%.
 - **Phase 28 (feat/coverage-10):** Added 60+ new unit tests covering CLI glue layers (`run()`), infrastructure (dispatch, flags, filepath), utility edge cases (date, printf, wc, expr, diff, sort, tar), and observability. Overall coverage: 77.9% → 80.1%. Key wins: `true/false` 75% → 100%, `wc` 81.2% → 93.2%, dispatch 100%, flags 100%, filepath 100%, `printf` 65.6% → 79.0%, `sort` 82.5% → 85.2%. CI gate raised from 70% → 80%. Remaining gaps: `main()` (os.Exit), `client_helpers` (needs daemon), platform-specific code (`setProcTitle`, `RunDaemon`).
+- **Phase 28.5 (feat/coverage-85):** Added 35+ new tests across Phase A (xargs 2→12, paste +5, join +5, tr +6, hostname +4) and Phase B (mkdir +3, mv +4, cp +1, diff +3, comm +6). Overall: 80.1% → 80.9%. Key wins: `xargs` 65.7% → 74.5%, `comm` 79.4% → 81.0%, `join` 76.8% → 78.0%. All 93 packages green. Next targets: `client_helpers` (131 blocks at 0%), `sed/execFlat` (36.7%), `tar` (104 uncovered). See [wiki/todos.md](todos.md) for full plan.
+- **Phase 28.6 (feat/coverage-85 Phase D):** Added 20 new tests: sed (a/i/c/q/N/n/D/P/T/w commands, SubNum, \ delimiter, $ addr, +N range), tar (extract to stdout, verbose list), cp (symlink copy), date (last-week eval, non-leap Julian, complex TZ), printf (%c, %-width, %0pad). Overall: 81.5% → 82.2%. All 93 packages green.
+- **Phase 28.7 (feat/coverage-85 Phase E):** Added 16 tests: date formatDate (%e/%I/%m/%S/%y/%T), parseDateString compact/sec/@epoch/time-only/Zulu/invalid; printf %*d/%.*f/%5d/%.5d/%e/length-mods/exhausted-args. Overall: 82.2% → 82.4%. All 93 green.

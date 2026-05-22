@@ -1,6 +1,66 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Coverage:** 77.9% | **--json:** 81/92 (patch ✅, dd deferred)
+> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Coverage:** 81.5% | **--json:** 81/92 (patch ✅, dd deferred)
+
+## Active Plan: Coverage Improvement → 85%
+
+> **Branch:** `feat/coverage-85` | **Current:** 81.5% | **Target:** 85%
+
+### Phase A — Complete ✅ (80.1% → 80.7%)
+Low-effort, pure-computation or simple test patterns:
+
+| Package | Tests Before | Tests After | Key additions |
+|---------|:---:|:---:|---|
+| `xargs` | 2 | **12** | `-n` max-args, `-t` trace, `-I` replace-str, `-E` eof-str, `-s` max-chars, default echo, bad flag, JSON, command failure, no-input-runs-once |
+| `paste` | 13 | **18** | JSON mode, file-not-found, bad flag, stdin default, trailing backslash in delimiters |
+| `join` | 8 | **13** | `-t` custom delimiter, JSON, `-1`/`-2` field spec, stdin, bad flag |
+| `tr` | 5 | **11** | `-s` squeeze, `-c` complement, CLI bad flag, missing operand |
+| `hostname` | 5 | **8** | `-d` domain, JSON, bad flag |
+
+### Phase B — Complete ✅ (80.7% → 80.9%)
+Mid-effort, needs temp files/dirs:
+
+| Package | Key additions |
+|---------|--------------|
+| `mkdir` | `-m` mode flag, missing operand, JSON |
+| `mv` | `-t` target-dir, missing operand, JSON |
+| `cp` | recursive directory copy (`-r`) |
+| `diff` | recursive non-regular file, missing-only-in-one, both missing |
+| `comm` | `-1`/`-2`/`-3` suppress columns, `--total` flag, JSON, bad flag |
+
+### Phase C — Complete ✅ (80.9% → 81.5%)
+Needs daemon integration test:
+
+| Package | Uncovered | Effort | Notes |
+|---------|:---:|:---:|---|
+| `client_helpers` (30+ funcs) | **131 blocks → 5 remaining** | Medium | 27 new helper tests: Dirname, Hostname, Printf, Test, Whoami, Readlink, ID, Date, Uname, Env, Printenv, Sort, Cut, Uniq, Find, Mv, Cp, Ln, Rmdir, Chmod, Md5sum, Sha256sum, Df, Du, Ps, Xargs, Expr. Skipped: Chown/Chgrp (root), Gzip (type mismatch), Tar (cwd), Kill (PID). |
+
+### Phase D — Complete ✅ (81.5% → 82.2%)
+
+| Package | Tests Added | Coverage After | Key additions |
+|---------|:---:|:---:|---|
+| `sed` | +13 | 69.5% | a/i/c/q/n/N/D/P/T/w commands, SubNum (s/pat/repl/N), w-file, \\ delimiter, $ address, +N range |
+| `tar` | +2 | 67.5% | Extract to stdout (-O), verbose listing (-t -v) |
+| `cp` | +1 | 78.0% | Symlink copy |
+| `date` | +4 | 73.5% | Last-week M.w.d eval, non-leap Julian, complex TZ with DST |
+| `printf` | +3 | 79.5% | %c char, %- left-justify, %0 zero-pad float |
+
+### Phase E — Complete ✅ (82.2% → 82.4%)
+
+| Package | Tests Added | Coverage After | Key additions |
+|---------|:---:|:---:|---|
+| `date` | +9 | 74.5% | formatDate specifiers (%e/%I/%m/%S/%y/%T/%%), parseDateString compact/sec/@epoch/time-only/Zulu/invalid |
+| `printf` | +7 | 80.5% | %*d star width, %.*f star precision, %5d/%.5d, %e, length mods (%ld/%lld/%hd), exhausted args |
+
+### Skipped (platform-specific / needs subprocess)
+
+| Function | Why |
+|----------|-----|
+| `main()` | `os.Exit()` |
+| `setProcTitle` | Modifies argv memory, Linux-only |
+| `RunDaemon` | Full daemon lifecycle |
+| `interactive()` | REPL with `os.Stdin` |
+| `ttyname()` | `IoctlGetTermios` syscall |
 
 ## Remaining Failures (20)
 

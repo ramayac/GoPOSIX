@@ -563,8 +563,48 @@ func TestLocalTime_BadUTC(t *testing.T) {
 	defer os.Unsetenv("TZ")
 	now := time.Now()
 	result := localTime(now)
-	// Bad offset returns original time.
 	if !result.Equal(now) {
 		t.Error("localTime should return same time for invalid UTC offset")
+	}
+}
+
+func TestTar_ExtractToStdout(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src")
+	os.WriteFile(src, []byte("hello\n"), 0644)
+	arc := filepath.Join(dir, "test.tar")
+	var out bytes.Buffer
+	code := run([]string{"-c", "-f", arc, "-C", dir, "src"}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("create: exit %d, stderr: %s", code, out.String())
+	}
+	// Extract to stdout (-O)
+	var extractOut bytes.Buffer
+	code = run([]string{"-x", "-f", arc, "-O"}, nil, &extractOut, &out, dir)
+	if code != 0 {
+		t.Fatalf("extract: exit %d", code)
+	}
+	if !strings.Contains(extractOut.String(), "hello") {
+		t.Errorf("expected 'hello' in stdout extract, got %q", extractOut.String())
+	}
+}
+
+func TestTar_ListVerbose(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.txt")
+	os.WriteFile(src, []byte("hello\n"), 0644)
+	arc := filepath.Join(dir, "test.tar")
+	var out bytes.Buffer
+	code := run([]string{"-c", "-f", arc, "-C", dir, "src.txt"}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("create: exit %d", code)
+	}
+	var listOut bytes.Buffer
+	code = run([]string{"-t", "-f", arc, "-v"}, nil, &listOut, &out, "")
+	if code != 0 {
+		t.Fatalf("list: exit %d", code)
+	}
+	if !strings.Contains(listOut.String(), "src.txt") {
+		t.Errorf("expected 'src.txt' in listing, got %q", listOut.String())
 	}
 }

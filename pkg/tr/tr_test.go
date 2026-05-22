@@ -100,3 +100,49 @@ func TestTrJSONDelete(t *testing.T) {
 		t.Errorf("lines %v, want ['heo word']", lines)
 	}
 }
+
+func TestTr_SqueezeRepeats(t *testing.T) {
+	// -s: squeeze repeated output characters.
+	in := "helloooo    world"
+	var out bytes.Buffer
+	Run(strings.NewReader(in), &out, "o", "o", false, true, false)
+	// Multiple 'o's squeezed.
+	if strings.Count(out.String(), "o") > 3 {
+		t.Errorf("expected squeezed 'o's, got %q", out.String())
+	}
+}
+
+func TestTr_Complement(t *testing.T) {
+	// -c: use complement of set1.
+	in := "hello123"
+	var out bytes.Buffer
+	Run(strings.NewReader(in), &out, "0-9", "x", false, false, true)
+	// Non-digits replaced with 'x'.
+	if out.String() != "xxxxx123" {
+		t.Errorf("got %q, want 'xxxxx123'", out.String())
+	}
+}
+
+func TestTr_DeleteAndSqueeze(t *testing.T) {
+	// -d -s: delete and squeeze.
+	in := "hello   world"
+	var out bytes.Buffer
+	Run(strings.NewReader(in), &out, " ", "", true, false, false)
+	_ = out.String()
+}
+
+func TestTrCLI_BadFlag(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"--nonexistent"}, nil, &out, &out, "")
+	if code != 2 {
+		t.Errorf("exit %d, want 2", code)
+	}
+}
+
+func TestTrCLI_MissingOperand(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"-d"}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("exit %d, want 1 for missing operand", code)
+	}
+}

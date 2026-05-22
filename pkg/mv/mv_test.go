@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -177,5 +178,46 @@ func TestBusyBox_Mv_RefusesDirToSubdir(t *testing.T) {
 	_, err := Run([]string{parent}, sub)
 	if err == nil {
 		t.Error("mv dir into self should fail")
+	}
+}
+
+func TestCLI_TargetDir(t *testing.T) {
+	// mv -t DIR SOURCE...
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src")
+	targetDir := filepath.Join(dir, "target")
+	os.WriteFile(src, []byte("hello"), 0644)
+	os.MkdirAll(targetDir, 0755)
+	var out bytes.Buffer
+	code := run([]string{"-t", targetDir, src}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	// File should now be in targetDir.
+	if _, err := os.Stat(filepath.Join(targetDir, "src")); err != nil {
+		t.Error("file not moved to target dir")
+	}
+}
+
+func TestCLI_MissingOperand(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("exit %d, want 1", code)
+	}
+}
+
+func TestCLI_JSON(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src")
+	dst := filepath.Join(dir, "dst")
+	os.WriteFile(src, []byte("hello"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"--json", src, dst}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), `"moved"`) {
+		t.Errorf("expected JSON, got %q", out.String())
 	}
 }

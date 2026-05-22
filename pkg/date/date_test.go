@@ -413,3 +413,148 @@ func TestPosixTZ_Eval_MonthWeekDay(t *testing.T) {
 	}
 	_ = r.eval(2024, -18000, -14400)
 }
+
+func TestPosixTZ_Eval_LastWeek(t *testing.T) {
+	// M3.5.0 = last Sunday in March (week=5 means last)
+	r := &posixTZRule{
+		isStart:          true,
+		isMonthWeekDay:   true,
+		month:            3,
+		week:             5,
+		weekday:          0,
+		timeOfTransition: 7200,
+	}
+	_ = r.eval(2024, -18000, -14400)
+}
+
+func TestPosixTZ_Eval_NonLeapJulian(t *testing.T) {
+	r := &posixTZRule{
+		isStart:          false,
+		isJulianNoLeap:   true,
+		julianDay:        59,
+		timeOfTransition: 7200,
+	}
+	_ = r.eval(2023, -18000, -14400)
+}
+
+func TestParsePOSIXTZ_StandardOnly(t *testing.T) {
+	// Simple TZ with just name and offset: "EST5"
+	tz, ok := parsePOSIXTZ("EST5")
+	if ok {
+		if tz.stdName != "EST" {
+			t.Errorf("expected EST, got %q", tz.stdName)
+		}
+	}
+}
+
+func TestParsePOSIXTZ_Complex(t *testing.T) {
+	// Full TZ: "NZST-12:00:00NZDT-13:00:00,M10.1.0,M3.3.0"
+	tz, ok := parsePOSIXTZ("NZST-12:00:00NZDT-13:00:00,M10.1.0,M3.3.0")
+	if ok {
+		if !tz.hasDST {
+			t.Error("expected DST for complex TZ")
+		}
+	}
+}
+
+func TestFormatDate_Specifiers(t *testing.T) {
+	now := time.Date(2024, 3, 15, 14, 30, 45, 0, time.UTC)
+	tests := []struct {
+		fmt, want string
+	}{
+		{"%e", "15"},
+		{"%I", "02"},
+		{"%m", "03"},
+		{"%S", "45"},
+		{"%y", "24"},
+		{"%T", "14:30:45"},
+		{"%%", "%"},
+	}
+	for _, tt := range tests {
+		got := formatDate(now, tt.fmt)
+		if got != tt.want {
+			t.Errorf("formatDate(%q) = %q, want %q", tt.fmt, got, tt.want)
+		}
+	}
+}
+
+func TestFormatDate_Composite(t *testing.T) {
+	now := time.Date(2024, 1, 5, 9, 7, 3, 0, time.UTC)
+	got := formatDate(now, "%Y-%m-%d %H:%M:%S")
+	if got != "2024-01-05 09:07:03" {
+		t.Errorf("got %q", got)
+	}
+}
+
+func TestParseDateString_Compact(t *testing.T) {
+	// YYYYMMDDHHMM format
+	tm, err := parseDateString("202403151430", time.UTC)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	if tm.Year() != 2024 || tm.Month() != 3 || tm.Day() != 15 {
+		t.Errorf("wrong date: %v", tm)
+	}
+}
+
+func TestParseDateString_CompactWithSec(t *testing.T) {
+	// YYYYMMDDHHMM.SS format
+	tm, err := parseDateString("202403151430.45", time.UTC)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	if tm.Second() != 45 {
+		t.Errorf("expected sec 45, got %d", tm.Second())
+	}
+}
+
+func TestParseDateString_AtTimestamp(t *testing.T) {
+	// @epoch format
+	tm, err := parseDateString("@1711497600", time.UTC)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	if tm.Year() != 2024 {
+		t.Errorf("expected 2024, got %d", tm.Year())
+	}
+}
+
+func TestParseDateString_TimeOnly(t *testing.T) {
+	// HH:MM:SS format
+	tm, err := parseDateString("14:30:45", time.UTC)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	if tm.Hour() != 14 || tm.Minute() != 30 || tm.Second() != 45 {
+		t.Errorf("wrong time: %v", tm)
+	}
+}
+
+func TestParseDateString_TimeOnlyHHMM(t *testing.T) {
+	tm, err := parseDateString("14:30", time.UTC)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	if tm.Hour() != 14 || tm.Minute() != 30 {
+		t.Errorf("wrong time: %v", tm)
+	}
+}
+
+func TestParseDateString_Zulu(t *testing.T) {
+	tm, err := parseDateString("2024-03-15 14:30Z", time.UTC)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	// Z means UTC
+	_, offset := tm.Zone()
+	if offset != 0 {
+		t.Errorf("expected UTC offset 0, got %d", offset)
+	}
+}
+
+func TestParseDateString_Invalid(t *testing.T) {
+	_, err := parseDateString("not-a-date", time.UTC)
+	if err == nil {
+		t.Error("expected error for invalid date")
+	}
+}

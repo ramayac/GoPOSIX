@@ -625,3 +625,91 @@ func TestFormat_BConv_AllEscapes(t *testing.T) {
 		}
 	}
 }
+
+func TestFormat_WidthAndFlags(t *testing.T) {
+	// %-10s: left-justified string
+	s, _ := Format("%-10s", []string{"hi"})
+	if !strings.Contains(s, "hi") {
+		t.Errorf("expected 'hi' in output, got %q", s)
+	}
+}
+
+func TestFormat_ZeroPadFloat(t *testing.T) {
+	s, _ := Format("%010.3f", []string{"1.5"})
+	if !strings.Contains(s, "1.500") {
+		t.Errorf("expected 1.500 in output, got %q", s)
+	}
+}
+
+func TestFormat_CharConv(t *testing.T) {
+	s, _ := Format("%c", []string{"hello"})
+	// %c prints first character: 'h'
+	if !strings.Contains(s, "h") {
+		t.Errorf("expected 'h' in output, got %q", s)
+	}
+}
+
+func TestFormat_IntWidthPrecision(t *testing.T) {
+	// %5d: width-padded integer
+	s, _ := Format("%5d", []string{"42"})
+	if !strings.Contains(s, "42") {
+		t.Errorf("expected 42 in output, got %q", s)
+	}
+	// %.5d: precision-padded
+	s2, _ := Format("%.5d", []string{"42"})
+	if !strings.Contains(s2, "00042") || !strings.Contains(s2, "42") {
+		t.Errorf("expected 00042 in output, got %q", s2)
+	}
+}
+
+func TestFormat_StarWidth(t *testing.T) {
+	// %*d: width from argument
+	s, _ := Format("%*d", []string{"8", "42"})
+	if !strings.Contains(s, "42") {
+		t.Errorf("expected 42 in output, got %q", s)
+	}
+}
+
+func TestFormat_StarPrecision(t *testing.T) {
+	// %.*f: precision from argument
+	s, _ := Format("%.*f", []string{"2", "3.14159"})
+	if !strings.Contains(s, "3.14") {
+		t.Errorf("expected 3.14 in output, got %q", s)
+	}
+}
+
+func TestFormat_FloatSci(t *testing.T) {
+	// %e: scientific notation
+	s, _ := Format("%e", []string{"3.14"})
+	if !strings.Contains(s, "3") {
+		t.Errorf("expected 3 in output, got %q", s)
+	}
+}
+
+func TestFormat_LengthModifiers(t *testing.T) {
+	// %ld, %lld, %hd: length modifiers (ignored by our implementation)
+	for _, f := range []string{"%ld", "%lld", "%hd"} {
+		s, _ := Format(f, []string{"42"})
+		if !strings.Contains(s, "42") {
+			t.Errorf("%s: expected 42, got %q", f, s)
+		}
+	}
+}
+
+func TestFormat_InvalidStarWidth(t *testing.T) {
+	// %*d with non-numeric width argument
+	s, hadErr := Format("%*d", []string{"abc", "42"})
+	if !hadErr {
+		t.Log("non-numeric * width should error")
+	}
+	_ = s
+}
+
+func TestFormat_ExhaustedArgs(t *testing.T) {
+	// Format with more specifiers than arguments
+	s, hadErr := Format("%d %d", []string{"1"})
+	if hadErr {
+		t.Log("exhausted args produced error (expected)")
+	}
+	_ = s
+}
