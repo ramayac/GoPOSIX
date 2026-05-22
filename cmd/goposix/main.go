@@ -88,6 +88,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/tree"
 	_ "github.com/ramayac/goposix/pkg/tr"
 	_ "github.com/ramayac/goposix/pkg/truefalse"
+	_ "github.com/ramayac/goposix/pkg/tsort"
 	_ "github.com/ramayac/goposix/pkg/tty"
 	_ "github.com/ramayac/goposix/pkg/uname"
 	_ "github.com/ramayac/goposix/pkg/unexpand"

@@ -59,6 +59,7 @@ PKG_DIRS   := . \
               ./pkg/cut/... \
               ./pkg/tr/... \
               ./pkg/sort/... \
+              ./pkg/tsort/... \
               ./pkg/seq/... \
               ./pkg/uniq/... \
               ./pkg/unexpand/... \

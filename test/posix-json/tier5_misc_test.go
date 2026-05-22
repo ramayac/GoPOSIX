@@ -17,6 +17,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/printenv"
 	_ "github.com/ramayac/goposix/pkg/sha3sum"
 	_ "github.com/ramayac/goposix/pkg/tree"
+	_ "github.com/ramayac/goposix/pkg/tsort"
 	_ "github.com/ramayac/goposix/pkg/xargs"
 )
 
@@ -394,6 +395,41 @@ func TestTier5_Tree(t *testing.T) {
 		name, _ := rootNode["name"].(string)
 		if name != tmpDir {
 			t.Errorf("expected root name %q, got %q", tmpDir, name)
+		}
+	})
+}
+
+func TestTier5_Tsort(t *testing.T) {
+	socket := startDaemon(t)
+	c := client.Dial(socket, 5*time.Second)
+
+	t.Run("topological sort over JSON-RPC", func(t *testing.T) {
+		var result ResultWrapper
+		err := c.Call(context.Background(), "goposix.tsort",
+			map[string]interface{}{
+				"flags": []interface{}{"--json"},
+				"stdin": "a b b c\n",
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		data, ok := result.Data.(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected map data, got %T", result.Data)
+		}
+		nodes, ok := data["nodes"].([]interface{})
+		if !ok {
+			t.Fatalf("expected 'nodes' list, got %v", data)
+		}
+		if len(nodes) != 3 {
+			t.Fatalf("expected 3 nodes, got %d", len(nodes))
+		}
+		if nodes[0].(string) != "a" || nodes[1].(string) != "b" || nodes[2].(string) != "c" {
+			t.Errorf("expected sorted ['a', 'b', 'c'], got %v", nodes)
 		}
 	})
 }
