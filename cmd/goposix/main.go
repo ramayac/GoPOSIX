@@ -71,6 +71,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/seq"
 	_ "github.com/ramayac/goposix/pkg/sha1sum"
 	_ "github.com/ramayac/goposix/pkg/sha256sum"
+	_ "github.com/ramayac/goposix/pkg/sha3sum"
 	_ "github.com/ramayac/goposix/pkg/sha512sum"
 	_ "github.com/ramayac/goposix/pkg/shell"
 	_ "github.com/ramayac/goposix/pkg/sleep"

@@ -14,6 +14,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/factor"
 	_ "github.com/ramayac/goposix/pkg/hostid"
 	_ "github.com/ramayac/goposix/pkg/printenv"
+	_ "github.com/ramayac/goposix/pkg/sha3sum"
 	_ "github.com/ramayac/goposix/pkg/xargs"
 )
 
@@ -303,6 +304,47 @@ func TestTier5_Factor(t *testing.T) {
 		}
 		if len(factors) != 10 {
 			t.Errorf("expected 10 factors of 2, got %d", len(factors))
+		}
+	})
+}
+
+func TestTier5_Sha3sum(t *testing.T) {
+	socket := startDaemon(t)
+	c := client.Dial(socket, 5*time.Second)
+
+	t.Run("computes SHA3 hash over JSON-RPC", func(t *testing.T) {
+		var result ResultWrapper
+		err := c.Call(context.Background(), "goposix.sha3sum",
+			map[string]interface{}{
+				"flags": []interface{}{"--json", "-a", "256"},
+				"stdin": "hello world\n",
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		results, ok := result.Data.([]interface{})
+		if !ok {
+			t.Fatalf("expected slice data, got %T", result.Data)
+		}
+		if len(results) != 1 {
+			t.Fatalf("expected 1 result entry, got %d", len(results))
+		}
+		entry, ok := results[0].(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected result entry map, got %T", results[0])
+		}
+		file, _ := entry["file"].(string)
+		if file != "-" {
+			t.Errorf("expected file '-', got %q", file)
+		}
+		hash, _ := entry["hash"].(string)
+		expected := "a8009a7a528d87778c356da3a55d964719e818666a04e4f960c9e2439e35f138"
+		if hash != expected {
+			t.Errorf("expected hash %q, got %q", expected, hash)
 		}
 	})
 }

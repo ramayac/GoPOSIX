@@ -22,6 +22,7 @@ PKG_DIRS   := . \
               ./pkg/hostname/... \
               ./pkg/hostid/... \
               ./pkg/factor/... \
+              ./pkg/sha3sum/... \
               ./pkg/uname/... \
               ./pkg/pwd/... \
               ./pkg/printenv/... \
