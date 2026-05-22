@@ -29,7 +29,7 @@ Whenever you write or modify code in this repository, you **MUST** adhere to the
 - `pkg/common/`: Foundation libraries (flags, JSON envelope, JSON-RPC types).
 - `pkg/<utility>/`: Implementation of specific POSIX utilities (e.g., `pkg/cat/`, `pkg/ls/`).
 - `test/compliance/`: Bash scripts that compare GoPOSIX's output and exit codes against the host OS (GNU/Linux) equivalents.
-- `docker/`: Dockerfiles — default daemon image (`Dockerfile`), CLI scratch (`Dockerfile.cli`), debug (`Dockerfile.debug`).
+- `docker/`: Docker configurations. Consolidates daemon, CLI, debug, and Alpine Distro targets into a single unified multi-stage `Dockerfile` (using targets `daemon`, `cli`, `debug`, and `alpine-mvp`). Pre-built GoReleaser images use `Dockerfile.goreleaser` / `Dockerfile.goreleaser.daemon`.
 
 ## 4. Development Workflow
 
@@ -69,7 +69,7 @@ For the full phase history and roadmap, see [wiki/phases.md](wiki/phases.md).
 
 ## 7. Docker & Containerization Insights
 
-- **Go Version Alignment:** Always ensure the `golang` base image version in `docker/Dockerfile*` matches or exceeds the `go` version specified in `go.mod`. Failing to do so will break the build during `go mod download`.
+- **Go Version Alignment:** Always ensure the `golang` base image version in `docker/Dockerfile` matches or exceeds the `go` version specified in `go.mod`. Failing to do so will break the build during `go mod download`.
 - **Debug Image Flexibility:** Use `CMD ["/bin/sh"]` instead of `ENTRYPOINT` in debug images. This allows `docker run -it goposix:debug sh` to work as expected, rather than passing `sh` as an argument to the `goposix` multicall binary.
 - **Scratch Image Purity:** When generating symlinks in a multi-stage Docker build, do **not** `COPY --from=stage /bin/ /bin/`. This pulls in all host OS binaries (like Alpine's BusyBox). Instead, create a dedicated output directory (e.g., `/out/bin`) in the intermediate stage and copy only that to the final `scratch` image.
 - **Testing Production:** Use `make smoke-docker` to verify the production image. Use `make docker-run CMD="ls -la"` for ad-hoc testing of specific utilities inside the minimal `scratch` environment.

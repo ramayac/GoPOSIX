@@ -127,4 +127,4 @@ See [Performance Quick Reference](wiki/performance.md) and [Benchmarking Plan](w
 - **`--json` Only:** Structured output via `--json` long flag only — no short-form (`-j`) collision with POSIX flags (ouch!)
 - **POSIX Flag Parsing:** Custom parser in `pkg/common/flags.go` with escape hatches for free-form utilities.
 
-Does it work? damn right it does: [KoreGoOS](https://github.com/ramayac/KoreGoOS).
+Does it work? yes it does, see how I replace busybox with goposix in alpine in this [docker file](docker/Dockerfile).
