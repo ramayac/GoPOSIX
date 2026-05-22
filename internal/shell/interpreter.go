@@ -3,6 +3,7 @@ package shell
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"os"
 	"strings"
@@ -36,29 +37,31 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 		return ExecResult{Stderr: err.Error(), ExitCode: 127}
 	}
 
-	execHandler := func(ctx context.Context, args []string) error {
-		if len(args) == 0 {
+	execHandler := func(next interp.ExecHandlerFunc) interp.ExecHandlerFunc {
+		return func(ctx context.Context, args []string) error {
+			if len(args) == 0 {
+				return nil
+			}
+			cmdName := args[0]
+			cmd, ok := dispatch.Lookup(cmdName)
+			if !ok {
+				// Fall back to next (which will be default exec handler or other middleware)
+				return next(ctx, args)
+			}
+
+			hc := interp.HandlerCtx(ctx)
+			// If hc.Dir is empty, fall back to the execution cwd.
+			dir := hc.Dir
+			if dir == "" {
+				dir = cwd
+			}
+
+			exitCode := cmd.Run(args[1:], hc.Stdin, hc.Stdout, hc.Stderr, dir)
+			if exitCode != 0 {
+				return interp.ExitStatus(uint8(exitCode))
+			}
 			return nil
 		}
-		cmdName := args[0]
-		cmd, ok := dispatch.Lookup(cmdName)
-		if !ok {
-			// Fall back to system exec for commands not registered in dispatch.
-			return interp.DefaultExecHandler(0)(ctx, args)
-		}
-
-		hc := interp.HandlerCtx(ctx)
-		// If hc.Dir is empty, fall back to the execution cwd.
-		dir := hc.Dir
-		if dir == "" {
-			dir = cwd
-		}
-
-		exitCode := cmd.Run(args[1:], hc.Stdin, hc.Stdout, hc.Stderr, dir)
-		if exitCode != 0 {
-			return interp.NewExitStatus(uint8(exitCode))
-		}
-		return nil
 	}
 
 	openHandler := func(ctx context.Context, path string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
@@ -78,7 +81,7 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 
 	opts := []interp.RunnerOption{
 		interp.StdIO(nil, lStdout, lStderr),
-		interp.ExecHandler(execHandler),
+		interp.ExecHandlers(execHandler),
 		interp.OpenHandler(openHandler),
 	}
 
@@ -121,8 +124,9 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 
 	exitCode := uint8(0)
 	if err != nil {
-		if exit, ok := interp.IsExitStatus(err); ok {
-			exitCode = exit
+		var exitStatus interp.ExitStatus
+		if errors.As(err, &exitStatus) {
+			exitCode = uint8(exitStatus)
 		} else {
 			exitCode = 1
 			stderr.WriteString(err.Error() + "\n")

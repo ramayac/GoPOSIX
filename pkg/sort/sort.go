@@ -151,17 +151,6 @@ func parseNumericPrefix(s string) (float64, bool) {
 	return v, true
 }
 
-func parseHuman(s string) (float64, bool) {
-	hv := parseHumanVal(s)
-	if hv.hasSuffix {
-		// Encode as: num*10 + suffixRank. This keeps ordering correct.
-		// Actually we can't combine them like this for sorting because the comparison
-		// needs to know suffix vs no-suffix. Return a marker.
-		return hv.num, true
-	}
-	return hv.num, hv.hasSuffix
-}
-
 func parseMonth(s string) (int, bool) {
 	s = strings.TrimSpace(s)
 	if s == "" {

@@ -84,7 +84,9 @@ goposix binary (single static ELF, <12MB)
 | 22 | Hardening III — Daemon-First Pivot | ✅ |
 | 23 | Flags Rewrite — zero-allocation POSIX scanner | ✅ |
 | 24 | Hardening IV Part 1 — 21 compliance gaps resolved, 6 remain | 🟡 |
+| 25 | Awesome-Go Prep & Daemon Stdin — checklists, Codecov & LICENSE, 25 lints fixed | ✅ |
 | 07a | `awk` — Platinum gate (integrated goawk v1.31.0) | ✅ |
+
 
 ---
 

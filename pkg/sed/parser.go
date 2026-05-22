@@ -427,9 +427,7 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 				text += string(rawText[i])
 			}
 		}
-		if strings.HasSuffix(text, "\n") {
-			text = text[:len(text)-1]
-		}
+		text = strings.TrimSuffix(text, "\n")
 		inst.Text = text
 
 	case 'b', 't', 'T', ':', 'r', 'w':

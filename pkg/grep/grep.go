@@ -240,7 +240,9 @@ func grepRun(args []string, stdout, errOut io.Writer, stdinR io.Reader, cwd stri
 	if len(patterns) == 0 {
 		// match nothing, re remains nil
 	} else if !fixed {
-		pattern = strings.Join(patterns, "|")
+		if pattern == "" {
+			pattern = strings.Join(patterns, "|")
+		}
 		if wordRegexp && !strings.Contains(pattern, "\\b") {
 			if pattern == "^" || pattern == "$" {
 				pattern = `a^`

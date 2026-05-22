@@ -206,11 +206,9 @@ func (s *Server) acceptLoop() {
 				return
 			}
 			// If listener closed, stop accepting
-			select {
-			case <-time.After(10 * time.Millisecond):
-				if s.listener == nil {
-					return
-				}
+			time.Sleep(10 * time.Millisecond)
+			if s.listener == nil {
+				return
 			}
 			continue
 		}

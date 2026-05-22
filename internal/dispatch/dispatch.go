@@ -15,7 +15,6 @@ type Command struct {
 	Run   func(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int // returns POSIX exit code
 }
 
-
 var registry = map[string]Command{}
 
 // Register adds a command to the global registry.

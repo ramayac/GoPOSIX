@@ -241,7 +241,7 @@ func TestBusyBox_Echo_OctalEscapeNNN(t *testing.T) {
 		t.Fatalf("exit code %d, want 0", code)
 	}
 	if buf.String() != "!z" {
-		t.Errorf("got %q (bytes: %v), want %q", buf.String(), []byte(buf.String()), "!z")
+		t.Errorf("got %q (bytes: %v), want %q", buf.String(), buf.Bytes(), "!z")
 	}
 }
 

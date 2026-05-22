@@ -32,10 +32,17 @@ jobs:
         run: make vet
 
       - name: Unit tests
-        run: make test
+        run: CGO_ENABLED=0 go test -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Coverage check
         run: make cover-gate
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.out
+          fail_ci_if_error: false
+
 
       - name: Build binary
         run: make build

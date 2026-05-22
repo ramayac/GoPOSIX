@@ -96,7 +96,6 @@ func Run(patchData []byte, targetPath string, stripLevel int, reverse, ignoreApp
 	}
 
 	result := &PatchResult{File: target, IsNew: isNewFile}
-	var appliedHunks []Hunk
 
 	for hi, hunk := range p.Hunks {
 		h := hunk
@@ -107,7 +106,6 @@ func Run(patchData []byte, targetPath string, stripLevel int, reverse, ignoreApp
 		newLines, ok := applyHunk(lines, h, ignoreApplied)
 		if ok {
 			lines = newLines
-			appliedHunks = append(appliedHunks, hunk)
 			result.Applied++
 		} else {
 			result.Rejected++
@@ -354,44 +352,6 @@ func applyAt(lines []string, h Hunk, pos int) []string {
 	return result
 }
 
-// findContext finds the position in lines where context lines match.
-// startHint is the 0-based line where the hunk should ideally start.
-func findContext(lines []string, ctx []string, startHint int) int {
-	if len(ctx) == 0 {
-		return startHint
-	}
-
-	// Try from startHint, with expanding offset
-	for offset := 0; offset <= len(lines); offset++ {
-		// Try before
-		if startHint-offset >= 0 {
-			if matchContext(lines[startHint-offset:], ctx) {
-				return startHint - offset
-			}
-		}
-		// Try after
-		if offset > 0 && startHint+offset < len(lines) {
-			if matchContext(lines[startHint+offset:], ctx) {
-				return startHint + offset
-			}
-		}
-	}
-	return -1
-}
-
-// matchContext checks if ctx matches the beginning of lines.
-func matchContext(lines []string, ctx []string) bool {
-	if len(lines) < len(ctx) {
-		return false
-	}
-	for i, c := range ctx {
-		if lines[i] != c {
-			return false
-		}
-	}
-	return true
-}
-
 // alreadyApplied checks if the hunk's result is already present in the file.
 func alreadyApplied(lines []string, h Hunk) bool {
 	// Build expected result of applying this hunk
@@ -444,7 +404,6 @@ func ParsePatch(r io.Reader) ([]Patch, error) {
 	var patches []Patch
 	var current *Patch
 	var currentHunk *Hunk
-	var headerLines []string
 	var inHunk bool
 
 	for scanner.Scan() {
@@ -461,7 +420,6 @@ func ParsePatch(r io.Reader) ([]Patch, error) {
 			}
 			current = &Patch{OldFile: line[4:]}
 			inHunk = false
-			headerLines = nil
 
 		case strings.HasPrefix(line, "+++ "):
 			if current != nil {
@@ -493,13 +451,9 @@ func ParsePatch(r io.Reader) ([]Patch, error) {
 			} else {
 				// Other non-hunk line ends the hunk
 				inHunk = false
-				headerLines = append(headerLines, line)
 			}
 
 		default:
-			if current == nil {
-				headerLines = append(headerLines, line)
-			}
 		}
 	}
 

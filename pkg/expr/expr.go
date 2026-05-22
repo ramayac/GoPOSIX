@@ -31,12 +31,6 @@ type ExprResult struct {
 	ExitCode int    `json:"exitCode"`
 }
 
-var spec = common.FlagSpec{
-	Defs: []common.FlagDef{
-		{Long: "json", Type: common.FlagBool},
-	},
-}
-
 // --- Evaluator ---
 
 type parser struct {

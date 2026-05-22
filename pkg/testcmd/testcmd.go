@@ -315,13 +315,6 @@ func evalBinary(left, op, right string) (bool, error) {
 	return false, fmt.Errorf("unknown binary operator: %s", op)
 }
 
-// spec for test command -- only the json flag (expression args are passthrough)
-var spec = common.FlagSpec{
-	Defs: []common.FlagDef{
-		{Long: "json", Type: common.FlagBool},
-	},
-}
-
 // --- CLI layer ---
 
 func runTest(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
