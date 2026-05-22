@@ -4,7 +4,7 @@ GoPOSIX is a POSIX-compliant userland implemented as a single, statically-linked
 The primary interface is a persistent JSON-RPC 2.0 daemon with a typed Go SDK (60µs/call).
 A multicall CLI binary is available as a secondary interface.
 
-**Version:** v1.0.0 (Gold) | **Go:** 1.26 | **Binary:** ~10 MB fully static
+**Version:** see [releases](https://github.com/ramayac/goposix/releases) | **Go:** 1.26 | **Binary:** <12 MB fully static
 
 ## Core Design Principles
 

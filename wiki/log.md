@@ -4,6 +4,33 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-22] cleanup | Wiki dedup + README de-staling (branch `docs/wiki-cleanup-2`)
+
+**Duplicate elimination:** Deleted `.wiki-instructions/wiki-maintainer.instructions.md`
+(identical to `wiki-maintainer.md` — both 2273 bytes, same content). Kept
+`wiki-maintainer.md` as canonical.
+
+**Alpine consolidation:** Replaced `wiki/alpine_integration.md` (marketing-style
+welcome page) with a stub redirecting to `wiki/alpine_plan.md` (technical
+blueprint). The integration page had ~80% overlap with the plan.
+
+**README de-staling (14 hardcoded values removed):**
+- Replaced "92+ tools" / "97.1% (679/699)" with descriptive language.
+- Removed the performance table with hardcoded µs/seconds/sizes — replaced
+  with approximate ranges and a link to `wiki/performance.md` for reproducible
+  benchmarks.
+- Stripped phase references ("Phase 25") from Daemon Stdin section.
+- Kept all CI badges (they auto-update).
+- Trimmed "Why?" section without losing the project's voice.
+
+**Clarity:** Added disambiguation note to `wiki/schema.md` (wiki structure
+contract vs. `wiki/json_schema.md` output schemas). Added Alpine links to
+`wiki/index.md`.
+
+Updated: `README.md`, `wiki/alpine_integration.md`, `wiki/index.md`,
+`wiki/schema.md`, `wiki/log.md`. Deleted:
+`.wiki-instructions/wiki-maintainer.instructions.md`.
+
 ## [2026-05-21] cleanup | Prune todos.md — removed all resolved sections
 
 Stripped `wiki/todos.md` of resolved cruft (~130 lines → ~40 lines). Removed:
