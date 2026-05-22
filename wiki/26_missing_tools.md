@@ -28,16 +28,17 @@ We follow a strict, systematic process for implementing the utilities in **Categ
 4. **PASS**: Verify that all unit tests pass (enforcing ≥ 80% coverage on the new package) and the BusyBox integration tests also pass.
 5. **UPDATE**: Update this document (`wiki/26_missing_tools.md`) to mark the completed utility as `[x] Implemented`, and update other wiki documentation if needed.
 
-### Tier 1 Progress Tracker (ONE by ONE)
+### Tier 1 Progress Tracker (COMPLETED ✅)
 - `[x]` **`which`**: Locates commands in the user's `PATH`.
 - `[x]` **`realpath`**: Resolves relative, absolute, and symlinked paths to absolute canonical paths.
 - `[x]` **`seq`**: Formatted loop printing numeric sequences.
-- `[x]` **`sha1sum` / `sha512sum`**: Computes and verifies SHA-1 and SHA-512 cryptographic digests.
+- `[x]` **`sha1sum`** / **`sha512sum`**: Computes and verifies SHA-1 and SHA-512 cryptographic digests.
 
-### Tier 2 Progress Tracker (ONE by ONE)
+### Tier 2 Progress Tracker (COMPLETED ✅)
 - `[x]` **`rev`**: Line buffer reverser.
 - `[x]` **`uptime`**: Displays system run time, user count, and load averages.
 - `[x]` **`wget`**: Non-interactive network file downloader.
+- `[x]` **`cal`**: Renders an ASCII calendar for a given month/year.
 
 ---
 
@@ -197,19 +198,16 @@ The following **29 utilities** are successfully implemented in GoPOSIX but **do 
 
 ## 4. Recommendations & Implementation Plan
 
-For the new `feat/missing-tools` branch, we recommend implementing the missing utilities in tiers based on their implementation simplicity and value:
+For our implementation progress in the `feat/missing-tools` branch, we follow the updated **5-Tier implementation plan** outlined in [implementation_plan.md](../../.gemini/antigravity-cli/brain/5a56f162-bc82-4d39-ae3f-bec51a30c200/implementation_plan.md):
 
-### Tier 1: Trivial & Quick Wins (4 Utilities)
-These can be implemented in single-session tasks and quickly validated:
-1. **`which`**: Inspects `os.Getenv("PATH")`, checks executable permissions.
-2. **`realpath`**: Wrapped around standard library `filepath.EvalSymlinks`.
-3. **`seq`**: Formatted loop printing numeric sequences.
-4. **`sha1sum` / `sha512sum`**: Modeled directly after the existing `sha256sum` package.
+### Completed Phases ✅
+* **Tier 1 (Trivial & Quick Wins)**: `which`, `realpath`, `seq`, `sha1sum`, and `sha512sum` are 100% complete and verified.
+* **Tier 2 (Mid-Level Complexity)**: `rev`, `uptime`, `wget`, and `cal` are 100% complete and verified.
 
-### Tier 2: Mid-Level Complexity (3 Utilities)
-1. **`wget`**: Core downloader leveraging Go's robust `net/http` stack, with mock server compliance testing.
-2. **`uptime`**: Parses `/proc/uptime` or calls standard sysinfo on Linux.
-3. **`rev`**: Line buffer reverser.
-
-### Tier 3: Complex Utilities
-* **`bc` / `dc` / `hexdump` / `xxd`**: Requires planning for dedicated parsing and output layouts.
+### Pending Phases ⏳
+* **Tier 3 (Trivial & Quick Wins - 6 Utilities)**:
+  - `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, and `pidof`.
+* **Tier 4 (Mid-Level Complexity - 10 Utilities)**:
+  - `bunzip2`, `bzcat`, `unlzma`, `uncompress`, `unzip`, `uuencode`, `taskset`, `start-stop-daemon`, `cryptpw`, and `makedevs`.
+* **Tier 5 (High Complexity & Privileged Utilities - 11 Utilities)**:
+  - `ar`, `hexdump`, `xxd`, `bc`, `dc`, `rx`, `ash`, `cpio`, `mdev`, `mkfs.minix`, and `mount`.
