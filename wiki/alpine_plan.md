@@ -45,6 +45,39 @@ CMD ["/bin/sh"]
 
 ---
 
+## 🔧 Daemon Mode in Alpine
+
+The current `alpine-mvp` image runs GoPOSIX as a pure CLI drop-in — it replaces
+`/bin/busybox` and drops into an interactive shell (`/bin/sh`). No daemon,
+no socket, no JSON-RPC. This is by design: the `alpine-mvp` target is about
+testing GoPOSIX as a BusyBox replacement in a real distro.
+
+To run GoPOSIX as a daemon inside Alpine, two changes are needed:
+
+1.  **Entrypoint**: Replace `CMD ["/bin/sh"]` with
+    `ENTRYPOINT ["/bin/goposix", "daemon", "--socket", "/home/goposix/goposix.sock", ...]`
+    — same as the scratch `daemon` target.
+
+2.  **User setup**: The daemon writes its socket to `/home/goposix/goposix.sock`
+    and runs as `USER goposix` in the scratch image. Alpine ships with only
+    `root` by default, so you'd need `RUN addgroup/adduser` like the `debug`
+    target. Alternatively, keep root and use `/tmp/goposix.sock` to skip user
+    setup entirely.
+
+### BusyBox override: keep or drop?
+
+Two approaches when adding the daemon to Alpine:
+
+| Approach | BusyBox | Use Case |
+|---|---|---|
+| **Keep override** | Overwrite `/bin/busybox` AND start the daemon. All shell commands route through GoPOSIX. | Pure-Go experiment, full GoPOSIX userland |
+| **Drop override** | Copy `goposix` only to `/bin/goposix`, leave BusyBox intact. Daemon runs alongside Alpine's native tools. | Practical use — Alpine's full ecosystem (`sh`, `apk`, init scripts) plus GoPOSIX's 60µs JSON-RPC |
+
+The second approach is more practical for real workloads: you get Alpine's
+package manager, init system, and shell scripts working normally, while
+the daemon serves JSON-RPC on the socket. This is currently **not**
+implemented — tracked in [todos.md](todos.md).
+
 ## 🔬 Core Verification Techniques
 
 1. **Programmatic API Testing**:

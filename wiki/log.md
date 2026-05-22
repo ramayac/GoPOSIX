@@ -4,6 +4,22 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-21] plan | Alpine daemon mode analysis + CI binary-size gate
+
+Documented what it takes to run GoPOSIX as a daemon inside the Alpine MVP
+image. Two changes needed: entrypoint swap (shell → daemon) + user setup
+(addgroup/adduser, or use root + /tmp socket). Discussed BusyBox override
+tradeoff: keep it for pure-Go experiments, drop it for practical Alpine +
+GoPOSIX JSON-RPC coexistence. Added to `alpine_plan.md` and `todos.md`.
+
+Removed the image-size gate from `.github/workflows/ci.yml` (it was building
+the wrong target — `alpine-mvp` at 26 MB, not `daemon` at 10 MB). Replaced
+with a binary-size gate (<15 MB) that checks the compiled `goposix` binary
+directly. Reordered Dockerfile targets so `daemon` is last (default).
+
+Updated: `wiki/alpine_plan.md`, `wiki/todos.md`, `wiki/log.md`,
+`.github/workflows/ci.yml`, `docker/Dockerfile`.
+
 ## [2026-05-20] sync | JSON schema gap fill — 30 new schemas, doc updated, patch --json
 
 Audited `wiki/json_schema.md` against `test/schemas/` and `pkg/`:

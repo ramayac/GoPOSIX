@@ -69,6 +69,12 @@ All active planning phases, deferred architectural enhancements, completed trans
 
 Refer to that document for full details.
 
+### Alpine Daemon Mode
+
+| # | Item | Status |
+|---|------|--------|
+| — | Daemon-in-Alpine: `alpine-mvp` image runs CLI-only (shell). Adding daemon mode requires entrypoint change + user setup + BusyBox override decision. | PLANNING — see [alpine_plan.md § Daemon Mode](alpine_plan.md#daemon-mode-in-alpine) |
+
 ## 🚀 CWD Signature Refactoring (Global State Elimination) — Resolved ✅
 
 Standardizing all 79 utility `Run` signatures to accept a context-relative `cwd string` parameter and achieving lock-free concurrent execution safety.
