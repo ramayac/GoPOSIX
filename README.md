@@ -10,7 +10,6 @@ A Go-native, single-binary POSIX userland with 92+ tools. Runs as a persistent J
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/image-%3C10MB-blue?logo=docker)](https://github.com/ramayac/goposix/pkgs/container/goposix)
 
-
 ## Why?
 
 Well, I wanted to do an experiment on [Harsness Engineering](https://walkinglabs.github.io/learn-harness-engineering/en/), and improve my "agentic development" skills, prompts, instructions and all that.
@@ -38,6 +37,10 @@ I want to be very clear about this:
 - And [goawk](https://github.com/benhoyt/goawk), which I used for the `awk` implementation, another big save!
 
 Finally: let's not kid ourselves, this project is 90% wiring the AI to do the heavy lifting, 10% is steering it in the right direction, the fact that I was able to "solo dev" this with an LLM, reproducing close to 99% of BusyBox's behavior in a completely different language shows that POSIX utilities are, at their core, text transformers with very well-defined contracts (do one thing and do it well).
+
+## Does it work?
+
+Yes! yes it does! see how GoPOSIX replaces BusyBox in Alpine here: **[docker/Dockerfile](docker/Dockerfile)** (target: `alpine-mvp`).
 
 ## Quickstart
 
@@ -122,4 +125,3 @@ c.Wc(ctx, []string{"-l"}, client.WithStdin("line1\nline2\nline3\n"))
 - **`--json` Only:** Structured output via `--json` long flag only — no short-form (`-j`) collision with POSIX flags.
 - **POSIX Flag Parsing:** Custom parser in `pkg/common/flags.go` with escape hatches for free-form utilities (echo, printf, expr).
 
-Does it work? Yes — see how GoPOSIX replaces BusyBox in Alpine: **[docker/Dockerfile](docker/Dockerfile)** (target: `alpine-mvp`).
