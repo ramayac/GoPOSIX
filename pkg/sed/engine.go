@@ -24,12 +24,10 @@ type engineState struct {
 	inPlace     bool
 	currentFile string
 	tmpFile     *os.File
-	outChanged  bool
 
 	lastRegex *regexp.Regexp
 
 	pendingAppend []string
-	pendingRead   []string
 
 	addrState        map[*Instruction]bool
 	matchedLineAddrs map[*Address]bool
@@ -151,9 +149,7 @@ func runEngineInternal(insts []*Instruction, readers []string, suppress bool, in
 			if strings.HasSuffix(lineStr, "\n") {
 				e.nextHasTrailingNewline = true
 				e.nextLine = lineStr[:len(lineStr)-1]
-				if strings.HasSuffix(e.nextLine, "\r") {
-					e.nextLine = e.nextLine[:len(e.nextLine)-1]
-				}
+				e.nextLine = strings.TrimSuffix(e.nextLine, "\r")
 			} else {
 				e.nextHasTrailingNewline = false
 				e.nextLine = lineStr
@@ -187,9 +183,7 @@ func runEngineInternal(insts []*Instruction, readers []string, suppress bool, in
 				if strings.HasSuffix(lineStr, "\n") {
 					e.nextHasTrailingNewline = true
 					e.nextLine = lineStr[:len(lineStr)-1]
-					if strings.HasSuffix(e.nextLine, "\r") {
-						e.nextLine = e.nextLine[:len(e.nextLine)-1]
-					}
+					e.nextLine = strings.TrimSuffix(e.nextLine, "\r")
 				} else {
 					e.nextHasTrailingNewline = false
 					e.nextLine = lineStr
@@ -264,7 +258,7 @@ func (e *engineState) matchAddress(addr *Address) bool {
 
 func (e *engineState) shouldRun(inst *Instruction) bool {
 	if inst.Addr1 == nil {
-		return true != inst.AddressInvert
+		return !inst.AddressInvert
 	}
 	if inst.Addr2 == nil {
 		return e.matchAddress(inst.Addr1) != inst.AddressInvert
@@ -415,9 +409,7 @@ func (e *engineState) execFlat(insts []*Instruction) error {
 				if strings.HasSuffix(lineStr, "\n") {
 					e.nextHasTrailingNewline = true
 					e.nextLine = lineStr[:len(lineStr)-1]
-					if strings.HasSuffix(e.nextLine, "\r") {
-						e.nextLine = e.nextLine[:len(e.nextLine)-1]
-					}
+					e.nextLine = strings.TrimSuffix(e.nextLine, "\r")
 				} else {
 					e.nextHasTrailingNewline = false
 					e.nextLine = lineStr
@@ -443,9 +435,7 @@ func (e *engineState) execFlat(insts []*Instruction) error {
 				if strings.HasSuffix(lineStr, "\n") {
 					e.nextHasTrailingNewline = true
 					e.nextLine = lineStr[:len(lineStr)-1]
-					if strings.HasSuffix(e.nextLine, "\r") {
-						e.nextLine = e.nextLine[:len(e.nextLine)-1]
-					}
+					e.nextLine = strings.TrimSuffix(e.nextLine, "\r")
 				} else {
 					e.nextHasTrailingNewline = false
 					e.nextLine = lineStr

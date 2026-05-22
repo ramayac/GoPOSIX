@@ -15,7 +15,6 @@ type Command struct {
 	Run   func(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int // returns POSIX exit code
 }
 
-
 var registry = map[string]Command{}
 
 // Register adds a command to the global registry.
@@ -47,6 +46,9 @@ func ListAll() []Command {
 // Used by the Dockerfile symlink-generator stage via: goposix --list-commands
 func ListCommands() {
 	for _, c := range ListAll() {
+		if c.Name == "sh" {
+			continue
+		}
 		fmt.Fprintln(os.Stdout, c.Name)
 	}
 }

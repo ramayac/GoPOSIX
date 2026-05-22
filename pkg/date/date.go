@@ -736,7 +736,7 @@ func parsePOSIXTZ(tz string) (*posixTZ, bool) {
 	}
 	rest = rest[1:]
 
-	endRule, rest, ok := parseRule(rest, false)
+	endRule, _, ok := parseRule(rest, false)
 	if !ok {
 		return nil, false
 	}

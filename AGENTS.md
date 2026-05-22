@@ -51,7 +51,7 @@ When implementing a new utility or feature, follow this checklist:
 
 ## 4a. Coverage Policy
 
-- **Gate:** `make ci` enforces a hard coverage gate at **≥70%** overall (see `COVERAGE_THRESHOLD` in Makefile). PRs that drop coverage below this threshold fail CI. Current overall coverage: **75.9%**. See [wiki/13_coverage_and_hardening.md](wiki/13_coverage_and_hardening.md) for full policy.
+- **Gate:** `make ci` enforces a hard coverage gate at **≥70%** overall (see `COVERAGE_THRESHOLD` in Makefile). PRs that drop coverage below this threshold fail CI. Current overall coverage: **77.0%**. See [wiki/13_coverage_and_hardening.md](wiki/13_coverage_and_hardening.md) for full policy.
 - **CLI Layer Testing:** The `run()` function (CLI glue) must be tested, not just the library-layer `Run()`. Extract an injectable entry point (e.g., `grepRun()`, `catRun()`) that accepts `io.Reader`/`io.Writer` instead of hardcoding `os.Stdin`/`os.Stdout`. See `pkg/cat/cat.go` for the canonical `catRun()` pattern.
 - **Per-package:** Use `make cover-pkg` to audit per-package coverage. No package should be below 5%.
 - **Before committing:** Always run `make testsuite` (BusyBox integration tests) in addition to `make test` (unit tests). The BusyBox suite catches cascading integration failures that unit tests miss.
@@ -60,7 +60,7 @@ When implementing a new utility or feature, follow this checklist:
 
 - **Daemon-First:** The default Docker image (`goposix:latest`) starts the persistent JSON-RPC daemon. CLI access is available as a secondary interface (`goposix:cli`). The Go SDK (`pkg/client/`) is the primary programmatic interface at 60µs/call.
 - **Root Protection:** Utilities that perform destructive operations (like `rm`) must include guards against destroying the root filesystem (e.g., `rm -rf /` must be refused without `--no-preserve-root`).
-- **BusyBox Test Suite:** 548 passed, 4 failed, 10 skipped (99.3% pass rate, 552 total tested). Failures: 3 in `date` (Go POSIX TZ limitations), 1 in `fold` (NUL handling). Run `make testsuite` before every commit to prevent regressions.
+- **BusyBox Test Suite:** 596 passed, 19 failed, 18 skipped (96.9% pass rate, 615 total tested). Failures: 16 in `awk` (goawk limits), 3 in `readlink`. Run `make testsuite` before every commit to prevent regressions.
 
 ## 6. Current State & Progression
 
@@ -82,6 +82,6 @@ While running and porting the BusyBox test suite to GoPOSIX, be aware of the fol
 - **Binary Data Parsing (`NUL` bytes):** The BusyBox test suite actively tests embedded `NUL` bytes (e.g., passing `he\0llo` to `sed` commands). Be careful when parsing text files or command arguments in Go. Do not use standard C-style `0` byte checks as an EOF marker or early-termination signal in parsers (like the `sed` AST builder), because literal `NUL` bytes are valid inputs.
 - **Harness Dependencies (`echo -e`):** The `testing.sh` harness often relies on `echo` to generate binary payloads. If `ECHO="goposix echo"` is used, ensure `goposix echo` fully implements octal (`\0NNN`) and hexadecimal (`\xNN`) escapes. Otherwise, the tests will generate literal backslashes, leading to cascading false-positive failures in downstream tools like `sed` and `grep`.
 - **Flag Pre-processing (`find`):** The custom `common.ParseFlags` expects double-dash long flags (`--name`). For tools that use single-dash long flags (like `find -name -exec {} \;`), an argument pre-processing step is required before passing arguments to the flag parser to ensure compatibility without breaking standard POSIX flag logic. `-exec` must be captured as a unit before the flag parser sees it to avoid treating it as bundled short flags (`-e -x -e -c`).
-- **Symlink collision (`sh`):** Never register a dispatch command named `sh` in a multicall binary. The test harness creates symlinks for every command via `--list-commands`, and a `sh -> goposix` symlink shadows the system `/bin/sh`, causing the entire test suite to fail (the harness runs test cases via `sh -x -e`). The `shell` command is safe; GoPOSIXOS can manually create a `sh` symlink if needed.
+- **Symlink collision (`sh`):** While both `shell` and its alias `sh` are registered as dispatch commands in GoPOSIX, to prevent a shadowing `/bin/sh` symlink from breaking the BusyBox test harness (which runs test cases via `sh -x -e`), the `ListCommands` function in `internal/dispatch/dispatch.go` explicitly filters out `"sh"` from being printed via `--list-commands`. This prevents the symlink generator stage from creating a `sh -> goposix` symlink while still allowing `sh` to be invoked programmatically or as a subcommand.
 
 **Always read the active Phase document before writing code!**

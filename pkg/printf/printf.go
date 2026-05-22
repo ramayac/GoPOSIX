@@ -741,58 +741,6 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	return exitCode
 }
 
-// countSpecifiers counts the number of conversion specifiers in a format string.
-func countSpecifiers(format string) int {
-	count := 0
-	i := 0
-	for i < len(format) {
-		if format[i] == '%' {
-			if i+1 < len(format) && format[i+1] == '%' {
-				i += 2
-				continue
-			}
-			count++
-			i++ // skip %
-			// skip flags, width, precision, length
-			for i < len(format) && strings.ContainsRune("-+ 0#", rune(format[i])) {
-				i++
-			}
-			for i < len(format) && format[i] >= '0' && format[i] <= '9' {
-				i++
-			}
-			if i < len(format) && format[i] == '.' {
-				i++
-				for i < len(format) && format[i] >= '0' && format[i] <= '9' {
-					i++
-				}
-			}
-			// length modifiers
-			if i < len(format) {
-				switch format[i] {
-				case 'h':
-					i++
-					if i < len(format) && format[i] == 'h' {
-						i++
-					}
-				case 'l':
-					i++
-					if i < len(format) && format[i] == 'l' {
-						i++
-					}
-				case 'j', 'z', 't', 'L':
-					i++
-				}
-			}
-			if i < len(format) {
-				i++ // conversion char
-			}
-		} else {
-			i++
-		}
-	}
-	return count
-}
-
 func init() {
 	dispatch.Register(dispatch.Command{
 		Name:  "printf",

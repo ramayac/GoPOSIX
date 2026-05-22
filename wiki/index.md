@@ -40,6 +40,7 @@
 - [20_hardening_ii.md](20_hardening_ii.md) | Hardening II: flag audit, code cleanup, coverage, input safety.
 - [22_hardening_iii.md](22_hardening_iii.md) | Hardening III: Daemon-First Pivot.
 - [23_flags_rewrite.md](23_flags_rewrite.md) | Flags Rewrite: zero-allocation POSIX scanner (COMPLETED).
+- [25_awesome_go_submission.md](25_awesome_go_submission.md) | Awesome-Go submission plan, checklists, and compliance validation.
 
 ## Deferred / Future
 

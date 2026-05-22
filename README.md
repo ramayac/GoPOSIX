@@ -3,12 +3,13 @@
 A Go-native, single-binary POSIX with 96.9% BusyBox test compatibility (596/615).
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
-[![go vet](https://img.shields.io/badge/go%20vet-passing-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
-[![coverage](https://img.shields.io/badge/coverage-76.6%25-brightgreen)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ramayac/goposix.svg)](https://pkg.go.dev/github.com/ramayac/goposix)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ramayac/goposix)](https://goreportcard.com/report/github.com/ramayac/goposix)
+[![codecov](https://codecov.io/gh/ramayac/goposix/graph/badge.svg)](https://codecov.io/gh/ramayac/goposix)
 [![Go Version](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go)](https://go.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/image-%3C10MB-blue?logo=docker)](https://github.com/ramayac/goposix/pkgs/container/goposix)
+
 
 ## Why?
 
@@ -111,6 +112,8 @@ See [Performance Quick Reference](wiki/performance.md) and [Benchmarking Plan](w
 - [JSON Schema](wiki/json_schema.md)
 - [Test Coverage & Compliance Matrix](wiki/test_coverage_matrix.md)
 - [POSIX FAQ](wiki/posix_faq.md)
+- [Awesome-Go Submission Plan](wiki/25_awesome_go_submission.md) — preparation checklists and compliance status
+
 
 ## Quick Project Principles
 
