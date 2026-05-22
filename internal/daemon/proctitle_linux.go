@@ -4,6 +4,7 @@ package daemon
 
 import (
 	"os"
+	"strings"
 	"unsafe"
 )
 
@@ -12,8 +13,20 @@ import (
 // and the kernel reports this region as /proc/<pid>/cmdline (what ps aux shows).
 var argvArea []byte
 
+func isGoTest() bool {
+	for _, a := range os.Args {
+		if strings.HasPrefix(a, "-test.") {
+			return true
+		}
+	}
+	if len(os.Args) > 0 && strings.HasSuffix(os.Args[0], ".test") {
+		return true
+	}
+	return false
+}
+
 func init() {
-	if len(os.Args) == 0 {
+	if len(os.Args) == 0 || isGoTest() {
 		return
 	}
 
