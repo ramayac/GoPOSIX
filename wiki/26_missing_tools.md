@@ -2,7 +2,7 @@
 
 > **Version:** 5.6 | **Date:** 2026-05-22 | **Tier:** GOLD | **Status:** COMPLETED
 >
-> **Analysis:** 35 Unimplemented Utilities | 53 Implemented & Tested Utilities | 29 Implemented Utilities Without BusyBox Tests
+> **Analysis:** 27 Unimplemented Utilities | 61 Implemented & Tested Utilities | 29 Implemented Utilities Without BusyBox Tests
 
 This document presents a comprehensive, systematic audit of the **BusyBox test suite** located in `test/busybox_testsuite` against the current registered commands and implemented packages in **GoPOSIX**. 
 
@@ -48,8 +48,8 @@ Through programmatic cross-referencing of GoPOSIX's dispatch commands (`goposix 
 | Category | Count | Description |
 | :--- | :---: | :--- |
 | **Total BusyBox Test Suites Covered** | **88** | Active test directories or `.tests` scripts inside `test/busybox_testsuite/` |
-| **Implemented & Tested** | **52** | Utilities implemented in `pkg/` and verified by BusyBox's test harness |
-| **Unimplemented & Tested** | **36** | Utilities with active BusyBox tests that GoPOSIX does not yet implement |
+| **Implemented & Tested** | **61** | Utilities implemented in `pkg/` and verified by BusyBox's test harness |
+| **Unimplemented & Tested** | **27** | Utilities with active BusyBox tests that GoPOSIX does not yet implement |
 | **Implemented Without BusyBox Tests** | **29** | GoPOSIX utilities that have custom tests but no upstream BusyBox suite files |
 
 ---
@@ -73,7 +73,7 @@ These tools are critical for file archiving and package management, complementin
   * *Purpose*: Extracts files from `.zip` archives.
 
 ### B. Network Utilities (1 Utility)
-* **`wget`** (Tested by `wget/` directory)
+* **`wget`** (Implemented in Phase 26) (Tested by `wget/` directory)
   * *Purpose*: Non-interactive network downloader.
   * *Feasibility*: Highly feasible using Go's `net/http` package.
   * > [!WARNING]
@@ -99,16 +99,16 @@ These tools are critical for file archiving and package management, complementin
   * *Purpose*: Reverse-Polish (stack-based) desk calculator.
 * **`factor`** (Tested by `factor.tests`)
   * *Purpose*: Factorizes numbers into primes.
-* **`seq`** (Tested by `seq.tests`)
+* **`seq`** (Implemented in Phase 26) (Tested by `seq.tests`)
   * *Purpose*: Prints a sequence of numbers (e.g., `1 1 10`). Highly requested and simple to write.
 
 ### E. Cryptographic Checksums (3 Utilities)
 These tools supplement our existing `md5sum` and `sha256sum` commands.
-* **`sha1sum`** (Tested by `sha1sum.tests`)
+* **`sha1sum`** (Implemented in Phase 26) (Tested by `sha1sum.tests`)
   * *Purpose*: Computes and verifies SHA-1 cryptographic digests.
 * **`sha3sum`** (Tested by `sha3sum.tests`)
   * *Purpose*: Computes and verifies SHA-3 digests.
-* **`sha512sum`** (Tested by `sha512sum.tests`)
+* **`sha512sum`** (Implemented in Phase 26) (Tested by `sha512sum.tests`)
   * *Purpose*: Computes and verifies SHA-512 digests.
   * *Feasibility*: Trivial to implement using Go's `crypto/sha1` and `golang.org/x/crypto/sha3`.
 
@@ -137,12 +137,12 @@ These tools supplement our existing `md5sum` and `sha256sum` commands.
   * *Purpose*: Mounts standard filesystems. Requires root privileges for full testing.
 
 ### H. General Utilities & Miscellaneous (9 Utilities)
-* **`cal`** (Tested by `cal.tests`)
+* **`cal`** (Implemented in Phase 26) (Tested by `cal.tests`)
   * *Purpose*: Renders an ASCII calendar for a given month/year.
-* **`realpath`** (Tested by `realpath.tests`)
+* **`realpath`** (Implemented in Phase 26) (Tested by `realpath.tests`)
   * *Purpose*: Resolves relative, absolute, and symlinked paths to absolute canonical paths.
   * *Feasibility*: Trivial in Go using `filepath.EvalSymlinks` and `filepath.Abs`.
-* **`rev`** (Tested by `rev.tests`)
+* **`rev`** (Implemented in Phase 26) (Tested by `rev.tests`)
   * *Purpose*: Reverses the character order of lines in a file.
 * **`start-stop-daemon`** (Tested by `start-stop-daemon.tests`)
   * *Purpose*: System V-style daemon management tool.
@@ -152,9 +152,9 @@ These tools supplement our existing `md5sum` and `sha256sum` commands.
   * *Purpose*: Displays directories in an indented tree diagram.
 * **`tsort`** (Tested by `tsort.tests`)
   * *Purpose*: Performs a topological sort on standard input.
-* **`uptime`** (Tested by `uptime/` directory)
+* **`uptime`** (Implemented in Phase 26) (Tested by `uptime/` directory)
   * *Purpose*: Displays how long the system has been running, user count, and load averages.
-* **`which`** (Tested by `which/` directory)
+* **`which`** (Implemented in Phase 26) (Tested by `which/` directory)
   * *Purpose*: Locates commands in the user's `PATH`.
 
 ---
