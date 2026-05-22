@@ -45,6 +45,13 @@ Needs daemon integration test:
 | `date` | +4 | 73.5% | Last-week M.w.d eval, non-leap Julian, complex TZ with DST |
 | `printf` | +3 | 79.5% | %c char, %- left-justify, %0 zero-pad float |
 
+### Phase E — Complete ✅ (82.2% → 82.4%)
+
+| Package | Tests Added | Coverage After | Key additions |
+|---------|:---:|:---:|---|
+| `date` | +9 | 74.5% | formatDate specifiers (%e/%I/%m/%S/%y/%T/%%), parseDateString compact/sec/@epoch/time-only/Zulu/invalid |
+| `printf` | +7 | 80.5% | %*d star width, %.*f star precision, %5d/%.5d, %e, length mods (%ld/%lld/%hd), exhausted args |
+
 ### Skipped (platform-specific / needs subprocess)
 
 | Function | Why |
