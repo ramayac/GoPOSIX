@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Branch:** `feat/coverage-85` | **Overall Coverage:** 80.9%
+> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Branch:** `feat/coverage-85` | **Overall Coverage:** 81.5%
 >
 > Canonical per-utility test status for all 86 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -153,7 +153,7 @@
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `client` | 56.6% | — | — | — |
+| `client` | 65.0% | — | — | — |
 
 ## Infrastructure
 
@@ -173,7 +173,7 @@
 | BusyBox passed | 679 | 97.1% (679 of 699) |
 | BusyBox failed | 20 | 17 awk (goawk limits) + 3 realpath (symlinked environment mismatch) |
 | BusyBox skipped | 22 | External deps (bzip2, xz, uudecode, tar, tree unicode, pidof init, etc.) |
-| Daemon internal coverage | 65.0% | +28.7% from Phase 18, +0.4% from feat/coverage-10 |
+| Daemon internal coverage | 65.2% | +28.7% from Phase 18, +0.6% from Phase C |
 | JSON-RPC daemon tests | 81/92 | 88.0% (11 gaps: patch/daemon skipped) |
 | Packages below 70% unit coverage | 7 | `client` (56.6%), `tty` (60.0%), `gzip` (64.7%), `tar` (65.3%), `shell` (66.7%), `logger` (67.7%), `sed` (67.9%) |
 
@@ -194,3 +194,4 @@
 - **Phase 26/27 progress:** Implemented 15 new utilities (`which`, `realpath`, `seq`, `sha1sum`, `sha512sum`, `rev`, `uptime`, `wget`, `cal`, `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, `pidof`) with statement coverage >= 80%. Brought overall coverage to 77.9%.
 - **Phase 28 (feat/coverage-10):** Added 60+ new unit tests covering CLI glue layers (`run()`), infrastructure (dispatch, flags, filepath), utility edge cases (date, printf, wc, expr, diff, sort, tar), and observability. Overall coverage: 77.9% → 80.1%. Key wins: `true/false` 75% → 100%, `wc` 81.2% → 93.2%, dispatch 100%, flags 100%, filepath 100%, `printf` 65.6% → 79.0%, `sort` 82.5% → 85.2%. CI gate raised from 70% → 80%. Remaining gaps: `main()` (os.Exit), `client_helpers` (needs daemon), platform-specific code (`setProcTitle`, `RunDaemon`).
 - **Phase 28.5 (feat/coverage-85):** Added 35+ new tests across Phase A (xargs 2→12, paste +5, join +5, tr +6, hostname +4) and Phase B (mkdir +3, mv +4, cp +1, diff +3, comm +6). Overall: 80.1% → 80.9%. Key wins: `xargs` 65.7% → 74.5%, `comm` 79.4% → 81.0%, `join` 76.8% → 78.0%. All 93 packages green. Next targets: `client_helpers` (131 blocks at 0%), `sed/execFlat` (36.7%), `tar` (104 uncovered). See [wiki/todos.md](todos.md) for full plan.
+- **Phase 28.6 (feat/coverage-85 Phase C):** Added 30 new client SDK helper tests against a running test daemon (Dirname, Hostname, Printf, Test, Whoami, Readlink, ID, Date, Uname, Env, Printenv, Sort, Cut, Uniq, Find, Mv, Cp, Ln, Rmdir, Chmod, Md5sum, Sha256sum, Df, Du, Ps, Xargs, Expr). `client_helpers` 30+ functions at 0% → 5 remaining (Chown/Chgrp need root, Gzip type mismatch, Tar cwd, Kill needs PID). Overall: 80.9% → 81.5%, client package: 56.6% → 65.0%. Next: Phase D (sed/execFlat, tar, date).

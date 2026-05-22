@@ -28,12 +28,12 @@ Mid-effort, needs temp files/dirs:
 | `diff` | recursive non-regular file, missing-only-in-one, both missing |
 | `comm` | `-1`/`-2`/`-3` suppress columns, `--total` flag, JSON, bad flag |
 
-### Phase C — Future (target: ~83-84%)
+### Phase C — Complete ✅ (80.9% → 81.5%)
 Needs daemon integration test:
 
 | Package | Uncovered | Effort | Notes |
 |---------|:---:|:---:|---|
-| `client_helpers` (30+ funcs) | **131 blocks** | Medium | All follow same `callUtility` template. Test daemon already exists in `forwarder_test.go:startTestDaemon()`. Batch-test all helpers against it. |
+| `client_helpers` (30+ funcs) | **131 blocks → 5 remaining** | Medium | 27 new helper tests: Dirname, Hostname, Printf, Test, Whoami, Readlink, ID, Date, Uname, Env, Printenv, Sort, Cut, Uniq, Find, Mv, Cp, Ln, Rmdir, Chmod, Md5sum, Sha256sum, Df, Du, Ps, Xargs, Expr. Skipped: Chown/Chgrp (root), Gzip (type mismatch), Tar (cwd), Kill (PID). |
 
 ### Phase D — Future (target: ~85%)
 Complex but impactful:
