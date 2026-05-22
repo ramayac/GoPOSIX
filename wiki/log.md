@@ -4,6 +4,16 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-21] cleanup | Prune todos.md — removed all resolved sections
+
+Stripped `wiki/todos.md` of resolved cruft (~130 lines → ~40 lines). Removed:
+Hardening IV (resolved), Phase 25 Daemon Stdin (resolved), date/fold
+failures (resolved), JSON-RPC daemon gaps (resolved), CWD signature
+refactoring (resolved). Kept: BusyBox awk failures (17, goawk-limited),
+Alpine daemon mode (planning), deferred.md link.
+
+Updated: `wiki/todos.md`, `wiki/log.md`.
+
 ## [2026-05-21] plan | Alpine daemon mode analysis + CI binary-size gate
 
 Documented what it takes to run GoPOSIX as a daemon inside the Alpine MVP
