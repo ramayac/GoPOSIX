@@ -20,11 +20,15 @@ PKG_DIRS   := . \
               ./pkg/truefalse/... \
               ./pkg/whoami/... \
               ./pkg/hostname/... \
+              ./pkg/hostid/... \
+              ./pkg/factor/... \
+              ./pkg/sha3sum/... \
               ./pkg/uname/... \
               ./pkg/pwd/... \
               ./pkg/printenv/... \
               ./pkg/paste/... \
               ./pkg/patch/... \
+              ./pkg/pidof/... \
               ./pkg/nl/... \
               ./pkg/env/... \
               ./pkg/yes/... \
@@ -37,18 +41,27 @@ PKG_DIRS   := . \
               ./pkg/comm/... \
               ./pkg/mv/... \
               ./pkg/touch/... \
+              ./pkg/tree/... \
               ./pkg/ln/... \
               ./pkg/stat/... \
               ./pkg/readlink/... \
+              ./pkg/realpath/... \
+              ./pkg/rev/... \
+              ./pkg/uptime/... \
               ./pkg/basename/... \
+              ./pkg/cal/... \
               ./pkg/dirname/... \
               ./pkg/head/... \
               ./pkg/tail/... \
               ./pkg/wc/... \
+              ./pkg/wget/... \
+              ./pkg/which/... \
               ./pkg/tee/... \
               ./pkg/cut/... \
               ./pkg/tr/... \
               ./pkg/sort/... \
+              ./pkg/tsort/... \
+              ./pkg/seq/... \
               ./pkg/uniq/... \
               ./pkg/unexpand/... \
               ./pkg/grep/... \
@@ -71,7 +84,9 @@ PKG_DIRS   := . \
               ./pkg/chmod/... \
               ./pkg/chown/... \
               ./pkg/chgrp/... \
+              ./pkg/sha1sum/... \
               ./pkg/sha256sum/... \
+              ./pkg/sha512sum/... \
               ./pkg/tar/... \
               ./internal/shell/... \
               ./pkg/shell/... \
