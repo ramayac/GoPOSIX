@@ -160,3 +160,72 @@ func TestJoinCLI_UnpairedLines(t *testing.T) {
 		t.Error("expected output")
 	}
 }
+
+func TestJoinCLI_CustomDelimiter(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	f2 := filepath.Join(dir, "f2")
+	os.WriteFile(f1, []byte("1:one\n2:two\n"), 0644)
+	os.WriteFile(f2, []byte("1:alpha\n2:beta\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-t:", f1, f2}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), "one") {
+		t.Errorf("expected 'one' in output, got %q", out.String())
+	}
+}
+
+func TestJoinCLI_JSON(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	f2 := filepath.Join(dir, "f2")
+	os.WriteFile(f1, []byte("1 one\n2 two\n"), 0644)
+	os.WriteFile(f2, []byte("1 alpha\n3 gamma\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"--json", f1, f2}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), `"records"`) {
+		t.Errorf("expected JSON, got %q", out.String())
+	}
+}
+
+func TestJoinCLI_FieldSpec(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	f2 := filepath.Join(dir, "f2")
+	os.WriteFile(f1, []byte("a 1 one\nb 2 two\n"), 0644)
+	os.WriteFile(f2, []byte("a 1 alpha\nb 2 beta\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-1", "2", "-2", "2", f1, f2}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), "one") {
+		t.Errorf("expected output, got %q", out.String())
+	}
+}
+
+func TestJoinCLI_BadFlag(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := run([]string{"--nonexistent"}, nil, &out, &errOut, "")
+	if code != 2 {
+		t.Errorf("exit %d, want 2", code)
+	}
+}
+
+func TestJoinCLI_Stdin(t *testing.T) {
+	// join with stdin (-)
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	os.WriteFile(f1, []byte("1 one\n2 two\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-", f1}, strings.NewReader("1 alpha\n"), &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+}
+

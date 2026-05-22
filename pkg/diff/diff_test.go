@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -454,5 +455,40 @@ func TestDiff_NewFile(t *testing.T) {
 	// -N treats absent files as empty
 	if code != 1 {
 		t.Errorf("expected exit 1 (files differ), got %d", code)
+	}
+}
+
+func TestDiff_RecursiveNonRegular(t *testing.T) {
+	// Recursive diff where one side has a file and the other doesn't.
+	dir := t.TempDir()
+	dirA := filepath.Join(dir, "A")
+	dirB := filepath.Join(dir, "B")
+	os.MkdirAll(dirA, 0755)
+	os.MkdirAll(dirB, 0755)
+	os.WriteFile(filepath.Join(dirA, "only-in-a"), []byte("x\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-r", dirA, dirB}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), "Only in") {
+		t.Errorf("expected 'Only in' message, got %q", out.String())
+	}
+}
+
+func TestDiff_RecursiveBothMissing(t *testing.T) {
+	dir := t.TempDir()
+	dirA := filepath.Join(dir, "A")
+	dirB := filepath.Join(dir, "B")
+	os.MkdirAll(dirA, 0755)
+	os.MkdirAll(dirB, 0755)
+	os.WriteFile(filepath.Join(dirA, "shared"), []byte("same\n"), 0644)
+	os.WriteFile(filepath.Join(dirB, "shared"), []byte("same\n"), 0644)
+	os.WriteFile(filepath.Join(dirB, "only-b"), []byte("y\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-r", dirA, dirB}, nil, &out, &out, "")
+	// Should show "Only in B"
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
 	}
 }

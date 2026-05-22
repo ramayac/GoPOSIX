@@ -95,11 +95,19 @@ func TestCLI_BadFlag(t *testing.T) {
 		t.Errorf("exit %d, want 2", code)
 	}
 }
-func TestCLI_LongFlag(t *testing.T) {
-	d := filepath.Join(t.TempDir(), "long")
+func TestCLI_Mode(t *testing.T) {
+	d := filepath.Join(t.TempDir(), "modedir")
 	var out bytes.Buffer
-	code := run([]string{"--parents", d}, nil, &out, &out, "")
+	code := run([]string{"-m", "0700", d}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
+	}
+}
+
+func TestCLI_MissingOperand(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("exit %d, want 1", code)
 	}
 }
