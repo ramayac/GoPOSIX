@@ -28,16 +28,11 @@ We follow a strict, systematic process for implementing the utilities in **Categ
 4. **PASS**: Verify that all unit tests pass (enforcing ≥ 80% coverage on the new package) and the BusyBox integration tests also pass.
 5. **UPDATE**: Update this document (`wiki/26_missing_tools.md`) to mark the completed utility as `[x] Implemented`, and update other wiki documentation if needed.
 
-### Category H Progress Tracker (ONE by ONE)
-- `[x]` **`cal`**: Renders an ASCII calendar for a given month/year. *(IMPLEMENTED)*
-- `[ ]` **`realpath`**: Resolves relative, absolute, and symlinked paths to absolute canonical paths.
-- `[ ]` **`rev`**: Reverses the character order of lines in a file.
-- `[ ]` **`start-stop-daemon`**: System V-style daemon management tool.
-- `[ ]` **`taskset`**: Sets or retrieves CPU affinity for processes.
-- `[ ]` **`tree`**: Displays directories in an indented tree diagram.
-- `[ ]` **`tsort`**: Performs a topological sort on standard input.
-- `[ ]` **`uptime`**: Displays how long the system has been running, user count, and load averages.
+### Tier 1 Progress Tracker (ONE by ONE)
 - `[ ]` **`which`**: Locates commands in the user's `PATH`.
+- `[ ]` **`realpath`**: Resolves relative, absolute, and symlinked paths to absolute canonical paths.
+- `[ ]` **`seq`**: Formatted loop printing numeric sequences.
+- `[ ]` **`sha1sum` / `sha512sum`**: Computes and verifies SHA-1 and SHA-512 cryptographic digests.
 
 ---
 
