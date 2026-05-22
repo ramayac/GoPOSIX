@@ -42,7 +42,7 @@ We follow a strict, systematic process for implementing the utilities in **Categ
 
 ### Tier 3 Progress Tracker (ONE by ONE)
 - `[x]` **`hostid`**: Prints a unique 32-bit hexadecimal identifier for the host.
-- `[ ]` **`factor`**: Prime factorization mathematical parser.
+- `[x]` **`factor`**: Prime factorization mathematical parser.
 - `[ ]` **`sha3sum`**: Computes and verifies SHA-3 digests.
 - `[ ]` **`tree`**: Displays directory structures as a nested indented tree.
 - `[ ]` **`tsort`**: Performs a topological sort on standard input.

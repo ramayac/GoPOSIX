@@ -32,6 +32,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/env"
 	_ "github.com/ramayac/goposix/pkg/expand"
 	_ "github.com/ramayac/goposix/pkg/expr"
+	_ "github.com/ramayac/goposix/pkg/factor"
 	_ "github.com/ramayac/goposix/pkg/find"
 	_ "github.com/ramayac/goposix/pkg/fold"
 	_ "github.com/ramayac/goposix/pkg/grep"

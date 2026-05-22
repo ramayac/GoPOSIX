@@ -124,6 +124,8 @@
 | `strings` | 90.1% | 1 | ✅ 1/1 | ✅ |
 | `seq` | 87.1% | 21 | ✅ 21/21 | ✅ |
 | `cal` | 85.8% | 1 | ✅ 1/1 | ✅ |
+| `factor` | 93.9% | 13 | ✅ 13/13 | ✅ |
+
 
 ## Tier 7 — Stubs (Phase 17, in-progress)
 
@@ -161,14 +163,14 @@
 
 | Suite | Count | Status |
 |-------|-------|--------|
-| Total packages | 88 | 87 utilities + client SDK |
-| Unit tests passing | 88/88 | 100% |
-| BusyBox tests run | 660 | 660 total applicable tests |
-| BusyBox passed | 640 | 97.0% (640 of 660) |
+| Total packages | 89 | 88 utilities + client SDK |
+| Unit tests passing | 89/89 | 100% |
+| BusyBox tests run | 673 | 673 total applicable tests |
+| BusyBox passed | 653 | 97.0% (653 of 673) |
 | BusyBox failed | 20 | 17 awk (goawk limits) + 3 realpath (symlinked environment mismatch) |
 | BusyBox skipped | 18 | External deps (bzip2, xz, uudecode, tar, etc.) |
 | Daemon internal coverage | 64.6% | +28.7% from Phase 18 |
-| JSON-RPC daemon tests | 76/87 | 87.4% (10 gaps: 2 original [tee, tr] + 8 new; patch/daemon skipped) |
+| JSON-RPC daemon tests | 77/88 | 87.5% (10 gaps: 2 original [tee, tr] + 8 new; patch/daemon skipped) |
 | Packages below 70% unit coverage | 8 | See [20_hardening_ii.md](20_hardening_ii.md) §20.13 for details |
 
 ## Remaining Gaps

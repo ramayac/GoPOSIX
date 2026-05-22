@@ -21,6 +21,7 @@ PKG_DIRS   := . \
               ./pkg/whoami/... \
               ./pkg/hostname/... \
               ./pkg/hostid/... \
+              ./pkg/factor/... \
               ./pkg/uname/... \
               ./pkg/pwd/... \
               ./pkg/printenv/... \

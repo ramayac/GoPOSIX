@@ -11,6 +11,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/dirname"
 	_ "github.com/ramayac/goposix/pkg/env"
 	_ "github.com/ramayac/goposix/pkg/expr"
+	_ "github.com/ramayac/goposix/pkg/factor"
 	_ "github.com/ramayac/goposix/pkg/hostid"
 	_ "github.com/ramayac/goposix/pkg/printenv"
 	_ "github.com/ramayac/goposix/pkg/xargs"
@@ -257,6 +258,52 @@ func TestTier5_Hostid(t *testing.T) {
 			t.Errorf("expected 8-character hostid, got %q (len %d)", hostid, len(hostid))
 		}
 		t.Logf("JSON-RPC hostid returned: %s", hostid)
+	})
+}
+
+func TestTier5_Factor(t *testing.T) {
+	socket := startDaemon(t)
+	c := client.Dial(socket, 5*time.Second)
+
+	t.Run("factorizes number over JSON-RPC", func(t *testing.T) {
+		var result ResultWrapper
+		err := c.Call(context.Background(), "goposix.factor",
+			map[string]interface{}{
+				"flags": []interface{}{"--json", "1024"},
+			},
+			&result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("expected exit 0, got %d", result.ExitCode)
+		}
+		data, ok := result.Data.(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected map data, got %T", result.Data)
+		}
+		results, ok := data["results"].([]interface{})
+		if !ok {
+			t.Fatalf("expected 'results' slice in data, got %v", data)
+		}
+		if len(results) != 1 {
+			t.Fatalf("expected 1 result entry, got %d", len(results))
+		}
+		entry, ok := results[0].(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected result entry map, got %T", results[0])
+		}
+		input, _ := entry["input"].(string)
+		if input != "1024" {
+			t.Errorf("expected input '1024', got %q", input)
+		}
+		factors, ok := entry["factors"].([]interface{})
+		if !ok {
+			t.Fatalf("expected 'factors' list, got %v", entry)
+		}
+		if len(factors) != 10 {
+			t.Errorf("expected 10 factors of 2, got %d", len(factors))
+		}
 	})
 }
 
