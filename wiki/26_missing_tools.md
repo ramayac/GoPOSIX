@@ -34,6 +34,11 @@ We follow a strict, systematic process for implementing the utilities in **Categ
 - `[x]` **`seq`**: Formatted loop printing numeric sequences.
 - `[x]` **`sha1sum` / `sha512sum`**: Computes and verifies SHA-1 and SHA-512 cryptographic digests.
 
+### Tier 2 Progress Tracker (ONE by ONE)
+- `[x]` **`rev`**: Line buffer reverser.
+- `[x]` **`uptime`**: Displays system run time, user count, and load averages.
+- `[x]` **`wget`**: Non-interactive network file downloader.
+
 ---
 
 ## 1. High-Level Summary Matrix

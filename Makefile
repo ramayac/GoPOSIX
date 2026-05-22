@@ -42,12 +42,14 @@ PKG_DIRS   := . \
               ./pkg/readlink/... \
               ./pkg/realpath/... \
               ./pkg/rev/... \
+              ./pkg/uptime/... \
               ./pkg/basename/... \
               ./pkg/cal/... \
               ./pkg/dirname/... \
               ./pkg/head/... \
               ./pkg/tail/... \
               ./pkg/wc/... \
+              ./pkg/wget/... \
               ./pkg/which/... \
               ./pkg/tee/... \
               ./pkg/cut/... \
