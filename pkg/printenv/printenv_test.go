@@ -32,7 +32,7 @@ func TestRunMissingVar(t *testing.T) {
 }
 func TestCLI_Basic(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{}, nil, &out)
+	code := run([]string{}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -43,7 +43,7 @@ func TestCLI_Basic(t *testing.T) {
 func TestCLI_SingleVar(t *testing.T) {
 	os.Setenv("GOPOSIX_TEST_VAR", "hello")
 	var out bytes.Buffer
-	code := run([]string{"GOPOSIX_TEST_VAR"}, nil, &out)
+	code := run([]string{"GOPOSIX_TEST_VAR"}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -53,7 +53,7 @@ func TestCLI_SingleVar(t *testing.T) {
 }
 func TestCLI_MissingVar(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"NONEXISTENT_VAR_ZZZ"}, nil, &out)
+	code := run([]string{"NONEXISTENT_VAR_ZZZ"}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("exit %d, want 1", code)
 	}
@@ -61,7 +61,7 @@ func TestCLI_MissingVar(t *testing.T) {
 func TestCLI_JSON(t *testing.T) {
 	os.Setenv("JSON_VAR", "val")
 	var out bytes.Buffer
-	code := run([]string{"--json", "JSON_VAR"}, nil, &out)
+	code := run([]string{"--json", "JSON_VAR"}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -71,7 +71,7 @@ func TestCLI_JSON(t *testing.T) {
 }
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, nil, &out)
+	code := run([]string{"--nonexistent"}, nil, &out, &out, "")
 	if code != 2 {
 		t.Errorf("exit %d, want 2", code)
 	}

@@ -648,16 +648,15 @@ func (s *Server) processRequest(req Request) *Response {
 	lw := &common.LimitWriter{W: &buf, Limit: 50 * 1024 * 1024}
 
 	// Execute the command
-	var exitCode int
-	if cmd.RunWithStreams != nil {
-		runStdin := stdinReader
-		if runStdin == nil {
-			runStdin = strings.NewReader("")
-		}
-		exitCode = cmd.RunWithStreams(args, lw, lw, runStdin)
-	} else {
-		exitCode = cmd.Run(args, stdinReader, lw)
+	runStdin := stdinReader
+	if runStdin == nil {
+		runStdin = strings.NewReader("")
 	}
+	sessionCwd := "/"
+	if session != nil && session.CWD != "" {
+		sessionCwd = session.CWD
+	}
+	exitCode := cmd.Run(args, runStdin, lw, lw, sessionCwd)
 	rpcExitCode = exitCode
 
 	// rawOutput: return the raw stdout text directly (used by CLI forwarder).

@@ -182,7 +182,7 @@ func isDigit(b byte) bool {
 	return b >= '0' && b <= '9'
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	rawArgs, format := splitFormatAndDate(args)
 
 	flags, err := common.ParseFlags(rawArgs, spec)

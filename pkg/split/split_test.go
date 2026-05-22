@@ -244,7 +244,7 @@ func TestSplitCLI_DefaultStdin(t *testing.T) {
 	defer os.Chdir(origWd)
 
 	var buf bytes.Buffer
-	code := run([]string{"-l", "2"}, nil, &buf)
+	code := run([]string{"-l", "2"}, nil, &buf, &buf, "")
 	// Empty stdin — should produce one chunk with no content
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
@@ -258,7 +258,7 @@ func TestSplitCLI_LineMode(t *testing.T) {
 	defer os.Chdir(origWd)
 
 	var buf bytes.Buffer
-	code := run([]string{"-l", "3"}, nil, &buf)
+	code := run([]string{"-l", "3"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -271,7 +271,7 @@ func TestSplitCLI_ByteMode(t *testing.T) {
 	defer os.Chdir(origWd)
 
 	var buf bytes.Buffer
-	code := run([]string{"-b", "10"}, nil, &buf)
+	code := run([]string{"-b", "10"}, nil, &buf, &buf, "")
 	// Empty stdin in byte mode: should produce 1 chunk
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
@@ -285,7 +285,7 @@ func TestSplitCLI_JsonMode(t *testing.T) {
 	defer os.Chdir(origWd)
 
 	var buf bytes.Buffer
-	code := run([]string{"--json", "-l", "2"}, nil, &buf)
+	code := run([]string{"--json", "-l", "2"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -302,7 +302,7 @@ func TestSplitCLI_NumericSuffix(t *testing.T) {
 	defer os.Chdir(origWd)
 
 	var buf bytes.Buffer
-	code := run([]string{"-d", "-l", "2"}, nil, &buf)
+	code := run([]string{"-d", "-l", "2"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -315,7 +315,7 @@ func TestSplitCLI_SuffixLength(t *testing.T) {
 	defer os.Chdir(origWd)
 
 	var buf bytes.Buffer
-	code := run([]string{"-a", "3", "-l", "2"}, nil, &buf)
+	code := run([]string{"-a", "3", "-l", "2"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -332,7 +332,7 @@ func TestSplitCLI_FileArg(t *testing.T) {
 	os.WriteFile(inputFile, []byte("a\nb\nc\nd\ne\n"), 0644)
 
 	var buf bytes.Buffer
-	code := run([]string{"-l", "2", inputFile, "pfx"}, nil, &buf)
+	code := run([]string{"-l", "2", inputFile, "pfx"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -344,7 +344,7 @@ func TestSplitCLI_FileArg(t *testing.T) {
 
 func TestSplitCLI_InvalidFlag(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--nonexistent"}, nil, &buf)
+	code := run([]string{"--nonexistent"}, nil, &buf, &buf, "")
 	if code != 2 {
 		t.Errorf("expected exit 2 for invalid flag, got %d", code)
 	}

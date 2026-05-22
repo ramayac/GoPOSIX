@@ -66,7 +66,7 @@ func Transform(input string, tabWidth int, initialOnly bool) string {
 	return strings.Join(lines, "\n")
 }
 
-func expandRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
+func expandRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, expSpec)
 	if err != nil {
 		fmt.Fprintf(errOut, "expand: %v\n", err)
@@ -114,7 +114,9 @@ func expandRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	return 0
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int { return expandRun(args, stdout, os.Stderr, os.Stdin) }
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return expandRun(args, stdout, stderr, stdin, cwd)
+}
 func init() {
 	dispatch.Register(dispatch.Command{Name: "expand", Usage: "Convert tabs to spaces", Run: run})
 }

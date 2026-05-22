@@ -224,7 +224,7 @@ func TestUnexpand_AllBlanks_MultipleRuns(t *testing.T) {
 func TestUnexpandRun_Stdin(t *testing.T) {
 	var out, errOut bytes.Buffer
 	in := strings.NewReader("        12345678\n")
-	rc := unexpandRun([]string{}, &out, &errOut, in)
+	rc := unexpandRun([]string{}, &out, &errOut, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -237,7 +237,7 @@ func TestUnexpandRun_Stdin(t *testing.T) {
 func TestUnexpandRun_JsonFlag(t *testing.T) {
 	var out, errOut bytes.Buffer
 	in := strings.NewReader("        hello\n")
-	rc := unexpandRun([]string{"--json"}, &out, &errOut, in)
+	rc := unexpandRun([]string{"--json"}, &out, &errOut, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -249,7 +249,7 @@ func TestUnexpandRun_JsonFlag(t *testing.T) {
 func TestUnexpandRun_AllFlag(t *testing.T) {
 	var out, errOut bytes.Buffer
 	in := strings.NewReader("123     456\n")
-	rc := unexpandRun([]string{"-a"}, &out, &errOut, in)
+	rc := unexpandRun([]string{"-a"}, &out, &errOut, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -262,7 +262,7 @@ func TestUnexpandRun_AllFlag(t *testing.T) {
 func TestUnexpandRun_TabWidth(t *testing.T) {
 	var out, errOut bytes.Buffer
 	in := strings.NewReader("        12345678\n")
-	rc := unexpandRun([]string{"-t", "4"}, &out, &errOut, in)
+	rc := unexpandRun([]string{"-t", "4"}, &out, &errOut, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}

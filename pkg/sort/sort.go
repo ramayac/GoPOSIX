@@ -490,11 +490,11 @@ func Run(items []lineItem, keySpecs []keySpec, reverse, numeric, unique, month, 
 	return result
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return sortRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return sortRun(args, stdout, stderr, stdin, cwd)
 }
 
-func sortRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func sortRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "sort: %v\n", err)
@@ -657,9 +657,8 @@ func cmpFloat(a, b float64) int {
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "sort",
-		Usage:          "Sort lines of text files",
-		Run:            run,
-		RunWithStreams: sortRun,
+		Name:  "sort",
+		Usage: "Sort lines of text files",
+		Run:   run,
 	})
 }

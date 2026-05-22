@@ -63,7 +63,7 @@ func NumberLines(r io.Reader, bodyType string, startNum, width int) ([]string, N
 	return lines, result
 }
 
-func nlRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
+func nlRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, nlSpec)
 	if err != nil {
 		fmt.Fprintf(errOut, "nl: %v\n", err)
@@ -134,7 +134,9 @@ func nlRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	return 0
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int { return nlRun(args, stdout, os.Stderr, os.Stdin) }
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return nlRun(args, stdout, stderr, stdin, cwd)
+}
 func init() {
 	dispatch.Register(dispatch.Command{Name: "nl", Usage: "Number lines of files", Run: run})
 }

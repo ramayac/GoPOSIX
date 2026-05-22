@@ -28,7 +28,7 @@ type PrintfResult struct {
 type runState struct {
 	format string   // escape-processed format string
 	args   []string // positional arguments
-	stdout    *strings.Builder
+	stdout *strings.Builder
 	argIdx int  // current argument index (cycles)
 	hadErr bool // any conversion error occurred
 	pos    int  // current position in format string (0-based byte index)
@@ -43,7 +43,7 @@ func Format(format string, args []string) (string, bool) {
 	state := &runState{
 		format: processEscapes(format),
 		args:   args,
-		stdout:    &strings.Builder{},
+		stdout: &strings.Builder{},
 	}
 
 	// POSIX: reuse format string as often as needed to satisfy all args.
@@ -704,7 +704,7 @@ func processEscapes(s string) string {
 	return buf.String()
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	// Manual flag parsing: only --json is accepted as a flag.
 	// Everything else (including -...) is a positional argument.
 	jsonMode := false

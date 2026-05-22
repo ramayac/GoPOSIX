@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -48,11 +47,11 @@ type FileInfo struct {
 	Mtime string `json:"mtime"`
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return findRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return findRun(args, stdout, stderr, stdin, cwd)
 }
 
-func findRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func findRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	var execCmd []string
 	execPlus := false
 
@@ -245,9 +244,8 @@ func buildExecArgs(execCmd []string, files []FileInfo) []string {
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "find",
-		Usage:          "Search for files in a directory hierarchy",
-		Run:            run,
-		RunWithStreams: findRun,
+		Name:  "find",
+		Usage: "Search for files in a directory hierarchy",
+		Run:   run,
 	})
 }

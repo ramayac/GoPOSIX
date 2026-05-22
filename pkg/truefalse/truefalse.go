@@ -23,7 +23,7 @@ var spec = common.FlagSpec{
 	},
 }
 
-func runTrue(args []string, stdin io.Reader, stdout io.Writer) int {
+func runTrue(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "true: %v\n", err)
@@ -35,7 +35,7 @@ func runTrue(args []string, stdin io.Reader, stdout io.Writer) int {
 	return 0
 }
 
-func runFalse(args []string, stdin io.Reader, stdout io.Writer) int {
+func runFalse(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "false: %v\n", err)

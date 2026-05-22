@@ -30,7 +30,7 @@ func Run(path string, mode os.FileMode) error {
 	return unix.Mkfifo(path, uint32(mode))
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "mkfifo: %v\n", err)

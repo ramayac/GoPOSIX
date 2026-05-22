@@ -245,7 +245,7 @@ func sortTempFile(t *testing.T, content string) string {
 func TestCLI_BasicFile(t *testing.T) {
 	f := sortTempFile(t, "c\nb\na\n")
 	var out bytes.Buffer
-	code := run([]string{f}, nil, &out)
+	code := run([]string{f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -257,7 +257,7 @@ func TestCLI_BasicFile(t *testing.T) {
 func TestCLI_Reverse(t *testing.T) {
 	f := sortTempFile(t, "a\nb\nc\n")
 	var out bytes.Buffer
-	code := run([]string{"-r", f}, nil, &out)
+	code := run([]string{"-r", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -269,7 +269,7 @@ func TestCLI_Reverse(t *testing.T) {
 func TestCLI_Numeric(t *testing.T) {
 	f := sortTempFile(t, "10\n2\n1\n")
 	var out bytes.Buffer
-	code := run([]string{"-n", f}, nil, &out)
+	code := run([]string{"-n", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -281,7 +281,7 @@ func TestCLI_Numeric(t *testing.T) {
 func TestCLI_Unique(t *testing.T) {
 	f := sortTempFile(t, "b\na\nb\nc\n")
 	var out bytes.Buffer
-	code := run([]string{"-u", f}, nil, &out)
+	code := run([]string{"-u", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -293,7 +293,7 @@ func TestCLI_Unique(t *testing.T) {
 func TestCLI_Combo(t *testing.T) {
 	f := sortTempFile(t, "10\n2\n10\n1\n2\n")
 	var out bytes.Buffer
-	code := run([]string{"-n", "-u", "-r", f}, nil, &out)
+	code := run([]string{"-n", "-u", "-r", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -305,7 +305,7 @@ func TestCLI_Combo(t *testing.T) {
 func TestCLI_KeyField(t *testing.T) {
 	f := sortTempFile(t, "z a\nx b\ny c\n")
 	var out bytes.Buffer
-	code := run([]string{"-k", "2", f}, nil, &out)
+	code := run([]string{"-k", "2", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -317,7 +317,7 @@ func TestCLI_KeyField(t *testing.T) {
 func TestCLI_KeyFieldDelimiter(t *testing.T) {
 	f := sortTempFile(t, "z,a\nx,b\ny,c\n")
 	var out bytes.Buffer
-	code := run([]string{"-t", ",", "-k", "2", f}, nil, &out)
+	code := run([]string{"-t", ",", "-k", "2", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -330,7 +330,7 @@ func TestCLI_OutputFile(t *testing.T) {
 	in := sortTempFile(t, "c\nb\na\n")
 	outFile := filepath.Join(t.TempDir(), "out.txt")
 	var out bytes.Buffer
-	code := run([]string{"-o", outFile, in}, nil, &out)
+	code := run([]string{"-o", outFile, in}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -343,7 +343,7 @@ func TestCLI_OutputFile(t *testing.T) {
 func TestCLI_JSON(t *testing.T) {
 	f := sortTempFile(t, "b\na\n")
 	var out bytes.Buffer
-	code := run([]string{"--json", f}, nil, &out)
+	code := run([]string{"--json", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -355,7 +355,7 @@ func TestCLI_JSON(t *testing.T) {
 func TestCLI_LongFlags(t *testing.T) {
 	f := sortTempFile(t, "10\n2\n1\n")
 	var out bytes.Buffer
-	code := run([]string{"--numeric-sort", "--reverse", f}, nil, &out)
+	code := run([]string{"--numeric-sort", "--reverse", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -366,7 +366,7 @@ func TestCLI_LongFlags(t *testing.T) {
 
 func TestCLI_FileNotFound(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"/nonexistent/sort/file"}, nil, &out)
+	code := run([]string{"/nonexistent/sort/file"}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing file, got %d", code)
 	}
@@ -374,7 +374,7 @@ func TestCLI_FileNotFound(t *testing.T) {
 
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, nil, &out)
+	code := run([]string{"--nonexistent"}, nil, &out, &out, "")
 	if code != 2 {
 		t.Errorf("expected exit 2 for bad flag, got %d", code)
 	}
@@ -384,7 +384,7 @@ func TestCLI_MultiFile(t *testing.T) {
 	f1 := sortTempFile(t, "c\n")
 	f2 := sortTempFile(t, "a\nb\n")
 	var out bytes.Buffer
-	code := run([]string{f1, f2}, nil, &out)
+	code := run([]string{f1, f2}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -396,7 +396,7 @@ func TestCLI_MultiFile(t *testing.T) {
 func TestCLI_ZeroTerminated(t *testing.T) {
 	f := sortTempFile(t, "z\x00a\x00m\x00")
 	var out bytes.Buffer
-	code := run([]string{"-z", f}, nil, &out)
+	code := run([]string{"-z", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -409,7 +409,7 @@ func TestCLI_ZeroTerminated(t *testing.T) {
 func TestCLI_Stable(t *testing.T) {
 	f := sortTempFile(t, "c\nb\na\n")
 	var out bytes.Buffer
-	code := run([]string{"-s", f}, nil, &out)
+	code := run([]string{"-s", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -421,7 +421,7 @@ func TestCLI_Stable(t *testing.T) {
 func TestCLI_HumanNumeric(t *testing.T) {
 	f := sortTempFile(t, "10K\n5K\n1M\n")
 	var out bytes.Buffer
-	code := run([]string{"-h", f}, nil, &out)
+	code := run([]string{"-h", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -438,7 +438,7 @@ func TestCLI_HumanNumeric(t *testing.T) {
 func TestCLI_MonthSort(t *testing.T) {
 	f := sortTempFile(t, "DEC\nJan\nMAR\n")
 	var out bytes.Buffer
-	code := run([]string{"-M", f}, nil, &out)
+	code := run([]string{"-M", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -451,7 +451,7 @@ func TestCLI_MonthSort(t *testing.T) {
 func TestCLI_EmptyInput(t *testing.T) {
 	f := sortTempFile(t, "")
 	var out bytes.Buffer
-	code := run([]string{f}, nil, &out)
+	code := run([]string{f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -471,7 +471,7 @@ func TestCLI_DashStdin(t *testing.T) {
 	defer func() { os.Stdin = oldStdin }()
 
 	var out bytes.Buffer
-	code := run([]string{"-"}, nil, &out)
+	code := run([]string{"-"}, r, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}

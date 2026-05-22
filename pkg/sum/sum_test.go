@@ -96,7 +96,7 @@ func TestSum_BSD_KnownValues(t *testing.T) {
 func TestSumRun_BSD_Stdin(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello\n")
-	rc := sumRun([]string{}, &outBuf, &errBuf, in)
+	rc := sumRun([]string{}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -115,7 +115,7 @@ func TestSumRun_BSD_SingleFile(t *testing.T) {
 	}
 
 	var outBuf, errBuf bytes.Buffer
-	rc := sumRun([]string{fpath}, &outBuf, &errBuf, nil)
+	rc := sumRun([]string{fpath}, &outBuf, &errBuf, nil, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -134,7 +134,7 @@ func TestSumRun_BSD_MultiFile(t *testing.T) {
 	os.WriteFile(f2, []byte("hello\n"), 0644)
 
 	var outBuf, errBuf bytes.Buffer
-	rc := sumRun([]string{f1, f2}, &outBuf, &errBuf, nil)
+	rc := sumRun([]string{f1, f2}, &outBuf, &errBuf, nil, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -153,7 +153,7 @@ func TestSumRun_BSD_MultiFile(t *testing.T) {
 func TestSumRun_SysV_Stdin(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello\n")
-	rc := sumRun([]string{"-s"}, &outBuf, &errBuf, in)
+	rc := sumRun([]string{"-s"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -171,7 +171,7 @@ func TestSumRun_SysV_SingleFile(t *testing.T) {
 	}
 
 	var outBuf, errBuf bytes.Buffer
-	rc := sumRun([]string{"-s", fpath}, &outBuf, &errBuf, nil)
+	rc := sumRun([]string{"-s", fpath}, &outBuf, &errBuf, nil, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -189,7 +189,7 @@ func TestSumRun_Json(t *testing.T) {
 	}
 
 	var outBuf, errBuf bytes.Buffer
-	rc := sumRun([]string{"--json", fpath}, &outBuf, &errBuf, nil)
+	rc := sumRun([]string{"--json", fpath}, &outBuf, &errBuf, nil, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -203,7 +203,7 @@ func TestSumRun_Json(t *testing.T) {
 
 func TestSumRun_MissingFile(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
-	rc := sumRun([]string{"/nonexistent/file"}, &outBuf, &errBuf, nil)
+	rc := sumRun([]string{"/nonexistent/file"}, &outBuf, &errBuf, nil, "")
 	if rc != 1 {
 		t.Errorf("exit code: got %d, want 1 for missing file", rc)
 	}
@@ -212,7 +212,7 @@ func TestSumRun_MissingFile(t *testing.T) {
 func TestSumRun_StdinDash(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	in := strings.NewReader("hello\n")
-	rc := sumRun([]string{"-"}, &outBuf, &errBuf, in)
+	rc := sumRun([]string{"-"}, &outBuf, &errBuf, in, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -223,7 +223,7 @@ func TestSumRun_StdinDash(t *testing.T) {
 
 func TestSumRun_Dispatch(t *testing.T) {
 	var outBuf bytes.Buffer
-	rc := run([]string{}, nil, &outBuf)
+	rc := run([]string{}, strings.NewReader(""), &outBuf, &outBuf, "")
 	if rc != 0 {
 		t.Errorf("exit code: got %d, want 0", rc)
 	}
@@ -231,7 +231,7 @@ func TestSumRun_Dispatch(t *testing.T) {
 
 func TestSumRun_BadFlag(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
-	rc := sumRun([]string{"--nonexistent"}, &outBuf, &errBuf, strings.NewReader(""))
+	rc := sumRun([]string{"--nonexistent"}, &outBuf, &errBuf, strings.NewReader(""), "")
 	if rc != 2 {
 		t.Errorf("exit code: got %d, want 2 for bad flag", rc)
 	}

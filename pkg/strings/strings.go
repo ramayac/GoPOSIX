@@ -74,7 +74,7 @@ func Scan(r io.Reader, minLen int) ([]StringEntry, error) {
 	return entries, nil
 }
 
-func stringsRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
+func stringsRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, strSpec)
 	if err != nil {
 		fmt.Fprintf(errOut, "strings: %v\n", err)
@@ -144,7 +144,9 @@ func stringsRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	return 0
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int { return stringsRun(args, stdout, os.Stderr, os.Stdin) }
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return stringsRun(args, stdout, stderr, stdin, cwd)
+}
 func init() {
 	dispatch.Register(dispatch.Command{Name: "strings", Usage: "Extract printable strings from files", Run: run})
 }

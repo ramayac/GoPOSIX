@@ -440,12 +440,12 @@ func dumpShorts(r io.Reader, w io.Writer, maxBytes int64, jsonMode bool) int {
 // CLI glue
 // ---------------------------------------------------------------------------
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return odRun(args, os.Stdin, stdout)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return odRun(args, stdin, stdout, cwd)
 }
 
 // odRun is the testable entry point for the od CLI.
-func odRun(args []string, stdin io.Reader, stdout io.Writer) int {
+func odRun(args []string, stdin io.Reader, stdout io.Writer, cwd string) int {
 	return Run(args, stdin, stdout)
 }
 

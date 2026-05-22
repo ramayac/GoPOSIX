@@ -111,7 +111,7 @@ func TestBusyBox_CP_ArchivePreservesSymlinks(t *testing.T) {
 
 	// Run via CLI to test -a flag
 	var buf bytes.Buffer
-	code := run([]string{"-a", link, dst}, nil, &buf)
+	code := run([]string{"-a", link, dst}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("cp -a failed: exit %d", code)
 	}
@@ -144,7 +144,7 @@ func TestBusyBox_CP_ArchiveMultipleFilesAndDirs(t *testing.T) {
 	sd := filepath.Join(srcDir, "subdir")
 
 	var buf bytes.Buffer
-	code := run([]string{"-a", f1, f2, l1, sd, dstDir}, nil, &buf)
+	code := run([]string{"-a", f1, f2, l1, sd, dstDir}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("cp -a failed: exit %d", code)
 	}
@@ -191,7 +191,7 @@ func TestBusyBox_CP_Parents(t *testing.T) {
 
 	var buf bytes.Buffer
 	relSrc := "src/foo/bar/baz/file"
-	code := run([]string{"--parents", relSrc, "dst"}, nil, &buf)
+	code := run([]string{"--parents", relSrc, "dst"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("cp --parents failed: exit %d", code)
 	}
@@ -214,7 +214,7 @@ func TestBusyBox_CP_HardLinkPreservation(t *testing.T) {
 	os.MkdirAll(baz, 0755)
 
 	var buf bytes.Buffer
-	code := run([]string{"-d", foo, bar, baz}, nil, &buf)
+	code := run([]string{"-d", foo, bar, baz}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("cp -d failed: exit %d", code)
 	}
@@ -236,7 +236,7 @@ func TestBusyBox_CP_UnreadableFile(t *testing.T) {
 	os.WriteFile(src, []byte("secret"), 0000)
 
 	var buf bytes.Buffer
-	code := run([]string{src, dst}, nil, &buf)
+	code := run([]string{src, dst}, nil, &buf, &buf, "")
 	// Should fail (exit non-zero)
 	if code == 0 {
 		t.Fatal("cp of unreadable file should fail")

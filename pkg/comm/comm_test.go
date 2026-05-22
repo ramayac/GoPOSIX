@@ -222,7 +222,7 @@ func TestCommRun_Stdin(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	stdin := strings.NewReader("123\ndef\n")
 
-	rc := commRun([]string{"-", "-"}, &outBuf, &errBuf, stdin)
+	rc := commRun([]string{"-", "-"}, &outBuf, &errBuf, stdin, "")
 	if rc != 0 {
 		t.Logf("stderr: %s", errBuf.String())
 	}

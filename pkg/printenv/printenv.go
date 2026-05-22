@@ -43,7 +43,7 @@ func Run(names []string) PrintenvResult {
 	return PrintenvResult{Vars: vars}
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "printenv: %v\n", err)

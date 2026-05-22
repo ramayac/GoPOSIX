@@ -180,7 +180,7 @@ func TestBusyBox_Cat_FileAndDashStdin(t *testing.T) {
 
 func simpleCat(args []string, stdin string) (int, string, string) {
 	var outBuf, errBuf bytes.Buffer
-	code := catRun(args, &outBuf, &errBuf, strings.NewReader(stdin))
+	code := catRun(args, &outBuf, &errBuf, strings.NewReader(stdin), "")
 	return code, outBuf.String(), errBuf.String()
 }
 

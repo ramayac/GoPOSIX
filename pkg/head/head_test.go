@@ -82,7 +82,7 @@ func runHead(args []string) (int, string, string) {
 
 	var exitCode int
 	_, stderr := captureOutput(func() {
-		exitCode = cmd.Run(args, nil, &jsonBuf)
+		exitCode = cmd.Run(args, os.Stdin, &jsonBuf, os.Stderr, "")
 	})
 	return exitCode, jsonBuf.String(), stderr
 }
@@ -96,7 +96,7 @@ func runHeadWithStdin(stdin string, args []string) (int, string, string) {
 
 	var exitCode int
 	_, stderr := captureOutputWithStdin(stdin, func() {
-		exitCode = cmd.Run(args, nil, &jsonBuf)
+		exitCode = cmd.Run(args, os.Stdin, &jsonBuf, os.Stderr, "")
 	})
 	return exitCode, jsonBuf.String(), stderr
 }
@@ -348,7 +348,7 @@ func TestRunCLI_Json(t *testing.T) {
 		t.Fatal("head not registered")
 	}
 	var jsonBuf bytes.Buffer
-	exitCode := cmd.Run([]string{"--json", testdataDir + "five.txt"}, nil, &jsonBuf)
+	exitCode := cmd.Run([]string{"--json", testdataDir + "five.txt"}, nil, &jsonBuf, &jsonBuf, "")
 	if exitCode != 0 {
 		t.Fatalf("exit %d", exitCode)
 	}

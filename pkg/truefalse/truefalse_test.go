@@ -8,21 +8,21 @@ import (
 
 func TestTrueExitsZero(t *testing.T) {
 	var buf bytes.Buffer
-	if code := runTrue(nil, nil, &buf); code != 0 {
+	if code := runTrue(nil, nil, &buf, &buf, ""); code != 0 {
 		t.Errorf("true: expected exit 0, got %d", code)
 	}
 }
 
 func TestFalseExitsOne(t *testing.T) {
 	var buf bytes.Buffer
-	if code := runFalse(nil, nil, &buf); code != 1 {
+	if code := runFalse(nil, nil, &buf, &buf, ""); code != 1 {
 		t.Errorf("false: expected exit 1, got %d", code)
 	}
 }
 
 func TestTrueJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := runTrue([]string{"--json"}, nil, &buf)
+	code := runTrue([]string{"--json"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -41,7 +41,7 @@ func TestTrueJSON(t *testing.T) {
 
 func TestFalseJSON(t *testing.T) {
 	var buf bytes.Buffer
-	code := runFalse([]string{"--json"}, nil, &buf)
+	code := runFalse([]string{"--json"}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Fatalf("exit code %d, want 1", code)
 	}
@@ -61,7 +61,7 @@ func TestFalseJSON(t *testing.T) {
 func TestTrueJSONNoArgs(t *testing.T) {
 	// true with no args should still work silently (json not set)
 	var buf bytes.Buffer
-	if code := runTrue([]string{}, nil, &buf); code != 0 {
+	if code := runTrue([]string{}, nil, &buf, &buf, ""); code != 0 {
 		t.Errorf("exit code %d, want 0", code)
 	}
 	if buf.Len() != 0 {

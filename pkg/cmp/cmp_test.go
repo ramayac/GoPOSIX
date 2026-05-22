@@ -156,7 +156,7 @@ func TestCompare_EmptyVsNonEmpty(t *testing.T) {
 
 func TestCmpRun_SilentMode(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
-	rc := cmpRun([]string{"-s", "-", "-"}, &outBuf, &errBuf, strings.NewReader("hello\n"))
+	rc := cmpRun([]string{"-s", "-", "-"}, &outBuf, &errBuf, strings.NewReader("hello\n"), "")
 	if rc != 0 {
 		t.Errorf("silent identical: got rc=%d, want 0 (stderr: %s)", rc, errBuf.String())
 	}
@@ -172,7 +172,7 @@ func TestCmpRun_DifferSilent(t *testing.T) {
 	os.WriteFile(f1, []byte("hello"), 0644)
 	os.WriteFile(f2, []byte("hallo"), 0644)
 	var outBuf, errBuf bytes.Buffer
-	rc := cmpRun([]string{"-s", f1, f2}, &outBuf, &errBuf, nil)
+	rc := cmpRun([]string{"-s", f1, f2}, &outBuf, &errBuf, nil, "")
 	if rc != 1 {
 		t.Errorf("silent differ: got rc=%d, want 1", rc)
 	}
@@ -188,7 +188,7 @@ func TestCmpRun_JsonFlag(t *testing.T) {
 	os.WriteFile(f1, []byte("hello"), 0644)
 	os.WriteFile(f2, []byte("hello"), 0644)
 	var outBuf, errBuf bytes.Buffer
-	rc := cmpRun([]string{"--json", f1, f2}, &outBuf, &errBuf, nil)
+	rc := cmpRun([]string{"--json", f1, f2}, &outBuf, &errBuf, nil, "")
 	if rc != 0 {
 		t.Fatalf("json identical: got rc=%d", rc)
 	}
@@ -204,7 +204,7 @@ func TestCmpRun_JsonDiffer(t *testing.T) {
 	os.WriteFile(f1, []byte("hello"), 0644)
 	os.WriteFile(f2, []byte("hallo"), 0644)
 	var outBuf, errBuf bytes.Buffer
-	rc := cmpRun([]string{"--json", f1, f2}, &outBuf, &errBuf, nil)
+	rc := cmpRun([]string{"--json", f1, f2}, &outBuf, &errBuf, nil, "")
 	if rc != 1 {
 		t.Fatalf("json differ: got rc=%d, want 1", rc)
 	}
@@ -215,7 +215,7 @@ func TestCmpRun_JsonDiffer(t *testing.T) {
 
 func TestCmpRun_MissingFile(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
-	rc := cmpRun([]string{"/nonexistent_12345", "/nonexistent_67890"}, &outBuf, &errBuf, nil)
+	rc := cmpRun([]string{"/nonexistent_12345", "/nonexistent_67890"}, &outBuf, &errBuf, nil, "")
 	if rc != 2 {
 		t.Errorf("missing file: got rc=%d, want 2", rc)
 	}
@@ -223,7 +223,7 @@ func TestCmpRun_MissingFile(t *testing.T) {
 
 func TestCmpRun_BadFlag(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
-	rc := cmpRun([]string{"--bad-flag"}, &outBuf, &errBuf, nil)
+	rc := cmpRun([]string{"--bad-flag"}, &outBuf, &errBuf, nil, "")
 	if rc != 2 {
 		t.Errorf("bad flag: got rc=%d, want 2", rc)
 	}
@@ -231,7 +231,7 @@ func TestCmpRun_BadFlag(t *testing.T) {
 
 func TestCmpRun_MissingOperand(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
-	rc := cmpRun([]string{}, &outBuf, &errBuf, nil)
+	rc := cmpRun([]string{}, &outBuf, &errBuf, nil, "")
 	if rc != 2 {
 		t.Errorf("missing operand: got rc=%d, want 2", rc)
 	}

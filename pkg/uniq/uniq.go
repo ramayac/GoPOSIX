@@ -111,11 +111,11 @@ func Run(r io.Reader, countMode, duplicatesOnly, uniqueOnly, ignoreCase bool, sk
 	return items, scanner.Err()
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return uniqRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return uniqRun(args, stdout, stderr, stdin, cwd)
 }
 
-func uniqRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func uniqRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "uniq: %v\n", err)
@@ -186,9 +186,8 @@ func uniqRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader)
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "uniq",
-		Usage:          "Report or omit repeated lines",
-		Run:            run,
-		RunWithStreams: uniqRun,
+		Name:  "uniq",
+		Usage: "Report or omit repeated lines",
+		Run:   run,
 	})
 }

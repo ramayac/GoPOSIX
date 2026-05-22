@@ -34,7 +34,7 @@ func Run(path, suffix string) BasenameResult {
 	return BasenameResult{Result: base}
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "basename: %v\n", err)

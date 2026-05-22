@@ -18,7 +18,7 @@ func TestGzipGunzipCycle(t *testing.T) {
 	os.WriteFile(file, []byte(content), 0644)
 
 	var buf bytes.Buffer
-	code := runGzip([]string{file}, nil, &buf)
+	code := runGzip([]string{file}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("gzip exit code %d", code)
 	}
@@ -32,7 +32,7 @@ func TestGzipGunzipCycle(t *testing.T) {
 		t.Fatalf("gz file not created")
 	}
 
-	code = runGunzip([]string{gzFile}, nil, &buf)
+	code = runGunzip([]string{gzFile}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("gunzip exit code %d", code)
 	}
@@ -57,7 +57,7 @@ func TestGzipKeep(t *testing.T) {
 	os.WriteFile(file, []byte("hello"), 0644)
 
 	var buf bytes.Buffer
-	code := runGzip([]string{"-k", file}, nil, &buf)
+	code := runGzip([]string{"-k", file}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -77,12 +77,12 @@ func TestGzipForce(t *testing.T) {
 	os.WriteFile(file+".gz", []byte("existing"), 0644)
 
 	var buf bytes.Buffer
-	code := runGzip([]string{file}, nil, &buf)
+	code := runGzip([]string{file}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Errorf("should fail without force")
 	}
 
-	code = runGzip([]string{"-f", file}, nil, &buf)
+	code = runGzip([]string{"-f", file}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("should succeed with force")
 	}
@@ -94,7 +94,7 @@ func TestGzipStdout(t *testing.T) {
 	os.WriteFile(file, []byte("hello stdout"), 0644)
 
 	var buf bytes.Buffer
-	code := runGzip([]string{"-c", file}, nil, &buf)
+	code := runGzip([]string{"-c", file}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -117,7 +117,7 @@ func TestGzipJSON(t *testing.T) {
 	os.WriteFile(file, []byte(strings.Repeat("a", 100)), 0644)
 
 	var buf bytes.Buffer
-	code := runGzip([]string{"--json", file}, nil, &buf)
+	code := runGzip([]string{"--json", file}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
@@ -149,7 +149,7 @@ func TestBusyBox_Gunzip_DoesntExist(t *testing.T) {
 	file1 := filepath.Join(tmpDir, "hello.txt")
 	os.WriteFile(file1, []byte("HELLO\n"), 0644)
 	var buf bytes.Buffer
-	code := runGzip([]string{"-k", file1}, nil, &buf)
+	code := runGzip([]string{"-k", file1}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("gzip failed: %d", code)
 	}
@@ -157,7 +157,7 @@ func TestBusyBox_Gunzip_DoesntExist(t *testing.T) {
 
 	// gunzip with non-existent file first, then valid gz
 	stderr := captureStderr(func() {
-		runGunzip([]string{filepath.Join(tmpDir, "z"), gzFile}, nil, &bytes.Buffer{})
+		runGunzip([]string{filepath.Join(tmpDir, "z"), gzFile}, nil, &bytes.Buffer{}, os.Stderr, "")
 	})
 
 	// Should mention the non-existent file
@@ -175,7 +175,7 @@ func TestBusyBox_Gunzip_UnknownSuffix(t *testing.T) {
 	file1 := filepath.Join(tmpDir, "hello.txt")
 	os.WriteFile(file1, []byte("HELLO\n"), 0644)
 	var buf bytes.Buffer
-	code := runGzip([]string{"-k", file1}, nil, &buf)
+	code := runGzip([]string{"-k", file1}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("gzip failed: %d", code)
 	}
@@ -183,7 +183,7 @@ func TestBusyBox_Gunzip_UnknownSuffix(t *testing.T) {
 	os.WriteFile(notGz, []byte{}, 0644)
 
 	stderr := captureStderr(func() {
-		runGunzip([]string{notGz, file1 + ".gz"}, nil, &bytes.Buffer{})
+		runGunzip([]string{notGz, file1 + ".gz"}, nil, &bytes.Buffer{}, os.Stderr, "")
 	})
 
 	if !strings.Contains(stderr, "t.zz: unknown suffix") {
@@ -198,11 +198,11 @@ func TestBusyBox_Gunzip_AlreadyExists(t *testing.T) {
 	os.WriteFile(file1, []byte("DATA1\n"), 0644)
 	os.WriteFile(file2, []byte("DATA2\n"), 0644)
 	var buf bytes.Buffer
-	code := runGzip([]string{"-k", file1}, nil, &buf)
+	code := runGzip([]string{"-k", file1}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("gzip t1 failed: %d", code)
 	}
-	code = runGzip([]string{"-k", file2}, nil, &buf)
+	code = runGzip([]string{"-k", file2}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Fatalf("gzip t2 failed: %d", code)
 	}
@@ -211,7 +211,7 @@ func TestBusyBox_Gunzip_AlreadyExists(t *testing.T) {
 	os.WriteFile(filepath.Join(tmpDir, "t1.txt"), []byte("preexisting"), 0644)
 
 	stderr := captureStderr(func() {
-		runGunzip([]string{file1 + ".gz", file2 + ".gz"}, nil, &bytes.Buffer{})
+		runGunzip([]string{file1 + ".gz", file2 + ".gz"}, nil, &bytes.Buffer{}, os.Stderr, "")
 	})
 
 	if !strings.Contains(stderr, "can't open 't1.txt': File exists") &&
@@ -243,7 +243,7 @@ func TestCLI_Compress(t *testing.T) {
 	f := filepath.Join(dir, "test.txt")
 	os.WriteFile(f, []byte("hello"), 0644)
 	var out bytes.Buffer
-	code := runGzip([]string{"-c", f}, nil, &out)
+	code := runGzip([]string{"-c", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -260,7 +260,7 @@ func TestCLI_Decompress(t *testing.T) {
 	gzw.Close()
 	os.WriteFile(f, buf.Bytes(), 0644)
 	var out bytes.Buffer
-	code := runGzip([]string{"-d", "-c", f}, nil, &out)
+	code := runGzip([]string{"-d", "-c", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -273,7 +273,7 @@ func TestCLI_JSON(t *testing.T) {
 	f := filepath.Join(dir, "j.txt")
 	os.WriteFile(f, []byte("json"), 0644)
 	var out bytes.Buffer
-	code := runGzip([]string{"--json", f}, nil, &out)
+	code := runGzip([]string{"--json", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -286,21 +286,21 @@ func TestCLI_Stdout(t *testing.T) {
 	f := filepath.Join(dir, "s.txt")
 	os.WriteFile(f, []byte("stdout"), 0644)
 	var out bytes.Buffer
-	code := runGzip([]string{"-c", "--stdout", f}, nil, &out)
+	code := runGzip([]string{"-c", "--stdout", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
 }
 func TestCLI_MissingFile(t *testing.T) {
 	var out bytes.Buffer
-	code := runGzip([]string{"/nonexistent/gzip/file"}, nil, &out)
+	code := runGzip([]string{"/nonexistent/gzip/file"}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("exit %d, want 1", code)
 	}
 }
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := runGzip([]string{"--nonexistent"}, nil, &out)
+	code := runGzip([]string{"--nonexistent"}, nil, &out, &out, "")
 	if code == 0 {
 		t.Errorf("exit %d, want non-zero for bad flag", code)
 	}
@@ -314,7 +314,7 @@ func TestCLI_Gunzip(t *testing.T) {
 	gzw.Close()
 	os.WriteFile(f, buf.Bytes(), 0644)
 	var out bytes.Buffer
-	code := runGunzip([]string{"-c", f}, nil, &out)
+	code := runGunzip([]string{"-c", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -328,7 +328,7 @@ func TestGzip_Level9(t *testing.T) {
 	f := filepath.Join(dir, "level9.txt")
 	os.WriteFile(f, []byte("compression level 9 test data"), 0644)
 	var out bytes.Buffer
-	code := runGzip([]string{"-9", "-c", f}, nil, &out)
+	code := runGzip([]string{"-9", "-c", f}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d, want 0", code)
 	}

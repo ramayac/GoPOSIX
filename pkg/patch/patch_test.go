@@ -334,7 +334,7 @@ func TestPatchRun_Basic(t *testing.T) {
 +asd
  zxc
 `)
-	code := patchRun([]string{fpath}, &stdout, &stderr, stdin)
+	code := patchRun([]string{fpath}, &stdout, &stderr, stdin, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0. stderr: %s", code, stderr.String())
 	}
@@ -360,7 +360,7 @@ func TestPatchRun_AlreadyApplied(t *testing.T) {
 +def
  123
 `)
-	code := patchRun([]string{fpath}, &stdout, &stderr, stdin)
+	code := patchRun([]string{fpath}, &stdout, &stderr, stdin, "")
 	if code != 1 {
 		t.Fatalf("exit code %d, want 1", code)
 	}

@@ -46,7 +46,7 @@ func Run(ignoreEnv bool, positional []string) EnvResult {
 	return EnvResult{Vars: vars}
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "env: %v\n", err)

@@ -42,32 +42,30 @@ var spec = common.FlagSpec{
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "gzip",
-		Usage:          "gzip [FILE]...",
-		Run:            runGzip,
-		RunWithStreams: gzipRun,
+		Name:  "gzip",
+		Usage: "gzip [FILE]...",
+		Run:   runGzip,
 	})
 	dispatch.Register(dispatch.Command{
-		Name:           "gunzip",
-		Usage:          "gunzip [FILE]...",
-		Run:            runGunzip,
-		RunWithStreams: gunzipRun,
+		Name:  "gunzip",
+		Usage: "gunzip [FILE]...",
+		Run:   runGunzip,
 	})
 }
 
-func runGunzip(args []string, stdin io.Reader, stdout io.Writer) int {
-	return gunzipRun(args, stdout, os.Stderr, os.Stdin)
+func runGunzip(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return gunzipRun(args, stdout, stderr, stdin, cwd)
 }
 
-func runGzip(args []string, stdin io.Reader, stdout io.Writer) int {
-	return gzipRun(args, stdout, os.Stderr, os.Stdin)
+func runGzip(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return gzipRun(args, stdout, stderr, stdin, cwd)
 }
 
-func gunzipRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func gunzipRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	return execute(args, stdout, errOut, stdin, true, "gunzip")
 }
 
-func gzipRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func gzipRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	return execute(args, stdout, errOut, stdin, false, "gzip")
 }
 

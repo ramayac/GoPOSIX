@@ -187,7 +187,7 @@ func splitLines(s string) []string {
 // --- CLI Glue ---
 
 // unexpandRun is the injectable entry point.
-func unexpandRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
+func unexpandRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "unexpand: %v\n", err)
@@ -244,8 +244,8 @@ func unexpandRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	return 0
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return unexpandRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return unexpandRun(args, stdout, stderr, stdin, cwd)
 }
 
 func init() {

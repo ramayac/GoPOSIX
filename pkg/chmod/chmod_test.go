@@ -9,7 +9,7 @@ import (
 
 func TestChmodMissingArgs(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{}, nil, &out)
+	rc := run([]string{}, nil, &out, &out, "")
 	if rc != 1 {
 		t.Errorf("expected 1, got %d", rc)
 	}
@@ -20,7 +20,7 @@ func TestChmodJSON(t *testing.T) {
 	f, _ := os.CreateTemp("", "chmod")
 	defer os.Remove(f.Name())
 
-	rc := run([]string{"--json", "0755", f.Name()}, nil, &out)
+	rc := run([]string{"--json", "0755", f.Name()}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -35,7 +35,7 @@ func TestCLI_OctalMode(t *testing.T) {
 	f, _ := os.CreateTemp("", "chmod")
 	defer os.Remove(f.Name())
 	var out bytes.Buffer
-	code := run([]string{"0644", f.Name()}, nil, &out)
+	code := run([]string{"0644", f.Name()}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -50,7 +50,7 @@ func TestCLI_SymbolicMode(t *testing.T) {
 	os.Chmod(f.Name(), 0600)
 	defer os.Remove(f.Name())
 	var out bytes.Buffer
-	code := run([]string{"a+r", f.Name()}, nil, &out)
+	code := run([]string{"a+r", f.Name()}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -62,7 +62,7 @@ func TestCLI_SymbolicMode(t *testing.T) {
 
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, nil, &out)
+	code := run([]string{"--nonexistent"}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 2, got %d", code)
 	}
@@ -72,7 +72,7 @@ func TestCLI_BadMode(t *testing.T) {
 	f, _ := os.CreateTemp("", "chmod")
 	defer os.Remove(f.Name())
 	var out bytes.Buffer
-	code := run([]string{"999", f.Name()}, nil, &out)
+	code := run([]string{"999", f.Name()}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for bad mode, got %d", code)
 	}
@@ -83,7 +83,7 @@ func TestSymbolicMode_RemoveRead(t *testing.T) {
 	os.Chmod(f.Name(), 0666)
 	defer os.Remove(f.Name())
 	var out bytes.Buffer
-	code := run([]string{"a-r", f.Name()}, nil, &out)
+	code := run([]string{"a-r", f.Name()}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -98,7 +98,7 @@ func TestSymbolicMode_SetEquals(t *testing.T) {
 	os.Chmod(f.Name(), 0777)
 	defer os.Remove(f.Name())
 	var out bytes.Buffer
-	code := run([]string{"u=r", f.Name()}, nil, &out)
+	code := run([]string{"u=r", f.Name()}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -114,7 +114,7 @@ func TestSymbolicMode_GroupOnly(t *testing.T) {
 	os.Chmod(f.Name(), 0000)
 	defer os.Remove(f.Name())
 	var out bytes.Buffer
-	code := run([]string{"g+rw", f.Name()}, nil, &out)
+	code := run([]string{"g+rw", f.Name()}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -126,7 +126,7 @@ func TestSymbolicMode_GroupOnly(t *testing.T) {
 
 func TestSymbolicMode_BadFormat(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"x", "/tmp"}, nil, &out)
+	code := run([]string{"x", "/tmp"}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for bad symbolic mode, got %d", code)
 	}
@@ -137,7 +137,7 @@ func TestCLI_JSON_Symbolic(t *testing.T) {
 	os.Chmod(f.Name(), 0600)
 	defer os.Remove(f.Name())
 	var out bytes.Buffer
-	code := run([]string{"--json", "a+r", f.Name()}, nil, &out)
+	code := run([]string{"--json", "a+r", f.Name()}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -148,7 +148,7 @@ func TestCLI_JSON_Symbolic(t *testing.T) {
 
 func TestCLI_NonexistentFile(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"0755", "/nonexistent_12345"}, nil, &out)
+	code := run([]string{"0755", "/nonexistent_12345"}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for nonexistent file, got %d", code)
 	}

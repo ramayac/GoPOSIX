@@ -13,7 +13,7 @@ import (
 func TestDd_StdinToStdout(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	stdin := strings.NewReader("I WANT\n")
-	code := ddRun(nil, stdin, &stdout, &stderr)
+	code := ddRun(nil, stdin, &stdout, &stderr, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -32,7 +32,7 @@ func TestDd_IfFlag(t *testing.T) {
 	os.WriteFile(fpath, []byte("I WANT"), 0644)
 
 	var stdout, stderr bytes.Buffer
-	code := ddRun([]string{"if=" + fpath}, nil, &stdout, &stderr)
+	code := ddRun([]string{"if=" + fpath}, nil, &stdout, &stderr, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -47,7 +47,7 @@ func TestDd_OfFlag(t *testing.T) {
 	fpath := filepath.Join(dir, "of_test")
 	stdin := strings.NewReader("I WANT\n")
 	var stderr bytes.Buffer
-	code := ddRun([]string{"of=" + fpath}, stdin, io.Discard, &stderr)
+	code := ddRun([]string{"of=" + fpath}, stdin, io.Discard, &stderr, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -61,7 +61,7 @@ func TestDd_OfFlag(t *testing.T) {
 func TestDd_CountBytes(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	stdin := strings.NewReader("I WANT\n")
-	code := ddRun([]string{"count=3", "iflag=count_bytes"}, stdin, &stdout, &stderr)
+	code := ddRun([]string{"count=3", "iflag=count_bytes"}, stdin, &stdout, &stderr, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -75,7 +75,7 @@ func TestDd_CountBlocks(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	// 10 chars with bs=5 → 2 blocks. count=1 should give first 5 chars.
 	stdin := strings.NewReader("abcdefghij")
-	code := ddRun([]string{"bs=5", "count=1"}, stdin, &stdout, &stderr)
+	code := ddRun([]string{"bs=5", "count=1"}, stdin, &stdout, &stderr, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -88,7 +88,7 @@ func TestDd_CountBlocks(t *testing.T) {
 func TestDd_Skip(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	stdin := strings.NewReader("abcdefghijklmno") // 15 chars
-	code := ddRun([]string{"bs=5", "skip=1", "count=1"}, stdin, &stdout, &stderr)
+	code := ddRun([]string{"bs=5", "skip=1", "count=1"}, stdin, &stdout, &stderr, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -106,7 +106,7 @@ func TestDd_Seek(t *testing.T) {
 	// Write 5 NULs at offset 0, then write "WORLD" after 5-byte seek
 	// Pre-create file with 5 bytes to seek past
 	os.WriteFile(fpath, []byte("XXXXX"), 0644)
-	code := ddRun([]string{"of=" + fpath, "bs=5", "seek=1", "conv=notrunc"}, stdin, io.Discard, &stderr)
+	code := ddRun([]string{"of=" + fpath, "bs=5", "seek=1", "conv=notrunc"}, stdin, io.Discard, &stderr, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -120,7 +120,7 @@ func TestDd_Seek(t *testing.T) {
 func TestDd_StatusNone(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	stdin := strings.NewReader("hello")
-	code := ddRun([]string{"status=none"}, stdin, &stdout, &stderr)
+	code := ddRun([]string{"status=none"}, stdin, &stdout, &stderr, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -133,7 +133,7 @@ func TestDd_StatusNone(t *testing.T) {
 func TestDd_ConvSync(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	stdin := strings.NewReader("short") // 5 chars
-	code := ddRun([]string{"bs=10", "conv=sync"}, stdin, &stdout, &stderr)
+	code := ddRun([]string{"bs=10", "conv=sync"}, stdin, &stdout, &stderr, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -151,7 +151,7 @@ func TestDd_WriteError(t *testing.T) {
 	if _, err := os.Stat("/dev/full"); err != nil {
 		t.Skip("/dev/full not available")
 	}
-	code := ddRun([]string{"of=/dev/full"}, stdin, io.Discard, &stderr)
+	code := ddRun([]string{"of=/dev/full"}, stdin, io.Discard, &stderr, "")
 	if code != 1 {
 		t.Errorf("exit code %d, want 1 (write error)", code)
 	}

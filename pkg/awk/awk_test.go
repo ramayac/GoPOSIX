@@ -12,7 +12,7 @@ func helper(t *testing.T, args []string, stdin string) (string, int) {
 	t.Helper()
 	var outBuf, errBuf bytes.Buffer
 	stdinReader := strings.NewReader(stdin)
-	code := awkRun(args, &outBuf, &errBuf, stdinReader)
+	code := awkRun(args, &outBuf, &errBuf, stdinReader, "")
 	return outBuf.String() + errBuf.String(), code
 }
 
@@ -338,7 +338,7 @@ func TestSplitFunction(t *testing.T) {
 func TestAWKRunInjectsWriters(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	stdin := strings.NewReader("hello\n")
-	code := awkRun([]string{"{ print $1 }"}, &outBuf, &errBuf, stdin)
+	code := awkRun([]string{"{ print $1 }"}, &outBuf, &errBuf, stdin, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -354,7 +354,7 @@ func TestAWKRunInjectsWriters(t *testing.T) {
 func TestJSONMode(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	stdin := strings.NewReader("alice 90\nbob 85\n")
-	code := awkRun([]string{"--json", "{ print $1, $2 }"}, &outBuf, &errBuf, stdin)
+	code := awkRun([]string{"--json", "{ print $1, $2 }"}, &outBuf, &errBuf, stdin, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0 (stderr: %q)", code, errBuf.String())
 	}
@@ -380,7 +380,7 @@ func TestJSONMode(t *testing.T) {
 func TestJSONModeNoOutput(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	stdin := strings.NewReader("")
-	code := awkRun([]string{"--json", "BEGIN { x = 1 }"}, &outBuf, &errBuf, stdin)
+	code := awkRun([]string{"--json", "BEGIN { x = 1 }"}, &outBuf, &errBuf, stdin, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0 (stderr: %q)", code, errBuf.String())
 	}
@@ -537,7 +537,7 @@ func TestRunCaptureSyntaxError(t *testing.T) {
 func TestJSONModeErrorExit(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	stdin := strings.NewReader("")
-	code := awkRun([]string{"--json", "BEGIN { exit 3 }"}, &outBuf, &errBuf, stdin)
+	code := awkRun([]string{"--json", "BEGIN { exit 3 }"}, &outBuf, &errBuf, stdin, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0 — JSON mode always returns 0", code)
 	}

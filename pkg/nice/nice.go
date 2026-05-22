@@ -54,7 +54,7 @@ func Run(adjustment int, command []string) (int, error) {
 	return 0, nil
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "nice: %v\n", err)

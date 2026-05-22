@@ -550,11 +550,11 @@ func parseHunkHeader(line string) (Hunk, error) {
 // CLI glue
 // ---------------------------------------------------------------------------
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return patchRun(args, stdout, os.Stderr, os.Stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return patchRun(args, stdout, stderr, stdin, cwd)
 }
 
-func patchRun(args []string, stdout, stderr io.Writer, stdin io.Reader) int {
+func patchRun(args []string, stdout, stderr io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(stderr, "patch: %v\n", err)

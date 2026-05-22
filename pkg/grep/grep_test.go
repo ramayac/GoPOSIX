@@ -201,7 +201,7 @@ func TestGrepFilename(t *testing.T) {
 func simpleGrep(args []string, stdin string) (int, string, string) {
 	var outBuf, errBuf bytes.Buffer
 	stdinR := io.Reader(strings.NewReader(stdin))
-	code := grepRun(args, &outBuf, &errBuf, stdinR)
+	code := grepRun(args, &outBuf, &errBuf, stdinR, "")
 	return code, outBuf.String(), errBuf.String()
 }
 
@@ -693,7 +693,7 @@ func TestGrepRecursiveOnSymlinkToDir(t *testing.T) {
 	os.Symlink("foo", filepath.Join(testDir, "symfoo"))
 
 	var out bytes.Buffer
-	code := run([]string{"-r", ".", filepath.Join(testDir, "symfoo")}, nil, &out)
+	code := run([]string{"-r", ".", filepath.Join(testDir, "symfoo")}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("grep -r exited with %d, want 0", code)
 	}
@@ -707,7 +707,7 @@ func TestEgrepAlias(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	stdinR := strings.NewReader("hello\nworld\n")
 	// egrepRun prepends -E; simulate same by calling grepRun with -E.
-	code := grepRun([]string{"-E", "hel+o", "-"}, &outBuf, &errBuf, stdinR)
+	code := grepRun([]string{"-E", "hel+o", "-"}, &outBuf, &errBuf, stdinR, "")
 	if code != 0 {
 		t.Fatalf("egrep-style exited with %d, want 0", code)
 	}
@@ -722,7 +722,7 @@ func TestFgrepAlias(t *testing.T) {
 	var outBuf, errBuf bytes.Buffer
 	stdinR := strings.NewReader("hello.\ngoodbye.\nhelo\n")
 	// fgrepRun prepends -F; simulate same by calling grepRun with -F.
-	code := grepRun([]string{"-F", ".", "-"}, &outBuf, &errBuf, stdinR)
+	code := grepRun([]string{"-F", ".", "-"}, &outBuf, &errBuf, stdinR, "")
 	if code != 0 {
 		t.Fatalf("fgrep-style exited with %d, want 0", code)
 	}
@@ -740,7 +740,7 @@ func TestGrepBinaryHandling(t *testing.T) {
 	{
 		var outBuf, errBuf bytes.Buffer
 		stdinR := strings.NewReader(binaryData)
-		code := grepRun([]string{"hello", "-"}, &outBuf, &errBuf, stdinR)
+		code := grepRun([]string{"hello", "-"}, &outBuf, &errBuf, stdinR, "")
 		if code != 0 {
 			t.Errorf("expected exit code 0, got %d", code)
 		}
@@ -755,7 +755,7 @@ func TestGrepBinaryHandling(t *testing.T) {
 	{
 		var outBuf, errBuf bytes.Buffer
 		stdinR := strings.NewReader(binaryData)
-		code := grepRun([]string{"-a", "hello", "-"}, &outBuf, &errBuf, stdinR)
+		code := grepRun([]string{"-a", "hello", "-"}, &outBuf, &errBuf, stdinR, "")
 		if code != 0 {
 			t.Errorf("expected exit code 0, got %d", code)
 		}

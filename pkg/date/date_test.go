@@ -9,7 +9,7 @@ import (
 
 func TestDateRun(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"-u"}, nil, &out)
+	rc := run([]string{"-u"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -20,7 +20,7 @@ func TestDateRun(t *testing.T) {
 
 func TestDateJSON(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"--json"}, nil, &out)
+	rc := run([]string{"--json"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}
@@ -34,7 +34,7 @@ func TestDateJSON(t *testing.T) {
 func TestBusyBox_Date_DashD_UnixTimestamp(t *testing.T) {
 	// date -d @1288486801 — Unix timestamp via @ prefix
 	var out bytes.Buffer
-	rc := run([]string{"-d", "@1288486801"}, nil, &out)
+	rc := run([]string{"-d", "@1288486801"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %d, want 0", rc)
 	}
@@ -46,7 +46,7 @@ func TestBusyBox_Date_DashD_UnixTimestamp(t *testing.T) {
 func TestBusyBox_Date_DashD_DottedFormat(t *testing.T) {
 	// date -d 1999.01.01-11:22:33 '+%d/%m/%y'
 	var out bytes.Buffer
-	rc := run([]string{"-d", "1999.01.01-11:22:33", "+%d/%m/%y"}, nil, &out)
+	rc := run([]string{"-d", "1999.01.01-11:22:33", "+%d/%m/%y"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %d, want 0", rc)
 	}
@@ -58,7 +58,7 @@ func TestBusyBox_Date_DashD_DottedFormat(t *testing.T) {
 func TestBusyBox_Date_DashD_YMD_HMS(t *testing.T) {
 	// date -d '1999-1-2 3:4:5'
 	var out bytes.Buffer
-	rc := run([]string{"-d", "1999-1-2 3:4:5"}, nil, &out)
+	rc := run([]string{"-d", "1999-1-2 3:4:5"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %d, want 0", rc)
 	}
@@ -71,7 +71,7 @@ func TestBusyBox_Date_DashD_YMD_HMS(t *testing.T) {
 func TestBusyBox_Date_DashD_Compact(t *testing.T) {
 	// date -d 200001231133
 	var out bytes.Buffer
-	rc := run([]string{"-d", "200001231133"}, nil, &out)
+	rc := run([]string{"-d", "200001231133"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %d, want 0", rc)
 	}
@@ -84,7 +84,7 @@ func TestBusyBox_Date_DashD_Compact(t *testing.T) {
 func TestBusyBox_Date_DashD_CompactWithSeconds(t *testing.T) {
 	// date -d 200001231133.30
 	var out bytes.Buffer
-	rc := run([]string{"-d", "200001231133.30"}, nil, &out)
+	rc := run([]string{"-d", "200001231133.30"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %d, want 0", rc)
 	}
@@ -97,7 +97,7 @@ func TestBusyBox_Date_DashD_CompactWithSeconds(t *testing.T) {
 func TestBusyBox_Date_DashD_TimeOnly(t *testing.T) {
 	// date -d 1:2 should parse as today at 01:02
 	var out bytes.Buffer
-	rc := run([]string{"-d", "1:2"}, nil, &out)
+	rc := run([]string{"-d", "1:2"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %v, want 0 (failed to parse '1:2')", rc)
 	}
@@ -110,7 +110,7 @@ func TestBusyBox_Date_DashD_TimeOnly(t *testing.T) {
 
 func TestBusyBox_Date_DashD_TimeOnlySeconds(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"-d", "1:2:3"}, nil, &out)
+	rc := run([]string{"-d", "1:2:3"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %d, want 0", rc)
 	}
@@ -123,7 +123,7 @@ func TestBusyBox_Date_DashD_TimeOnlySeconds(t *testing.T) {
 func TestBusyBox_Date_DashD_MonthDay_Time(t *testing.T) {
 	// date -d 1.2-3:4 → today's year, Jan 2, 03:04
 	var out bytes.Buffer
-	rc := run([]string{"-d", "1.2-3:4"}, nil, &out)
+	rc := run([]string{"-d", "1.2-3:4"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %v, want 0 (failed to parse '1.2-3:4')", rc)
 	}
@@ -135,7 +135,7 @@ func TestBusyBox_Date_DashD_MonthDay_Time(t *testing.T) {
 
 func TestBusyBox_Date_DashD_MonthDay_TimeSeconds(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"-d", "1.2-3:4:5"}, nil, &out)
+	rc := run([]string{"-d", "1.2-3:4:5"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %v, want 0", rc)
 	}
@@ -148,7 +148,7 @@ func TestBusyBox_Date_DashD_MonthDay_TimeSeconds(t *testing.T) {
 func TestBusyBox_Date_DashU(t *testing.T) {
 	// date -u -d 2000.01.01-11:22:33 → UTC output
 	var out bytes.Buffer
-	rc := run([]string{"-u", "-d", "2000.01.01-11:22:33"}, nil, &out)
+	rc := run([]string{"-u", "-d", "2000.01.01-11:22:33"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %d, want 0", rc)
 	}
@@ -164,7 +164,7 @@ func TestBusyBox_Date_DashU(t *testing.T) {
 func TestBusyBox_Date_FormatStrftime(t *testing.T) {
 	// +%T format
 	var out bytes.Buffer
-	rc := run([]string{"-d", "1:2:3", "+%T"}, nil, &out)
+	rc := run([]string{"-d", "1:2:3", "+%T"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %d, want 0", rc)
 	}
@@ -176,7 +176,7 @@ func TestBusyBox_Date_FormatStrftime(t *testing.T) {
 func TestBusyBox_Date_FormatC(t *testing.T) {
 	// +%c format (locale date/time)
 	var out bytes.Buffer
-	rc := run([]string{"-d", "200001231133", "+%c"}, nil, &out)
+	rc := run([]string{"-d", "200001231133", "+%c"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %d, want 0", rc)
 	}
@@ -188,7 +188,7 @@ func TestBusyBox_Date_FormatC(t *testing.T) {
 
 func TestBusyBox_Date_FormatPercentD(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"-d", "1999.01.01-11:22:33", "+%d"}, nil, &out)
+	rc := run([]string{"-d", "1999.01.01-11:22:33", "+%d"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %d, want 0", rc)
 	}
@@ -199,7 +199,7 @@ func TestBusyBox_Date_FormatPercentD(t *testing.T) {
 
 func TestBusyBox_Date_FormatPercentY(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"-d", "200001231133", "+%Y"}, nil, &out)
+	rc := run([]string{"-d", "200001231133", "+%Y"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %d, want 0", rc)
 	}
@@ -210,7 +210,7 @@ func TestBusyBox_Date_FormatPercentY(t *testing.T) {
 
 func TestBusyBox_Date_FormatPercentYPercentm(t *testing.T) {
 	var out bytes.Buffer
-	rc := run([]string{"-d", "1999.01.01-11:22:33", "+%Y%m"}, nil, &out)
+	rc := run([]string{"-d", "1999.01.01-11:22:33", "+%Y%m"}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Fatalf("exit code %d, want 0", rc)
 	}
@@ -222,7 +222,7 @@ func TestBusyBox_Date_FormatPercentYPercentm(t *testing.T) {
 func TestBusyBox_Date_RejectsExtraArgs(t *testing.T) {
 	// date -d 012311332000.30 %+c → should reject extra non-format arg
 	var buf bytes.Buffer
-	code := run([]string{"-d", "012311332000.30", "%+c"}, nil, &buf)
+	code := run([]string{"-d", "012311332000.30", "%+c"}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Fatalf("exit code %d, want 1", code)
 	}
@@ -255,7 +255,7 @@ func TestPOSIXDateSpecifiers(t *testing.T) {
 
 	for _, tc := range tests {
 		var out bytes.Buffer
-		rc := run([]string{"-d", "2026.05.19-21:47:58", tc.format}, nil, &out)
+		rc := run([]string{"-d", "2026.05.19-21:47:58", tc.format}, nil, &out, &out, "")
 		if rc != 0 {
 			t.Fatalf("failed to run date for format %s: exit code %d", tc.format, rc)
 		}
@@ -306,9 +306,8 @@ func TestPOSIXTZ_ParsingAndEvaluation(t *testing.T) {
 
 func TestDateRun_InvalidDate_MulticallHeader(t *testing.T) {
 	// Rejects invalid positional argument
-	rc := run([]string{"-d", "012311332000.30", "%+c"}, nil, nil)
+	rc := run([]string{"-d", "012311332000.30", "%+c"}, nil, nil, nil, "")
 	if rc != 1 {
 		t.Errorf("expected exit code 1, got %d", rc)
 	}
 }
-

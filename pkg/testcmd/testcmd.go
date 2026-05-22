@@ -324,7 +324,7 @@ var spec = common.FlagSpec{
 
 // --- CLI layer ---
 
-func runTest(args []string, stdin io.Reader, stdout io.Writer) int {
+func runTest(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	// Pre-process: extract --json/-j before passing to flag parser
 	// because test's expression language uses single-dash flags (-n, -z, -eq etc.)
 	jsonMode := false
@@ -358,7 +358,7 @@ func runTest(args []string, stdin io.Reader, stdout io.Writer) int {
 	return exitCode
 }
 
-func runBracket(args []string, stdin io.Reader, stdout io.Writer) int {
+func runBracket(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	// Pre-process: extract --json/-j
 	jsonMode := false
 	cleanArgs := make([]string, 0, len(args))

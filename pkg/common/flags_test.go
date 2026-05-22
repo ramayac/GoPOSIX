@@ -338,4 +338,3 @@ func TestPreProcess(t *testing.T) {
 		t.Error("expected flag -a to be set after pre-processing -x")
 	}
 }
-

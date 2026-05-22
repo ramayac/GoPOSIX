@@ -224,7 +224,7 @@ func TestRunEmpty(t *testing.T) {
 
 func TestWhoDefaultOutput(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{}, nil, &buf)
+	code := run([]string{}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -232,7 +232,7 @@ func TestWhoDefaultOutput(t *testing.T) {
 
 func TestWhoHeadingOutput(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"-H"}, nil, &buf)
+	code := run([]string{"-H"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -241,7 +241,7 @@ func TestWhoHeadingOutput(t *testing.T) {
 
 func TestWhoQuickOutput(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"-q"}, nil, &buf)
+	code := run([]string{"-q"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -250,7 +250,7 @@ func TestWhoQuickOutput(t *testing.T) {
 
 func TestWhoJson(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json"}, nil, &buf)
+	code := run([]string{"--json"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -261,7 +261,7 @@ func TestWhoJson(t *testing.T) {
 
 func TestWhoJsonQuick(t *testing.T) {
 	var buf bytes.Buffer
-	code := run([]string{"--json", "-q"}, nil, &buf)
+	code := run([]string{"--json", "-q"}, nil, &buf, &buf, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -298,7 +298,7 @@ func TestFixedString_Empty(t *testing.T) {
 }
 
 func TestRunViaCLI(t *testing.T) {
-	code := run([]string{}, nil, io.Discard)
+	code := run([]string{}, nil, io.Discard, io.Discard, "")
 	if code != 0 {
 		t.Errorf("expected exit 0, got %d", code)
 	}
@@ -306,7 +306,7 @@ func TestRunViaCLI(t *testing.T) {
 
 func TestWhoCLI_Quick(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"-q"}, nil, &out)
+	code := run([]string{"-q"}, nil, &out, &out, "")
 	if code != 0 {
 		t.Errorf("exit %d, want 0", code)
 	}
@@ -317,7 +317,7 @@ func TestWhoCLI_Quick(t *testing.T) {
 
 func TestWhoCLI_Header(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"-H"}, nil, &out)
+	code := run([]string{"-H"}, nil, &out, &out, "")
 	if code != 0 {
 		t.Errorf("exit %d, want 0", code)
 	}
@@ -325,7 +325,7 @@ func TestWhoCLI_Header(t *testing.T) {
 
 func TestWhoRun_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, nil, &out)
+	code := run([]string{"--nonexistent"}, nil, &out, &out, "")
 	if code != 2 {
 		t.Errorf("exit %d, want 2 for bad flag", code)
 	}

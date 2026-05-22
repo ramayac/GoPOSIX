@@ -26,12 +26,12 @@ import (
 	"github.com/ramayac/goposix/internal/shell"
 )
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return shellRun(args, os.Stdin, stdout, os.Stderr)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return shellRun(args, stdin, stdout, stderr, cwd)
 }
 
 // shellRun is the injectable entry point for testing.
-func shellRun(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+func shellRun(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	// Parse flags. The dispatch framework strips the command name before
 	// passing args, so args[0] is the first actual argument.
 	// Handle shebang space in args[0] if present (symlink mode may pass

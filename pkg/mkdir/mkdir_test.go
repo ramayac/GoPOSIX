@@ -58,7 +58,7 @@ func TestRunMode(t *testing.T) {
 func TestCLI_Basic(t *testing.T) {
 	d := filepath.Join(t.TempDir(), "newdir")
 	var out bytes.Buffer
-	code := run([]string{d}, nil, &out)
+	code := run([]string{d}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -69,7 +69,7 @@ func TestCLI_Basic(t *testing.T) {
 func TestCLI_Parents(t *testing.T) {
 	d := filepath.Join(t.TempDir(), "a", "b", "c")
 	var out bytes.Buffer
-	code := run([]string{"-p", d}, nil, &out)
+	code := run([]string{"-p", d}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -80,7 +80,7 @@ func TestCLI_Parents(t *testing.T) {
 func TestCLI_JSON(t *testing.T) {
 	d := filepath.Join(t.TempDir(), "jd")
 	var out bytes.Buffer
-	code := run([]string{"--json", d}, nil, &out)
+	code := run([]string{"--json", d}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -90,7 +90,7 @@ func TestCLI_JSON(t *testing.T) {
 }
 func TestCLI_BadFlag(t *testing.T) {
 	var out bytes.Buffer
-	code := run([]string{"--nonexistent"}, nil, &out)
+	code := run([]string{"--nonexistent"}, nil, &out, &out, "")
 	if code != 2 {
 		t.Errorf("exit %d, want 2", code)
 	}
@@ -98,7 +98,7 @@ func TestCLI_BadFlag(t *testing.T) {
 func TestCLI_LongFlag(t *testing.T) {
 	d := filepath.Join(t.TempDir(), "long")
 	var out bytes.Buffer
-	code := run([]string{"--parents", d}, nil, &out)
+	code := run([]string{"--parents", d}, nil, &out, &out, "")
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}

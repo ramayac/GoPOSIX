@@ -70,7 +70,7 @@ func Compare(r1, r2 io.Reader, limit int, verbose bool) ([]DiffEntry, bool) {
 	return diffs, len(diffs) == 0
 }
 
-func cmpRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
+func cmpRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, cmpSpec)
 	if err != nil {
 		fmt.Fprintf(errOut, "cmp: %v\n", err)
@@ -185,7 +185,9 @@ func cmpRun(args []string, stdout, errOut io.Writer, stdin io.Reader) int {
 	return 0
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int { return cmpRun(args, stdout, os.Stderr, os.Stdin) }
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return cmpRun(args, stdout, stderr, stdin, cwd)
+}
 func init() {
-	dispatch.Register(dispatch.Command{Name: "cmp", Usage: "Compare two files byte by byte", Run: run, RunWithStreams: cmpRun})
+	dispatch.Register(dispatch.Command{Name: "cmp", Usage: "Compare two files byte by byte", Run: run})
 }

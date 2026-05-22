@@ -57,12 +57,9 @@ All `date` compliance failures are fully resolved by our custom POSIX `TZ` envir
 
 The `fold with NULs` and trailing newline compliance failures are fully resolved by introducing byte-splitting stream parsing.
 
-## JSON-RPC Daemon Gaps
+## JSON-RPC Daemon Gaps — Resolved ✅
 
-2 utilities lack explicit daemon integration tests in `test/posix-json/`: `tee`, `tr`.
-(`testcmd` and `truefalse` are tested via `runner_test.go`; `daemon` is the daemon itself;
-`patch` is tested via BusyBox. `tee` and `tr` are registered and dispatchable but lack
-dedicated JSON-RPC sub-tests for their stdin-dependent success paths.)
+All daemon integration tests for `tee` and `tr` have been implemented and verified under `test/posix-json/tier2_text_test.go` (on branch `feat/hardening-part3`).
 
 ## Planned & Deferred Work
 
@@ -70,7 +67,103 @@ All active planning phases, deferred architectural enhancements, completed trans
 
 👉 **[wiki/deferred.md](deferred.md)**
 
-Refer to that document for full details on:
-* **Active Planning & Future Phases**: Phase 24 (Multi-Agent Observability), Phase 26 (Daemon Pipeline Composition).
-* **Deferred Architectural Enhancements**: CWD Signature Refactoring (threading `CWD` through `Run()`), `dd --json` Output support, XML Output (`--xml`), Multi-Tenant Sandboxing, Smart CLI Forwarding (M5), StopAtFirstNonFlag Integration (`echo`/`printf`), CGroups v2 Per-Session Isolation.
-* **Documented Limitations**: Go `regexp` vs POSIX BRE/ERE.
+Refer to that document for full details.
+
+## 🚀 CWD Signature Refactoring (Global State Elimination) — Resolved ✅
+
+Standardizing all 79 utility `Run` signatures to accept a context-relative `cwd string` parameter and achieving lock-free concurrent execution safety.
+
+### Phase 1: Core Registry & Execution Layers
+- `[x]` Refactor `Command` in `internal/dispatch/dispatch.go` to unified signature.
+- `[x]` Refactor `goposix.go` to retrieve and forward process physical CWD.
+- `[x]` Refactor `internal/daemon/server.go` to retrieve and forward session CWD.
+- `[x]` Refactor `internal/shell/interpreter.go` to eliminate `execMu` / `chdirMu` and forward interpreter dir.
+
+### Phase 2: Batch Refactoring of 79 Utilities
+
+#### Batch A (Structural Foundation)
+- `[x]` `pwd`
+- `[x]` `basename`
+- `[x]` `dirname`
+- `[x]` `truefalse`
+- `[x]` `testcmd`
+- `[x]` `tty`
+- `[x]` `hostname`
+- `[x]` `id`
+- `[x]` `whoami`
+- `[x]` `logname`
+- `[x]` `uname`
+
+#### Batch B (Standard I/O Streams)
+- `[x]` `echo`
+- `[x]` `printf`
+- `[x]` `yes`
+- `[x]` `sleep`
+- `[x]` `env`
+- `[x]` `printenv`
+- `[x]` `nice`
+- `[x]` `nohup`
+- `[x]` `kill`
+- `[x]` `ps`
+
+#### Batch C (Basic Text Parsers)
+- `[x]` `cat`
+- `[x]` `head`
+- `[x]` `tail`
+- `[x]` `wc`
+- `[x]` `tee`
+- `[x]` `tr`
+- `[x]` `fold`
+- `[x]` `expand`
+- `[x]` `unexpand`
+- `[x]` `strings`
+- `[x]` `uniq`
+
+#### Batch D (Advanced Text Parsers)
+- `[x]` `grep`
+- `[x]` `sed`
+- `[x]` `awk`
+- `[x]` `cut`
+- `[x]` `paste`
+- `[x]` `join`
+- `[x]` `sort`
+- `[x]` `split`
+- `[x]` `diff`
+- `[x]` `cmp`
+- `[x]` `comm`
+
+#### Batch E (Filesystem Operations)
+- `[x]` `ls`
+- `[x]` `stat`
+- `[x]` `chmod`
+- `[x]` `chown`
+- `[x]` `chgrp`
+- `[x]` `mkdir`
+- `[x]` `rmdir`
+- `[x]` `touch`
+- `[x]` `rm`
+- `[x]` `mv`
+- `[x]` `cp`
+- `[x]` `ln`
+- `[x]` `link`
+- `[x]` `unlink`
+- `[x]` `readlink`
+
+#### Batch F (Archival & Hashing)
+- `[x]` `tar`
+- `[x]` `gzip`
+- `[x]` `dd`
+- `[x]` `cksum`
+- `[x]` `sum`
+- `[x]` `md5sum`
+- `[x]` `sha256sum`
+- `[x]` `xargs`
+
+#### Batch G (System & Sandbox)
+- `[x]` `df`
+- `[x]` `du`
+- `[x]` `shell`
+- `[x]` `patch`
+- `[x]` `daemon`
+- `[x]` `date`
+- `[x]` `mkfifo`

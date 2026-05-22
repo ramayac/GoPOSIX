@@ -99,7 +99,7 @@ func isSymbolicMode(modeStr string) bool {
 	return strings.ContainsAny(modeStr, "-+=")
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "chmod: %v\n", err)

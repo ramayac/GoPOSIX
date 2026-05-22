@@ -414,7 +414,7 @@ func indexStr(str, chars string) string {
 	return "0"
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	// Manual flag parsing: only --json/-j is accepted as a flag.
 	// Everything else (including negative numbers) is positional.
 	jsonMode := false

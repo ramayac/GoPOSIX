@@ -237,7 +237,7 @@ func printLong(stdout io.Writer, fi FileInfo, showInode, showBlocks, humanReadab
 		sizeStr, fi.ModTime.Format("Jan _2 15:04"), name)
 }
 
-func lsRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
+func lsRun(args []string, out, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(errOut, "ls: %v\n", err)
@@ -352,15 +352,14 @@ func isSingleFile(files []FileInfo, path string, directoryMode bool) bool {
 	return !fi.IsDir()
 }
 
-func run(args []string, stdin io.Reader, stdout io.Writer) int {
-	return lsRun(args, stdout, os.Stderr, stdin)
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return lsRun(args, stdout, stderr, stdin, cwd)
 }
 
 func init() {
 	dispatch.Register(dispatch.Command{
-		Name:           "ls",
-		Usage:          "List directory contents",
-		Run:            run,
-		RunWithStreams: lsRun,
+		Name:  "ls",
+		Usage: "List directory contents",
+		Run:   run,
 	})
 }
