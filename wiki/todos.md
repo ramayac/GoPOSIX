@@ -1,10 +1,10 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Coverage:** 77.9% | **--json:** 81/92 (patch ✅, dd deferred)
+> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Coverage:** 81.5% | **--json:** 81/92 (patch ✅, dd deferred)
 
-## Active Plan: Coverage Improvement (Phase A & B → 85%)
+## Active Plan: Coverage Improvement → 85%
 
-> **Branch:** `feat/coverage-85` | **Current:** 80.9% | **Target:** 85%
+> **Branch:** `feat/coverage-85` | **Current:** 81.5% | **Target:** 85%
 
 ### Phase A — Complete ✅ (80.1% → 80.7%)
 Low-effort, pure-computation or simple test patterns:
