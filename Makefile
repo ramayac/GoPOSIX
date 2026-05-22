@@ -275,31 +275,48 @@ fmt-check:
 docker:
 	docker build \
 	  --build-arg VERSION=$(VERSION) \
+	  --target daemon \
 	  -t $(DOCKER_IMG) \
+	  -t goposix:latest \
 	  -f docker/Dockerfile .
 
 # Convenience aliases for clarity.
 .PHONY: image
-dimage: docker
+image: docker
 
 # CLI-only scratch image (goposix:cli)
 .PHONY: docker-cli
 docker-cli:
 	docker build \
 	  --build-arg VERSION=$(VERSION) \
+	  --target cli \
 	  -t $(DOCKER_IMG_CLI) \
 	  -t goposix:cli \
-	  -f docker/Dockerfile.cli .
+	  -f docker/Dockerfile .
 
 .PHONY: image-cli
-dimage-cli: docker-cli
+image-cli: docker-cli
 
 .PHONY: docker-debug
 docker-debug: ## Build debug alpine docker image
-	docker build -t goposix:debug -f docker/Dockerfile.debug .
+	docker build \
+	  --target debug \
+	  -t goposix:debug \
+	  -f docker/Dockerfile .
 
 .PHONY: image-debug
-dimage-debug: docker-debug
+image-debug: docker-debug
+
+# Go-Alpine Distro MVP (GoPOSIX-powered Alpine Userland)
+.PHONY: docker-alpine
+docker-alpine:
+	docker build \
+	  --target alpine-mvp \
+	  -t go-alpine \
+	  -f docker/Dockerfile .
+
+.PHONY: image-alpine
+image-alpine: docker-alpine
 
 .PHONY: docker-shell
 docker-shell: docker-debug ## Run an interactive shell in the docker image
@@ -440,7 +457,7 @@ bench-image:
 
 .PHONY: daemon-image
 daemon-image:
-	docker build -t goposix:daemon -f docker/Dockerfile .
+	docker build --target daemon -t goposix:daemon -f docker/Dockerfile .
 
 .PHONY: bench-daemon
 bench-daemon: daemon-image
