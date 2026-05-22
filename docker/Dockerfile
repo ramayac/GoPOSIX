@@ -51,15 +51,16 @@ COPY --chown=1000:1000 --from=symlinker /home/goposix /home/goposix
 
 USER goposix
 
-# Target 4: Daemon — default production daemon image.
-FROM base-runtime AS daemon
-EXPOSE 8080
-ENTRYPOINT ["/bin/goposix", "daemon", "--socket", "/home/goposix/goposix.sock", "--workers", "4"]
-CMD ["--listen-addr", ":8080"]
-
-# Target 5: CLI — production CLI-only image.
+# Target 4: CLI — production CLI-only image.
 FROM base-runtime AS cli
 ENTRYPOINT ["/bin/goposix"]
+
+# Target 5: Alpine MVP Distro — Alpine base with GoPOSIX overwriting busybox.
+FROM alpine:3.20 AS alpine-mvp
+COPY --from=builder /goposix /bin/goposix
+COPY --from=builder /goposix /bin/busybox
+COPY test/compliance/test_alpine.sh /usr/local/bin/test_goposix.sh
+CMD ["/bin/sh"]
 
 # Target 6: Debug — Alpine-based debug image with utility tools.
 FROM alpine:3.20 AS debug
@@ -76,9 +77,8 @@ RUN addgroup -g 1000 goposix && adduser -u 1000 -G goposix -s /bin/sh -D goposix
 USER goposix
 CMD ["/bin/sh"]
 
-# Target 7: Alpine MVP Distro — Alpine base with GoPOSIX overwriting busybox.
-FROM alpine:3.20 AS alpine-mvp
-COPY --from=builder /goposix /bin/goposix
-COPY --from=builder /goposix /bin/busybox
-COPY test/compliance/test_alpine.sh /usr/local/bin/test_goposix.sh
-CMD ["/bin/sh"]
+# Target 7: Daemon — default production daemon image (last = default).
+FROM base-runtime AS daemon
+EXPOSE 8080
+ENTRYPOINT ["/bin/goposix", "daemon", "--socket", "/home/goposix/goposix.sock", "--workers", "4"]
+CMD ["--listen-addr", ":8080"]
