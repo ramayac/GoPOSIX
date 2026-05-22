@@ -40,16 +40,20 @@ PKG_DIRS   := . \
               ./pkg/ln/... \
               ./pkg/stat/... \
               ./pkg/readlink/... \
+              ./pkg/realpath/... \
+              ./pkg/rev/... \
               ./pkg/basename/... \
               ./pkg/cal/... \
               ./pkg/dirname/... \
               ./pkg/head/... \
               ./pkg/tail/... \
               ./pkg/wc/... \
+              ./pkg/which/... \
               ./pkg/tee/... \
               ./pkg/cut/... \
               ./pkg/tr/... \
               ./pkg/sort/... \
+              ./pkg/seq/... \
               ./pkg/uniq/... \
               ./pkg/unexpand/... \
               ./pkg/grep/... \

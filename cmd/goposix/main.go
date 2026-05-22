@@ -62,6 +62,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/pwd"
 	_ "github.com/ramayac/goposix/pkg/readlink"
 	_ "github.com/ramayac/goposix/pkg/realpath"
+	_ "github.com/ramayac/goposix/pkg/rev"
 	_ "github.com/ramayac/goposix/pkg/rm"
 	_ "github.com/ramayac/goposix/pkg/rmdir"
 	_ "github.com/ramayac/goposix/pkg/sed"
