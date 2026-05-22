@@ -546,3 +546,13 @@ func TestJSONModeErrorExit(t *testing.T) {
 		t.Errorf("expected 'status':3 in JSON, got: %q", out)
 	}
 }
+
+func TestAwk_CLIRun(t *testing.T) {
+	// Test the CLI glue run() function.
+	var outBuf, errBuf bytes.Buffer
+	stdin := bytes.NewBufferString("hello\n")
+	rc := run([]string{"{ print }", "-"}, stdin, &outBuf, &errBuf, "")
+	if rc != 0 {
+		t.Errorf("exit code: got %d, want 0", rc)
+	}
+}

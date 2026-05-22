@@ -116,3 +116,16 @@ func TestNlRun_Json(t *testing.T) {
 		t.Errorf("JSON missing number: %s", outBuf.String())
 	}
 }
+
+func TestNl_CLIRun(t *testing.T) {
+	// Test the CLI glue run() function.
+	var outBuf, errBuf bytes.Buffer
+	stdin := bytes.NewBufferString("line1\n")
+	rc := run([]string{}, stdin, &outBuf, &errBuf, "")
+	if rc != 0 {
+		t.Errorf("exit code: got %d, want 0", rc)
+	}
+	if !strings.Contains(outBuf.String(), "1") {
+		t.Errorf("expected numbered output, got %q", outBuf.String())
+	}
+}

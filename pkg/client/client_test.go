@@ -598,3 +598,26 @@ func TestRpcError_Error(t *testing.T) {
 		t.Errorf("Error() = %q, want 'RPC error -32600: Invalid Request'", s)
 	}
 }
+
+func TestItoa(t *testing.T) {
+	tests := []struct {
+		n    int
+		want string
+	}{
+		{0, "0"},
+		{1, "1"},
+		{10, "10"},
+		{-1, "-1"},
+		{-10, "-10"},
+		{100, "100"},
+		{999, "999"},
+		{-999, "-999"},
+		{12345, "12345"},
+	}
+	for _, tt := range tests {
+		got := itoa(tt.n)
+		if got != tt.want {
+			t.Errorf("itoa(%d) = %q, want %q", tt.n, got, tt.want)
+		}
+	}
+}

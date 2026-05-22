@@ -236,3 +236,12 @@ func TestCmpRun_MissingOperand(t *testing.T) {
 		t.Errorf("missing operand: got rc=%d, want 2", rc)
 	}
 }
+
+func TestCmp_CLIRun(t *testing.T) {
+	// Test the CLI glue run() function.
+	var outBuf, errBuf bytes.Buffer
+	rc := run([]string{}, nil, &outBuf, &errBuf, "")
+	if rc != 2 {
+		t.Errorf("expected exit 2 for missing operand, got %d", rc)
+	}
+}

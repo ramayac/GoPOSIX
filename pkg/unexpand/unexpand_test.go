@@ -275,3 +275,13 @@ func TestUnexpandRun_TabWidth(t *testing.T) {
 func TestUnexpandRun_MultipleFiles(t *testing.T) {
 	t.Skip("requires temp files — tested via integration")
 }
+
+func TestUnexpand_CLIRun(t *testing.T) {
+	// Test the CLI glue run() function.
+	var outBuf strings.Builder
+	stdin := strings.NewReader("    hello\n")
+	rc := run([]string{}, stdin, &outBuf, &outBuf, "")
+	if rc != 0 {
+		t.Errorf("exit code: got %d, want 0", rc)
+	}
+}

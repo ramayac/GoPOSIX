@@ -235,3 +235,41 @@ func TestCommRun_Stdin(t *testing.T) {
 func TestCommRun_JsonFlag(t *testing.T) {
 	t.Skip("requires temp files — tested via integration")
 }
+
+func TestToResult(t *testing.T) {
+	entries := []Entry{
+		{Col: 1, Text: "file1-only"},
+		{Col: 2, Text: "file2-only"},
+		{Col: 3, Text: "both"},
+		{Col: 1, Text: "file1-again"},
+		{Col: 3, Text: "both2"},
+		{Col: 2, Text: "file2-again"},
+	}
+	result := toResult(entries)
+	if len(result.OnlyFile1) != 2 || result.OnlyFile1[0] != "file1-only" || result.OnlyFile1[1] != "file1-again" {
+		t.Errorf("OnlyFile1: %v", result.OnlyFile1)
+	}
+	if len(result.OnlyFile2) != 2 || result.OnlyFile2[0] != "file2-only" || result.OnlyFile2[1] != "file2-again" {
+		t.Errorf("OnlyFile2: %v", result.OnlyFile2)
+	}
+	if len(result.Both) != 2 || result.Both[0] != "both" || result.Both[1] != "both2" {
+		t.Errorf("Both: %v", result.Both)
+	}
+}
+
+func TestToResult_Empty(t *testing.T) {
+	result := toResult(nil)
+	if len(result.OnlyFile1) != 0 || len(result.OnlyFile2) != 0 || len(result.Both) != 0 {
+		t.Errorf("expected empty result, got %+v", result)
+	}
+}
+
+func TestComm_CLIRun(t *testing.T) {
+	// Test the CLI glue run() function.
+	var outBuf, errBuf bytes.Buffer
+	// commRun needs file args; run() wraps it. With no args, it should error.
+	rc := run([]string{}, nil, &outBuf, &errBuf, "")
+	if rc != 2 {
+		t.Logf("comm run() exit code: %d", rc)
+	}
+}

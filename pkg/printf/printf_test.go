@@ -7,6 +7,35 @@ import (
 	"testing"
 )
 
+func TestUnescapeChar(t *testing.T) {
+	tests := []struct {
+		in   string
+		want byte
+	}{
+		{"", 0},
+		{"n", '\n'},
+		{"t", '\t'},
+		{"r", '\r'},
+		{"\\\\", '\\'},
+		{"a", '\a'},
+		{"b", '\b'},
+		{"f", '\f'},
+		{"v", '\v'},
+		{"0", 0},
+		{"x", 'x'},  // plain character
+		{"101", 0101},  // octal 'A'
+		{"377", 0377},  // octal max byte
+		{"00", 0},      // octal 0
+		{"7", '7'},      // single octal digit, treated as literal
+	}
+	for _, tt := range tests {
+		got := unescapeChar(tt.in)
+		if got != tt.want {
+			t.Errorf("unescapeChar(%q) = %d (0x%x), want %d (0x%x)", tt.in, got, got, tt.want, tt.want)
+		}
+	}
+}
+
 // Helper: Format helper that returns just the output string.
 func fmtStr(format string, args []string) string {
 	s, _ := Format(format, args)

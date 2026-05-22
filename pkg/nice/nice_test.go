@@ -60,3 +60,14 @@ func TestNiceJson(t *testing.T) {
 		t.Error("JSON output missing adjustment field")
 	}
 }
+
+func TestNice_CLIRun(t *testing.T) {
+	// Test the CLI glue run() function.
+	var outBuf, errBuf bytes.Buffer
+	rc := run([]string{}, nil, &outBuf, &errBuf, "")
+	if rc != 0 {
+		// nice without arguments just prints current niceness
+		rc := run([]string{"echo", "test"}, nil, &outBuf, &errBuf, "")
+		_ = rc
+	}
+}

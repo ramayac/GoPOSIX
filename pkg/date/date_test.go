@@ -7,6 +7,39 @@ import (
 	"time"
 )
 
+func TestIsDigit(t *testing.T) {
+	if !isDigit('5') {
+		t.Error("expected '5' to be digit")
+	}
+	if !isDigit('0') {
+		t.Error("expected '0' to be digit")
+	}
+	if !isDigit('9') {
+		t.Error("expected '9' to be digit")
+	}
+	if isDigit('a') {
+		t.Error("expected 'a' not to be digit")
+	}
+	if isDigit('-') {
+		t.Error("expected '-' not to be digit")
+	}
+}
+
+func TestIsLeapYear(t *testing.T) {
+	// Typical leap years.
+	for _, y := range []int{2000, 2004, 2008, 2012, 2016, 2020, 2024, 2400} {
+		if !isLeapYear(y) {
+			t.Errorf("expected %d to be leap year", y)
+		}
+	}
+	// Non-leap years.
+	for _, y := range []int{1900, 2001, 2002, 2003, 2005, 2006, 2007, 2100} {
+		if isLeapYear(y) {
+			t.Errorf("expected %d NOT to be leap year", y)
+		}
+	}
+}
+
 func TestDateRun(t *testing.T) {
 	var out bytes.Buffer
 	rc := run([]string{"-u"}, nil, &out, &out, "")

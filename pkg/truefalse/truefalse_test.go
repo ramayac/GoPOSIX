@@ -68,3 +68,20 @@ func TestTrueJSONNoArgs(t *testing.T) {
 		t.Errorf("expected no output, got %q", buf.String())
 	}
 }
+
+func TestTrueBadFlag(t *testing.T) {
+	// Unknown flag should return 2.
+	var buf bytes.Buffer
+	code := runTrue([]string{"--nonexistent"}, nil, &buf, &buf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2 for bad flag, got %d", code)
+	}
+}
+
+func TestFalseBadFlag(t *testing.T) {
+	var buf bytes.Buffer
+	code := runFalse([]string{"--nonexistent"}, nil, &buf, &buf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2 for bad flag, got %d", code)
+	}
+}

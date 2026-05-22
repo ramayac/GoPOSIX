@@ -133,3 +133,17 @@ func TestExpandRun_JsonFlag(t *testing.T) {
 		t.Errorf("JSON output missing 'lines': %s", out.String())
 	}
 }
+
+func TestExpand_CLIRun(t *testing.T) {
+	// Test the CLI glue run() function which wraps expandRun.
+	var out, errOut strings.Builder
+	stdin := strings.NewReader("hello\tworld\n")
+	// run() signature: (args, stdin, stdout, stderr, cwd)
+	rc := run([]string{}, stdin, &out, &errOut, "")
+	if rc != 0 {
+		t.Errorf("exit code: got %d, want 0", rc)
+	}
+	if out.String() != "hello   world\n" {
+		t.Errorf("got %q, want 'hello    world\\n'", out.String())
+	}
+}

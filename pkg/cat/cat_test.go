@@ -449,3 +449,16 @@ func TestCLI_BadFlag(t *testing.T) {
 		t.Error("expected error message for bad flag")
 	}
 }
+
+func TestCat_CLIRun(t *testing.T) {
+	// Test the CLI glue run() function.
+	var outBuf, errBuf bytes.Buffer
+	stdin := bytes.NewBufferString("hello\n")
+	rc := run([]string{}, stdin, &outBuf, &errBuf, "")
+	if rc != 0 {
+		t.Errorf("exit code: got %d, want 0", rc)
+	}
+	if outBuf.String() != "hello\n" {
+		t.Errorf("got %q, want %q", outBuf.String(), "hello\n")
+	}
+}

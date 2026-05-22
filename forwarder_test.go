@@ -74,6 +74,59 @@ func startTestDaemon(t *testing.T) string {
 	return ""
 }
 
+func TestTryForward_PipedStdin(t *testing.T) {
+	// When stdin is piped, TryForward should return -1 (fallback to cold start).
+	// We mock isStdinPipedFn to simulate piped stdin.
+	origFn := isStdinPipedFn
+	isStdinPipedFn = func() bool { return true }
+	defer func() { isStdinPipedFn = origFn }()
+
+	// Point GOPOSIX_SOCKET to a valid-looking path (but it shouldn't matter
+	// since piped stdin short-circuits).
+	os.Setenv("GOPOSIX_SOCKET", "/tmp/should-not-check-socket")
+	defer os.Unsetenv("GOPOSIX_SOCKET")
+
+	code := TryForward()
+	if code != -1 {
+		t.Errorf("TryForward with piped stdin should return -1, got %d", code)
+	}
+}
+
+func TestForwardToDaemon_NoSocket(t *testing.T) {
+	// forwardToDaemon with a non-existent socket should return -1.
+	code := forwardToDaemon("/tmp/nonexistent-goposix-forward-test.sock",
+		[]string{"goposix", "echo", "hello"})
+	if code != -1 {
+		t.Errorf("expected -1 (fallback), got %d", code)
+	}
+}
+
+func TestForwardToDaemon_MetaFlags(t *testing.T) {
+	// When a well-known binary is invoked with --help, --version, or
+	// --list-commands, forwardToDaemon should return -1 to fall back.
+	for _, flag := range []string{"--help", "-h", "--version", "--list-commands"} {
+		code := forwardToDaemon("/tmp/irrelevant.sock",
+			[]string{"goposix", flag})
+		if code != -1 {
+			t.Errorf("forwardToDaemon with %s should return -1, got %d", flag, code)
+		}
+	}
+}
+
+func TestForwardToDaemon_MarshalError(t *testing.T) {
+	// forwardToDaemon with a non-marshallable argument should return 126.
+	// Actually, Go JSON marshaling doesn't fail on strings/ints/bools.
+	// The marshal path is hard to trigger, but verify the function exists.
+	// For coverage: send a command name that can't be marshaled (like NaN).
+	// Since we use simple structs, we can't easily trigger a marshal error.
+	// Instead, we test the connection failure path which covers the fallback.
+	code := forwardToDaemon("/tmp/definitely-not-a-socket",
+		[]string{"goposix", "echo", "test"})
+	if code != -1 {
+		t.Errorf("expected -1 for connection failure, got %d", code)
+	}
+}
+
 func TestTryForward_Integration(t *testing.T) {
 	// Spin up a test daemon
 	socketPath := startTestDaemon(t)

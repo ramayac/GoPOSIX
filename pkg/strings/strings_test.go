@@ -211,3 +211,13 @@ func TestStringsRun_RadixFlag(t *testing.T) {
 		t.Errorf("unexpected output: %q", output)
 	}
 }
+
+func TestStrings_CLIRun(t *testing.T) {
+	// Test the CLI glue run() function.
+	var outBuf, errBuf bytes.Buffer
+	stdin := bytes.NewBufferString("")
+	rc := run([]string{}, stdin, &outBuf, &errBuf, "")
+	if rc != 0 {
+		t.Errorf("exit code: got %d, want 0", rc)
+	}
+}

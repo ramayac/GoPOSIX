@@ -313,6 +313,136 @@ func BenchmarkParseFlags_ShortOnly(b *testing.B) {
 	}
 }
 
+func TestFlagErrorInterface(t *testing.T) {
+	err := &FlagError{ExitCode: 2, Msg: "test error"}
+	if err.Error() != "test error" {
+		t.Errorf("expected 'test error', got %q", err.Error())
+	}
+	if err.ExitCode != 2 {
+		t.Errorf("expected ExitCode 2, got %d", err.ExitCode)
+	}
+}
+
+func TestGetAll(t *testing.T) {
+	spec := FlagSpec{
+		Defs: []FlagDef{
+			{Short: "e", Long: "regexp", Type: FlagValue},
+		},
+	}
+	result, err := ParseFlags([]string{"-e", "pat1", "-e", "pat2"}, spec)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	allShort := result.GetAll("e")
+	if len(allShort) != 2 || allShort[0] != "pat1" || allShort[1] != "pat2" {
+		t.Errorf("GetAll(e) = %v, want [pat1, pat2]", allShort)
+	}
+	allLong := result.GetAll("regexp")
+	if len(allLong) != 2 || allLong[0] != "pat1" || allLong[1] != "pat2" {
+		t.Errorf("GetAll(regexp) = %v, want [pat1, pat2]", allLong)
+	}
+	// Non-existent flag returns nil.
+	if got := result.GetAll("nonexistent"); got != nil {
+		t.Errorf("GetAll(nonexistent) = %v, want nil", got)
+	}
+}
+
+func TestGetAllEmpty(t *testing.T) {
+	result := newParseResult()
+	if got := result.GetAll("nonexistent"); got != nil {
+		t.Errorf("expected nil for empty result, got %v", got)
+	}
+}
+
+func TestParseShortValueFlagNoValueProvided(t *testing.T) {
+	spec := FlagSpec{
+		Defs: []FlagDef{
+			{Short: "o", Long: "output", Type: FlagValue},
+		},
+	}
+	_, err := ParseFlags([]string{"-o"}, spec)
+	if err == nil {
+		t.Fatal("expected error for -o without value")
+	}
+	fe, ok := err.(*FlagError)
+	if !ok || fe.ExitCode != 2 {
+		t.Errorf("expected FlagError with exit code 2, got %v", err)
+	}
+}
+
+func TestParseLongValueFlagNoValueProvided(t *testing.T) {
+	spec := FlagSpec{
+		Defs: []FlagDef{
+			{Long: "output", Type: FlagValue},
+		},
+	}
+	_, err := ParseFlags([]string{"--output"}, spec)
+	if err == nil {
+		t.Fatal("expected error for --output without value")
+	}
+	fe, ok := err.(*FlagError)
+	if !ok || fe.ExitCode != 2 {
+		t.Errorf("expected FlagError with exit code 2, got %v", err)
+	}
+}
+
+func TestParseShortOptionalValueInGroup(t *testing.T) {
+	// -e can be grouped with bool flags, carrying the remainder as value.
+	spec := FlagSpec{
+		Defs: []FlagDef{
+			{Short: "n", Type: FlagBool},
+			{Short: "e", Long: "eof", Type: FlagOptionalValue},
+		},
+	}
+	// -neSTR: n is bool, e is optional-value with remainder "STR"
+	result, err := ParseFlags([]string{"-neSTR"}, spec)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.Has("n") {
+		t.Error("expected -n to be set")
+	}
+	if result.Get("e") != "STR" {
+		t.Errorf("expected -e value 'STR', got %q", result.Get("e"))
+	}
+}
+
+func TestParseShortValueInGroup(t *testing.T) {
+	// -ofoo: o is value-type, picks up "foo" as value.
+	spec := FlagSpec{
+		Defs: []FlagDef{
+			{Short: "n", Type: FlagBool},
+			{Short: "o", Type: FlagValue},
+		},
+	}
+	// -nofoo: n is bool, o is value with remainder "foo"
+	result, err := ParseFlags([]string{"-nofoo"}, spec)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.Has("n") {
+		t.Error("expected -n to be set")
+	}
+	if result.Get("o") != "foo" {
+		t.Errorf("expected -o value 'foo', got %q", result.Get("o"))
+	}
+}
+
+func TestParseShortValueFlagAtEnd(t *testing.T) {
+	spec := FlagSpec{
+		Defs: []FlagDef{
+			{Short: "o", Type: FlagValue},
+		},
+	}
+	result, err := ParseFlags([]string{"-o", "file.txt"}, spec)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Get("o") != "file.txt" {
+		t.Errorf("expected -o value 'file.txt', got %q", result.Get("o"))
+	}
+}
+
 func TestPreProcess(t *testing.T) {
 	spec := FlagSpec{
 		Defs: []FlagDef{

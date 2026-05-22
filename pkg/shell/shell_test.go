@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -138,5 +139,45 @@ func TestShellDispatchRegistered(t *testing.T) {
 	// The actual dispatch.Lookup would require the full binary.
 	if testing.Short() {
 		t.Skip("skipping dispatch registration check in short mode")
+	}
+}
+
+func TestIsTerminal_NotATerminal(t *testing.T) {
+	// os.Stdin is usually not a terminal in test context.
+	// But let's test with a regular file.
+	f, err := os.CreateTemp("", "shell-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(f.Name())
+	defer f.Close()
+	if isTerminal(f) {
+		t.Error("regular file should not be detected as terminal")
+	}
+}
+
+func TestIsTerminal_ClosedFile(t *testing.T) {
+	f, err := os.CreateTemp("", "shell-test-closed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+	os.Remove(f.Name())
+	// Calling Stat() on a closed (but still valid fd) file still works.
+	// But if the file is removed, Stat still works on linux.
+	// Just verify it doesn't panic.
+	_ = isTerminal(f)
+}
+
+func TestShell_CLIRun(t *testing.T) {
+	// Test the CLI glue run() function.
+	var outBuf, errBuf bytes.Buffer
+	// shellRun requires script args or stdin
+	rc := run([]string{"-c", "echo test"}, nil, &outBuf, &errBuf, "")
+	if rc != 0 {
+		t.Errorf("exit code: got %d, want 0", rc)
+	}
+	if !strings.Contains(outBuf.String(), "test") {
+		t.Errorf("expected 'test' in output, got %q", outBuf.String())
 	}
 }
