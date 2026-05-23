@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestRunBasicDir(t *testing.T) {
@@ -337,3 +338,41 @@ func TestCLI_DirectoryMode(t *testing.T) {
 		t.Error("f.txt should be suppressed in directoryMode (-d)")
 	}
 }
+
+func TestUIDGIDCacheExpiration(t *testing.T) {
+	// Temporarily override package-level cacheTTL
+	oldTTL := cacheTTL
+	defer func() { cacheTTL = oldTTL }()
+
+	// Test 1: Cache retrieval within 1 second TTL
+	cacheTTL = 1 * time.Second
+
+	uid := uint32(9999)
+	gid := uint32(9999)
+	ownerCache.Store(uid, cacheEntry{value: "cached-owner", createdAt: time.Now()})
+	groupCache.Store(gid, cacheEntry{value: "cached-group", createdAt: time.Now()})
+
+	// Verify cached value is returned immediately
+	if ownerName(uid) != "cached-owner" {
+		t.Errorf("expected cached-owner, got %s", ownerName(uid))
+	}
+	if groupName(gid) != "cached-group" {
+		t.Errorf("expected cached-group, got %s", groupName(gid))
+	}
+
+	// Test 2: Expire cache by manually backdating the createdAt timestamp
+	ownerCache.Store(uid, cacheEntry{value: "cached-owner", createdAt: time.Now().Add(-5 * time.Second)})
+	groupCache.Store(gid, cacheEntry{value: "cached-group", createdAt: time.Now().Add(-5 * time.Second)})
+
+	// Set TTL to 2 seconds (so the 5-seconds-ago entries are fully expired)
+	cacheTTL = 2 * time.Second
+
+	// Since they are expired, they will do a fresh lookup and return the numeric string fallback
+	if ownerName(uid) == "cached-owner" {
+		t.Error("expected cached value to be expired, but got cached-owner")
+	}
+	if groupName(gid) == "cached-group" {
+		t.Error("expected cached value to be expired, but got cached-group")
+	}
+}
+

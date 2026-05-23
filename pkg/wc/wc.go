@@ -101,48 +101,101 @@ func CountScanner(r io.Reader) (WcResult, error) {
 // Proper count implementation
 func CountProper(r io.Reader) (WcResult, error) {
 	var res WcResult
-	reader := bufio.NewReader(r)
+	var reader *bufio.Reader
+	if br, ok := r.(*bufio.Reader); ok {
+		reader = br
+	} else {
+		reader = bufio.NewReaderSize(r, 64*1024)
+	}
 	inWord := false
 	curLineLen := 0
 
 	for {
-		r, size, err := reader.ReadRune()
-		if err != nil {
-			if err == io.EOF {
-				// Check last line's length (file may not end with newline)
-				if curLineLen > res.MaxLineLength {
-					res.MaxLineLength = curLineLen
+		buf, err := reader.Peek(64 * 1024)
+		n := len(buf)
+		if n == 0 {
+			if err != nil {
+				if err == io.EOF {
+					break
 				}
-				break
+				return res, err
 			}
-			return res, err
-		}
-		res.Bytes += size
-		res.Chars++
-		if r == '\n' {
-			res.Lines++
-			if curLineLen > res.MaxLineLength {
-				res.MaxLineLength = curLineLen
-			}
-			curLineLen = 0
-			inWord = false
 			continue
 		}
-		curLineLen++
-		if unicode.IsSpace(r) {
-			inWord = false
-		} else if !inWord {
-			inWord = true
-			res.Words++
+
+		i := 0
+		for i < n {
+			b := buf[i]
+			if b < 0x80 {
+				// ASCII fast path
+				res.Bytes++
+				res.Chars++
+				i++
+
+				if b == '\n' {
+					res.Lines++
+					if curLineLen > res.MaxLineLength {
+						res.MaxLineLength = curLineLen
+					}
+					curLineLen = 0
+					inWord = false
+					continue
+				}
+
+				curLineLen++
+				isSpace := b == ' ' || b == '\t' || b == '\r' || b == '\f' || b == '\v'
+				if isSpace {
+					inWord = false
+				} else if !inWord {
+					inWord = true
+					res.Words++
+				}
+			} else {
+				// UTF-8 slow path
+				if n-i < 4 && err != io.EOF {
+					break
+				}
+
+				rn, size := utf8.DecodeRune(buf[i:])
+				res.Bytes += size
+				res.Chars++
+				i += size
+
+				if rn == '\n' {
+					res.Lines++
+					if curLineLen > res.MaxLineLength {
+						res.MaxLineLength = curLineLen
+					}
+					curLineLen = 0
+					inWord = false
+					continue
+				}
+
+				curLineLen++
+				if unicode.IsSpace(rn) {
+					inWord = false
+				} else if !inWord {
+					inWord = true
+					res.Words++
+				}
+			}
 		}
+
+		_, _ = reader.Discard(i)
 	}
+
+	// Check last line's length (file may not end with newline)
+	if curLineLen > res.MaxLineLength {
+		res.MaxLineLength = curLineLen
+	}
+
 	return res, nil
 }
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "wc: %v\n", err)
+		fmt.Fprintf(stderr, "wc: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -173,11 +226,11 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	for _, p := range paths {
 		var f io.Reader
 		if p == "-" {
-			f = os.Stdin
+			f = stdin
 		} else {
 			file, err := os.Open(p)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "wc: %s: %v\n", p, err)
+				fmt.Fprintf(stderr, "wc: %s: %v\n", p, err)
 				exitCode = 1
 				continue
 			}
@@ -187,7 +240,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 		res, err := CountProper(f)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "wc: %s: %v\n", p, err)
+			fmt.Fprintf(stderr, "wc: %s: %v\n", p, err)
 			exitCode = 1
 			continue
 		}

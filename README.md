@@ -74,6 +74,8 @@ make ci           # full pipeline (test + testsuite + coverage + docker)
 | `GOPOSIX_MAX_REQUEST_SIZE` | `1048576` (1MB) | Max JSON-RPC request size in bytes |
 | `GOPOSIX_RATE_LIMIT` | `100` | Max JSON-RPC requests/sec per connection |
 | `GOPOSIX_SHUTDOWN_TIMEOUT` | `5s` | Graceful shutdown drain timeout |
+| `GOPOSIX_LS_CACHE_TTL` | `30s` | Time-to-Live for `ls` owner/group name string translation caching (Go duration format, e.g., `30s`, `1m`) |
+
 
 #### Standard POSIX Environment Variables
 
