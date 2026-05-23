@@ -3,9 +3,9 @@ package id
 import (
 	"fmt"
 	"io"
-	"os"
 	"os/user"
 	"strconv"
+	"strings"
 
 	"github.com/ramayac/goposix/internal/dispatch"
 	"github.com/ramayac/goposix/pkg/common"
@@ -13,6 +13,10 @@ import (
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
+		{Short: "u", Long: "user", Type: common.FlagBool},
+		{Short: "g", Long: "group", Type: common.FlagBool},
+		{Short: "G", Long: "groups", Type: common.FlagBool},
+		{Short: "n", Long: "name", Type: common.FlagBool},
 		{Long: "json", Type: common.FlagBool},
 	},
 }
@@ -28,13 +32,13 @@ type IDInfo struct {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "id: %v\n", err)
+		fmt.Fprintf(stderr, "id: %v\n", err)
 		return 1
 	}
 
 	u, err := user.Current()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "id: %v\n", err)
+		fmt.Fprintf(stderr, "id: %v\n", err)
 		return 1
 	}
 
@@ -58,6 +62,48 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	jsonMode := flags.Has("json")
+
+	if !jsonMode {
+		uOpt := flags.Has("u")
+		gOpt := flags.Has("g")
+		GOpt := flags.Has("G")
+		nOpt := flags.Has("n")
+
+		if uOpt {
+			if nOpt {
+				fmt.Fprintln(stdout, u.Username)
+			} else {
+				fmt.Fprintln(stdout, uid)
+			}
+			return 0
+		}
+
+		if gOpt {
+			if nOpt {
+				fmt.Fprintln(stdout, groupName)
+			} else {
+				fmt.Fprintln(stdout, gid)
+			}
+			return 0
+		}
+
+		if GOpt {
+			var list []string
+			for _, gg := range gids {
+				if nOpt {
+					if goBj, err := user.LookupGroupId(gg); err == nil {
+						list = append(list, goBj.Name)
+					} else {
+						list = append(list, gg)
+					}
+				} else {
+					list = append(list, gg)
+				}
+			}
+			fmt.Fprintln(stdout, strings.Join(list, " "))
+			return 0
+		}
+	}
 
 	common.Render("id", info, jsonMode, stdout, func() {
 		fmt.Fprintf(stdout, "uid=%d(%s) gid=%d(%s)", uid, u.Username, gid, groupName)

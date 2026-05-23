@@ -82,7 +82,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	var infile string
 	var remotename string
 	var reader io.Reader
-	mode := "666"
+	mode := "644"
 
 	if len(pos) == 1 {
 		infile = "-"
@@ -112,6 +112,28 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 			if info, err := file.Stat(); err == nil {
 				mode = fmt.Sprintf("%o", info.Mode()&0777)
+			}
+		}
+	}
+
+	if infile == "-" {
+		if f, ok := reader.(*os.File); ok {
+			if info, err := f.Stat(); err == nil {
+				m := info.Mode()
+				if m&os.ModeCharDevice != 0 {
+					mode = fmt.Sprintf("%o", m&0777)
+				} else {
+					mode = "644"
+				}
+			}
+		} else if reader == os.Stdin {
+			if info, err := os.Stdin.Stat(); err == nil {
+				m := info.Mode()
+				if m&os.ModeCharDevice != 0 {
+					mode = fmt.Sprintf("%o", m&0777)
+				} else {
+					mode = "644"
+				}
 			}
 		}
 	}
@@ -161,7 +183,6 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			}
 		}
 		fmt.Fprintln(stdout, "====")
-		fmt.Fprintln(stdout, "end")
 	} else {
 		fmt.Fprintf(stdout, "begin %s %s\n", mode, remotename)
 		buf := make([]byte, 45)

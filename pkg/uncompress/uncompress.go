@@ -4,6 +4,7 @@ package uncompress
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,6 +47,10 @@ type UncompressResult struct {
 }
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	origLogWriter := log.Writer()
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(origLogWriter)
+
 	jsonMode := false
 	for _, arg := range args {
 		if arg == "--json" {

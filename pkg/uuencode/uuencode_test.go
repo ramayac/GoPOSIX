@@ -54,7 +54,7 @@ func TestUuencodeTraditional(t *testing.T) {
 		t.Fatalf("Expected code 0, got %d. Stderr: %s", code, stderr.String())
 	}
 
-	expected := "begin 666 FILE\n!00``\n`\nend\n"
+	expected := "begin 644 FILE\n!00``\n`\nend\n"
 	if stdout.String() != expected {
 		t.Errorf("Expected %q, got %q", expected, stdout.String())
 	}
@@ -70,7 +70,7 @@ func TestUuencodeBase64(t *testing.T) {
 		t.Fatalf("Expected code 0, got %d. Stderr: %s", code, stderr.String())
 	}
 
-	expected := "begin-base64 666 FILE\nQUI=\n====\nend\n"
+	expected := "begin-base64 644 FILE\nQUI=\n====\n"
 	if stdout.String() != expected {
 		t.Errorf("Expected %q, got %q", expected, stdout.String())
 	}

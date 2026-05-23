@@ -151,11 +151,11 @@ func TestUnzipOperations(t *testing.T) {
 	os.RemoveAll(extractDir)
 	stdout.Reset()
 	stderr.Reset()
-	code = run([]string{"-d", "out", "test.zip", "foo/baz/"}, nil, &stdout, &stderr, tempDir)
+	code = run([]string{"-d", "out", "test.zip", "foo/baz/qux"}, nil, &stdout, &stderr, tempDir)
 	if code != 0 {
 		t.Errorf("Expected code 0, got %d. Stderr: %s", code, stderr.String())
 	}
-	// qux should be extracted because it matches prefix "foo/baz/"
+	// qux should be extracted because it matches exact filter "foo/baz/qux"
 	quxPath := filepath.Join(extractDir, "foo/baz/qux")
 	if _, err := os.Stat(quxPath); err != nil {
 		t.Error("Expected foo/baz/qux to be extracted based on filters")

@@ -118,6 +118,7 @@ PKG_DIRS   := . \
               ./pkg/uncompress/... \
               ./pkg/unzip/... \
               ./pkg/uuencode/... \
+              ./pkg/uudecode/... \
               ./pkg/taskset/... \
               ./pkg/start-stop-daemon/... \
               ./pkg/cryptpw/... \

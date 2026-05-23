@@ -137,8 +137,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			return true
 		}
 		for _, filter := range filters {
-			// standard prefix or exact match
-			if name == filter || strings.HasPrefix(name, filter) {
+			if name == filter {
 				return true
 			}
 		}

@@ -93,7 +93,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		written, err := io.Copy(stdout, bzReader)
 		if err != nil {
 			if !quietMode {
-				fmt.Fprintf(stderr, "bunzip2: corrupted data\n")
+				fmt.Fprintf(stderr, "bunzip2: bunzip error -5\n")
 			}
 			if jsonMode {
 				common.RenderError("bunzip2", 1, "DECOMPRESS_ERROR", err.Error(), true, stderr)
@@ -211,7 +211,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 				// Clean up partially written dest file
 				destFile.Close()
 				os.Remove(absDestPath)
-				return err
+				return fmt.Errorf("bunzip error -5")
 			}
 
 			results = append(results, ExtractedFileInfo{

@@ -17,6 +17,7 @@ var spec = common.FlagSpec{
 		{Short: "h", Long: "help", Type: common.FlagBool},
 		{Long: "json", Type: common.FlagBool},
 	},
+	StopAtFirstNonFlag: true,
 }
 
 func init() {

@@ -106,6 +106,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/unzip"
 	_ "github.com/ramayac/goposix/pkg/uptime"
 	_ "github.com/ramayac/goposix/pkg/uuencode"
+	_ "github.com/ramayac/goposix/pkg/uudecode"
 	_ "github.com/ramayac/goposix/pkg/wc"
 	_ "github.com/ramayac/goposix/pkg/wget"
 	_ "github.com/ramayac/goposix/pkg/which"
