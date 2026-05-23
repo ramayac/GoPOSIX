@@ -21,7 +21,7 @@ check() {
 }
 
 AR="${AR:-ar}"
-GOPOSIX_AR="${GOPOSIX_AR:-./goposix ar}"
+GOPOSIX_AR="${GOPOSIX_AR:-goposix}"
 
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
@@ -32,29 +32,29 @@ echo "hello world" > hello.txt
 echo "goodbye world" > goodbye.txt
 
 # Test 1: Create archive and list
-$GOPOSIX_AR rc test.a hello.txt goodbye.txt
-RESULT=$(goposix ar t test.a | sort | tr '\n' '|')
+$GOPOSIX_AR ar rc test.a hello.txt goodbye.txt
+RESULT=$($GOPOSIX_AR ar t test.a | sort | tr '\n' '|')
 check "ar create and list" "goodbye.txt|hello.txt|" "$RESULT"
 
 # Test 2: Print file from archive
-RESULT=$(goposix ar p test.a hello.txt)
+RESULT=$($GOPOSIX_AR ar p test.a hello.txt)
 check "ar print file" "hello world" "$RESULT"
 
 # Test 3: Extract file
 rm -f hello.txt goodbye.txt
-goposix ar x test.a
+$GOPOSIX_AR ar x test.a
 check "ar extract hello.txt" "hello world" "$(cat hello.txt)"
 check "ar extract goodbye.txt" "goodbye world" "$(cat goodbye.txt)"
 
 # Test 4: Delete member
-goposix ar d test.a hello.txt
-RESULT=$(goposix ar t test.a)
+$GOPOSIX_AR ar d test.a hello.txt
+RESULT=$($GOPOSIX_AR ar t test.a)
 check "ar delete: only goodbye.txt remains" "goodbye.txt" "$RESULT"
 
 # Test 5: Replace/update member
 echo "updated content" > goodbye.txt
-goposix ar r test.a goodbye.txt
-RESULT=$(goposix ar p test.a goodbye.txt)
+$GOPOSIX_AR ar r test.a goodbye.txt
+RESULT=$($GOPOSIX_AR ar p test.a goodbye.txt)
 check "ar replace: updated content" "updated content" "$RESULT"
 
 echo "ar compliance: PASS=$PASS FAIL=$FAIL"

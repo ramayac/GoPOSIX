@@ -139,7 +139,7 @@ var cmdPkgMapping = map[string][]string{
 	"gzip":      {"gzip", "gunzip"},
 	"truefalse": {"true", "false"},
 	"testcmd":   {"test"},
-	"shell":     {"shell", "sh"},
+	"shell":     {"shell", "sh", "ash"},
 }
 
 // TestListCommandsMatchesPkgDir verifies that every utility package under

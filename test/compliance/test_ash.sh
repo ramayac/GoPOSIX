@@ -37,7 +37,7 @@ check "ash script file" "script output" "$RESULT"
 goposix ash -c 'exit 0'
 check "ash exit 0" "0" "$?"
 
-goposix ash -c 'exit 42' || true
+goposix ash -c 'exit 42'
 check "ash exit 42" "42" "$?"
 
 echo "ash compliance: PASS=$PASS FAIL=$FAIL"
