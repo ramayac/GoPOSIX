@@ -378,7 +378,7 @@ func TestArReplaceVerbose(t *testing.T) {
 func TestArDeleteVerbose(t *testing.T) {
 	dir := t.TempDir()
 	archivePath := createTestArchive(t, map[string]string{
-		"del_verbose.txt": "delete me\n",
+		"del_verbose.txt":  "delete me\n",
 		"keep_verbose.txt": "keep me\n",
 	})
 

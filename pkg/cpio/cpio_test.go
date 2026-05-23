@@ -250,8 +250,8 @@ func TestCpioCreateJSON(t *testing.T) {
 func TestCpioExtractFilter(t *testing.T) {
 	dir := t.TempDir()
 	archive := createTestArchive(t, map[string]string{
-		"want.txt":    "want this\n",
-		"unwant.txt":  "don't want\n",
+		"want.txt":   "want this\n",
+		"unwant.txt": "don't want\n",
 	})
 
 	var stdout, stderr bytes.Buffer
@@ -414,5 +414,36 @@ func TestCpioExtractJSON(t *testing.T) {
 	out := stdout.String()
 	if !strings.Contains(out, `"members"`) {
 		t.Errorf("expected JSON with members key, got: %s", out)
+	}
+}
+
+func TestCpioPassThroughDirJSON(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	// Create a subdir to pass
+	if err := os.Mkdir(filepath.Join(srcDir, "mysubdir"), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	stdinR := strings.NewReader("mysubdir\n")
+	var stdout, stderr bytes.Buffer
+	rc := cpioRun([]string{"-p", "--json", dstDir}, stdinR, &stdout, &stderr, srcDir)
+	if rc != 0 {
+		t.Fatalf("expected rc=0, got %d: %s", rc, stderr.String())
+	}
+}
+
+func TestCpioListModeOnly(t *testing.T) {
+	archive := createTestArchive(t, map[string]string{
+		"list_only.txt": "list only test\n",
+	})
+	var stdout, stderr bytes.Buffer
+	rc := cpioRun([]string{"-t"}, archive, &stdout, &stderr, "/tmp")
+	if rc != 0 {
+		t.Fatalf("expected rc=0, got %d: %s", rc, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "list_only.txt") {
+		t.Errorf("expected list_only.txt in output, got: %s", stdout.String())
 	}
 }
