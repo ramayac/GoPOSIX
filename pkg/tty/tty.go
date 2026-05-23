@@ -24,6 +24,14 @@ var spec = common.FlagSpec{
 	},
 }
 
+var (
+	isTerminalFn = func(fd int) bool {
+		_, err := unix.IoctlGetTermios(fd, unix.TCGETS)
+		return err == nil
+	}
+	ttynameFn = ttyname
+)
+
 // ttyname returns the path of the terminal associated with fd.
 func ttyname(fd int) (string, error) {
 	// Use TIOCGTPEER or just read /proc/self/fd/N
@@ -37,12 +45,19 @@ func ttyname(fd int) (string, error) {
 
 // Run checks whether stdin is a terminal and returns its path.
 func Run() (TtyResult, error) {
-	fd := int(os.Stdin.Fd())
-	_, err := unix.IoctlGetTermios(fd, unix.TCGETS)
-	if err != nil {
+	return runTty(os.Stdin)
+}
+
+func runTty(stdin io.Reader) (TtyResult, error) {
+	fdable, ok := stdin.(interface{ Fd() uintptr })
+	if !ok {
 		return TtyResult{IsTTY: false}, nil
 	}
-	path, err := ttyname(fd)
+	fd := int(fdable.Fd())
+	if !isTerminalFn(fd) {
+		return TtyResult{IsTTY: false}, nil
+	}
+	path, err := ttynameFn(fd)
 	if err != nil {
 		// Still a tty, just can't get the name
 		return TtyResult{IsTTY: true, Path: "unknown"}, nil
@@ -59,7 +74,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	jsonMode := flags.Has("json")
 	silent := flags.Has("s")
 
-	result, err := Run()
+	result, err := runTty(stdin)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tty: %v\n", err)
 		common.RenderError("tty", 1, "ETTY", err.Error(), jsonMode, stdout)

@@ -2,6 +2,7 @@ package goposix
 
 import (
 	"bytes"
+	"net"
 	"os"
 	"path/filepath"
 	"testing"
@@ -162,3 +163,72 @@ func TestTryForward_Integration(t *testing.T) {
 		t.Errorf("expected stdout %q, got %q", expected, buf.String())
 	}
 }
+
+func TestForwardToDaemon_WellKnownShortArgv(t *testing.T) {
+	code := forwardToDaemon("/tmp/irrelevant.sock", []string{"goposix"})
+	if code != -1 {
+		t.Errorf("expected -1 for short argv on well-known, got %d", code)
+	}
+}
+
+func TestTryForward_DefaultSocketPath(t *testing.T) {
+	// Unset socket env
+	origEnv := os.Getenv("GOPOSIX_SOCKET")
+	os.Unsetenv("GOPOSIX_SOCKET")
+	defer func() {
+		if origEnv != "" {
+			os.Setenv("GOPOSIX_SOCKET", origEnv)
+		}
+	}()
+
+	// TryForward should fail and return -1 since /var/run/goposix.sock won't exist
+	code := TryForward()
+	if code != -1 {
+		t.Errorf("expected -1, got %d", code)
+	}
+}
+
+func TestForwardToDaemon_SocketErrorAndInvalidJson(t *testing.T) {
+	socketPath := filepath.Join(t.TempDir(), "goposix-mock.sock")
+	l, err := net.Listen("unix", socketPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+
+	// 1. Test invalid JSON response
+	go func() {
+		conn, err := l.Accept()
+		if err == nil {
+			// Read request
+			buf := make([]byte, 1024)
+			_, _ = conn.Read(buf)
+			// Write invalid JSON
+			_, _ = conn.Write([]byte("invalid json\n"))
+			conn.Close()
+		}
+	}()
+
+	code := forwardToDaemon(socketPath, []string{"goposix", "echo", "test"})
+	if code != 126 {
+		t.Errorf("expected 126 for invalid JSON, got %d", code)
+	}
+
+	// 2. Test JSON-RPC error response
+	go func() {
+		conn, err := l.Accept()
+		if err == nil {
+			buf := make([]byte, 1024)
+			_, _ = conn.Read(buf)
+			// Write error JSON-RPC
+			_, _ = conn.Write([]byte(`{"jsonrpc":"2.0","id":1,"error":{"code":-32601,"message":"method not found"}}` + "\n"))
+			conn.Close()
+		}
+	}()
+
+	code = forwardToDaemon(socketPath, []string{"goposix", "echo", "test"})
+	if code != 126 {
+		t.Errorf("expected 126 for JSON-RPC error, got %d", code)
+	}
+}
+

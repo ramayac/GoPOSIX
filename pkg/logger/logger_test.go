@@ -2,6 +2,8 @@ package logger
 
 import (
 	"bytes"
+	"io"
+	"net"
 	"strings"
 	"testing"
 )
@@ -166,3 +168,102 @@ func TestRun_StderrFlag(t *testing.T) {
 		t.Errorf("expected mytag, got %s", result.Tag)
 	}
 }
+
+type mockConn struct {
+	net.Conn
+	buf       bytes.Buffer
+	closed    bool
+	failWrite bool
+}
+
+func (m *mockConn) Write(b []byte) (int, error) {
+	if m.failWrite {
+		return 0, io.EOF // we can import "io" or use standard errors
+	}
+	return m.buf.Write(b)
+}
+
+func (m *mockConn) Close() error {
+	m.closed = true
+	return nil
+}
+
+func TestLoggerMockedDial(t *testing.T) {
+	origDial := dialSyslogFn
+	defer func() { dialSyslogFn = origDial }()
+
+	// 1. Success case: dialing /dev/log succeeds
+	conn := &mockConn{}
+	dialSyslogFn = func(network, address string) (net.Conn, error) {
+		if address == "/dev/log" {
+			return conn, nil
+		}
+		return nil, io.EOF
+	}
+
+	res, err := Run("hello mock", "mocktag", "local0.info", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.Message != "hello mock" {
+		t.Errorf("expected 'hello mock', got %q", res.Message)
+	}
+	if !conn.closed {
+		t.Error("expected connection to be closed")
+	}
+	if !strings.Contains(conn.buf.String(), "<134>mocktag: hello mock") {
+		t.Errorf("unexpected formatted message: %s", conn.buf.String())
+	}
+
+	// 2. Write fails on connection
+	connWriteFail := &mockConn{failWrite: true}
+	dialSyslogFn = func(network, address string) (net.Conn, error) {
+		return connWriteFail, nil
+	}
+	_, err = Run("fail write", "mocktag", "local0.info", false)
+	if err == nil {
+		t.Error("expected error when connection write fails")
+	}
+
+	// 3. Dial fails completely (silent fallback)
+	dialSyslogFn = func(network, address string) (net.Conn, error) {
+		return nil, io.EOF
+	}
+	_, err = Run("fallback msg", "mocktag", "local0.info", false)
+	if err != nil {
+		t.Errorf("unexpected error on silent fallback: %v", err)
+	}
+}
+
+func TestLoggerCLI_InjectableStreams(t *testing.T) {
+	// 1. Stdin reading
+	stdin := strings.NewReader("message from stdin\n")
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-t", "stdintag"}, stdin, &stdout, &stderr, "")
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d. Stderr: %s", code, stderr.String())
+	}
+
+	// 2. Priority parse failure in CLI
+	stdout.Reset()
+	stderr.Reset()
+	code = run([]string{"-p", "invalid.pri", "msg"}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Errorf("expected exit 1 for invalid priority, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "logger:") {
+		t.Errorf("expected error logs on stderr, got: %s", stderr.String())
+	}
+
+	// 3. AlsoStderr flag via CLI
+	stdout.Reset()
+	stderr.Reset()
+	code = run([]string{"-s", "-t", "tag", "log to stderr"}, nil, &stdout, &stderr, "")
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "log to stderr") {
+		t.Errorf("expected stderr to contain 'log to stderr', got: %s", stderr.String())
+	}
+}
+

@@ -102,6 +102,14 @@ func formatSyslogMessage(pri int, tag, msg string) string {
 }
 
 // Run submits a message to syslog.
+var (
+	dialSyslogFn = func(network, address string) (net.Conn, error) {
+		return net.Dial(network, address)
+	}
+	stderrWriter io.Writer = os.Stderr
+)
+
+// Run submits a message to syslog.
 func Run(message, tag, priorityStr string, alsoStderr bool) (LoggerResult, error) {
 	pri, err := parsePriority(priorityStr)
 	if err != nil {
@@ -115,13 +123,13 @@ func Run(message, tag, priorityStr string, alsoStderr bool) (LoggerResult, error
 	formatted := formatSyslogMessage(pri, tag, message)
 
 	// Try to connect to /dev/log first
-	conn, err := net.Dial("unixgram", "/dev/log")
+	conn, err := dialSyslogFn("unixgram", "/dev/log")
 	if err != nil {
 		// Fallback: try /var/run/syslog or UDP localhost
-		conn, err = net.Dial("unixgram", "/var/run/syslog")
+		conn, err = dialSyslogFn("unixgram", "/var/run/syslog")
 		if err != nil {
 			// Last resort: UDP to localhost:514
-			conn, err = net.Dial("udp", "127.0.0.1:514")
+			conn, err = dialSyslogFn("udp", "127.0.0.1:514")
 			if err != nil {
 				// Silently ignore if no syslog available (matches GNU logger behavior)
 				result := LoggerResult{
@@ -130,7 +138,7 @@ func Run(message, tag, priorityStr string, alsoStderr bool) (LoggerResult, error
 					Message:  message,
 				}
 				if alsoStderr {
-					fmt.Fprintln(os.Stderr, message)
+					fmt.Fprintln(stderrWriter, message)
 				}
 				return result, nil
 			}
@@ -143,7 +151,7 @@ func Run(message, tag, priorityStr string, alsoStderr bool) (LoggerResult, error
 	}
 
 	if alsoStderr {
-		fmt.Fprintln(os.Stderr, message)
+		fmt.Fprintln(stderrWriter, message)
 	}
 
 	return LoggerResult{
@@ -156,7 +164,7 @@ func Run(message, tag, priorityStr string, alsoStderr bool) (LoggerResult, error
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "logger: %v\n", err)
+		fmt.Fprintf(stderr, "logger: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -177,18 +185,23 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	// If no positional args, read from stdin
 	if message == "" {
-		data, err := io.ReadAll(os.Stdin)
+		data, err := io.ReadAll(stdin)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "logger: %v\n", err)
+			fmt.Fprintf(stderr, "logger: %v\n", err)
 			common.RenderError("logger", 1, "EREAD", err.Error(), jsonMode, stdout)
 			return 1
 		}
 		message = strings.TrimSpace(string(data))
 	}
 
+	// Capture custom stderr mapping during run execution
+	oldStderrWriter := stderrWriter
+	stderrWriter = stderr
+	defer func() { stderrWriter = oldStderrWriter }()
+
 	result, err := Run(message, tag, priorityStr, alsoStderr)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "logger: %v\n", err)
+		fmt.Fprintf(stderr, "logger: %v\n", err)
 		common.RenderError("logger", 1, "ELOGGER", err.Error(), jsonMode, stdout)
 		return 1
 	}

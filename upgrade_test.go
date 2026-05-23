@@ -4,6 +4,12 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -216,3 +222,272 @@ func TestParseVersion(t *testing.T) {
 		}
 	}
 }
+
+type mockResponseBody struct {
+	io.Reader
+	closed bool
+}
+
+func (m *mockResponseBody) Close() error {
+	m.closed = true
+	return nil
+}
+
+func TestFetchLatestRelease_Mock(t *testing.T) {
+	origDo := doHTTPRequest
+	defer func() { doHTTPRequest = origDo }()
+
+	// 1. Success case
+	doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+		jsonData := fmt.Sprintf(`{
+			"tag_name": "v2.0.0",
+			"assets": [
+				{"name": "goposix_%s_%s.tar.gz", "browser_download_url": "https://example.com/download"}
+			]
+		}`, runtime.GOOS, runtime.GOARCH)
+
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       &mockResponseBody{Reader: strings.NewReader(jsonData)},
+		}, nil
+	}
+
+	tag, url, err := fetchLatestRelease()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if tag != "v2.0.0" {
+		t.Errorf("expected tag v2.0.0, got %s", tag)
+	}
+	if url != "https://example.com/download" {
+		t.Errorf("expected download url, got %s", url)
+	}
+
+	// 2. Non-200 Status
+	doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusNotFound,
+			Body:       &mockResponseBody{Reader: strings.NewReader("not found")},
+		}, nil
+	}
+	_, _, err = fetchLatestRelease()
+	if err == nil {
+		t.Error("expected error for non-200 status")
+	}
+
+	// 3. Invalid JSON
+	doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       &mockResponseBody{Reader: strings.NewReader("invalid { json")},
+		}, nil
+	}
+	_, _, err = fetchLatestRelease()
+	if err == nil {
+		t.Error("expected error for invalid JSON")
+	}
+
+	// 4. No matching asset
+	doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+		jsonData := `{
+			"tag_name": "v2.0.0",
+			"assets": [
+				{"name": "goposix_invalid_os_arch.tar.gz", "browser_download_url": "https://example.com/download"}
+			]
+		}`
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       &mockResponseBody{Reader: strings.NewReader(jsonData)},
+		}, nil
+	}
+	_, _, err = fetchLatestRelease()
+	if err == nil {
+		t.Error("expected error for missing asset matching platform")
+	}
+}
+
+func TestDownloadBinary_Mock(t *testing.T) {
+	origDo := doHTTPRequest
+	defer func() { doHTTPRequest = origDo }()
+
+	// 1. Success case - raw binary (not .tar.gz)
+	doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       &mockResponseBody{Reader: strings.NewReader("fake binary data")},
+		}, nil
+	}
+
+	tmpFile, err := downloadBinary("https://example.com/goposix_linux_amd64")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer os.Remove(tmpFile)
+
+	data, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "fake binary data" {
+		t.Errorf("expected 'fake binary data', got %q", string(data))
+	}
+
+	// 2. Download returns non-200 status
+	doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusForbidden,
+			Body:       &mockResponseBody{Reader: strings.NewReader("error")},
+		}, nil
+	}
+	_, err = downloadBinary("https://example.com/goposix")
+	if err == nil {
+		t.Error("expected error for non-200 download status")
+	}
+}
+
+func TestUpgrade_Mock(t *testing.T) {
+	origDo := doHTTPRequest
+	defer func() { doHTTPRequest = origDo }()
+
+	// 1. Upgrade not needed: version is already the latest version
+	doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+		jsonData := fmt.Sprintf(`{
+			"tag_name": "v1.0.0",
+			"assets": [
+				{"name": "goposix_%s_%s.tar.gz", "browser_download_url": "https://example.com/download"}
+			]
+		}`, runtime.GOOS, runtime.GOARCH)
+
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       &mockResponseBody{Reader: strings.NewReader(jsonData)},
+		}, nil
+	}
+
+	err := Upgrade("v1.0.0")
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	// 2. Upgrade not needed: version on disk is newer
+	err = Upgrade("v1.0.1")
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	// 3. Empty version tag error case
+	doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+		jsonData := `{
+			"tag_name": "",
+			"assets": []
+		}`
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       &mockResponseBody{Reader: strings.NewReader(jsonData)},
+		}, nil
+	}
+	err = Upgrade("v1.0.0")
+	if err == nil {
+		t.Error("expected error for empty tag_name")
+	}
+}
+
+func TestDownloadBinary_MockTarGz(t *testing.T) {
+	origDo := doHTTPRequest
+	defer func() { doHTTPRequest = origDo }()
+
+	// Success case - .tar.gz archive
+	var buf bytes.Buffer
+	gw := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gw)
+
+	content := []byte("tar gz binary content")
+	hdr := &tar.Header{
+		Name:     "goposix",
+		Size:     int64(len(content)),
+		Typeflag: tar.TypeReg,
+		Mode:     0755,
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tw.Write(content); err != nil {
+		t.Fatal(err)
+	}
+	tw.Close()
+	gw.Close()
+
+	doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       &mockResponseBody{Reader: bytes.NewReader(buf.Bytes())},
+		}, nil
+	}
+
+	tmpFile, err := downloadBinary("https://example.com/goposix_linux_amd64.tar.gz")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer os.Remove(tmpFile)
+
+	data, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "tar gz binary content" {
+		t.Errorf("expected 'tar gz binary content', got %q", string(data))
+	}
+}
+
+func TestDownloadBinary_ErrorPaths(t *testing.T) {
+	origDo := doHTTPRequest
+	defer func() { doHTTPRequest = origDo }()
+
+	// 1. Invalid URL for NewRequest
+	_, err := downloadBinary("http://[::1]%23/invalid")
+	if err == nil {
+		t.Error("expected error for invalid URL")
+	}
+
+	// 2. HTTP request failure
+	doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+		return nil, fmt.Errorf("network down")
+	}
+	_, err = downloadBinary("https://example.com/goposix")
+	if err == nil {
+		t.Error("expected error for HTTP connection failure")
+	}
+
+	// 3. Corrupted .tar.gz download
+	doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       &mockResponseBody{Reader: strings.NewReader("not a gzip archive")},
+		}, nil
+	}
+	_, err = downloadBinary("https://example.com/goposix.tar.gz")
+	if err == nil {
+		t.Error("expected error for corrupted .tar.gz extraction")
+	}
+}
+
+func TestUpgrade_FetchLatestReleaseError(t *testing.T) {
+	origDo := doHTTPRequest
+	defer func() { doHTTPRequest = origDo }()
+
+	doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+		return nil, fmt.Errorf("github api is down")
+	}
+
+	err := Upgrade("v1.0.0")
+	if err == nil {
+		t.Error("expected error when GitHub API is down during Upgrade")
+	}
+	if !strings.Contains(err.Error(), "cannot check for updates") {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+
+
+
