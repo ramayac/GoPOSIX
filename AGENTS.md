@@ -23,7 +23,13 @@ We follow a strict, systematic process for implementing the utilities one by one
 
 ```
 
-The tool must pass the BusyBox test suite for the utility, have it's own *_test.go, registered in main.go and Makefile.
+Each new tool must pass the BusyBox test suite for the utility, have it's own *_test.go, registered in main.go and Makefile.
+You must run for each new tool:
+- make test
+- make testsuite
+- go vet
+- go fmt
+the tool must have json schema defined in schema.md and a json schema test in compliance/test_<tool>.sh
 
 ## 2. Strict Architectural Invariants
 
@@ -63,6 +69,9 @@ When implementing a new utility or feature, follow this checklist:
    - Run `make compliance` to verify POSIX behavior against the system.
    - Run `make ci` to run the full pipeline including Docker builds.
 7. **Documentation:** Update the corresponding Phase plan in the `wiki/` directory (e.g., check off the task list).
+8. **Todos and Coverage Matrix:** Update and maintain`wiki/todos.md` and keep the `wiki/test_coverage_matrix.md` with the new utility's coverage percentage and any relevant notes.
+9. **Wiki**: Refer to .wiki-instructions/wiki-maintainer.md for detailed instructions on how to update the wiki with new findings, architectural notes, and phase progress. Or use .wiki-instructions/query.md to ask specific questions about the wiki content.
+
 
 ## 4a. Coverage Policy
 
