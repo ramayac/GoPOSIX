@@ -252,7 +252,7 @@ func cpioExtract(in io.Reader, listOnly, makeDirs, verbose, jsonMode bool, filte
 			continue
 		}
 
-		if verbose || listOnly {
+		if (verbose || listOnly) && !jsonMode {
 			fmt.Fprintln(stdout, name)
 		}
 
