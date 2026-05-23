@@ -114,6 +114,11 @@ import (
 	_ "github.com/ramayac/goposix/pkg/whoami"
 	_ "github.com/ramayac/goposix/pkg/xargs"
 	_ "github.com/ramayac/goposix/pkg/yes"
+	// Tier 5: high-complexity utilities
+	_ "github.com/ramayac/goposix/pkg/ar"
+	_ "github.com/ramayac/goposix/pkg/cpio"
+	_ "github.com/ramayac/goposix/pkg/mdev"
+	_ "github.com/ramayac/goposix/pkg/mount"
 )
 
 func main() {

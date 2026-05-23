@@ -123,6 +123,10 @@ PKG_DIRS   := . \
               ./pkg/start-stop-daemon/... \
               ./pkg/cryptpw/... \
               ./pkg/makedevs/... \
+              ./pkg/ar/... \
+              ./pkg/cpio/... \
+              ./pkg/mount/... \
+              ./pkg/mdev/... \
               ./test/posix-json/...
 
 

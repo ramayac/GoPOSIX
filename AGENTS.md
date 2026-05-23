@@ -10,6 +10,21 @@ GoPOSIX is designed for **programmatic consumption** in containerized environmen
 1. Every utility supports structured machine-readable output via a `--json` flag.
 2. It features a persistent JSON-RPC 2.0 daemon to avoid continuous process-spawning overhead for repeated operations.
 
+### 1.1 Development loop
+
+We follow a strict, systematic process for implementing the utilities one by one. The development loop is:
+
+```
+  [ CHECK ] ──> [ TEST ] ──> [ CODE ] ──> [ PASS ] ──> [ UPDATE ]
+     │             │            │            │             │
+  Inspect      Create our   Write Go     Run unit &    Mark utility
+  BusyBox      own unit     logic &      BusyBox       implemented
+  tests        tests        register     tests         in wiki, plan or coverage matrix.
+
+```
+
+The tool must pass the BusyBox test suite for the utility, have it's own *_test.go, registered in main.go and Makefile.
+
 ## 2. Strict Architectural Invariants
 
 Whenever you write or modify code in this repository, you **MUST** adhere to the following rules:
