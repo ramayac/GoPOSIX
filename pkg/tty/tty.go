@@ -24,6 +24,15 @@ var spec = common.FlagSpec{
 	},
 }
 
+var (
+	isTerminalFn = func(fd int) bool {
+		_, err := unix.IoctlGetTermios(fd, unix.TCGETS)
+		return err == nil
+	}
+	ttynameFn = ttyname
+	runTtyFn  = runTty
+)
+
 // ttyname returns the path of the terminal associated with fd.
 func ttyname(fd int) (string, error) {
 	// Use TIOCGTPEER or just read /proc/self/fd/N
@@ -37,12 +46,19 @@ func ttyname(fd int) (string, error) {
 
 // Run checks whether stdin is a terminal and returns its path.
 func Run() (TtyResult, error) {
-	fd := int(os.Stdin.Fd())
-	_, err := unix.IoctlGetTermios(fd, unix.TCGETS)
-	if err != nil {
+	return runTty(os.Stdin)
+}
+
+func runTty(stdin io.Reader) (TtyResult, error) {
+	fdable, ok := stdin.(interface{ Fd() uintptr })
+	if !ok {
 		return TtyResult{IsTTY: false}, nil
 	}
-	path, err := ttyname(fd)
+	fd := int(fdable.Fd())
+	if !isTerminalFn(fd) {
+		return TtyResult{IsTTY: false}, nil
+	}
+	path, err := ttynameFn(fd)
 	if err != nil {
 		// Still a tty, just can't get the name
 		return TtyResult{IsTTY: true, Path: "unknown"}, nil
@@ -53,15 +69,15 @@ func Run() (TtyResult, error) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tty: %v\n", err)
+		fmt.Fprintf(stderr, "tty: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
 	silent := flags.Has("s")
 
-	result, err := Run()
+	result, err := runTtyFn(stdin)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tty: %v\n", err)
+		fmt.Fprintf(stderr, "tty: %v\n", err)
 		common.RenderError("tty", 1, "ETTY", err.Error(), jsonMode, stdout)
 		return 1
 	}
@@ -73,15 +89,13 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		return 0
 	}
 
-	if !jsonMode {
+	common.Render("tty", result, jsonMode, stdout, func() {
 		if result.IsTTY {
 			fmt.Fprintln(stdout, result.Path)
 		} else {
 			fmt.Fprintln(stdout, "not a tty")
 		}
-	} else {
-		common.Render("tty", result, jsonMode, stdout, func() {})
-	}
+	})
 	return 0
 }
 

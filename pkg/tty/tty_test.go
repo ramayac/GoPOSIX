@@ -3,6 +3,7 @@ package tty
 import (
 	"bytes"
 	"io"
+	"strings"
 	"testing"
 )
 
@@ -101,3 +102,102 @@ func TestTtyCLI_InvalidFlag(t *testing.T) {
 		t.Errorf("expected exit 2 for invalid flag, got %d", code)
 	}
 }
+
+type mockFdReader struct {
+	io.Reader
+}
+
+func (mockFdReader) Fd() uintptr {
+	return 42
+}
+
+func TestTtyMockedTerminal(t *testing.T) {
+	// Backup original functions
+	origIsTerminal := isTerminalFn
+	origTtyname := ttynameFn
+	defer func() {
+		isTerminalFn = origIsTerminal
+		ttynameFn = origTtyname
+	}()
+
+	// 1. Test success terminal case
+	isTerminalFn = func(fd int) bool { return true }
+	ttynameFn = func(fd int) (string, error) { return "/dev/pts/9", nil }
+
+	var out bytes.Buffer
+	code := run([]string{}, mockFdReader{}, &out, &out, "")
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+	if out.String() != "/dev/pts/9\n" {
+		t.Errorf("expected '/dev/pts/9\\n', got %q", out.String())
+	}
+
+	// 2. Test ttyname error fallback
+	ttynameFn = func(fd int) (string, error) { return "", io.EOF }
+	out.Reset()
+	code = run([]string{}, mockFdReader{}, &out, &out, "")
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+	if out.String() != "unknown\n" {
+		t.Errorf("expected 'unknown\\n', got %q", out.String())
+	}
+
+	// 3. Test --json with mocked tty success
+	ttynameFn = func(fd int) (string, error) { return "/dev/tty2", nil }
+	out.Reset()
+	code = run([]string{"--json"}, mockFdReader{}, &out, &out, "")
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+	if !bytes.Contains(out.Bytes(), []byte(`"/dev/tty2"`)) {
+		t.Errorf("expected JSON to contain '/dev/tty2', got: %s", out.String())
+	}
+
+	// 4. Test silent mode with terminal
+	out.Reset()
+	code = run([]string{"-s"}, mockFdReader{}, &out, &out, "")
+	if code != 0 {
+		t.Errorf("expected exit 0 for silent with terminal, got %d", code)
+	}
+}
+
+func TestTtynameDirect(t *testing.T) {
+	_, err := ttyname(-1)
+	if err == nil {
+		t.Error("expected error for invalid fd -1")
+	}
+	_, _ = ttyname(0)
+}
+
+func TestTtyRun_ErrorFallback(t *testing.T) {
+	origRunTty := runTtyFn
+	defer func() { runTtyFn = origRunTty }()
+
+	runTtyFn = func(stdin io.Reader) (TtyResult, error) {
+		return TtyResult{}, io.EOF
+	}
+
+	// 1. Text mode: prints error to stderr and exits 1
+	var out bytes.Buffer
+	code := run([]string{}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("expected exit 1 for runTty error, got %d", code)
+	}
+	if !strings.Contains(out.String(), "tty: EOF") {
+		t.Errorf("expected error containing 'tty: EOF', got: %s", out.String())
+	}
+
+	// 2. JSON mode: renders error and exits 1
+	out.Reset()
+	code = run([]string{"--json"}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("expected exit 1 for runTty error, got %d", code)
+	}
+	if !bytes.Contains(out.Bytes(), []byte(`"ETTY"`)) {
+		t.Errorf("expected error JSON containing ETTY, got: %s", out.String())
+	}
+}
+
+

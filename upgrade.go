@@ -13,6 +13,10 @@ import (
 	"strings"
 )
 
+var doHTTPRequest = func(req *http.Request) (*http.Response, error) {
+	return http.DefaultClient.Do(req)
+}
+
 // Upgrade performs a self-upgrade: checks the latest GitHub release, compares
 // it against the current version, and if a newer release exists, downloads and
 // atomically replaces the running binary.
@@ -89,7 +93,7 @@ func fetchLatestRelease() (tag string, assetURL string, err error) {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "goposix-upgrade")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := doHTTPRequest(req)
 	if err != nil {
 		return "", "", err
 	}
@@ -144,7 +148,7 @@ func downloadBinary(assetURL string) (string, error) {
 	}
 	req.Header.Set("User-Agent", "goposix-upgrade")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := doHTTPRequest(req)
 	if err != nil {
 		return "", err
 	}
