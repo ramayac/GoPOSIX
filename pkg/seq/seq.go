@@ -275,8 +275,6 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	return 0
 }
 
-
-
 func init() {
 	dispatch.Register(dispatch.Command{
 		Name:  "seq",

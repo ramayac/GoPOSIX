@@ -392,9 +392,9 @@ func TestParsePOSIXTZ_NoDST(t *testing.T) {
 func TestPosixTZ_Eval_JulianNoLeap(t *testing.T) {
 	// Rule with isJulianNoLeap, testing leap year handling.
 	r := &posixTZRule{
-		isStart:       false,
-		isJulianNoLeap: true,
-		julianDay:     60,
+		isStart:          false,
+		isJulianNoLeap:   true,
+		julianDay:        60,
 		timeOfTransition: 7200,
 	}
 	// In a leap year (2024), day >= 60 subtracts 0, in non-leap subtracts 1.

@@ -208,3 +208,31 @@ The BusyBox test suite chains utilities: echo creates files → diff compares ou
 ### Result
 
 79 → 3 failures (96.2% pass rate). See `wiki/14b_busybox_regression_fix.md` for full details.
+
+---
+
+## Phase 26/27 — 31 New Utilities (2026-05-22)
+
+### Shell aliases must be listed in cmdPkgMapping
+
+When a package registers multiple command names (e.g., `pkg/shell` registers `shell`, `sh`, and `ash`), the test `TestListCommandsMatchesPkgDir` in `cmd/goposix/main_test.go` checks every registered command maps to a `pkg/` directory. Adding `ash` without updating `cmdPkgMapping` broke CI. Always add aliases to the mapping: `"shell": {"shell", "sh", "ash"}`.
+
+### Don't write to stdout before JSON in daemon mode
+
+When a utility runs in JSON mode under the daemon, its stdout is captured as the response. Any non-JSON output written to stdout before the JSON envelope corrupts the daemon response. Found in `cpioExtract` where `fmt.Fprintln(stdout, name)` ran before the JSON rendering when `-t` (list) was used. Fix: guard text output with `&& !jsonMode`.
+
+### Custom flag parsers break daemon --json prepend
+
+The daemon prepends `--json` to every utility's args. Utilities with custom flag parsing (like `shell`) that treat unknown flags as termination will break when `--json` appears first. The `ash` JSON-RPC test had to be skipped because `shellRun` sees `--json` as an unknown flag and stops parsing, treating subsequent args (`-c`, script) as file paths. Fix: either make the custom parser recognize `--json`, or use a daemon-specific dispatch path (like `goposix.shell.exec`).
+
+### Compliance tests need careful variable scoping
+
+`test/compliance/test_ar.sh` used `./goposix` (relative to CWD) which broke when the test `cd`'d to a tempdir. `test/compliance/test_ash.sh` used `|| true` after `exit 42`, making `$?` always 0. Compliance tests should use configurable variables (`GOPOSIX_AR=${GOPOSIX_AR:-goposix}`) and never mask exit codes.
+
+### Go's compress/lzw ≠ Unix compress format
+
+Go's `compress/lzw` package produces the LZW algorithm output but doesn't include the Unix `.Z` file header/magic bytes expected by the `uncompress` utility. Tests using Go-generated LZW data fail with the `hotei/dcompress` library. Use system `compress` or embed pre-computed `.Z` files in test data.
+
+### Bzcat/Bunzip2 JSON-RPC data shape varies
+
+`bzcat` outputs decompressed content to stdout (raw text as `data` field), while `bunzip2` outputs structured JSON (`{"files": [...]}`). Tests must handle both shapes. The daemon captures stdout as-is; for `bzcat`, the response `data` is the decompressed text string, not a map.

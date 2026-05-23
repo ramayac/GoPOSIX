@@ -20,19 +20,19 @@ func TestUptime(t *testing.T) {
 	}()
 
 	tests := []struct {
-		name         string
-		uptimeData   string
-		loadavgData  string
-		mockUsers    int
-		args         []string
-		wantExit     int
-		wantStdout   string
-		checkJSON    bool
-		jsonUptime   float64
-		jsonLoad1m   float64
-		jsonLoad5m   float64
-		jsonLoad15m  float64
-		jsonUsers    int
+		name        string
+		uptimeData  string
+		loadavgData string
+		mockUsers   int
+		args        []string
+		wantExit    int
+		wantStdout  string
+		checkJSON   bool
+		jsonUptime  float64
+		jsonLoad1m  float64
+		jsonLoad5m  float64
+		jsonLoad15m float64
+		jsonUsers   int
 	}{
 		{
 			name:        "Uptime in minutes, singular user",

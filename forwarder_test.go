@@ -231,4 +231,3 @@ func TestForwardToDaemon_SocketErrorAndInvalidJson(t *testing.T) {
 		t.Errorf("expected 126 for JSON-RPC error, got %d", code)
 	}
 }
-

@@ -112,7 +112,23 @@ PKG_DIRS   := . \
               ./pkg/tty/... \
               ./pkg/unlink/... \
               ./pkg/who/... \
+              ./pkg/bunzip2/... \
+              ./pkg/bzcat/... \
+              ./pkg/unlzma/... \
+              ./pkg/uncompress/... \
+              ./pkg/unzip/... \
+              ./pkg/uuencode/... \
+              ./pkg/uudecode/... \
+              ./pkg/taskset/... \
+              ./pkg/start-stop-daemon/... \
+              ./pkg/cryptpw/... \
+              ./pkg/makedevs/... \
+              ./pkg/ar/... \
+              ./pkg/cpio/... \
+              ./pkg/mount/... \
+              ./pkg/mdev/... \
               ./test/posix-json/...
+
 
 .DEFAULT_GOAL := help
 

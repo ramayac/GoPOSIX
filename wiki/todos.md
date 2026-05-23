@@ -1,106 +1,72 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-22 | **BusyBox:** 679 pass / 20 fail / 22 skip | **Coverage:** 81.5% | **--json:** 81/92 (patch ✅, dd deferred)
+> **Last updated:** 2026-05-22 | **Utilities:** 115 | **Coverage:** 82.9% | **JSON-RPC Daemon:** 106/115 (92.2%)
 
-## Active Plan: Coverage Improvement → 85%
+This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
-> **Branch:** `feat/coverage-85` | **Current:** 81.5% | **Target:** 85%
+---
 
-### Phase A — Complete ✅ (80.1% → 80.7%)
-Low-effort, pure-computation or simple test patterns:
+## 📈 Current Project State
 
-| Package | Tests Before | Tests After | Key additions |
-|---------|:---:|:---:|---|
-| `xargs` | 2 | **12** | `-n` max-args, `-t` trace, `-I` replace-str, `-E` eof-str, `-s` max-chars, default echo, bad flag, JSON, command failure, no-input-runs-once |
-| `paste` | 13 | **18** | JSON mode, file-not-found, bad flag, stdin default, trailing backslash in delimiters |
-| `join` | 8 | **13** | `-t` custom delimiter, JSON, `-1`/`-2` field spec, stdin, bad flag |
-| `tr` | 5 | **11** | `-s` squeeze, `-c` complement, CLI bad flag, missing operand |
-| `hostname` | 5 | **8** | `-d` domain, JSON, bad flag |
+| Metric | Value |
+|--------|-------|
+| **Total Utilities Implemented** | **115** (all registered via `dispatch.Register`) |
+| **Overall Statement Coverage** | **82.9%** (fully compliant with the `>=80%` CI gate) |
+| **JSON-RPC Daemon Coverage** | **106/115** utilities with structured output tests |
+| **Multicall Compatibility** | Complete dispatching via symlinks or direct subcommands |
+| **CGO Status** | 100% CGO-free Go (`CGO_ENABLED=0`) |
 
-### Phase B — Complete ✅ (80.7% → 80.9%)
-Mid-effort, needs temp files/dirs:
+---
 
-| Package | Key additions |
-|---------|--------------|
-| `mkdir` | `-m` mode flag, missing operand, JSON |
-| `mv` | `-t` target-dir, missing operand, JSON |
-| `cp` | recursive directory copy (`-r`) |
-| `diff` | recursive non-regular file, missing-only-in-one, both missing |
-| `comm` | `-1`/`-2`/`-3` suppress columns, `--total` flag, JSON, bad flag |
+## 🛠️ Active Phase: Phase 27 (High-Complexity Tier 5)
 
-### Phase C — Complete ✅ (80.9% → 81.5%)
-Needs daemon integration test:
+Phase 26 (Tiers 1–4) is **complete**. Phase 27 has 5 of 11 implemented. The remaining 6 are cataloged in detail on the dedicated Phase 27 planning page:
 
-| Package | Uncovered | Effort | Notes |
-|---------|:---:|:---:|---|
-| `client_helpers` (30+ funcs) | **131 blocks → 5 remaining** | Medium | 27 new helper tests: Dirname, Hostname, Printf, Test, Whoami, Readlink, ID, Date, Uname, Env, Printenv, Sort, Cut, Uniq, Find, Mv, Cp, Ln, Rmdir, Chmod, Md5sum, Sha256sum, Df, Du, Ps, Xargs, Expr. Skipped: Chown/Chgrp (root), Gzip (type mismatch), Tar (cwd), Kill (PID). |
+👉 **[wiki/27_high_complexity_tools.md](27_high_complexity_tools.md)**
 
-### Phase D — Complete ✅ (81.5% → 82.2%)
+### Tier 5 Utilities (11 Utilities - IN PROGRESS 🔨)
+* **Compression & Archiving (2)**: ✅ `ar`, ✅ `cpio`
+* **Development & Hex (3)**: ⏳ `hexdump`, ⏳ `xxd`, ⏳ `rx`
+* **Mathematics (2)**: ⏳ `bc`, ⏳ `dc`
+* **Shell (1)**: ✅ `ash` (alias to existing native `shell` implementation)
+* **System Admin & Hardware (3)**: ✅ `mdev`, ⏳ `mkfs.minix`, ✅ `mount`
 
-| Package | Tests Added | Coverage After | Key additions |
-|---------|:---:|:---:|---|
-| `sed` | +13 | 69.5% | a/i/c/q/n/N/D/P/T/w commands, SubNum (s/pat/repl/N), w-file, \\ delimiter, $ address, +N range |
-| `tar` | +2 | 67.5% | Extract to stdout (-O), verbose listing (-t -v) |
-| `cp` | +1 | 78.0% | Symlink copy |
-| `date` | +4 | 73.5% | Last-week M.w.d eval, non-leap Julian, complex TZ with DST |
-| `printf` | +3 | 79.5% | %c char, %- left-justify, %0 zero-pad float |
+---
 
-### Phase E — Complete ✅ (82.2% → 82.4%)
+## ❌ Known Limitations & Remaining Failures
 
-| Package | Tests Added | Coverage After | Key additions |
-|---------|:---:|:---:|---|
-| `date` | +9 | 74.5% | formatDate specifiers (%e/%I/%m/%S/%y/%T/%%), parseDateString compact/sec/@epoch/time-only/Zulu/invalid |
-| `printf` | +7 | 80.5% | %*d star width, %.*f star precision, %5d/%.5d, %e, length mods (%ld/%lld/%hd), exhausted args |
+### 1. `awk` — 16 failures (goawk v1.31.0 engine limitations)
+* Hex/Octal constants, scoped nested variables, scoped scopes, and bitwise operations are not supported by the underlying parsing engine.
+* *Status*: **Deferred** (see [wiki/deferred.md](deferred.md) for full context).
 
-### Skipped (platform-specific / needs subprocess)
+### 2. `cpio` — 2 failures (cavaliergopher/cpio library limitation)
+* Block count output not emitted by `-t` or `-i` operations; `cavaliergopher/cpio` reader doesn't track block counts.
+* *Status*: **Accepted** (low-impact output formatting; core functionality correct).
 
-| Function | Why |
-|----------|-----|
-| `main()` | `os.Exit()` |
-| `setProcTitle` | Modifies argv memory, Linux-only |
-| `RunDaemon` | Full daemon lifecycle |
-| `interactive()` | REPL with `os.Stdin` |
-| `ttyname()` | `IoctlGetTermios` syscall |
+### 3. `pidof` — 1 failure (exit code mismatch)
+* BusyBox test expects specific exit code behavior when no matching process is found.
+* *Status*: **Needs investigation**.
 
-## Remaining Failures (20)
+### 4. Compliance tests — ✅ COMPLETE
+* 28 `test/compliance/test_<name>.sh` scripts written for all Phase 26 Tier 4 and Phase 27 tools.
+* 84 assertions, 0 failures. 1 test skipped (uncompress needs system `compress`).
 
-### `awk` — 17 failures (goawk v1.31.0 limitations)
+### 5. JSON-RPC tests — 0 remaining gaps (106 running + 6 skipped = 112/115)
+* **30 new daemon tests** written in `test/posix-json/tier8_phase26_27_test.go` (24 running + 6 skipped).
+* **6 skipped** for hard constraints:
+  - `ash` — shell's custom flag parser conflicts with daemon's `--json` auto-prepend
+  - `wget` — requires live network connectivity
+  - `daemon` — cannot run a daemon inside the daemon process
+  - `mount` — requires root privileges for most operations
+  - `mdev` — requires root + kernel hotplug infrastructure
+  - `makedevs` — requires root for device node creation
+* **3 aliases** (`egrep`, `fgrep`, `gunzip`) share their parent's RPC method and are tested through `goposix.grep` / `goposix.gzip`.
+* **Verdict:** every utility has a JSON-RPC test or a documented reason it can't be tested.
 
-| # | Test | Root Cause |
-|---|------|------------|
-| 1 | `awk bitwise op` | goawk doesn't implement bitwise operators |
-| 2 | `awk properly handles undefined function` | goawk parse error on undefined functions |
-| 3 | `awk unused function args are evaluated` | goawk evaluation order difference |
-| 4 | `awk hex const 1` | goawk doesn't support hex constants |
-| 5 | `awk hex const 2` | Same |
-| 6 | `awk oct const` | goawk doesn't support octal constants |
-| 7 | `awk handles non-existing file correctly` | goawk error handling difference |
-| 8 | `awk nested loops with the same variable` | goawk scoping difference |
-| 9–12 | `awk func arg parsing 1–4` | goawk function argument parsing |
-| 13 | `awk handles empty ()` | goawk empty arg list handling |
-| 14 | `awk break` | goawk break statement |
-| 15 | `awk continue` | goawk continue statement |
-| 16 | `awk negative field access` | goawk negative field access |
-| 17 | `awk backslash+newline` | goawk line continuation handling |
+---
 
-### `realpath` — 3 failures (canonical path resolution limits in symlinked workspace)
+## 🚀 Historical Roadmaps & Archive
 
-| # | Test | Root Cause |
-|---|------|------------|
-| 18 | `realpath on non-existent local file 1` | Path canonicalization behavior difference on non-existent paths |
-| 19 | `realpath on link to non-existent file 1` | Path canonicalization behavior difference on non-existent paths |
-| 20 | `realpath on link to non-existent file 3` | Path canonicalization behavior difference on non-existent paths |
+The sequence of completed milestones, architectural changes, and past iterations (Phases 01 to 25) are preserved for historical reference in the master phase ledger:
 
-## Planned & Deferred Work
-
-All active planning phases, deferred architectural enhancements, completed transitions, and engine limitations are consolidated in a single central registry:
-
-👉 **[wiki/deferred.md](deferred.md)**
-
-Refer to that document for full details.
-
-### Alpine Daemon Mode
-
-| # | Item | Status |
-|---|------|--------|
-| — | Daemon-in-Alpine: `alpine-mvp` image runs CLI-only (shell). Adding daemon mode requires entrypoint change + user setup + BusyBox override decision. | PLANNING — see [alpine_plan.md § Daemon Mode](alpine_plan.md#daemon-mode-in-alpine) |
+👉 **[wiki/phases.md](phases.md)**

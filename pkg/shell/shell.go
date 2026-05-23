@@ -179,4 +179,9 @@ func init() {
 		Usage: "Execute shell scripts or interactive shell (alias)",
 		Run:   run,
 	})
+	dispatch.Register(dispatch.Command{
+		Name:  "ash",
+		Usage: "Execute shell scripts or interactive shell (ash alias)",
+		Run:   run,
+	})
 }

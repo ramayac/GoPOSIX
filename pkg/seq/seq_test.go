@@ -22,11 +22,11 @@ func (w *errorWriter) Write(p []byte) (n int, err error) {
 
 func TestFormatNum(t *testing.T) {
 	tests := []struct {
-		val       float64
-		prec      int
-		intWidth  int
-		eqWidth   bool
-		expected  string
+		val      float64
+		prec     int
+		intWidth int
+		eqWidth  bool
+		expected string
 	}{
 		// Non-equal-width, positive float
 		{3.5, 2, 3, false, "3.50"},

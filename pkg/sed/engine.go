@@ -340,7 +340,7 @@ func (e *engineState) execFlat(insts []*Instruction) error {
 					if inst.Global {
 						e.patSpace = re.ReplaceAllString(e.patSpace, repl)
 					} else if inst.SubNum > 0 {
-						// replace Nth occurence
+						// replace Nth occurrence
 						matches := re.FindAllStringIndex(e.patSpace, -1)
 						if len(matches) >= inst.SubNum {
 							loc := matches[inst.SubNum-1]

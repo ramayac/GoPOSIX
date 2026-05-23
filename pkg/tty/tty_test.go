@@ -199,5 +199,3 @@ func TestTtyRun_ErrorFallback(t *testing.T) {
 		t.Errorf("expected error JSON containing ETTY, got: %s", out.String())
 	}
 }
-
-
