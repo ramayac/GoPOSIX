@@ -102,3 +102,23 @@ This document catalogs the final tier of unimplemented BusyBox-tested utilities 
 * **Implementation Strategy**:
   * Bridge flag strings and path directories directly to the Linux standard `unix.Mount` system call.
   * Mock system calls in unit tests to verify proper flag parsing and error boundaries without requiring root permissions during development builds.
+
+---
+
+## 🔍 Third-Party Libraries & Feasibility Audit
+
+To keep GoPOSIX's transitive dependency count extremely low (as per the directive: *Avoid external Go modules unless absolutely necessary*), we performed a comprehensive audit of available open-source Go packages versus custom ground-up implementations for each of the 11 Tier 5 utilities:
+
+| Utility | Recommended Path | Library / Package | Technical Rationale |
+| :--- | :---: | :--- | :--- |
+| **`ar`** | **Library** | `github.com/blakesmith/ar` | Lightweight, standard-library-like API (`Reader`/`Writer`), BSD-licensed, zero transitive dependencies. Writing from scratch is redundant. |
+| **`cpio`** | **Library** | `github.com/cavaliergopher/cpio` | Robust ODC/New ASCII SVR4 parser supporting standard archives, MIT-licensed, widely tested. |
+| **`hexdump`** | **Ground-Up** | *None* | Hexdump's complex `-e` formatting syntax is highly specific. Writing a custom scanner/formatter in Go is cleaner and easier to test with injectables. |
+| **`xxd`** | **Ground-Up** | *None* | Reversing hex grids back to binary (`xxd -r`) has very custom parsing expectations that are best solved using a simple custom reader loop. |
+| **`rx`** | **Ground-Up** | *None* (or `xmodem-go`) | The XMODEM-CRC protocol is extremely simple (~100 lines of packet matching/NAK/ACK loops). Writing it from scratch keeps external dependencies at zero. |
+| **`bc`** | **Ground-Up** | *None* | Algebraic expression parsing and custom trigonometric scaling are best built using a clean Recursive Descent Parser with Go's standard `math/big` engine. |
+| **`dc`** | **Ground-Up** | *None* | A Reverse-Polish stack machine is trivial to implement in Go (less than 120 lines) using `math/big`. No external parser needed. |
+| **`ash`** | **Alias Integration** | *None* | Standard shell parsing is already handled natively in `pkg/shell` via `mvdan.cc/sh/v3`. We just need to register the `"ash"` command dispatcher alias! |
+| **`mdev`** | **Ground-Up / Syscall** | `golang.org/x/sys/unix` | Listening to kernel `uevents` can be achieved directly by binding to a Netlink raw socket using the Go standard `syscall` package, keeping external dependencies low. |
+| **`mkfs.minix`**| **Ground-Up** | *None* | Creating Minix filesystems requires serializing binary block structures. No reliable Go libraries exist, so custom `encoding/binary` packing is required. |
+| **`mount`** | **System Call** | `golang.org/x/sys/unix` | Bridge commands directly to standard Linux `unix.Mount` syscalls. |

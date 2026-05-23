@@ -10,6 +10,8 @@ require (
 )
 
 require (
+	github.com/blakesmith/ar v0.0.0-20190502131153-809d4375e1fb // indirect
+	github.com/cavaliergopher/cpio v1.0.1 // indirect
 	github.com/hotei/dcompress v0.0.0-20150530022901-3c67b82327a0 // indirect
 	github.com/sergeymakinen/go-crypt v1.0.4 // indirect
 	github.com/tredoe/crypt v1.0.3 // indirect
