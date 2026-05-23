@@ -20,16 +20,16 @@ This document serves as the live registry of remaining work, active plans, and k
 
 ## 🛠️ Active Phase: Phase 27 (High-Complexity Tier 5)
 
-Phase 26 (Tiers 1–4) is **complete**. Phase 27 has 5 of 11 implemented. The remaining 6 are cataloged in detail on the dedicated Phase 27 planning page:
+Phase 26 (Tiers 1–4) is **complete**. Phase 27 (Tier 5) is also **complete** (11 of 11 implemented). The full breakdown is documented on the planning page:
 
 👉 **[wiki/27_high_complexity_tools.md](27_high_complexity_tools.md)**
 
-### Tier 5 Utilities (11 Utilities - IN PROGRESS 🔨)
+### Tier 5 Utilities (11 Utilities - COMPLETE ✅)
 * **Compression & Archiving (2)**: ✅ `ar`, ✅ `cpio`
-* **Development & Hex (3)**: ✅ `rx`, ⏳ `hexdump`, ⏳ `xxd`
-* **Mathematics (2)**: ✅ `dc`, ⏳ `bc`
+* **Development & Hex (3)**: ✅ `rx`, ✅ `hexdump`, ✅ `xxd`
+* **Mathematics (2)**: ✅ `dc`, ✅ `bc`
 * **Shell (1)**: ✅ `ash` (alias to existing native `shell` implementation)
-* **System Admin & Hardware (3)**: ✅ `mdev`, ⏳ `mkfs.minix`, ✅ `mount`
+* **System Admin & Hardware (3)**: ✅ `mdev`, ✅ `mkfs.minix`, ✅ `mount`
 
 ---
 

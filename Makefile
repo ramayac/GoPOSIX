@@ -129,6 +129,10 @@ PKG_DIRS   := . \
               ./pkg/cpio/... \
               ./pkg/mount/... \
               ./pkg/mdev/... \
+              ./pkg/xxd/... \
+              ./pkg/hexdump/... \
+              ./pkg/bc/... \
+              ./pkg/mkfs_minix/... \
               ./test/posix-json/...
 
 

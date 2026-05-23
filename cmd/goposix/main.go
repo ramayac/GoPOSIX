@@ -121,6 +121,10 @@ import (
 	_ "github.com/ramayac/goposix/pkg/cpio"
 	_ "github.com/ramayac/goposix/pkg/mdev"
 	_ "github.com/ramayac/goposix/pkg/mount"
+	_ "github.com/ramayac/goposix/pkg/xxd"
+	_ "github.com/ramayac/goposix/pkg/hexdump"
+	_ "github.com/ramayac/goposix/pkg/bc"
+	_ "github.com/ramayac/goposix/pkg/mkfs_minix"
 )
 
 func main() {
