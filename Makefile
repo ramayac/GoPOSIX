@@ -155,6 +155,8 @@ help:
 	@echo "    image        Build the default (daemon) Docker image"
 	@echo "    image-cli    Build the CLI-only (scratch) Docker image"
 	@echo "    image-debug  Build the debug (Alpine+shell) Docker image"
+	@echo "    image-openbox Build the Openbox desktop Docker image"
+	@echo "    openbox-demo Build + run Openbox desktop demo (needs Xephyr)"
 	@echo ""
 	@echo "  Test"
 	@echo "    test         Run all unit tests"
@@ -173,6 +175,8 @@ help:
 	@echo "    docker        Build default daemon image ($(DOCKER_IMG))"
 	@echo "    docker-cli    Build CLI-only scratch image (goposix:cli)"
 	@echo "    docker-debug  Build Alpine debug image (goposix:debug)"
+	@echo "    docker-openbox Build Openbox desktop image (goposix:openbox)"
+	@echo "    openbox-demo  Build + launch Openbox desktop (nested X11 window)"
 	@echo "    smoke-docker  Run smoke tests in CLI container"
 	@echo ""
 	@echo "  Smoke"
@@ -343,6 +347,36 @@ docker-debug: ## Build debug alpine docker image
 
 .PHONY: image-debug
 image-debug: docker-debug
+
+.PHONY: docker-openbox
+docker-openbox:
+	docker build \
+	  -t goposix:openbox \
+	  -f docker/Dockerfile.openbox .
+
+.PHONY: image-openbox
+image-openbox: docker-openbox
+
+.PHONY: openbox-demo
+openbox-demo: docker-openbox
+	@command -v Xephyr >/dev/null 2>&1 || { \
+	  echo "ERROR: Xephyr not found. Install it:"; \
+	  echo "  Debian/Ubuntu: sudo apt install xserver-xephyr"; \
+	  echo "  Arch:          sudo pacman -S xorg-server-xephyr"; \
+	  echo "  Fedora:        sudo dnf install xorg-X11-server-Xephyr"; \
+	  exit 1; \
+	}
+	@echo "Starting Xephyr nested display on :1 (1280x720)..."
+	@Xephyr :1 -screen 1280x720 -ac & \
+	  XEPHYR_PID=$$!; \
+	  sleep 0.5; \
+	  echo "Launching openbox container... (close Xephyr window to exit)"; \
+	  docker run -it --rm \
+	    -v /tmp/.X11-unix:/tmp/.X11-unix \
+	    -e DISPLAY=:1 \
+	    goposix:openbox; \
+	  echo "Shutting down Xephyr..."; \
+	  kill $$XEPHYR_PID 2>/dev/null; wait $$XEPHYR_PID 2>/dev/null; true
 
 # Go-Alpine Distro MVP (GoPOSIX-powered Alpine Userland)
 .PHONY: docker-alpine
