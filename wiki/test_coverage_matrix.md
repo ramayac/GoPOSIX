@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-22 | **BusyBox:** 729 pass / 19 fail / 53 skip | **Branch:** `feat/missing-tools-tier4` | **Overall Coverage:** 82.9% | **JSON-RPC:** 106/115 (92.2%)
+> **Last updated:** 2026-05-26 | **BusyBox:** 729 pass / 19 fail / 53 skip | **Branch:** `feat/missing-tools-tier4` | **Overall Coverage:** 82.9% | **JSON-RPC:** 107/115 (93.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -169,6 +169,7 @@
 | `ash` | — | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mount` | 80.6% | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mdev` | 87.4% | 0 | ⚠️ 0/12 (12 skip) | ⚠️ skip |
+| `dc` | 90.3% | 3 | 🟡 3/13 (dc testsuite: 3 ✓ / 10 wrapping+scale diffs) | ✅ |
 
 ## SDK / Client Library
 
@@ -195,7 +196,7 @@
 | BusyBox failed | 19 | 16 awk (goawk limits) + 2 cpio (block count output) + 1 pidof |
 | BusyBox skipped | 53 | External deps (bzip2, xz, uudecode, tar, tree unicode, pidof init, ar needs system ar, mount/mdev need root, etc.) |
 | Daemon internal coverage | 65.2% | +28.7% from Phase 18, +0.6% from Phase C |
-| JSON-RPC daemon tests | 106/115 | 92.2% (0 gaps: 6 Tier 8 skips with documented reasons + 3 aliases share parent RPC) |
+| JSON-RPC daemon tests | 107/115 | 93.0% (0 gaps: 6 Tier 8 skips with documented reasons + 2 aliases share parent RPC) |
 | Packages below 70% unit coverage | 3 | `tty` (60.0%), `gzip` (64.7%), `tar` (69.4%) |
 
 ## Remaining Gaps
@@ -215,8 +216,8 @@
 - **Coverage gate:** CI enforces ≥80% overall (run `make cover-gate` for current; target ≥80% per Phase 28)
 - **Tier 7 stubs:** Implemented as functional stubs; need hardening and BusyBox-style compliance tests
 - **Phase 26 (Tiers 1–4):** 25 utilities + 1 companion (`uudecode`) implemented. Tier 1: `which`, `realpath`, `seq`, `sha1sum`, `sha512sum`. Tier 2: `rev`, `uptime`, `wget`, `cal`. Tier 3: `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, `pidof`. Tier 4: `bunzip2`, `bzcat`, `unlzma`, `uncompress`, `unzip`, `uuencode`, `uudecode`, `taskset`, `start-stop-daemon`, `cryptpw`, `makedevs`.
-- **Phase 27 (Tier 5):** 5 of 11 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`. Remaining: `hexdump`, `xxd`, `rx`, `bc`, `dc`, `mkfs.minix`.
-- **Phase 26/27 JSON-RPC tests:** 25 new daemon tests added in `test/posix-json/tier8_phase26_27_test.go`. 6 tools skipped (ash→shell --json conflict, wget→network, daemon→recursive, mount/mdev/makedevs→root). Fixed cpio bug where list mode printed filenames to stdout in JSON mode, corrupting daemon output.
+- **Phase 27 (Tier 5):** 6 of 11 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`, `dc`. Remaining: `hexdump`, `xxd`, `rx`, `bc`, `mkfs.minix`.
+- **Phase 26/27 JSON-RPC tests:** 31 new daemon tests added in `test/posix-json/tier8_phase26_27_test.go` (25 running + 6 skipped). Includes `dc` add + complex.
 - **JSON-RPC alias coverage added:** `egrep`, `fgrep` (grep aliases), `gunzip` (gzip alias) now tested via daemon.
 - **Phase 26/27 compliance tests:** 28 `test/compliance/test_<name>.sh` scripts written. 84 assertions, 0 failures. 1 test skipped (uncompress needs system `compress`).
 - **Phase 28 (feat/coverage-10):** Added 60+ new unit tests covering CLI glue layers (`run()`), infrastructure (dispatch, flags, filepath), utility edge cases (date, printf, wc, expr, diff, sort, tar), and observability. Overall coverage: 77.9% → 80.1%. Key wins: `true/false` 75% → 100%, `wc` 81.2% → 93.2%, dispatch 100%, flags 100%, filepath 100%, `printf` 65.6% → 79.0%, `sort` 82.5% → 85.2%. CI gate raised from 70% → 80%. Remaining gaps: `main()` (os.Exit), `client_helpers` (needs daemon), platform-specific code (`setProcTitle`, `RunDaemon`).

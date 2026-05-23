@@ -4,7 +4,7 @@
 >
 > **Status:** 115 utilities | 729 BusyBox passes (91.0%) | 82.9% coverage | 106/115 JSON-RPC
 >
-> ✅ Phase 26 (Missing Tools Tier 1–4) — 26 utilities implemented (branch `feat/missing-tools-tier4`): `which`, `realpath`, `seq`, `sha1sum`, `sha512sum`, `rev`, `uptime`, `wget`, `cal`, `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, `pidof`, `bunzip2`, `bzcat`, `unlzma`, `uncompress`, `unzip`, `uuencode`, `uudecode`, `taskset`, `start-stop-daemon`, `cryptpw`, `makedevs`. 🔨 Phase 27 (High-Complexity Tier 5) — 5 of 11 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`.
+> ✅ Phase 26 (Missing Tools Tier 1–4) — 26 utilities implemented (branch `feat/missing-tools-tier4`): `which`, `realpath`, `seq`, `sha1sum`, `sha512sum`, `rev`, `uptime`, `wget`, `cal`, `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, `pidof`, `bunzip2`, `bzcat`, `unlzma`, `uncompress`, `unzip`, `uuencode`, `uudecode`, `taskset`, `start-stop-daemon`, `cryptpw`, `makedevs`. 🔨 Phase 27 (High-Complexity Tier 5) — 6 of 11 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`, `dc`.
 
 ---
 
@@ -97,7 +97,7 @@ goposix binary (single static ELF, <12MB)
 
 | # | Item | Doc |
 |---|------|-----|
-| 🔨 | Phase 27 — 6 remaining Tier 5 tools: `hexdump`, `xxd`, `rx`, `bc`, `dc`, `mkfs.minix` | [27_high_complexity_tools.md](27_high_complexity_tools.md) — branch `feat/missing-tools-tier4` |
+| 🔨 | Phase 27 — 5 remaining Tier 5 tools: `hexdump`, `xxd`, `rx`, `bc`, `mkfs.minix` | [27_high_complexity_tools.md](27_high_complexity_tools.md) — branch `feat/missing-tools-tier4` |
 | ✅ | Hardening IV Part 1 — 21 gaps resolved (injectable streams, date specifiers, grep binary detection, ls -d, PreProcess hook, +15 more) | [24_hardening_iv.md](24_hardening_iv.md) |
 | 🔧 | Observability exports (A–D done, E external) | [observability_exports.md](observability_exports.md) — branch `feat/observability` |
 | — | Multi-agent observability | [observability_exports.md#part-2](observability_exports.md) — deferred discussion |

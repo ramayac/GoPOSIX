@@ -27,7 +27,7 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 has 5 of 11 implemented. The re
 ### Tier 5 Utilities (11 Utilities - IN PROGRESS 🔨)
 * **Compression & Archiving (2)**: ✅ `ar`, ✅ `cpio`
 * **Development & Hex (3)**: ⏳ `hexdump`, ⏳ `xxd`, ⏳ `rx`
-* **Mathematics (2)**: ⏳ `bc`, ⏳ `dc`
+* **Mathematics (2)**: ✅ `dc`, ⏳ `bc`
 * **Shell (1)**: ✅ `ash` (alias to existing native `shell` implementation)
 * **System Admin & Hardware (3)**: ✅ `mdev`, ⏳ `mkfs.minix`, ✅ `mount`
 

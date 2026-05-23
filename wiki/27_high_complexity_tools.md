@@ -1,9 +1,9 @@
 # Phase 27 — High Complexity & Privileged Utilities (Tier 5)
 
-> **Version:** 1.1 | **Date:** 2026-05-23 | **Status:** PARTIALLY IMPLEMENTED
+> **Version:** 1.2 | **Date:** 2026-05-26 | **Status:** PARTIALLY IMPLEMENTED
 >
 > **Analysis:** 11 High-Complexity / Privileged Utilities (Tier 5)
-> **Implemented:** `ar`, `cpio`, `ash` (alias), `mount`, `mdev` ✅
+> **Implemented:** `ar`, `cpio`, `ash` (alias), `mount`, `mdev`, `dc` ✅ (6/11)
 
 This document catalogs the final tier of unimplemented BusyBox-tested utilities in **GoPOSIX**. It outlines the requirements, architectural considerations, and precise Go-native implementation strategies needed to implement them with full POSIX and BusyBox parity.
 
@@ -51,15 +51,17 @@ This document catalogs the final tier of unimplemented BusyBox-tested utilities 
 
 ### 3. Mathematics & Calculators
 
-#### 🧮 **`bc`** & **`dc`** (Arbitrary-precision calculators)
-* **BusyBox Test Suite**: `bc.tests` and `dc.tests` (e.g., executing complex scripts, scale calculations, trigonometry, and variables).
-* **POSIX/GNU Requirements**:
-  * **`dc`**: Stack-based, Reverse-Polish Notation (RPN) calculator.
-  * **`bc`**: Interactive, C-like calculator language with variables, arrays, custom functions, control statements (`if`, `for`, `while`), and floating-point scale limits.
-* **Implementation Strategy**:
-  * Standard math operations will be bridged to Go's standard `math/big` package (`big.Float`, `big.Int`, `big.Rat`) for unlimited precision.
-  * **`dc`**: Implement a stack machine that reads character sequences, updates standard registers, and handles math bounds.
-  * **`bc`**: Implement a token scanner and an AST parser that evaluates expressions or parses mathematical routines into an execution scope.
+#### 🧮 **`dc`** — ✅ IMPLEMENTED (`pkg/dc/`)
+* **BusyBox Test Suite**: `dc.tests` (arithmetic, stack ops, registers, conditionals, macros, scale).
+* **Library**: None — pure `math/big` stack machine.
+* **Operations**: `+`, `-`, `*`, `/`, `%`, `~` (divmod), `^` (power), `v` (sqrt), `|` (modexp), `p`/`n`/`P`/`f` (print), `c`/`d`/`r`/`R`/`z`/`Z` (stack ops), `s`/`l`/`S`/`L` (registers), `x` (macro), `>`/`<`/`=`/`!>`/`!<`/`!=`/`e` (conditionals), `(`/`{`/`G`/`N` (boolean compare), `k`/`K` (scale), `a` (ascii), `[...]` (strings), `?` (stdin), `-e`/`-f`/`--json`.
+* **Coverage**: 90.3% ✅
+* **Known differences from BusyBox**: Uses global scale for formatting (BusyBox uses per-number scale). Five BusyBox dc bugs documented in [wiki/11_lessons_learned.md](11_lessons_learned.md).
+
+#### 🧮 **`bc`** (Arbitrary-precision calculator — not yet implemented)
+* **BusyBox Test Suite**: `bc.tests` (complex scripts, scale calculations, trigonometry, variables).
+* **POSIX/GNU Requirements**: Interactive, C-like calculator language with variables, arrays, custom functions, control statements (`if`, `for`, `while`), and floating-point scale limits.
+* **Implementation Strategy**: Token scanner + AST parser + `math/big` evaluation engine.
 
 ---
 
@@ -107,7 +109,7 @@ To keep GoPOSIX's transitive dependency count extremely low (as per the directiv
 | **`xxd`** | **Ground-Up** | *None* | Reversing hex grids back to binary (`xxd -r`) has very custom parsing expectations that are best solved using a simple custom reader loop. |
 | **`rx`** | **Ground-Up** | *None* (or `xmodem-go`) | The XMODEM-CRC protocol is extremely simple (~100 lines of packet matching/NAK/ACK loops). Writing it from scratch keeps external dependencies at zero. |
 | **`bc`** | **Ground-Up** | *None* | Algebraic expression parsing and custom trigonometric scaling are best built using a clean Recursive Descent Parser with Go's standard `math/big` engine. |
-| **`dc`** | **Ground-Up** | *None* | A Reverse-Polish stack machine is trivial to implement in Go (less than 120 lines) using `math/big`. No external parser needed. |
+| **`dc`** | **Ground-Up** | *None* | ✅ IMPLEMENTED — Pure Go `math/big` RPN stack machine with registers, macros, conditionals, and 69-char line wrapping. 90.3% coverage with 67 unit tests. |
 | **`ash`** | **Alias Integration** | *None* | Standard shell parsing is already handled natively in `pkg/shell` via `mvdan.cc/sh/v3`. We just need to register the `"ash"` command dispatcher alias! |
 | **`mdev`** | **Ground-Up / Syscall** | `golang.org/x/sys/unix` | Listening to kernel `uevents` can be achieved directly by binding to a Netlink raw socket using the Go standard `syscall` package, keeping external dependencies low. |
 | **`mkfs.minix`**| **Ground-Up** | *None* | Creating Minix filesystems requires serializing binary block structures. No reliable Go libraries exist, so custom `encoding/binary` packing is required. |
