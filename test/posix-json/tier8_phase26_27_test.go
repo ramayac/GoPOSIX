@@ -28,6 +28,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/patch"
 	_ "github.com/ramayac/goposix/pkg/realpath"
 	_ "github.com/ramayac/goposix/pkg/rev"
+	_ "github.com/ramayac/goposix/pkg/rx"
 	_ "github.com/ramayac/goposix/pkg/seq"
 	_ "github.com/ramayac/goposix/pkg/sha1sum"
 	_ "github.com/ramayac/goposix/pkg/sha512sum"
@@ -1109,8 +1110,8 @@ func TestTier8_Dc(t *testing.T) {
 
 	t.Run("dc add", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(ctx, "dc", map[string]interface{}{
-			"expression": []string{"10 20+p"},
+		err := c.Call(ctx, "goposix.dc", map[string]interface{}{
+			"flags": []interface{}{"-e", "10 20+p"},
 		}, &result)
 		if err != nil {
 			t.Fatalf("dc add call: %v", err)
@@ -1130,8 +1131,8 @@ func TestTier8_Dc(t *testing.T) {
 
 	t.Run("dc complex", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(ctx, "dc", map[string]interface{}{
-			"expression": []string{"8 8*2 2+/p"},
+		err := c.Call(ctx, "goposix.dc", map[string]interface{}{
+			"flags": []interface{}{"-e", "8 8*2 2+/p"},
 		}, &result)
 		if err != nil {
 			t.Fatalf("dc complex call: %v", err)
