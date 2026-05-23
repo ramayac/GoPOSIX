@@ -170,6 +170,7 @@
 | `mount` | 80.6% | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mdev` | 87.4% | 0 | ⚠️ 0/12 (12 skip) | ⚠️ skip |
 | `dc` | 90.3% | 3 | 🟡 3/13 (dc testsuite: 3 ✓ / 10 wrapping+scale diffs) | ✅ |
+| `rx` | 72.4% | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 
 ## SDK / Client Library
 
@@ -216,7 +217,7 @@
 - **Coverage gate:** CI enforces ≥80% overall (run `make cover-gate` for current; target ≥80% per Phase 28)
 - **Tier 7 stubs:** Implemented as functional stubs; need hardening and BusyBox-style compliance tests
 - **Phase 26 (Tiers 1–4):** 25 utilities + 1 companion (`uudecode`) implemented. Tier 1: `which`, `realpath`, `seq`, `sha1sum`, `sha512sum`. Tier 2: `rev`, `uptime`, `wget`, `cal`. Tier 3: `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, `pidof`. Tier 4: `bunzip2`, `bzcat`, `unlzma`, `uncompress`, `unzip`, `uuencode`, `uudecode`, `taskset`, `start-stop-daemon`, `cryptpw`, `makedevs`.
-- **Phase 27 (Tier 5):** 6 of 11 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`, `dc`. Remaining: `hexdump`, `xxd`, `rx`, `bc`, `mkfs.minix`.
+- **Phase 27 (Tier 5): 7 of 11 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`, `dc`, `rx`. Remaining: `hexdump`, `xxd`, `bc`, `mkfs.minix`.
 - **Phase 26/27 JSON-RPC tests:** 31 new daemon tests added in `test/posix-json/tier8_phase26_27_test.go` (25 running + 6 skipped). Includes `dc` add + complex.
 - **JSON-RPC alias coverage added:** `egrep`, `fgrep` (grep aliases), `gunzip` (gzip alias) now tested via daemon.
 - **Phase 26/27 compliance tests:** 28 `test/compliance/test_<name>.sh` scripts written. 84 assertions, 0 failures. 1 test skipped (uncompress needs system `compress`).

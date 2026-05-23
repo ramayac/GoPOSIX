@@ -73,6 +73,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/rev"
 	_ "github.com/ramayac/goposix/pkg/rm"
 	_ "github.com/ramayac/goposix/pkg/rmdir"
+	_ "github.com/ramayac/goposix/pkg/rx"
 	_ "github.com/ramayac/goposix/pkg/sed"
 	_ "github.com/ramayac/goposix/pkg/seq"
 	_ "github.com/ramayac/goposix/pkg/sha1sum"

@@ -1,9 +1,9 @@
 # Phase 27 — High Complexity & Privileged Utilities (Tier 5)
 
-> **Version:** 1.2 | **Date:** 2026-05-26 | **Status:** PARTIALLY IMPLEMENTED
+> **Version:** 1.3 | **Date:** 2026-05-26 | **Status:** PARTIALLY IMPLEMENTED
 >
 > **Analysis:** 11 High-Complexity / Privileged Utilities (Tier 5)
-> **Implemented:** `ar`, `cpio`, `ash` (alias), `mount`, `mdev`, `dc` ✅ (6/11)
+> **Implemented:** `ar`, `cpio`, `ash` (alias), `mount`, `mdev`, `dc`, `rx` ✅ (7/11)
 
 This document catalogs the final tier of unimplemented BusyBox-tested utilities in **GoPOSIX**. It outlines the requirements, architectural considerations, and precise Go-native implementation strategies needed to implement them with full POSIX and BusyBox parity.
 
@@ -38,14 +38,11 @@ This document catalogs the final tier of unimplemented BusyBox-tested utilities 
   * **`hexdump`**: Design a lightweight parser for the formatting strings that compiles format tokens into a slice of print actions.
   * **`xxd`**: Write standard byte-grid output formatters, and a line-by-line scanner for `-r` that parses hex offsets and hexadecimal character pairs to recreate the binary stream.
 
-#### 📡 **`rx`** (XMODEM file receiver)
-* **BusyBox Test Suite**: `rx.tests` (verifies protocol integrity, handshakes, and errors).
-* **POSIX/GNU Requirements**: Non-interactive file receiver using the classic XMODEM protocol (standard 128-byte packets and XMODEM-1K/1024-byte packets) with standard Checksum and CRC-16 integrity verification.
-* **Implementation Strategy**:
-  * Write XMODEM packet parsing and state machine:
-    * Standard Control Characters: `SOH` (0x01), `STX` (0x02), `EOT` (0x04), `ACK` (0x06), `NAK` (0x15), `CAN` (0x18).
-    * CRC calculations over byte arrays.
-  * Rely entirely on injectable `io.Reader`/`io.Writer` streams to easily mock UART/Serial port behavior in Go unit tests.
+#### 📡 **`rx`** — ✅ IMPLEMENTED (`pkg/rx/`)
+* **BusyBox Test Suite**: `rx.tests` (1 test: single-block XMODEM transfer with CRC-16).
+* **Library**: None — pure Go XMODEM state machine using `io.Reader`/`io.Writer` injectable streams.
+* **Operations**: Receives SOH/STX data packets with CRC-16/XMODEM verification, sends ACK/NAK/C control characters, strips trailing CP/M EOF padding (0x1A), supports `--json`.
+* **Coverage**: 72.4% ✅
 
 ---
 
@@ -107,7 +104,7 @@ To keep GoPOSIX's transitive dependency count extremely low (as per the directiv
 | **`cpio`** | **Library** | `github.com/cavaliergopher/cpio` | Robust ODC/New ASCII SVR4 parser supporting standard archives, MIT-licensed, widely tested. |
 | **`hexdump`** | **Ground-Up** | *None* | Hexdump's complex `-e` formatting syntax is highly specific. Writing a custom scanner/formatter in Go is cleaner and easier to test with injectables. |
 | **`xxd`** | **Ground-Up** | *None* | Reversing hex grids back to binary (`xxd -r`) has very custom parsing expectations that are best solved using a simple custom reader loop. |
-| **`rx`** | **Ground-Up** | *None* (or `xmodem-go`) | The XMODEM-CRC protocol is extremely simple (~100 lines of packet matching/NAK/ACK loops). Writing it from scratch keeps external dependencies at zero. |
+| **`rx`** | **Ground-Up** | *None* | ✅ IMPLEMENTED — XMODEM CRC-16 state machine. 72.4% coverage with 9 tests. |
 | **`bc`** | **Ground-Up** | *None* | Algebraic expression parsing and custom trigonometric scaling are best built using a clean Recursive Descent Parser with Go's standard `math/big` engine. |
 | **`dc`** | **Ground-Up** | *None* | ✅ IMPLEMENTED — Pure Go `math/big` RPN stack machine with registers, macros, conditionals, and 69-char line wrapping. 90.3% coverage with 67 unit tests. |
 | **`ash`** | **Alias Integration** | *None* | Standard shell parsing is already handled natively in `pkg/shell` via `mvdan.cc/sh/v3`. We just need to register the `"ash"` command dispatcher alias! |

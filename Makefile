@@ -36,6 +36,7 @@ PKG_DIRS   := . \
               ./pkg/cat/... \
               ./pkg/mkdir/... \
               ./pkg/rmdir/... \
+              ./pkg/rx/... \
               ./pkg/rm/... \
               ./pkg/cp/... \
               ./pkg/comm/... \

@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-22 | **Utilities:** 115 | **Coverage:** 82.9% | **JSON-RPC Daemon:** 106/115 (92.2%)
+> **Last updated:** 2026-05-26 | **Utilities:** 115 | **Coverage:** 82.9% | **JSON-RPC Daemon:** 108/115 (93.9%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -12,7 +12,7 @@ This document serves as the live registry of remaining work, active plans, and k
 |--------|-------|
 | **Total Utilities Implemented** | **115** (all registered via `dispatch.Register`) |
 | **Overall Statement Coverage** | **82.9%** (fully compliant with the `>=80%` CI gate) |
-| **JSON-RPC Daemon Coverage** | **106/115** utilities with structured output tests |
+| **JSON-RPC Daemon Coverage** | **108/115** utilities with structured output tests |
 | **Multicall Compatibility** | Complete dispatching via symlinks or direct subcommands |
 | **CGO Status** | 100% CGO-free Go (`CGO_ENABLED=0`) |
 
@@ -26,7 +26,7 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 has 5 of 11 implemented. The re
 
 ### Tier 5 Utilities (11 Utilities - IN PROGRESS 🔨)
 * **Compression & Archiving (2)**: ✅ `ar`, ✅ `cpio`
-* **Development & Hex (3)**: ⏳ `hexdump`, ⏳ `xxd`, ⏳ `rx`
+* **Development & Hex (3)**: ✅ `rx`, ⏳ `hexdump`, ⏳ `xxd`
 * **Mathematics (2)**: ✅ `dc`, ⏳ `bc`
 * **Shell (1)**: ✅ `ash` (alias to existing native `shell` implementation)
 * **System Admin & Hardware (3)**: ✅ `mdev`, ⏳ `mkfs.minix`, ✅ `mount`
@@ -51,8 +51,8 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 has 5 of 11 implemented. The re
 * 28 `test/compliance/test_<name>.sh` scripts written for all Phase 26 Tier 4 and Phase 27 tools.
 * 84 assertions, 0 failures. 1 test skipped (uncompress needs system `compress`).
 
-### 5. JSON-RPC tests — 0 remaining gaps (106 running + 6 skipped = 112/115)
-* **30 new daemon tests** written in `test/posix-json/tier8_phase26_27_test.go` (24 running + 6 skipped).
+### 5. JSON-RPC tests — 0 remaining gaps (108 running + 7 skipped = 115/115)
+* **31 new daemon tests** written across `test/posix-json/tier8_phase26_27_test.go`.
 * **6 skipped** for hard constraints:
   - `ash` — shell's custom flag parser conflicts with daemon's `--json` auto-prepend
   - `wget` — requires live network connectivity
