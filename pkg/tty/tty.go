@@ -30,6 +30,7 @@ var (
 		return err == nil
 	}
 	ttynameFn = ttyname
+	runTtyFn  = runTty
 )
 
 // ttyname returns the path of the terminal associated with fd.
@@ -68,15 +69,15 @@ func runTty(stdin io.Reader) (TtyResult, error) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tty: %v\n", err)
+		fmt.Fprintf(stderr, "tty: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
 	silent := flags.Has("s")
 
-	result, err := runTty(stdin)
+	result, err := runTtyFn(stdin)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tty: %v\n", err)
+		fmt.Fprintf(stderr, "tty: %v\n", err)
 		common.RenderError("tty", 1, "ETTY", err.Error(), jsonMode, stdout)
 		return 1
 	}
@@ -88,15 +89,13 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		return 0
 	}
 
-	if !jsonMode {
+	common.Render("tty", result, jsonMode, stdout, func() {
 		if result.IsTTY {
 			fmt.Fprintln(stdout, result.Path)
 		} else {
 			fmt.Fprintln(stdout, "not a tty")
 		}
-	} else {
-		common.Render("tty", result, jsonMode, stdout, func() {})
-	}
+	})
 	return 0
 }
 

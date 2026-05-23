@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net"
 	"strings"
@@ -266,4 +267,47 @@ func TestLoggerCLI_InjectableStreams(t *testing.T) {
 		t.Errorf("expected stderr to contain 'log to stderr', got: %s", stderr.String())
 	}
 }
+
+func TestRun_EmptyTag(t *testing.T) {
+	result, err := Run("empty tag msg", "", "user.notice", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Tag != "logger" {
+		t.Errorf("expected tag to default to 'logger', got %s", result.Tag)
+	}
+}
+
+type mockReader struct{}
+
+func (mockReader) Read(p []byte) (int, error) {
+	return 0, fmt.Errorf("mock read error")
+}
+
+func TestLoggerCLI_ReadError(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := run([]string{}, mockReader{}, &stdout, &stderr, "")
+	if code != 1 {
+		t.Errorf("expected exit 1 for read error, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "logger: mock read error") {
+		t.Errorf("expected stderr to contain read error logs, got: %s", stderr.String())
+	}
+}
+
+func TestLoggerCLI_WriteFailure(t *testing.T) {
+	origDial := dialSyslogFn
+	defer func() { dialSyslogFn = origDial }()
+
+	dialSyslogFn = func(network, address string) (net.Conn, error) {
+		return &mockConn{failWrite: true}, nil
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"message"}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Errorf("expected exit 1 for write failure, got %d", code)
+	}
+}
+
 
