@@ -228,4 +228,3 @@ func TestJoinCLI_Stdin(t *testing.T) {
 		t.Errorf("exit %d, want 0", code)
 	}
 }
-

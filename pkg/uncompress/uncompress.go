@@ -270,7 +270,6 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			return nil
 		}()
 
-
 		if err != nil {
 			exitCode = 1
 			if !quietMode {

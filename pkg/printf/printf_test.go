@@ -22,11 +22,11 @@ func TestUnescapeChar(t *testing.T) {
 		{"f", '\f'},
 		{"v", '\v'},
 		{"0", 0},
-		{"x", 'x'},  // plain character
-		{"101", 0101},  // octal 'A'
-		{"377", 0377},  // octal max byte
-		{"00", 0},      // octal 0
-		{"7", '7'},      // single octal digit, treated as literal
+		{"x", 'x'},    // plain character
+		{"101", 0101}, // octal 'A'
+		{"377", 0377}, // octal max byte
+		{"00", 0},     // octal 0
+		{"7", '7'},    // single octal digit, treated as literal
 	}
 	for _, tt := range tests {
 		got := unescapeChar(tt.in)
@@ -604,7 +604,7 @@ func TestFormat_BConv_AllEscapes(t *testing.T) {
 		{`\r`, "\r"},
 		{`\0`, "\x00"},
 		{`\0101`, "A"},
-		{`\c`, `\c`},  // \c is NOT truncated in %b args (only in format string)
+		{`\c`, `\c`}, // \c is NOT truncated in %b args (only in format string)
 		{`hello\nworld`, "hello\nworld"},
 	}
 	for _, tt := range tests {

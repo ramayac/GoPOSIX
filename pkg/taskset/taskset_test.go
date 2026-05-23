@@ -189,4 +189,3 @@ func TestTasksetErrorPaths(t *testing.T) {
 		t.Error("Expected failure for invalid hex mask in command mode")
 	}
 }
-

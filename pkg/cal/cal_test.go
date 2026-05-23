@@ -128,10 +128,10 @@ func TestCalCLIYearOnly(t *testing.T) {
 func TestCalCLIInvalidArgs(t *testing.T) {
 	// Test invalid inputs
 	cases := [][]string{
-		{"13", "2000"}, // Invalid month
-		{"0", "2000"},  // Invalid month
-		{"1", "0"},     // Invalid year
-		{"1", "10000"}, // Invalid year
+		{"13", "2000"},  // Invalid month
+		{"0", "2000"},   // Invalid month
+		{"1", "0"},      // Invalid year
+		{"1", "10000"},  // Invalid year
 		{"foo", "2000"}, // Non-numeric month string not matching month names
 	}
 	for _, c := range cases {

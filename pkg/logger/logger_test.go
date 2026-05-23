@@ -309,5 +309,3 @@ func TestLoggerCLI_WriteFailure(t *testing.T) {
 		t.Errorf("expected exit 1 for write failure, got %d", code)
 	}
 }
-
-

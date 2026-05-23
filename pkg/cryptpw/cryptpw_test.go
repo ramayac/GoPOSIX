@@ -214,4 +214,3 @@ func TestCryptpwErrorPaths(t *testing.T) {
 		t.Error("Expected DES to fail with invalid salt")
 	}
 }
-

@@ -1,8 +1,8 @@
 # Phase 26 — Missing BusyBox Tools Analysis
 
-> **Version:** 5.6 | **Date:** 2026-05-22 | **Tier:** GOLD | **Status:** COMPLETED
+> **Version:** 6.0 | **Date:** 2026-05-23 | **Tier:** GOLD | **Status:** COMPLETED
 >
-> **Analysis:** 27 Unimplemented Utilities | 61 Implemented & Tested Utilities | 29 Implemented Utilities Without BusyBox Tests
+> **Analysis:** 17 Unimplemented Utilities | 71 Implemented & Tested Utilities | 29 Implemented Utilities Without BusyBox Tests
 
 This document presents a comprehensive, systematic audit of the **BusyBox test suite** located in `test/busybox_testsuite` against the current registered commands and implemented packages in **GoPOSIX**. 
 
@@ -212,9 +212,8 @@ For our implementation progress in the `feat/missing-tools` branch, we follow th
 * **Tier 1 (Trivial & Quick Wins)**: `which`, `realpath`, `seq`, `sha1sum`, and `sha512sum` are 100% complete and verified.
 * **Tier 2 (Mid-Level Complexity)**: `rev`, `uptime`, `wget`, and `cal` are 100% complete and verified.
 * **Tier 3 (Trivial & Quick Wins)**: `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, and `pidof` are 100% complete and verified.
+* **Tier 4 (Mid-Level Complexity - 10 Utilities)**: `bunzip2`, `bzcat`, `unlzma`, `uncompress`, `unzip`, `uuencode`, `taskset`, `start-stop-daemon`, `cryptpw`, and `makedevs` (along with companion `uudecode`) are 100% complete and verified.
 
 ### Pending Phases ⏳
-* **Tier 4 (Mid-Level Complexity - 10 Utilities)**:
-  - `bunzip2`, `bzcat`, `unlzma`, `uncompress`, `unzip`, `uuencode`, `taskset`, `start-stop-daemon`, `cryptpw`, and `makedevs`.
 * **Tier 5 (High Complexity & Privileged Utilities - 11 Utilities)**:
   - `ar`, `hexdump`, `xxd`, `bc`, `dc`, `rx`, `ash`, `cpio`, `mdev`, `mkfs.minix`, and `mount`.
