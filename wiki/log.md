@@ -746,6 +746,30 @@ docs/SECURITY.md artifact verification section with cosign verify, SBOM inspect,
 and slsa-verifier commands. Updated 09_release_docs.md with supply chain section
 (09.2b) and milestone items.
 
+## [2026-05-22] ingest | Phase 26 complete + Phase 27 partial (branch `feat/missing-tools-tier4`)
+
+Absorbed 31 new utilities (Phase 26 Tiers 1-4: 26 tools; Phase 27 Tier 5: 5 tools).
+
+**Files ingested:**
+- `wiki/26_missing_tools.md` — marked Tier 4 complete, updated counts
+- `wiki/27_high_complexity_tools.md` — marked 5 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`
+- `wiki/test_coverage_matrix.md` — added Tier 8 section (16 tools), updated to 115 utils, 729/19/53 BusyBox, 106/115 JSON-RPC, 82.9% coverage
+- `wiki/todos.md` — updated project state, added cpio/pidof limitations, 28 compliance tests missing
+- `wiki/phases.md` — added Phase 26 (✅) and Phase 27 (🔨), bumped version to 6.0
+- `wiki/index.md` — added link to `27_high_complexity_tools.md`
+- `wiki/11_lessons_learned.md` — added Phase 26/27 lessons
+
+**Code changes absorbed:**
+- `test/posix-json/tier8_phase26_27_test.go` — 30 new daemon tests (24 running, 6 skipped)
+- `cmd/goposix/main_test.go` — added `ash` to cmdPkgMapping (CI fix)
+- `pkg/cpio/cpio.go` — fixed stdout leak in JSON list mode (was printing filenames before JSON, corrupting daemon output)
+- `test/compliance/test_ar.sh`, `test/compliance/test_ash.sh` — fixed path/exit code bugs
+- 31 new `pkg/<tool>/` packages at >= 80% coverage
+
+**BusyBox delta:** +50 pass (679→729), -1 fail (20→19), +31 skip (22→53). 2 new cpio failures (block count from cavaliergopher/cpio).
+
+**JSON-RPC delta:** +31 tests (82→106/115), 9 remaining gaps (6 hard-skipped: ash `--json` conflict, wget network, daemon recursive, mount/mdev/makedevs root).
+
 ## [2026-05-13] update | Phase 11a complete, Gold 4/5 resolved
 
 11a_lower_priority.md milestone: 8/8 complete (11a.3 → 12.2, 11a.4 → 12.4,

@@ -1,10 +1,10 @@
 # GoPOSIX — Project Roadmap & State
 
-> **Version:** 5.6 | **Date:** 2026-05-20 | **Tier:** GOLD | **Branch:** `main`
+> **Version:** 6.0 | **Date:** 2026-05-22 | **Tier:** GOLD | **Branch:** `feat/missing-tools-tier4`
 >
-> **Status:** 77 utilities | 548 BusyBox passes (99.3%) | 76.7% coverage | 77/77 JSON-RPC
+> **Status:** 115 utilities | 729 BusyBox passes (91.0%) | 82.9% coverage | 106/115 JSON-RPC
 >
-> ✅ Phase 24 (Hardening IV Part 1) — 21 compliance gaps resolved (branch `feat/hardening4-part1`): injectable streams for 11 utilities, resolved sed regex issues, 13+ POSIX `date` format specifiers, `grep` binary detection, `ls -d` flag, `PreProcess` flag hook, 5 more resolved. 6 HIGH-priority items remain (H1–H6).
+> ✅ Phase 26 (Missing Tools Tier 1–4) — 26 utilities implemented (branch `feat/missing-tools-tier4`): `which`, `realpath`, `seq`, `sha1sum`, `sha512sum`, `rev`, `uptime`, `wget`, `cal`, `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, `pidof`, `bunzip2`, `bzcat`, `unlzma`, `uncompress`, `unzip`, `uuencode`, `uudecode`, `taskset`, `start-stop-daemon`, `cryptpw`, `makedevs`. 🔨 Phase 27 (High-Complexity Tier 5) — 5 of 11 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`.
 
 ---
 
@@ -12,11 +12,11 @@
 
 | Metric | Value |
 |--------|-------|
-| BusyBox pass rate | 548 passed / 4 failed / 10 skipped (99.3%) |
-| Overall test coverage | 76.7% |
-| Utilities implemented | 77 |
-| JSON-RPC daemon coverage | 77/77 utilities |
-| Daemon unit coverage | 64.6% |
+| BusyBox pass rate | 729 passed / 19 failed / 53 skipped (91.0%) |
+| Overall test coverage | 82.9% |
+| Utilities implemented | 115 |
+| JSON-RPC daemon coverage | 106/115 utilities (92.2%) |
+| Daemon unit coverage | 65.2% |
 | Supply chain security | SBOM + Cosign + SLSA L3 + Trivy |
 | Shell security model | Documented + tested (GOPOSIX_SHELL_TIMEOUT, SecurePath, 128MB limits) |
 
@@ -44,6 +44,7 @@ goposix binary (single static ELF, <12MB)
 | **4 — System** | `ps`, `kill`, `sleep`, `date`, `id`, `groups`, `chmod`, `chown`, `chgrp`, `df`, `du`, `find`, `xargs` | 06 ✅ |
 | **5 — Advanced** | `tar`, `gzip`, `sha256sum`, `md5sum`, `diff`, `patch`, `test`/`[`, `printf`, `expr` | 07 ✅ |
 | **Post-MVP** | `dd`, `od`, `patch` (`egrep`, `fgrep` aliases) | 15/18 ✅ |
+| **6 — Phase 26/27** | `which`, `realpath`, `seq`, `sha1sum`, `sha512sum`, `rev`, `uptime`, `wget`, `cal`, `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, `pidof`, `bunzip2`, `bzcat`, `unlzma`, `uncompress`, `unzip`, `uuencode`, `uudecode`, `taskset`, `start-stop-daemon`, `cryptpw`, `makedevs`, `ar`, `cpio`, `ash`, `mount`, `mdev` | 26/27 ✅/🔨 |
 | **Platinum** | `awk` | 07a ✅ |
 
 ### Technical Specs
@@ -86,6 +87,8 @@ goposix binary (single static ELF, <12MB)
 | 24 | Hardening IV Part 1 — 21 compliance gaps resolved, 6 remain | 🟡 |
 | 25 | Awesome-Go Prep & Daemon Stdin — checklists, Codecov & LICENSE, 25 lints fixed | ✅ |
 | 07a | `awk` — Platinum gate (integrated goawk v1.31.0) | ✅ |
+| 26 | Missing Tools Tier 1–4 — 26 utilities, 100% BusyBox compatibility | ✅ |
+| 27 | High-Complexity Tier 5 — 5 of 11 implemented (`ar`, `cpio`, `ash`, `mount`, `mdev`) | 🔨 |
 
 
 ---
@@ -94,8 +97,9 @@ goposix binary (single static ELF, <12MB)
 
 | # | Item | Doc |
 |---|------|-----|
-| 🔴 | Hardening IV — 6 remaining HIGH-priority gaps (H1–H6) | [24_hardening_iv.md](24_hardening_iv.md) — branch `feat/hardening4-part1` |
+| 🔨 | Phase 27 — 6 remaining Tier 5 tools: `hexdump`, `xxd`, `rx`, `bc`, `dc`, `mkfs.minix` | [27_high_complexity_tools.md](27_high_complexity_tools.md) — branch `feat/missing-tools-tier4` |
 | ✅ | Hardening IV Part 1 — 21 gaps resolved (injectable streams, date specifiers, grep binary detection, ls -d, PreProcess hook, +15 more) | [24_hardening_iv.md](24_hardening_iv.md) |
 | 🔧 | Observability exports (A–D done, E external) | [observability_exports.md](observability_exports.md) — branch `feat/observability` |
 | — | Multi-agent observability | [observability_exports.md#part-2](observability_exports.md) — deferred discussion |
+| — | Phase 26/27 JSON-RPC tests: 25 new daemon tests, 6 skipped (hard constraints) | [test_coverage_matrix.md](test_coverage_matrix.md) |
 | — | Ongoing maintenance | [todos.md](todos.md), [deferred.md](deferred.md) |

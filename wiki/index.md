@@ -29,7 +29,8 @@
 ## Test & Compliance
 
 - [test_coverage_matrix.md](test_coverage_matrix.md) | Per-utility test status for all 77 utilities.
-- [26_missing_tools.md](26_missing_tools.md) | Analysis of missing BusyBox tools based on test suite coverage.
+- [26_missing_tools.md](26_missing_tools.md) | Analysis of missing BusyBox tools based on test suite coverage (COMPLETED).
+- [27_high_complexity_tools.md](27_high_complexity_tools.md) | High-complexity & privileged Tier 5 utilities (IN PROGRESS).
 - [posix_faq.md](posix_faq.md) | POSIX compliance FAQ.
 
 ## Completed Phase Summaries
