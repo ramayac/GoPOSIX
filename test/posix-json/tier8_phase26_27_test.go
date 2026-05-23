@@ -1097,15 +1097,21 @@ func TestTier8_Gunzip(t *testing.T) {
 	})
 }
 
+func TestTier8_Rx(t *testing.T) {
+	t.Skip("rx requires live XMODEM stdin — tested via compliance script")
+}
+
 func TestTier8_Dc(t *testing.T) {
-	c := client.New("/tmp/goposix-json-test.sock")
+	socket := startDaemon(t)
+	c := client.Dial(socket, 5*time.Second)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	t.Run("dc add", func(t *testing.T) {
-		result, err := c.Call(ctx, "dc", map[string]interface{}{
+		var result ResultWrapper
+		err := c.Call(ctx, "dc", map[string]interface{}{
 			"expression": []string{"10 20+p"},
-		})
+		}, &result)
 		if err != nil {
 			t.Fatalf("dc add call: %v", err)
 		}
@@ -1123,9 +1129,10 @@ func TestTier8_Dc(t *testing.T) {
 	})
 
 	t.Run("dc complex", func(t *testing.T) {
-		result, err := c.Call(ctx, "dc", map[string]interface{}{
+		var result ResultWrapper
+		err := c.Call(ctx, "dc", map[string]interface{}{
 			"expression": []string{"8 8*2 2+/p"},
-		})
+		}, &result)
 		if err != nil {
 			t.Fatalf("dc complex call: %v", err)
 		}
