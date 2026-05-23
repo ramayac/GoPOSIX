@@ -26,6 +26,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/cut"
 	_ "github.com/ramayac/goposix/pkg/daemon"
 	_ "github.com/ramayac/goposix/pkg/date"
+	_ "github.com/ramayac/goposix/pkg/dc"
 	_ "github.com/ramayac/goposix/pkg/dd"
 	_ "github.com/ramayac/goposix/pkg/df"
 	_ "github.com/ramayac/goposix/pkg/diff"

@@ -21,6 +21,7 @@ import (
 	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/cpio"
 	_ "github.com/ramayac/goposix/pkg/cryptpw"
+	_ "github.com/ramayac/goposix/pkg/dc"
 	_ "github.com/ramayac/goposix/pkg/makedevs"
 	_ "github.com/ramayac/goposix/pkg/mdev"
 	_ "github.com/ramayac/goposix/pkg/mount"
@@ -1092,6 +1093,49 @@ func TestTier8_Gunzip(t *testing.T) {
 			t.Logf("gunzip data keys: %s", getKeys(m))
 		} else {
 			t.Logf("gunzip data type: %T", result.Data)
+		}
+	})
+}
+
+func TestTier8_Dc(t *testing.T) {
+	c := client.New("/tmp/goposix-json-test.sock")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	t.Run("dc add", func(t *testing.T) {
+		result, err := c.Call(ctx, "dc", map[string]interface{}{
+			"expression": []string{"10 20+p"},
+		})
+		if err != nil {
+			t.Fatalf("dc add call: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Fatalf("dc add exit: %d", result.ExitCode)
+		}
+		data, ok := result.Data.(map[string]interface{})
+		if !ok {
+			t.Fatalf("dc data type: %T", result.Data)
+		}
+		output, _ := data["output"].([]interface{})
+		if len(output) < 1 || output[0] != "30" {
+			t.Errorf("dc add got %v, want [30]", output)
+		}
+	})
+
+	t.Run("dc complex", func(t *testing.T) {
+		result, err := c.Call(ctx, "dc", map[string]interface{}{
+			"expression": []string{"8 8*2 2+/p"},
+		})
+		if err != nil {
+			t.Fatalf("dc complex call: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Fatalf("dc complex exit: %d", result.ExitCode)
+		}
+		data, _ := result.Data.(map[string]interface{})
+		output, _ := data["output"].([]interface{})
+		if len(output) < 1 || output[0] != "16" {
+			t.Errorf("dc complex got %v, want [16]", output)
 		}
 	})
 }

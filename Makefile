@@ -58,6 +58,7 @@ PKG_DIRS   := . \
               ./pkg/which/... \
               ./pkg/tee/... \
               ./pkg/cut/... \
+              ./pkg/dc/... \
               ./pkg/tr/... \
               ./pkg/sort/... \
               ./pkg/tsort/... \
