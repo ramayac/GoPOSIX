@@ -9,4 +9,10 @@ require (
 	mvdan.cc/sh/v3 v3.13.1
 )
 
-require golang.org/x/term v0.43.0 // indirect
+require (
+	github.com/hotei/dcompress v0.0.0-20150530022901-3c67b82327a0 // indirect
+	github.com/sergeymakinen/go-crypt v1.0.4 // indirect
+	github.com/tredoe/crypt v1.0.3 // indirect
+	github.com/ulikunitz/xz v0.5.12 // indirect
+	golang.org/x/term v0.43.0 // indirect
+)
