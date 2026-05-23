@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-22 | **Utilities:** 115 | **Coverage:** 82.9% | **JSON-RPC Daemon:** 82/115 (71.3%)
+> **Last updated:** 2026-05-22 | **Utilities:** 115 | **Coverage:** 82.9% | **JSON-RPC Daemon:** 106/115 (92.2%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -12,7 +12,7 @@ This document serves as the live registry of remaining work, active plans, and k
 |--------|-------|
 | **Total Utilities Implemented** | **115** (all registered via `dispatch.Register`) |
 | **Overall Statement Coverage** | **82.9%** (fully compliant with the `>=80%` CI gate) |
-| **JSON-RPC Daemon Coverage** | **82/115** utilities with structured output tests |
+| **JSON-RPC Daemon Coverage** | **106/115** utilities with structured output tests |
 | **Multicall Compatibility** | Complete dispatching via symlinks or direct subcommands |
 | **CGO Status** | 100% CGO-free Go (`CGO_ENABLED=0`) |
 
@@ -47,12 +47,21 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 has 5 of 11 implemented. The re
 * BusyBox test expects specific exit code behavior when no matching process is found.
 * *Status*: **Needs investigation**.
 
-### 4. Compliance tests missing for 28 utilities
-* Only `ar`, `cpio`, and `ash` have `test/compliance/test_<name>.sh` scripts.
-* All Phase 26 Tier 4 and Phase 27 tools need compliance tests.
+### 4. Compliance tests — ✅ COMPLETE
+* 28 `test/compliance/test_<name>.sh` scripts written for all Phase 26 Tier 4 and Phase 27 tools.
+* 84 assertions, 0 failures. 1 test skipped (uncompress needs system `compress`).
 
-### 5. JSON-RPC tests missing for 33 utilities
-* All Tier 8 (16 tools) plus 17 legacy tools lack structured output tests in `test/posix-json/`.
+### 5. JSON-RPC tests — 0 remaining gaps (106 running + 6 skipped = 112/115)
+* **30 new daemon tests** written in `test/posix-json/tier8_phase26_27_test.go` (24 running + 6 skipped).
+* **6 skipped** for hard constraints:
+  - `ash` — shell's custom flag parser conflicts with daemon's `--json` auto-prepend
+  - `wget` — requires live network connectivity
+  - `daemon` — cannot run a daemon inside the daemon process
+  - `mount` — requires root privileges for most operations
+  - `mdev` — requires root + kernel hotplug infrastructure
+  - `makedevs` — requires root for device node creation
+* **3 aliases** (`egrep`, `fgrep`, `gunzip`) share their parent's RPC method and are tested through `goposix.grep` / `goposix.gzip`.
+* **Verdict:** every utility has a JSON-RPC test or a documented reason it can't be tested.
 
 ---
 

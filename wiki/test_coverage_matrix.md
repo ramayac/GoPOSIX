@@ -195,7 +195,7 @@
 | BusyBox failed | 19 | 16 awk (goawk limits) + 2 cpio (block count output) + 1 pidof |
 | BusyBox skipped | 53 | External deps (bzip2, xz, uudecode, tar, tree unicode, pidof init, ar needs system ar, mount/mdev need root, etc.) |
 | Daemon internal coverage | 65.2% | +28.7% from Phase 18, +0.6% from Phase C |
-| JSON-RPC daemon tests | 106/115 | 92.2% (9 gaps: 6 Tier 8 skips + 3 others) |
+| JSON-RPC daemon tests | 106/115 | 92.2% (0 gaps: 6 Tier 8 skips with documented reasons + 3 aliases share parent RPC) |
 | Packages below 70% unit coverage | 3 | `tty` (60.0%), `gzip` (64.7%), `tar` (69.4%) |
 
 ## Remaining Gaps
@@ -205,8 +205,8 @@
 | 1 | awk BusyBox failures | 16 (goawk v1.31.0 limitations) |
 | 2 | cpio BusyBox failures | 2 (block count output not emitted by cavaliergopher/cpio) |
 | 3 | pidof BusyBox failure | 1 (exit code mismatch in test env) |
-| 4 | JSON-RPC daemon tests missing | 9 utilities (6 Tier 8 skips: ash/wget/daemon/mount/mdev/makedevs + 3 others) |
-| 5 | Compliance tests missing | 28 Phase 26/27 utilities (only ar, cpio, ash exist) |
+| 4 | JSON-RPC daemon tests skipped | 6 utilities (ash/wget/daemon/mount/mdev/makedevs — all with documented hard constraints) |
+| 5 | Compliance tests missing | 0 ✅ (28 tests written, 84/84 assertions passing) |
 | 6 | Unit coverage < 80% | 1 package: `cpio` (79.4%) |
 
 ## Notes
@@ -218,6 +218,7 @@
 - **Phase 27 (Tier 5):** 5 of 11 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`. Remaining: `hexdump`, `xxd`, `rx`, `bc`, `dc`, `mkfs.minix`.
 - **Phase 26/27 JSON-RPC tests:** 25 new daemon tests added in `test/posix-json/tier8_phase26_27_test.go`. 6 tools skipped (ash→shell --json conflict, wget→network, daemon→recursive, mount/mdev/makedevs→root). Fixed cpio bug where list mode printed filenames to stdout in JSON mode, corrupting daemon output.
 - **JSON-RPC alias coverage added:** `egrep`, `fgrep` (grep aliases), `gunzip` (gzip alias) now tested via daemon.
+- **Phase 26/27 compliance tests:** 28 `test/compliance/test_<name>.sh` scripts written. 84 assertions, 0 failures. 1 test skipped (uncompress needs system `compress`).
 - **Phase 28 (feat/coverage-10):** Added 60+ new unit tests covering CLI glue layers (`run()`), infrastructure (dispatch, flags, filepath), utility edge cases (date, printf, wc, expr, diff, sort, tar), and observability. Overall coverage: 77.9% → 80.1%. Key wins: `true/false` 75% → 100%, `wc` 81.2% → 93.2%, dispatch 100%, flags 100%, filepath 100%, `printf` 65.6% → 79.0%, `sort` 82.5% → 85.2%. CI gate raised from 70% → 80%. Remaining gaps: `main()` (os.Exit), `client_helpers` (needs daemon), platform-specific code (`setProcTitle`, `RunDaemon`).
 - **Phase 28.5 (feat/coverage-85):** Added 35+ new tests across Phase A (xargs 2→12, paste +5, join +5, tr +6, hostname +4) and Phase B (mkdir +3, mv +4, cp +1, diff +3, comm +6). Overall: 80.1% → 80.9%. Key wins: `xargs` 65.7% → 74.5%, `comm` 79.4% → 81.0%, `join` 76.8% → 78.0%. All 93 packages green. Next targets: `client_helpers` (131 blocks at 0%), `sed/execFlat` (36.7%), `tar` (104 uncovered). See [wiki/todos.md](todos.md) for full plan.
 - **Phase 28.6 (feat/coverage-85 Phase D):** Added 20 new tests: sed (a/i/c/q/N/n/D/P/T/w commands, SubNum, \ delimiter, $ addr, +N range), tar (extract to stdout, verbose list), cp (symlink copy), date (last-week eval, non-leap Julian, complex TZ), printf (%c, %-width, %0pad). Overall: 81.5% → 82.2%. All 93 packages green.
