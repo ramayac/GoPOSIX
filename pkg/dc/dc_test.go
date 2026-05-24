@@ -216,14 +216,14 @@ func TestDcConditionals(t *testing.T) {
 		var output []string
 		evalDC(state, "[1p]sa", nil, &output)
 		output = nil
-		testEval(t, state, "2 1>a 9p", "1\n9\n")
+		testEval(t, state, "1 2>a 9p", "1\n9\n")
 	})
 	t.Run("< true", func(t *testing.T) {
 		state := &dcState{regs: make(map[rune][]dcValue)}
 		var output []string
 		evalDC(state, "[2p]sb", nil, &output)
 		output = nil
-		testEval(t, state, "1 2<b 9p", "2\n9\n")
+		testEval(t, state, "2 1<b 9p", "2\n9\n")
 	})
 	t.Run("= true", func(t *testing.T) {
 		state := &dcState{regs: make(map[rune][]dcValue)}
@@ -237,21 +237,21 @@ func TestDcConditionals(t *testing.T) {
 		var output []string
 		evalDC(state, "[1p]sa", nil, &output)
 		output = nil
-		testEval(t, state, "1 2>a 9p", "9\n")
+		testEval(t, state, "2 1>a 9p", "9\n")
 	})
 	t.Run("else clause", func(t *testing.T) {
 		state := &dcState{regs: make(map[rune][]dcValue)}
 		var output []string
 		evalDC(state, "[1p]sa [2p]sb", nil, &output)
 		output = nil
-		testEval(t, state, "1 2>aeb 9p", "2\n9\n")
+		testEval(t, state, "2 1>aeb 9p", "2\n9\n")
 	})
 	t.Run("! negated", func(t *testing.T) {
 		state := &dcState{regs: make(map[rune][]dcValue)}
 		var output []string
 		evalDC(state, "[1p]sa", nil, &output)
 		output = nil
-		testEval(t, state, "1 2!>a 9p", "1\n9\n")
+		testEval(t, state, "2 1!>a 9p", "1\n9\n")
 	})
 }
 
@@ -395,7 +395,7 @@ func TestDcNewNumStr(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			r, err := newNumStr(tt.input)
+			r, _, err := newNumStr(tt.input)
 			if tt.isErr {
 				if err == nil {
 					t.Errorf("expected error for %q", tt.input)
