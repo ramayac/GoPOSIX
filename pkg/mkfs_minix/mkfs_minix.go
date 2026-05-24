@@ -83,7 +83,7 @@ func Run(w io.Writer, blocks, inodes, namelen int) (MkfsResult, error) {
 	zmapBlocks := 0
 	firstDataZone := 0
 	for i := 0; i < 1000; i++ {
-		inodeBlocks := (inodes * 32 + 1023) / 1024
+		inodeBlocks := (inodes*32 + 1023) / 1024
 		firstDataZone = 2 + imapBlocks + zmapBlocks + inodeBlocks
 		sb_zmaps := (blocks - firstDataZone + 1 + 8191) / 8192
 		if zmapBlocks == sb_zmaps {
@@ -168,7 +168,7 @@ func Run(w io.Writer, blocks, inodes, namelen int) (MkfsResult, error) {
 		zmap[i] = 0xff
 	}
 	for i := firstDataZone; i < blocks; i++ {
-		clearBit(zmap, i - firstDataZone + 1)
+		clearBit(zmap, i-firstDataZone+1)
 	}
 	setBit(zmap, 1) // Mark first data block (root directory)
 	if _, err := w.Write(zmap); err != nil {
@@ -176,10 +176,10 @@ func Run(w io.Writer, blocks, inodes, namelen int) (MkfsResult, error) {
 	}
 
 	// 5. Inode Table blocks
-	inodeBlocks := (inodes * 32 + 1023) / 1024
+	inodeBlocks := (inodes*32 + 1023) / 1024
 	inodeTableSize := inodeBlocks * 1024
 	inodeTable := make([]byte, inodeTableSize)
-	
+
 	dirEntrySize := namelen + 2
 	rootInode := MinixInode{
 		Mode:   040755, // Directory with 755 permissions
@@ -202,7 +202,7 @@ func Run(w io.Writer, blocks, inodes, namelen int) (MkfsResult, error) {
 
 	// 6. First Data Zone (Root Directory Entries)
 	rootBlock := make([]byte, 1024)
-	
+
 	// Entry 1: "." (Inode 1)
 	binary.LittleEndian.PutUint16(rootBlock[0:2], 1)
 	copy(rootBlock[2:2+namelen], ".")

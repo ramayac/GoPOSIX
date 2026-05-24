@@ -45,17 +45,17 @@ const (
 	TokDiv
 	TokMod
 	TokPower
-	TokInc   // ++
-	TokDec   // --
-	TokEq    // ==
-	TokLe    // <=
-	TokGe    // >=
-	TokNe    // !=
-	TokLt    // <
-	TokGt    // >
-	TokAnd   // &&
-	TokOr    // ||
-	TokNot   // !
+	TokInc // ++
+	TokDec // --
+	TokEq  // ==
+	TokLe  // <=
+	TokGe  // >=
+	TokNe  // !=
+	TokLt  // <
+	TokGt  // >
+	TokAnd // &&
+	TokOr  // ||
+	TokNot // !
 	TokLparen
 	TokRparen
 	TokLbracket
@@ -457,8 +457,8 @@ type BinaryExpr struct {
 }
 
 type UnaryExpr struct {
-	Op       TokenType
-	Expr     Expr
+	Op         TokenType
+	Expr       Expr
 	PostIncDec bool // true for postfix ++/--
 }
 
@@ -1473,7 +1473,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			divInt := big.NewInt(0).Div(div.Num(), div.Denom())
 			term := big.NewRat(0, 1).Mul(rhsVal.Rat, big.NewRat(0, 1).SetInt(divInt))
 			res.Sub(lhsVal.Rat, term)
-			
+
 			resScale = rhsVal.Scale + ip.Scale
 			if lhsVal.Scale > resScale {
 				resScale = lhsVal.Scale
@@ -1481,7 +1481,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 		case TokPower:
 			exponent := ratToInt64(rhsVal.Rat)
 			res = ratPower(lhsVal.Rat, exponent)
-			
+
 			if exponent < 0 {
 				resScale = ip.Scale
 			} else {

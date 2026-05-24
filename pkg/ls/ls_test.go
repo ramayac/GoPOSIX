@@ -375,4 +375,3 @@ func TestUIDGIDCacheExpiration(t *testing.T) {
 		t.Error("expected cached value to be expired, but got cached-group")
 	}
 }
-

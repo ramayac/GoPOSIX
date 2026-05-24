@@ -135,11 +135,11 @@ func TestRun_CommandReturnsError(t *testing.T) {
 // they register.  Most are 1:1, but some register aliases.
 var cmdPkgMapping = map[string][]string{
 	// 1:1 mappings — omitted (default: []string{pkgName})
-	"grep":      {"grep", "egrep", "fgrep"},
-	"gzip":      {"gzip", "gunzip"},
-	"truefalse": {"true", "false"},
-	"testcmd":   {"test"},
-	"shell":     {"shell", "sh", "ash"},
+	"grep":       {"grep", "egrep", "fgrep"},
+	"gzip":       {"gzip", "gunzip"},
+	"truefalse":  {"true", "false"},
+	"testcmd":    {"test"},
+	"shell":      {"shell", "sh", "ash"},
 	"mkfs_minix": {"mkfs.minix"},
 }
 

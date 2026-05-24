@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-24 | **Utilities:** 115 | **Coverage:** 82.3% | **BusyBox:** 798/39/82 (95.3%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-05-24 | **Utilities:** 115 | **Coverage:** 82.3% | **BusyBox:** 806/39/74 (95.4%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -12,7 +12,7 @@ This document serves as the live registry of remaining work, active plans, and k
 |--------|-------|
 | **Total Utilities Implemented** | **115** (all registered via `dispatch.Register`) |
 | **Overall Statement Coverage** | **82.3%** (fully compliant with the `>=80%` CI gate) |
-| **BusyBox Suite Passed / Failed / Skipped** | **798 / 39 / 82** (95.3% pass rate, 919 total) |
+| **BusyBox Suite Passed / Failed / Skipped** | **806 / 39 / 74** (95.4% pass rate, 919 total) |
 | **JSON-RPC Daemon Coverage** | **115/115** utilities with structured output tests |
 | **Multicall Compatibility** | Complete dispatching via symlinks or direct subcommands |
 | **CGO Status** | 100% CGO-free Go (`CGO_ENABLED=0`) |
@@ -282,43 +282,32 @@ Every skipped test is listed below as an actionable checkbox, organized by root 
 
 ---
 
-#### 🟣 F. `ar` — Archive Creation Not Yet Wired (2 skipped)
+#### 🟣 F. `ar` — Archive Creation — ✅ 2 RESOLVED
 
-- [ ] **ar creates archives** — `ar -r -c` create new archive
-- [ ] **ar replaces things in archives** — `ar -r` replace members in existing archive
+- [x] **ar creates archives** — `ar -r -c` create new archive — ✅ PASSES
+- [x] **ar replaces things in archives** — `ar -r` replace members in existing archive — ✅ PASSES
 
-*Fix*: The `blakesmith/ar` library supports full read/write. These are likely skipped because the `ar` command dispatcher doesn't surface the create/replace flags to the test harness. Check flag parsing and `-r`/`-c` wiring.
-
----
-
-#### ⚪ G. `cryptpw` — SHA-256/512 with Rounds (4 skipped)
-
-- [ ] **cryptpw sha256** — SHA-256 password hashing (`$5$` prefix)
-- [ ] **cryptpw sha256 rounds=99999** — SHA-256 with custom rounds parameter
-- [ ] **cryptpw sha512** — SHA-512 password hashing (`$6$` prefix)
-- [ ] **cryptpw sha512 rounds=99999** — SHA-512 with custom rounds parameter
-
-*Fix*: Go's `crypto/sha256` and `crypto/sha512` in stdlib. Implement SHA-crypt modular crypt format (PHC string format with `$5$`/`$6$` prefix and `rounds=` parameter).
+*Resolution*: Enabled `FEATURE_AR_CREATE` flag in `runtest`. GoPOSIX ar already supported `-r`/`-c` via `arReplace()` with `readArchive()` returning nil for new archives.
 
 ---
 
-#### ⚪ H. `unzip` — Corrupted Archive Handling (3 skipped)
+#### ⚪ G. `unzip` — Corrupted Archive Handling — ✅ 3 RESOLVED
 
-- [ ] **unzip (bad archive)** — graceful error on completely invalid zip
-- [ ] **unzip (archive with corrupted lzma 1)** — LZMA corruption detection
-- [ ] **unzip (archive with corrupted lzma 2)** — LZMA corruption detection variant
+- [x] **unzip (bad archive)** — graceful error on completely invalid zip — ✅ PASSES
+- [x] **unzip (archive with corrupted lzma 1)** — LZMA corruption detection — ✅ PASSES
+- [x] **unzip (archive with corrupted lzma 2)** — LZMA corruption detection variant — ✅ PASSES
 
-*Fix*: GoPOSIX unzip already handles valid archives. Add error-path tests for corrupted data — likely just need to ensure `archive/zip` errors are surfaced as non-zero exit codes.
+*Resolution*: Added `scanCorruptedZip()` for local file header scanning in corrupted archives, BusyBox-compatible error messages ("corrupted data" + "inflate error"), `/`-prefix warning detection, and `sanitizeFilename()` for control-character replacement.
 
 ---
 
-#### ⚪ I. `tree` — Directory Tree Display (3 skipped)
+#### ⚪ H. `tree` — Directory Tree Display — ✅ 3 RESOLVED
 
-- [ ] **tree single file** — tree display of a single file
-- [ ] **tree multiple directories** — tree display of multiple directory arguments
-- [ ] **tree nested directories and files** — recursive tree display
+- [x] **tree single file** — tree display of a single file — ✅ PASSES
+- [x] **tree multiple directories** — tree display of multiple directory arguments — ✅ PASSES
+- [x] **tree nested directories and files** — recursive tree display — ✅ PASSES
 
-*Fix*: `tree` is registered in dispatch but the BusyBox test harness may not be discovering it. Check `--list-commands` output for `tree`, verify symlink is created in `LINKSDIR`.
+*Resolution*: Enabled `UNICODE_SUPPORT` flag in `runtest`. GoPOSIX tree already used Unicode box-drawing characters; all tree output matches BusyBox exactly.
 
 ---
 

@@ -3,6 +3,7 @@ package unzip
 
 import (
 	"archive/zip"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"os"
@@ -105,8 +106,23 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	// Filter matches: positional arguments after ZIPFILE
 	filters := flags.Positional[1:]
 
+	// Determine modes early — needed for error path output decisions.
+	quietMode := flags.Has("q")
+	stdoutMode := flags.Has("p")
+
 	r, err := zip.OpenReader(absZipPath)
 	if err != nil {
+		// Scan for filenames even in corrupted archives so we can emit
+		// header/inflating lines and slash-prefix warnings (BusyBox compat).
+		firstFile, slashWarn := scanCorruptedZip(absZipPath)
+		firstFile = sanitizeFilename(firstFile)
+		if slashWarn && !quietMode && !jsonMode {
+			fmt.Fprintf(stderr, "unzip: removing leading '/' from member names\n")
+		}
+		if !quietMode && !stdoutMode && !jsonMode && firstFile != "" {
+			fmt.Fprintf(stdout, "Archive:  %s\n", zipPath)
+			fmt.Fprintf(stdout, "  inflating: %s\n", firstFile)
+		}
 		if jsonMode {
 			common.RenderError("unzip", 1, "OPEN_ERROR", err.Error(), true, stderr)
 		} else {
@@ -117,6 +133,29 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 	defer r.Close()
 
+	// If archive opens but has zero entries while the file is non-trivial,
+	// it's a corrupted zip — report it as corrupted data.
+	if len(r.File) == 0 {
+		fi, statErr := os.Stat(absZipPath)
+		if statErr == nil && fi.Size() > 128 {
+			// File has data but no parseable entries — corrupted.
+			firstFile, slashWarn := scanCorruptedZip(absZipPath)
+			firstFile = sanitizeFilename(firstFile)
+			if slashWarn && !quietMode && !jsonMode {
+				fmt.Fprintf(stderr, "unzip: removing leading '/' from member names\n")
+			}
+			if !quietMode && !stdoutMode && !jsonMode && firstFile != "" {
+				fmt.Fprintf(stdout, "Archive:  %s\n", zipPath)
+				fmt.Fprintf(stdout, "  inflating: %s\n", firstFile)
+			}
+			if !jsonMode {
+				fmt.Fprintf(stderr, "unzip: corrupted data\n")
+				fmt.Fprintf(stderr, "unzip: inflate error\n")
+			}
+			return 1
+		}
+	}
+
 	destDir := cwd
 	if flags.Has("d") {
 		destDir = flags.Get("d")
@@ -125,8 +164,6 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		}
 	}
 
-	stdoutMode := flags.Has("p")
-	quietMode := flags.Has("q")
 	overwriteMode := flags.Has("o")
 	listMode := flags.Has("l")
 	testMode := flags.Has("t")
@@ -240,10 +277,26 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		fmt.Fprintf(stdout, "Archive:  %s\n", zipPath)
 	}
 
+	strippedSlash := false
 	exitCode := 0
 	for _, f := range r.File {
 		if !shouldExtract(f.Name) {
 			continue
+		}
+
+		// Strip leading '/' from member names (security convention, per POSIX).
+		// This must happen before any mode-specific handling so stdout/list/test
+		// paths also trigger the warning.
+		if strings.HasPrefix(f.Name, "/") {
+			if !strippedSlash && !quietMode && !jsonMode {
+				fmt.Fprintf(stderr, "unzip: removing leading '/' from member names\n")
+				strippedSlash = true
+			}
+		}
+
+		// Print inflating progress for non-quiet, non-stdout, non-json modes.
+		if !quietMode && !stdoutMode && !jsonMode {
+			fmt.Fprintf(stdout, "  inflating: %s\n", sanitizeFilename(f.Name))
 		}
 
 		err := func() error {
@@ -259,6 +312,11 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			}
 
 			destPath := filepath.Clean(filepath.Join(destDir, f.Name))
+
+			// Strip leading '/' from member names (security convention)
+			if strings.HasPrefix(f.Name, "/") {
+				destPath = filepath.Clean(filepath.Join(destDir, f.Name[1:]))
+			}
 
 			// Security guard: prevent directory traversal attacks
 			if !strings.HasPrefix(destPath, destDir) {
@@ -280,10 +338,6 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 				return nil
 			}
 
-			if !quietMode && !jsonMode {
-				fmt.Fprintf(stdout, "  inflating: %s\n", f.Name)
-			}
-
 			out, err := os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 			if err != nil {
 				return err
@@ -299,7 +353,21 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			exitCode = 1
 			errStr = err.Error()
 			if !quietMode {
-				fmt.Fprintf(stderr, "unzip: error extracting %s: %v\n", f.Name, err)
+				// Detect decompression errors and emit BusyBox-compatible messages.
+				// Go's archive/zip surfaces flate/lzma/checksum errors through
+				// io.Copy or f.Open when compressed data is corrupted.
+				errMsg := err.Error()
+				isDecompressErr := strings.Contains(errMsg, "flate") ||
+					strings.Contains(errMsg, "checksum") ||
+					strings.Contains(errMsg, "unexpected EOF") ||
+					strings.Contains(errMsg, "invalid") ||
+					strings.Contains(errMsg, "unsupported compression")
+				if isDecompressErr {
+					fmt.Fprintf(stderr, "unzip: corrupted data\n")
+					fmt.Fprintf(stderr, "unzip: inflate error\n")
+				} else {
+					fmt.Fprintf(stderr, "unzip: error extracting %s: %v\n", f.Name, err)
+				}
 			}
 		}
 
@@ -317,4 +385,74 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	return exitCode
+}
+
+// scanCorruptedZip scans a zip file for local file headers in corrupted
+// archives. Returns the first filename found and whether any filename
+// starts with '/'. Used to emit BusyBox-compatible output even when
+// Go's archive/zip can't parse the file normally.
+func scanCorruptedZip(zipPath string) (firstFile string, slashWarn bool) {
+	f, err := os.Open(zipPath)
+	if err != nil {
+		return "", false
+	}
+	defer f.Close()
+
+	// Read up to 64KB — enough to find local file headers near the start.
+	buf := make([]byte, 65536)
+	n, err := io.ReadFull(f, buf)
+	if err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
+		return "", false
+	}
+	buf = buf[:n]
+
+	// Look for local file header signatures: PK\x03\x04 (standard) or
+	// PK\x03\x00 (some corrupted variants).
+	for i := 0; i < len(buf)-30; i++ {
+		if buf[i] != 'P' || buf[i+1] != 'K' || buf[i+2] != 0x03 {
+			continue
+		}
+		sigByte := buf[i+3]
+		if sigByte != 0x04 && sigByte != 0x00 {
+			continue
+		}
+		// Local file header: offset 26 = filename length (uint16 LE)
+		if i+30 > len(buf) {
+			break
+		}
+		nameLen := binary.LittleEndian.Uint16(buf[i+26 : i+28])
+		extraLen := binary.LittleEndian.Uint16(buf[i+28 : i+30])
+		nameStart := i + 30
+		nameEnd := nameStart + int(nameLen)
+		if nameEnd > len(buf) || nameLen == 0 {
+			continue
+		}
+		name := string(buf[nameStart:nameEnd])
+		if name[0] == '/' {
+			slashWarn = true
+			name = name[1:] // strip leading '/' for display
+		}
+		if firstFile == "" && name != "" {
+			firstFile = name
+		}
+		// Skip past this header to continue scanning.
+		i = nameEnd + int(extraLen) - 1
+	}
+	return firstFile, slashWarn
+}
+
+// sanitizeFilename replaces control characters in filenames
+// with '?' to match BusyBox's display of binary/corrupted filenames.
+// Extended ASCII (0x80+) and printable ASCII are left untouched.
+func sanitizeFilename(name string) string {
+	if name == "" {
+		return name
+	}
+	b := []byte(name)
+	for i, c := range b {
+		if c < 0x20 || c == 0x7f {
+			b[i] = '?'
+		}
+	}
+	return string(b)
 }
