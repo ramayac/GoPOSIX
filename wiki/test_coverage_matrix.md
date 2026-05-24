@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-24 | **BusyBox:** 798 pass / 42 fail / 53 skip | **Branch:** `feat/more-tools` | **Overall Coverage:** 82.3% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-05-24 | **BusyBox:** 810 pass / 45 fail / 64 skip | **Branch:** `main` | **Overall Coverage:** 82.3% | **JSON-RPC:** 115/115 (100.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -50,10 +50,10 @@
 | `ln` | 79.3% | 6 | ✅ 6/6 | ✅ |
 | `stat` | 100.0% | — | — | ✅ |
 | `readlink` | 76.8% | 6 | ✅ 6/6 | ✅ |
-| `realpath` | 94.7% | 10 | ⚠️ 7/10 (3 fail) | ✅ |
+| `realpath` | 94.7% | 10 | ✅ 10/10 | ✅ |
 | `basename` | 85.7% | 2 | ✅ 2/2 | ✅ |
 | `dirname` | 85.7% | 7 | ✅ 7/7 | ✅ |
-| `tree` | 98.0% | 4 | ✅ 1/4 (3 skip) | ✅ |
+| `tree` | 98.0% | 4 | ✅ 4/4 | ✅ |
 
 ## Tier 3 — Text Processing
 
@@ -95,7 +95,7 @@
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `tar` | 69.4% | 18 | ✅ 18/18 | ✅ |
+| `tar` | 69.4% | 31 | ⚠️ 24/31 (3 mode, 3 symlink safety, 1 XZ) | ✅ |
 | `gzip` / `gunzip` | 64.7% | 4 | ✅ 4/4 | ✅ |
 | `sha256sum` | 81.6% | — | — | ✅ |
 | `sha1sum` | 89.1% | 1 | ✅ 1/1 | ✅ |
@@ -157,20 +157,20 @@
 | `bzcat` | 90.6% | 3 | ✅ 3/3 | ✅ |
 | `unlzma` | 83.3% | 3 | ✅ 3/3 | ✅ |
 | `uncompress` | 84.1% | 1 | ✅ 1/1 | ✅ |
-| `unzip` | 87.5% | 1 | ⚠️ 1/4 (3 skip) | ✅ |
+| `unzip` | 87.5% | 4 | ✅ 4/4 | ✅ |
 | `uuencode` | 88.3% | 19 | ✅ 19/19 | ✅ |
 | `uudecode` | 80.5% | — | — | ✅ |
 | `taskset` | 86.4% | 3 | ✅ 3/3 | ✅ |
 | `start-stop-daemon` | 82.1% | 4 | ✅ 4/4 | ✅ |
 | `cryptpw` | 80.6% | 3 | ⚠️ 3/7 (4 skip) | ✅ |
 | `makedevs` | 87.3% | 1 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
-| `ar` | 80.0% | 0 | ⚠️ 0/23 (23 skip) | ✅ |
+| `ar` | 80.0% | 2 | ✅ 2/2 | ✅ |
 | `cpio` | 82.0% | 2 | ✅ 2/9 (7 skip) | ✅ |
 | `ash` | — | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mount` | 80.6% | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mdev` | 87.4% | 0 | ⚠️ 0/12 (12 skip) | ⚠️ skip |
-| `dc` | 90.3% | 3 | 🟡 3/13 (dc testsuite: 3 ✓ / 10 wrapping+scale diffs) | ✅ |
-| `rx` | 72.4% | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
+| `dc` | 90.3% | 36 | ⚠️ 7/36 (29 skip, FEATURE_DC_BIG not enabled) | ✅ |
+| `rx` | 72.4% | 1 | ⚠️ 0/1 (1 flaky — intermittent timing) | ✅ |
 | `hexdump` | 83.6% | 3 | ✅ 3/3 | ✅ |
 | `xxd` | 86.4% | 7 | ✅ 7/7 | ✅ |
 | `bc` | 64.3% | 81 | ⚠️ 59/81 (22 fail) | ✅ |
@@ -193,36 +193,33 @@
 
 | Suite | Count | Status |
 |-------|-------|--------|
-| Total packages | 113 | 112 utilities + client SDK |
-| Unit tests passing | 113/113 | 100% |
-| BusyBox tests run | 893 | 893 total applicable tests |
-| BusyBox passed | 798 | 89.4% (798 of 893) |
-| BusyBox failed | 42 | 17 awk + 22 bc + 3 realpath |
-| BusyBox skipped | 53 | External deps (bzip2, xz, uudecode, tar, tree unicode, pidof init, ar needs system ar, mount/mdev need root, etc.) |
+| Total packages | 115 | 115 utilities + client SDK |
+| Unit tests passing | 115/115 | 100% |
+| BusyBox tests run | 919 | 919 total applicable tests |
+| BusyBox passed | 810 | 88.1% (810 of 919) |
+| BusyBox failed | 45 | 16 awk + 22 bc + 7 tar |
+| BusyBox skipped | 64 | 29 dc (FEATURE_DC_BIG), 13 mdev (root), 7 cpio, 4 cryptpw, 1 mount, 1 makedevs, 1 pidof, 1 rx, 1 tar-xz, 1 ash, 5+ awk |
 | Overall statement coverage | 82.3% | Checked via make cover-gate |
 | JSON-RPC daemon tests | 115/115 | 100.0% (all 115 utilities implemented and registered) |
-| Packages below 70% unit coverage | 4 | `tty` (60.0%), `gzip` (64.7%), `tar` (69.4%), `bc` (64.3%) |
+| Packages below 70% unit coverage | 2 | `bc` (64.3%), `tar` (69.4%) |
 
 ## Remaining Gaps
 
 | # | Gap | Count |
 |---|-----|-------|
-| 1 | awk BusyBox failures | 17 (goawk v1.31.0 limitations) |
+| 1 | awk BusyBox failures | 16 (goawk v1.31.0 engine limitations) |
 | 2 | bc BusyBox failures | 22 (formatting and precision/scale differences) |
-| 3 | realpath BusyBox failures | 3 (non-existent link resolution differences) |
-| 4 | Unit coverage < 80% | 1 package: `bc` (64.3%) |
+| 3 | tar BusyBox failures | 7 (3 hardlink/symlink mode ordering, 3 symlink safety, 1 XZ) |
+| 4 | Unit coverage < 80% | 2 packages: `bc` (64.3%), `tar` (69.4%) |
 
 ## Notes
 
-- **BusyBox skipped (10):** All tar tests requiring bzip2/xz/uudecode (external deps)
-- **Coverage gate:** CI enforces ≥80% overall (run `make cover-gate` for current; target ≥80% per Phase 28)
-- **Tier 7 stubs:** Implemented as functional stubs; need hardening and BusyBox-style compliance tests
-- **Phase 26 (Tiers 1–4):** 25 utilities + 1 companion (`uudecode`) implemented. Tier 1: `which`, `realpath`, `seq`, `sha1sum`, `sha512sum`. Tier 2: `rev`, `uptime`, `wget`, `cal`. Tier 3: `hostid`, `factor`, `sha3sum`, `tree`, `tsort`, `pidof`. Tier 4: `bunzip2`, `bzcat`, `unlzma`, `uncompress`, `unzip`, `uuencode`, `uudecode`, `taskset`, `start-stop-daemon`, `cryptpw`, `makedevs`.
-- **Phase 27 (Tier 5):** 11 of 11 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`, `dc`, `rx`, `hexdump`, `xxd`, `bc`, `mkfs.minix`.
-- **Phase 26/27 JSON-RPC tests:** 31 new daemon tests added in `test/posix-json/tier8_phase26_27_test.go` (25 running + 6 skipped). Includes `dc` add + complex.
-- **JSON-RPC alias coverage added:** `egrep`, `fgrep` (grep aliases), `gunzip` (gzip alias) now tested via daemon.
-- **Phase 26/27 compliance tests:** 28 `test/compliance/test_<name>.sh` scripts written. 84 assertions, 0 failures. 1 test skipped (uncompress needs system `compress`).
-- **Phase 28 (feat/coverage-10):** Added 60+ new unit tests covering CLI glue layers (`run()`), infrastructure (dispatch, flags, filepath), utility edge cases (date, printf, wc, expr, diff, sort, tar), and observability. Overall coverage: 77.9% → 80.1%. Key wins: `true/false` 75% → 100%, `wc` 81.2% → 93.2%, dispatch 100%, flags 100%, filepath 100%, `printf` 65.6% → 79.0%, `sort` 82.5% → 85.2%. CI gate raised from 70% → 80%. Remaining gaps: `main()` (os.Exit), `client_helpers` (needs daemon), platform-specific code (`setProcTitle`, `RunDaemon`).
-- **Phase 28.5 (feat/coverage-85):** Added 35+ new tests across Phase A (xargs 2→12, paste +5, join +5, tr +6, hostname +4) and Phase B (mkdir +3, mv +4, cp +1, diff +3, comm +6). Overall: 80.1% → 80.9%. Key wins: `xargs` 65.7% → 74.5%, `comm` 79.4% → 81.0%, `join` 76.8% → 78.0%. All 93 packages green. Next targets: `client_helpers` (131 blocks at 0%), `sed/execFlat` (36.7%), `tar` (104 uncovered). See [wiki/todos.md](todos.md) for full plan.
-- **Phase 28.6 (feat/coverage-85 Phase D):** Added 20 new tests: sed (a/i/c/q/N/n/D/P/T/w commands, SubNum, \ delimiter, $ addr, +N range), tar (extract to stdout, verbose list), cp (symlink copy), date (last-week eval, non-leap Julian, complex TZ), printf (%c, %-width, %0pad). Overall: 81.5% → 82.2%. All 93 packages green.
-- **Phase 28.7 (feat/coverage-85 Phase E):** Added 16 tests: date formatDate (%e/%I/%m/%S/%y/%T), parseDateString compact/sec/@epoch/time-only/Zulu/invalid; printf %*d/%.*f/%5d/%.5d/%e/length-mods/exhausted-args. Overall: 82.2% → 82.4%. All 93 green.
+- **ar**: Archive creation now passes all BusyBox tests (2/2). Feature flags enabled. ✅
+- **unzip**: Corrupted archive handling passes all BusyBox tests (4/4). Added `scanCorruptedZip()` for local file header extraction from damaged zips. ✅
+- **tree**: All 4 BusyBox tests pass including Unicode box-drawing output. ✅
+- **tar**: 4 previously-skipped tests now pass (empty gzip, extract tgz, Pax UTF8, symlinks+hardlinks coexist). Bzip2 auto-detection and `-k` flag added. 7 remaining failures: 3 ordering issues, 3 symlink safety, 1 XZ.
+- **dc**: 7 basic tests pass; 29 behind FEATURE_DC_BIG flag not yet enabled.
+- **realpath**: All 10 BusyBox tests pass (previously 3 failures — resolved). ✅
+- **Coverage gate:** CI enforces ≥80% overall (run `make cover-gate` for current)
+- **JSON-RPC alias coverage added:** `egrep`, `fgrep` (grep aliases), `gunzip` (gzip alias) tested via daemon.
+- **Phase 26/27 compliance tests:** 28 `test/compliance/test_<name>.sh` scripts written. 84 assertions, 0 failures.

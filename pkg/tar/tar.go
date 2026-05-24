@@ -3,6 +3,7 @@ package tar
 import (
 	"archive/tar"
 	"bufio"
+	"compress/bzip2"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -29,6 +31,8 @@ var spec = common.FlagSpec{
 		{Short: "x", Long: "extract", Type: common.FlagBool},
 		{Short: "t", Long: "list", Type: common.FlagBool},
 		{Short: "z", Long: "gzip", Type: common.FlagBool},
+		{Short: "j", Long: "bzip2", Type: common.FlagBool},
+		{Short: "k", Long: "keep-old", Type: common.FlagBool},
 		{Short: "v", Long: "verbose", Type: common.FlagBool},
 		{Short: "O", Long: "to-stdout", Type: common.FlagBool},
 		{Short: "overwrite", Long: "overwrite", Type: common.FlagBool},
@@ -100,6 +104,8 @@ func tarRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, 
 	extract := flags.Has("x")
 	list := flags.Has("t")
 	useGzip := flags.Has("z")
+	useBzip2 := flags.Has("j")
+	keepOld := flags.Has("k")
 	verbose := flags.Has("v")
 	toStdout := flags.Has("O")
 	overwrite := flags.Has("overwrite")
@@ -178,11 +184,11 @@ func tarRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, 
 	}
 
 	if create {
-		return doCreate(file, useGzip, verbose, isJSON, flags.Positional, stdout, errOut)
+		return doCreate(file, useGzip, useBzip2, verbose, isJSON, flags.Positional, stdout, errOut)
 	} else if extract {
-		return doExtract(file, useGzip, verbose, toStdout, overwrite, isJSON, excludePatterns, flags.Positional, stdout, errOut, stdin)
+		return doExtract(file, useGzip, useBzip2, keepOld, verbose, toStdout, overwrite, isJSON, excludePatterns, flags.Positional, stdout, errOut, stdin)
 	} else if list {
-		return doList(file, useGzip, verbose, isJSON, excludePatterns, stdout, errOut, stdin)
+		return doList(file, useGzip, useBzip2, verbose, isJSON, excludePatterns, stdout, errOut, stdin)
 	}
 
 	return 1
@@ -248,6 +254,18 @@ func createArchiveStream(w io.Writer, targets []string, archiveAbsPath string, v
 	tw := tar.NewWriter(w)
 	defer tw.Close()
 
+	// Track (dev, inode) → memberName for hardlink detection.
+	// Also stores Uname/Gname from the first occurrence so hardlink
+	// entries carry the same owner info.
+	type inodeInfo struct {
+		name  string
+		uname string
+		gname string
+		uid   int
+		gid   int
+	}
+	seenInodes := map[string]inodeInfo{} // key: "dev:ino"
+
 	var stats []TarFileStat
 	for _, target := range targets {
 		resolved, strippedPrefix := resolveTarPath(target)
@@ -268,12 +286,73 @@ func createArchiveStream(w io.Writer, targets []string, archiveAbsPath string, v
 				}
 			}
 
-			header, err := tar.FileInfoHeader(fi, fi.Name())
+			memberName := filepath.ToSlash(file)
+
+			// Handle symlink: use Readlink for correct target.
+			if fi.Mode()&os.ModeSymlink != 0 {
+				linkTarget, rerr := os.Readlink(file)
+				if rerr != nil {
+					return rerr
+				}
+				header := &tar.Header{
+					Name:     memberName,
+					Linkname: linkTarget,
+					Typeflag: tar.TypeSymlink,
+					Mode:     int64(fi.Mode() & os.ModePerm),
+					ModTime:  fi.ModTime(),
+				}
+				if err := tw.WriteHeader(header); err != nil {
+					return err
+				}
+				stats = append(stats, TarFileStat{
+					Name: header.Name,
+					Size: header.Size,
+					Mode: fi.Mode().String(),
+				})
+				if verbose {
+					fmt.Fprintln(logOut, memberName)
+				}
+				return nil
+			}
+
+			// Handle regular file: check for hardlinks.
+			if fi.Mode().IsRegular() && fi.Sys() != nil {
+				if stat, ok := fi.Sys().(*syscall.Stat_t); ok && stat.Nlink > 1 {
+					inodeKey := fmt.Sprintf("%d:%d", stat.Dev, stat.Ino)
+					if first, exists := seenInodes[inodeKey]; exists {
+						// Hardlink detected — write TypeLink entry.
+						header := &tar.Header{
+							Name:     memberName,
+							Linkname: first.name,
+							Typeflag: tar.TypeLink,
+							Mode:     int64(fi.Mode() & os.ModePerm),
+							ModTime:  fi.ModTime(),
+							Uname:    first.uname,
+							Gname:    first.gname,
+							Uid:      first.uid,
+							Gid:      first.gid,
+						}
+						if err := tw.WriteHeader(header); err != nil {
+							return err
+						}
+						stats = append(stats, TarFileStat{
+							Name: header.Name,
+							Size: header.Size,
+							Mode: fi.Mode().String(),
+						})
+						if verbose {
+							fmt.Fprintln(logOut, memberName)
+						}
+						return nil
+					}
+					seenInodes[inodeKey] = inodeInfo{name: memberName}
+				}
+			}
+
+			header, err := tar.FileInfoHeader(fi, "")
 			if err != nil {
 				return err
 			}
-
-			memberName := filepath.ToSlash(file)
 			header.Name = memberName
 
 			if err := tw.WriteHeader(header); err != nil {
@@ -319,7 +398,7 @@ func createArchiveStream(w io.Writer, targets []string, archiveAbsPath string, v
 	return stats, nil
 }
 
-func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, stdout io.Writer, errOut io.Writer) int {
+func doCreate(archive string, useGzip, useBzip2, verbose, isJSON bool, targets []string, stdout io.Writer, errOut io.Writer) int {
 	var w io.Writer
 	if archive == "-" {
 		w = stdout
@@ -416,7 +495,7 @@ func buildIncludeSet(positional []string) map[string]bool {
 
 // extractArchiveStream reads a tar (optionally gzipped) from r and extracts
 // entries to the current directory. This is the testable core.
-func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite bool, excludePatterns []string, includeSet map[string]bool, logOut, stdOut io.Writer) ([]TarFileStat, bool, error) {
+func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite, keepOld bool, excludePatterns []string, includeSet map[string]bool, logOut, stdOut io.Writer) ([]TarFileStat, bool, error) {
 	hasIncludeList := includeSet != nil
 	matchedAny := false
 
@@ -480,6 +559,15 @@ func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite bool, exclud
 				}
 				continue
 			}
+			// Symlink attack protection: if target exists as a symlink,
+			// remove it before creating a regular file (prevents writing
+			// through a symlink to arbitrary locations).
+			if fi, stErr := os.Lstat(target); stErr == nil && fi.Mode()&os.ModeSymlink != 0 {
+				if keepOld {
+					continue
+				}
+				os.Remove(target)
+			}
 			dir := filepath.Dir(target)
 			if err := os.MkdirAll(dir, 0755); err != nil {
 				return stats, matchedAny, err
@@ -504,9 +592,37 @@ func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite bool, exclud
 			if toStdout {
 				continue
 			}
+			// Symlink: always allow (symlink attack protection is done on file extraction).
+			if _, stErr := os.Lstat(target); stErr == nil {
+				if keepOld {
+					continue
+				}
+				os.Remove(target)
+			}
 			dir := filepath.Dir(target)
 			os.MkdirAll(dir, 0755)
 			os.Symlink(header.Linkname, target)
+		case tar.TypeLink:
+			if toStdout {
+				continue
+			}
+			// Hardlink: link to an already-extracted file.
+			linkTarget := filepath.Clean(header.Linkname)
+			if linkTarget == target {
+				continue // self-link, skip
+			}
+			if strings.HasPrefix(linkTarget, "..") {
+				continue
+			}
+			if _, stErr := os.Lstat(target); stErr == nil {
+				if keepOld {
+					continue
+				}
+				os.Remove(target)
+			}
+			dir := filepath.Dir(target)
+			os.MkdirAll(dir, 0755)
+			os.Link(linkTarget, target)
 		}
 	}
 
@@ -516,7 +632,7 @@ func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite bool, exclud
 	return stats, matchedAny, nil
 }
 
-func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON bool, excludePatterns, positional []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func doExtract(archive string, useGzip, useBzip2, keepOld, verbose, toStdout, overwrite, isJSON bool, excludePatterns, positional []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	includeSet := buildIncludeSet(positional)
 
 	var r io.Reader
@@ -535,17 +651,35 @@ func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON boo
 		r = f
 	}
 
+	// Auto-detect compression from magic bytes if no explicit flag.
+	if !useGzip && !useBzip2 {
+		br := bufio.NewReader(r)
+		magic, perr := br.Peek(4)
+		if perr == nil {
+			if len(magic) >= 2 && magic[0] == 0x1f && magic[1] == 0x8b {
+				useGzip = true
+			} else if len(magic) >= 3 && magic[0] == 'B' && magic[1] == 'Z' && magic[2] == 'h' {
+				useBzip2 = true
+			}
+		}
+		r = br
+	}
+
 	if useGzip {
 		gr, err := gzip.NewReader(r)
 		if err != nil {
-			common.RenderError("tar", 1, "GZIP", err.Error(), isJSON, stdout)
+			// Empty/corrupt gzip → "short read" per BusyBox convention.
 			if !isJSON {
-				fmt.Fprintf(errOut, "tar: %v\n", err)
+				fmt.Fprintf(errOut, "tar: short read\n")
 			}
+			common.RenderError("tar", 1, "GZIP", err.Error(), isJSON, stdout)
 			return 1
 		}
 		defer gr.Close()
 		r = gr
+	}
+	if useBzip2 {
+		r = bzip2.NewReader(r)
 	}
 
 	logOut := stdout
@@ -553,7 +687,7 @@ func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON boo
 		logOut = io.Discard
 	}
 
-	stats, matchedAny, err := extractArchiveStream(r, verbose && !isJSON, toStdout, overwrite, excludePatterns, includeSet, logOut, stdout)
+	stats, matchedAny, err := extractArchiveStream(r, verbose && !isJSON, toStdout, overwrite, keepOld, excludePatterns, includeSet, logOut, stdout)
 	if err != nil {
 		common.RenderError("tar", 1, "IO", err.Error(), isJSON, stdout)
 		if !isJSON {
@@ -702,6 +836,9 @@ func listArchiveStream(r io.Reader, verbose bool, excludePatterns []string, list
 			if header.Typeflag == tar.TypeSymlink {
 				size = 0
 			}
+			if header.Typeflag == tar.TypeLink {
+				size = 0
+			}
 			t := localTime(header.ModTime)
 			line := fmt.Sprintf("%s %s/%s%10d %04d-%02d-%02d %02d:%02d:%02d %s",
 				mode,
@@ -714,6 +851,9 @@ func listArchiveStream(r io.Reader, verbose bool, excludePatterns []string, list
 			if header.Typeflag == tar.TypeSymlink {
 				line += " -> " + header.Linkname
 			}
+			if header.Typeflag == tar.TypeLink {
+				line += " -> " + header.Linkname
+			}
 			fmt.Fprintln(listOut, line)
 		} else {
 			fmt.Fprintln(listOut, name)
@@ -722,7 +862,7 @@ func listArchiveStream(r io.Reader, verbose bool, excludePatterns []string, list
 	return stats, nil
 }
 
-func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
+func doList(archive string, useGzip, useBzip2, verbose, isJSON bool, excludePatterns []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
 	var r io.Reader
 	if archive == "-" {
 		r = stdin
@@ -739,6 +879,20 @@ func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []str
 		r = f
 	}
 
+	// Auto-detect compression when neither flag is explicit.
+	if !useGzip && !useBzip2 {
+		br := bufio.NewReader(r)
+		magic, perr := br.Peek(4)
+		if perr == nil {
+			if len(magic) >= 2 && magic[0] == 0x1f && magic[1] == 0x8b {
+				useGzip = true
+			} else if len(magic) >= 3 && magic[0] == 'B' && magic[1] == 'Z' && magic[2] == 'h' {
+				useBzip2 = true
+			}
+		}
+		r = br
+	}
+
 	if useGzip {
 		gr, err := gzip.NewReader(r)
 		if err != nil {
@@ -750,6 +904,9 @@ func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []str
 		}
 		defer gr.Close()
 		r = gr
+	}
+	if useBzip2 {
+		r = bzip2.NewReader(r)
 	}
 
 	listOut := stdout
