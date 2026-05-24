@@ -157,7 +157,8 @@ func cpioRun(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd strin
 
 // cpioCreate reads file names from stdin and writes a cpio archive.
 func cpioCreate(out io.Writer, nameReader io.Reader, verbose, jsonMode bool, stdout, stderr io.Writer, cwd string) int {
-	w := cpio.NewWriter(out)
+	cw := &countingWriter{w: out}
+	w := cpio.NewWriter(cw)
 	var members []CpioMember
 
 	scanner := bufio.NewScanner(nameReader)
@@ -221,6 +222,11 @@ func cpioCreate(out io.Writer, nameReader io.Reader, verbose, jsonMode bool, std
 		return 1
 	}
 
+	if !jsonMode {
+		blocks := (cw.n + 511) / 512
+		fmt.Fprintf(stderr, "%d blocks\n", blocks)
+	}
+
 	if jsonMode {
 		common.Render("cpio", CpioResult{Members: members}, true, stdout, nil)
 	}
@@ -229,7 +235,8 @@ func cpioCreate(out io.Writer, nameReader io.Reader, verbose, jsonMode bool, std
 
 // cpioExtract reads a cpio archive from in and extracts (or lists) its contents.
 func cpioExtract(in io.Reader, listOnly, makeDirs, verbose, jsonMode bool, filter []string, stdout, stderr io.Writer, cwd string) int {
-	r := cpio.NewReader(in)
+	cr := &countingReader{r: in}
+	r := cpio.NewReader(cr)
 	filterSet := makeSet(filter)
 	var members []CpioMember
 
@@ -309,6 +316,14 @@ func cpioExtract(in io.Reader, listOnly, makeDirs, verbose, jsonMode bool, filte
 		}
 	}
 
+	// Consume any remaining bytes to get accurate block count
+	io.Copy(io.Discard, cr)
+
+	if !jsonMode {
+		blocks := (cr.n + 511) / 512
+		fmt.Fprintf(stderr, "%d blocks\n", blocks)
+	}
+
 	if jsonMode {
 		common.Render("cpio", CpioResult{Members: members}, true, stdout, nil)
 	}
@@ -318,6 +333,7 @@ func cpioExtract(in io.Reader, listOnly, makeDirs, verbose, jsonMode bool, filte
 // cpioPass copies files named on stdin to a destination directory.
 func cpioPass(dest string, nameReader io.Reader, verbose, jsonMode bool, stdout, stderr io.Writer, cwd string) int {
 	var members []CpioMember
+	var totalBytes int64 = 0
 	scanner := bufio.NewScanner(nameReader)
 
 	for scanner.Scan() {
@@ -366,6 +382,8 @@ func cpioPass(dest string, nameReader io.Reader, verbose, jsonMode bool, stdout,
 			os.MkdirAll(destPath, info.Mode())
 		}
 
+		totalBytes += virtualArchiveSize(name, info.Mode(), info.Size())
+
 		if jsonMode {
 			members = append(members, CpioMember{
 				Name:    name,
@@ -374,6 +392,13 @@ func cpioPass(dest string, nameReader io.Reader, verbose, jsonMode bool, stdout,
 				ModTime: info.ModTime().Unix(),
 			})
 		}
+	}
+
+	totalBytes += virtualArchiveSize("TRAILER!!!", 0, 0)
+
+	if !jsonMode {
+		blocks := (totalBytes + 511) / 512
+		fmt.Fprintf(stderr, "%d blocks\n", blocks)
 	}
 
 	if jsonMode {
@@ -393,3 +418,39 @@ func makeSet(s []string) map[string]bool {
 
 // Ensure time is used (it's used in CpioMember.ModTime via Unix()).
 var _ = time.Now
+
+// countingReader counts total bytes read from the underlying reader.
+type countingReader struct {
+	r io.Reader
+	n int64
+}
+
+func (cr *countingReader) Read(p []byte) (int, error) {
+	n, err := cr.r.Read(p)
+	cr.n += int64(n)
+	return n, err
+}
+
+// countingWriter counts total bytes written to the underlying writer.
+type countingWriter struct {
+	w io.Writer
+	n int64
+}
+
+func (cw *countingWriter) Write(p []byte) (int, error) {
+	n, err := cw.w.Write(p)
+	cw.n += int64(n)
+	return n, err
+}
+
+// virtualArchiveSize calculates what the newc CPIO record size would be.
+func virtualArchiveSize(name string, mode os.FileMode, size int64) int64 {
+	var contentSize int64 = 0
+	if mode.IsRegular() {
+		contentSize = size
+	}
+	nameLen := int64(len(name) + 1)
+	paddedName := (110 + nameLen + 3) &^ 3
+	paddedContent := (contentSize + 3) &^ 3
+	return paddedName + paddedContent
+}

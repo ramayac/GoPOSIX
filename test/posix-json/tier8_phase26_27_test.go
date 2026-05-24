@@ -18,15 +18,17 @@ import (
 	_ "github.com/ramayac/goposix/pkg/bunzip2"
 	_ "github.com/ramayac/goposix/pkg/bzcat"
 	_ "github.com/ramayac/goposix/pkg/cal"
+	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/cpio"
 	_ "github.com/ramayac/goposix/pkg/cryptpw"
-	"github.com/ramayac/goposix/pkg/client"
+	_ "github.com/ramayac/goposix/pkg/dc"
 	_ "github.com/ramayac/goposix/pkg/makedevs"
 	_ "github.com/ramayac/goposix/pkg/mdev"
 	_ "github.com/ramayac/goposix/pkg/mount"
 	_ "github.com/ramayac/goposix/pkg/patch"
 	_ "github.com/ramayac/goposix/pkg/realpath"
 	_ "github.com/ramayac/goposix/pkg/rev"
+	_ "github.com/ramayac/goposix/pkg/rx"
 	_ "github.com/ramayac/goposix/pkg/seq"
 	_ "github.com/ramayac/goposix/pkg/sha1sum"
 	_ "github.com/ramayac/goposix/pkg/sha512sum"
@@ -1092,6 +1094,56 @@ func TestTier8_Gunzip(t *testing.T) {
 			t.Logf("gunzip data keys: %s", getKeys(m))
 		} else {
 			t.Logf("gunzip data type: %T", result.Data)
+		}
+	})
+}
+
+func TestTier8_Rx(t *testing.T) {
+	t.Skip("rx requires live XMODEM stdin — tested via compliance script")
+}
+
+func TestTier8_Dc(t *testing.T) {
+	socket := startDaemon(t)
+	c := client.Dial(socket, 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	t.Run("dc add", func(t *testing.T) {
+		var result ResultWrapper
+		err := c.Call(ctx, "goposix.dc", map[string]interface{}{
+			"flags": []interface{}{"-e", "10 20+p"},
+		}, &result)
+		if err != nil {
+			t.Fatalf("dc add call: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Fatalf("dc add exit: %d", result.ExitCode)
+		}
+		data, ok := result.Data.(map[string]interface{})
+		if !ok {
+			t.Fatalf("dc data type: %T", result.Data)
+		}
+		output, _ := data["output"].([]interface{})
+		if len(output) < 1 || output[0] != "30" {
+			t.Errorf("dc add got %v, want [30]", output)
+		}
+	})
+
+	t.Run("dc complex", func(t *testing.T) {
+		var result ResultWrapper
+		err := c.Call(ctx, "goposix.dc", map[string]interface{}{
+			"flags": []interface{}{"-e", "8 8*2 2+/p"},
+		}, &result)
+		if err != nil {
+			t.Fatalf("dc complex call: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Fatalf("dc complex exit: %d", result.ExitCode)
+		}
+		data, _ := result.Data.(map[string]interface{})
+		output, _ := data["output"].([]interface{})
+		if len(output) < 1 || output[0] != "16" {
+			t.Errorf("dc complex got %v, want [16]", output)
 		}
 	})
 }

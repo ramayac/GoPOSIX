@@ -2,6 +2,7 @@
 package ls
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"io/fs"
@@ -11,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -67,20 +69,63 @@ func statInfo(info fs.FileInfo) (inode, links uint64, blocks int64, uid, gid uin
 	return 0, 1, 0, 0, 0
 }
 
+type cacheEntry struct {
+	value     string
+	createdAt time.Time
+}
+
+var (
+	ownerCache     sync.Map // uint32 -> cacheEntry
+	groupCache     sync.Map // uint32 -> cacheEntry
+	cacheTTL       = 30 * time.Second
+	cacheLoadedTTL sync.Once
+)
+
+func getTTL() time.Duration {
+	cacheLoadedTTL.Do(func() {
+		if ttlStr := os.Getenv("GOPOSIX_LS_CACHE_TTL"); ttlStr != "" {
+			if d, err := time.ParseDuration(ttlStr); err == nil && d >= 0 {
+				cacheTTL = d
+			}
+		}
+	})
+	return cacheTTL
+}
+
 func ownerName(uid uint32) string {
-	u, err := user.LookupId(strconv.Itoa(int(uid)))
-	if err != nil {
-		return strconv.Itoa(int(uid))
+	now := time.Now()
+	ttl := getTTL()
+	if val, ok := ownerCache.Load(uid); ok {
+		entry := val.(cacheEntry)
+		if now.Sub(entry.createdAt) < ttl {
+			return entry.value
+		}
 	}
-	return u.Username
+	u, err := user.LookupId(strconv.Itoa(int(uid)))
+	name := strconv.Itoa(int(uid))
+	if err == nil {
+		name = u.Username
+	}
+	ownerCache.Store(uid, cacheEntry{value: name, createdAt: now})
+	return name
 }
 
 func groupName(gid uint32) string {
-	g, err := user.LookupGroupId(strconv.Itoa(int(gid)))
-	if err != nil {
-		return strconv.Itoa(int(gid))
+	now := time.Now()
+	ttl := getTTL()
+	if val, ok := groupCache.Load(gid); ok {
+		entry := val.(cacheEntry)
+		if now.Sub(entry.createdAt) < ttl {
+			return entry.value
+		}
 	}
-	return g.Name
+	g, err := user.LookupGroupId(strconv.Itoa(int(gid)))
+	name := strconv.Itoa(int(gid))
+	if err == nil {
+		name = g.Name
+	}
+	groupCache.Store(gid, cacheEntry{value: name, createdAt: now})
+	return name
 }
 
 func buildFileInfo(path string, info fs.FileInfo) FileInfo {
@@ -275,6 +320,9 @@ func lsRun(args []string, out, errOut io.Writer, stdin io.Reader, cwd string) in
 		return 0
 	}
 
+	bw := bufio.NewWriterSize(out, 32*1024)
+	defer bw.Flush()
+
 	multiPath := len(results) > 1
 	for _, res := range results {
 		files := sortFiles(res.Files, byTime, bySize, reverse)
@@ -282,7 +330,7 @@ func lsRun(args []string, out, errOut io.Writer, stdin io.Reader, cwd string) in
 		// System ls: "ls -l file1 dir1" shows "dir1:" header but not "file1:".
 		showHeader := multiPath && !isSingleFile(files, res.Path, directoryMode)
 		if showHeader {
-			fmt.Fprintf(out, "%s:\n", res.Path)
+			fmt.Fprintf(bw, "%s:\n", res.Path)
 		}
 		// Emit "total NNN" line when -l or -s is active and we're
 		// listing a directory or multiple items (not a single file).
@@ -291,7 +339,7 @@ func lsRun(args []string, out, errOut io.Writer, stdin io.Reader, cwd string) in
 			for _, fi := range files {
 				totalBlocks += fi.Blocks / 2
 			}
-			fmt.Fprintf(out, "total %d\n", totalBlocks)
+			fmt.Fprintf(bw, "total %d\n", totalBlocks)
 		}
 		for _, fi := range files {
 			name := fi.Name
@@ -307,30 +355,30 @@ func lsRun(args []string, out, errOut io.Writer, stdin io.Reader, cwd string) in
 
 			switch {
 			case longFmt:
-				printLong(out, fi, showInode, showBlocks, humanReadable)
+				printLong(bw, fi, showInode, showBlocks, humanReadable)
 			case onePer:
 				if showInode {
-					fmt.Fprintf(out, "%7d ", fi.Inode)
+					fmt.Fprintf(bw, "%7d ", fi.Inode)
 				}
 				if showBlocks {
-					fmt.Fprintf(out, "%4d ", fi.Blocks/2)
+					fmt.Fprintf(bw, "%4d ", fi.Blocks/2)
 				}
-				fmt.Fprintln(out, name)
+				fmt.Fprintln(bw, name)
 			default:
 				// Default mode: one-per-line when not a terminal (piped).
 				// Multi-column would require terminal width; for busytest
 				// and pipes, one-per-line is the expected behavior.
 				if showInode {
-					fmt.Fprintf(out, "%7d ", fi.Inode)
+					fmt.Fprintf(bw, "%7d ", fi.Inode)
 				}
 				if showBlocks {
-					fmt.Fprintf(out, "%4d ", fi.Blocks/2)
+					fmt.Fprintf(bw, "%4d ", fi.Blocks/2)
 				}
-				fmt.Fprintln(out, name)
+				fmt.Fprintln(bw, name)
 			}
 		}
 		if showHeader {
-			fmt.Fprintln(out)
+			fmt.Fprintln(bw)
 		}
 	}
 	return 0

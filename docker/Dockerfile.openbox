@@ -1,0 +1,54 @@
+# syntax=docker/dockerfile:1
+# Minimal graphical Alpine image: openbox + GoPOSIX.
+# Build:  docker build -t openbox -f docker/Dockerfile.openbox .
+# Host:   xhost +local:   (allow container X11 connections)
+# Run:    docker run -it --rm -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=$DISPLAY openbox
+
+# Stage 1: Builder — compiles a fully static GoPOSIX binary.
+FROM golang:1.26-alpine AS builder
+
+RUN apk add --no-cache git ca-certificates tzdata
+
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+
+ARG VERSION
+RUN VERSION=${VERSION:-$(git describe --tags --always 2>/dev/null || echo "dev")} && \
+    CGO_ENABLED=0 GOOS=linux \
+    go build \
+      -ldflags="-s -w -X 'github.com/ramayac/goposix/pkg/common.Version=${VERSION}' -X 'github.com/ramayac/goposix.Version=${VERSION}'" \
+      -o /goposix ./cmd/goposix/
+
+RUN /goposix --list-commands > /commands.txt
+
+# Stage 2: Openbox desktop with GoPOSIX tools.
+FROM alpine:3.20
+
+RUN apk add --no-cache \
+    xorg-server xinit xf86-input-libinput \
+    mesa-dri-gallium mesa-egl mesa-gbm \
+    openbox font-dejavu \
+    xterm \
+    dbus
+
+# Copy GoPOSIX binary and create multicall symlinks.
+COPY --from=builder /goposix /bin/goposix
+COPY --from=builder /commands.txt /commands.txt
+RUN while IFS= read -r cmd; do ln -s /bin/goposix "/bin/${cmd}"; done < /commands.txt
+
+RUN addgroup -g 1000 nonRootUser && \
+    adduser -u 1000 -G nonRootUser -s /bin/shell -D nonRootUser
+
+# Allow anyone to start X inside a container.
+RUN echo "allowed_users=anybody" > /etc/X11/Xwrapper.config
+
+# Auto-start an xterm so the desktop isn't a black void.
+RUN mkdir -p /home/nonRootUser/.config/openbox && \
+    echo 'xterm &' > /home/nonRootUser/.config/openbox/autostart && \
+    chown -R nonRootUser:nonRootUser /home/nonRootUser
+
+USER nonRootUser
+ENV DISPLAY=:0 SHELL=/bin/goposix
+CMD ["openbox"]

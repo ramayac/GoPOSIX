@@ -18,6 +18,7 @@ var spec = common.FlagSpec{
 		{Short: "c", Long: "", Type: common.FlagBool},
 		{Short: "f", Long: "", Type: common.FlagBool},
 		{Short: "x", Long: "", Type: common.FlagBool},
+		{Short: "i", Long: "", Type: common.FlagBool},
 		{Short: "t", Long: "", Type: common.FlagValue},
 		{Short: "N", Long: "", Type: common.FlagValue},
 		{Short: "A", Long: "", Type: common.FlagValue},
@@ -75,6 +76,8 @@ func Run(args []string, r io.Reader, w io.Writer) int {
 			return dumpChars(in, w, maxBytes, jsonMode)
 		case "f":
 			return dumpFloat(in, w, maxBytes, jsonMode)
+		case "i1", "i2", "i4", "i8", "i", "d1", "d2", "d4", "d8", "d":
+			return dumpInts(in, w, maxBytes, jsonMode)
 		}
 	}
 
@@ -87,6 +90,8 @@ func Run(args []string, r io.Reader, w io.Writer) int {
 		return dumpFloat(in, w, maxBytes, jsonMode)
 	case flags.Has("x"):
 		return dumpHex(in, w, maxBytes, jsonMode)
+	case flags.Has("i"):
+		return dumpInts(in, w, maxBytes, jsonMode)
 	default:
 		return dumpShorts(in, w, maxBytes, jsonMode)
 	}
@@ -418,6 +423,65 @@ func dumpShorts(r io.Reader, w io.Writer, maxBytes int64, jsonMode bool) int {
 				line += fmt.Sprintf(" %07o", val)
 			} else {
 				line += fmt.Sprintf(" %07o", uint16(buf[i]))
+			}
+		}
+		line += "\n"
+		emit(line)
+		offset += int64(n)
+		if err == io.EOF {
+			break
+		}
+	}
+
+	emit(fmt.Sprintf("%07o\n", offset))
+
+	if jsonMode {
+		common.Render("od", OdResult{Records: records}, true, w, func() {})
+	}
+	return 0
+}
+
+func dumpInts(r io.Reader, w io.Writer, maxBytes int64, jsonMode bool) int {
+	const perLine = 16
+	buf := make([]byte, perLine)
+	var offset int64
+	var records []string
+
+	emit := func(s string) {
+		records = append(records, s)
+		if !jsonMode {
+			fmt.Fprint(w, s)
+		}
+	}
+
+	for {
+		n, err := io.ReadFull(r, buf)
+		if n == 0 && err == io.EOF {
+			break
+		}
+		if maxBytes >= 0 {
+			remaining := maxBytes - offset
+			if remaining <= 0 {
+				break
+			}
+			if int64(n) > remaining {
+				n = int(remaining)
+			}
+		}
+
+		line := fmt.Sprintf("%07o", offset)
+		for i := 0; i < n; i += 4 {
+			if i+3 < n {
+				val := int32(uint32(buf[i]) | uint32(buf[i+1])<<8 | uint32(buf[i+2])<<16 | uint32(buf[i+3])<<24)
+				line += fmt.Sprintf("%12d", val)
+			} else {
+				var val uint32
+				shift := 0
+				for j := i; j < n; j++ {
+					val |= uint32(buf[j]) << shift
+					shift += 8
+				}
+				line += fmt.Sprintf("%12d", int32(val))
 			}
 		}
 		line += "\n"

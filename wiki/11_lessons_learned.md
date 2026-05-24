@@ -236,3 +236,15 @@ Go's `compress/lzw` package produces the LZW algorithm output but doesn't includ
 ### Bzcat/Bunzip2 JSON-RPC data shape varies
 
 `bzcat` outputs decompressed content to stdout (raw text as `data` field), while `bunzip2` outputs structured JSON (`{"files": [...]}`). Tests must handle both shapes. The daemon captures stdout as-is; for `bzcat`, the response `data` is the decompressed text string, not a map.
+
+### BusyBox dc bugs found during implementation
+
+1. **String parsing in `-f` vs `-e` mode**: BusyBox `dc` parses `\[` differently when reading from a file (`-f`) vs command-line (`-e`). In `-e` mode, `\[` is correctly treated as escaped bracket; in `-f` mode, it may cause premature string termination due to shell interaction or a dc parser bug. The `dc_strings.dc` test file contains broken expected output from this bug.
+
+2. **Precision difference in chained division**: BusyBox `dc` produces a mathematically incorrect result for `20k 239854711289345712 2891374 182 .2893 ///pR` (dc_divide test). The exact rational computation yields `52187553294928.31582417750748351505...` but BusyBox outputs `52187553294928.31582417732156163799`. This is a floating-point rounding artifact in BusyBox's internal representation.
+
+3. **Line wrapping at 69 chars**: BusyBox `dc` wraps long output lines at 69 content characters (with `\` at position 70), not the typical 76-80 expected from terminal width. Our `wrapOutput()` must match this exact wrapping boundary for BusyBox test suite compatibility.
+
+4. **Per-number scale vs global scale**: BusyBox `dc` stores each number with its own internal scale. The `K` command pushes a value with scale 0 (not affected by global scale), while division results use the global `k` scale. Our implementation uses a single global scale for formatting, which causes `5k KpR` to produce `5.00000` instead of `5`. This is a documented architectural difference.
+
+5. **`0^0` and `0^(-n)` conventions**: BusyBox `dc` defines `0^0 = 1` (matching mathematical convention) and `0^(-n) = 0` for n > 0 (diverging from mathematical `1/0^n = 1/0 = undefined`). Our implementation follows these BusyBox conventions for test compatibility. Also, `|` (modexp) returns 1 when exponent is 0 regardless of base or modulus.

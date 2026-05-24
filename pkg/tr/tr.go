@@ -101,6 +101,8 @@ func expandSetList(s string) []rune {
 
 func Run(r io.Reader, w io.Writer, set1, set2 string, deleteFlag, squeezeFlag, complementFlag bool) error {
 	reader := bufio.NewReader(r)
+	bw := bufio.NewWriterSize(w, 32*1024)
+	defer bw.Flush()
 
 	s1List := expandSetList(set1)
 	s1Map := expandSet(set1)
@@ -120,6 +122,12 @@ func Run(r io.Reader, w io.Writer, set1, set2 string, deleteFlag, squeezeFlag, c
 			}
 			trans[r1] = r2
 		}
+	}
+
+	// Pre-expand squeeze set once outside the loop
+	var squeezeSet map[rune]bool
+	if squeezeFlag && len(s2List) > 0 {
+		squeezeSet = expandSet(set2)
 	}
 
 	var lastWrite rune = utf8.RuneError
@@ -156,7 +164,7 @@ func Run(r io.Reader, w io.Writer, set1, set2 string, deleteFlag, squeezeFlag, c
 			// Simplified: if squeezing and outRune == lastWrite and outRune is in the squeeze set...
 			var inSqueezeSet bool
 			if len(s2List) > 0 {
-				inSqueezeSet = expandSet(set2)[outRune]
+				inSqueezeSet = squeezeSet[outRune]
 			} else {
 				inSqueezeSet = inSet1
 			}
@@ -166,7 +174,7 @@ func Run(r io.Reader, w io.Writer, set1, set2 string, deleteFlag, squeezeFlag, c
 			}
 		}
 
-		fmt.Fprint(w, string(outRune))
+		bw.WriteRune(outRune)
 		lastWrite = outRune
 	}
 

@@ -26,6 +26,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/cut"
 	_ "github.com/ramayac/goposix/pkg/daemon"
 	_ "github.com/ramayac/goposix/pkg/date"
+	_ "github.com/ramayac/goposix/pkg/dc"
 	_ "github.com/ramayac/goposix/pkg/dd"
 	_ "github.com/ramayac/goposix/pkg/df"
 	_ "github.com/ramayac/goposix/pkg/diff"
@@ -72,6 +73,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/rev"
 	_ "github.com/ramayac/goposix/pkg/rm"
 	_ "github.com/ramayac/goposix/pkg/rmdir"
+	_ "github.com/ramayac/goposix/pkg/rx"
 	_ "github.com/ramayac/goposix/pkg/sed"
 	_ "github.com/ramayac/goposix/pkg/seq"
 	_ "github.com/ramayac/goposix/pkg/sha1sum"
@@ -116,9 +118,13 @@ import (
 	_ "github.com/ramayac/goposix/pkg/yes"
 	// Tier 5: high-complexity utilities
 	_ "github.com/ramayac/goposix/pkg/ar"
+	_ "github.com/ramayac/goposix/pkg/bc"
 	_ "github.com/ramayac/goposix/pkg/cpio"
+	_ "github.com/ramayac/goposix/pkg/hexdump"
 	_ "github.com/ramayac/goposix/pkg/mdev"
+	_ "github.com/ramayac/goposix/pkg/mkfs_minix"
 	_ "github.com/ramayac/goposix/pkg/mount"
+	_ "github.com/ramayac/goposix/pkg/xxd"
 )
 
 func main() {

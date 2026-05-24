@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"net"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/ramayac/goposix/internal/daemon"
 	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/pkg/tr"
+	"github.com/ramayac/goposix/pkg/wc"
 
 	_ "github.com/ramayac/goposix/pkg/echo"
 	_ "github.com/ramayac/goposix/pkg/ls"
@@ -86,5 +89,43 @@ func BenchmarkCLIEcho(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var buf bytes.Buffer
 		cmd.Run([]string{"hello"}, nil, &buf, &buf, "")
+	}
+}
+
+func BenchmarkCountProper(b *testing.B) {
+	testStr := strings.Repeat("hello world this is a test\nand another line here of text\n", 200)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		r := strings.NewReader(testStr)
+		_, err := wc.CountProper(r)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkTrTranslate(b *testing.B) {
+	testStr := strings.Repeat("abcdefghijklmnopqrstuvwxyz\n", 400)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		r := strings.NewReader(testStr)
+		var out bytes.Buffer
+		err := tr.Run(r, &out, "a-z", "A-Z", false, false, false)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkTrSqueeze(b *testing.B) {
+	testStr := strings.Repeat("helloooooo   woooorldddd   this   isss   aaa   testtt\n", 200)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		r := strings.NewReader(testStr)
+		var out bytes.Buffer
+		err := tr.Run(r, &out, "a-z", "", false, true, false)
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }

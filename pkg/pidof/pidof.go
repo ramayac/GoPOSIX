@@ -92,31 +92,20 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			exeTarget = filepath.Base(link)
 		}
 
-		// Read /proc/<pid>/cmdline arguments
-		var cmdlineArgs []string
+		// Read /proc/<pid>/cmdline to get argv[0]
+		argv0 := ""
 		if cmdlineBytes, err := os.ReadFile(filepath.Join("/proc", dir.Name(), "cmdline")); err == nil {
 			parts := strings.Split(string(cmdlineBytes), "\x00")
-			for _, p := range parts {
-				if p != "" {
-					cmdlineArgs = append(cmdlineArgs, filepath.Base(p))
-				}
+			if len(parts) > 0 && parts[0] != "" {
+				argv0 = filepath.Base(parts[0])
 			}
 		}
 
 		// Check matches
 		matched := false
 		for _, target := range targetNames {
-			if comm == target || exeTarget == target {
+			if comm == target || exeTarget == target || argv0 == target {
 				matched = true
-				break
-			}
-			for _, arg := range cmdlineArgs {
-				if arg == target {
-					matched = true
-					break
-				}
-			}
-			if matched {
 				break
 			}
 		}

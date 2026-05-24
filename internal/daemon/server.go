@@ -26,6 +26,39 @@ import (
 	"log/slog"
 )
 
+var (
+	bufferPool = &sync.Pool{
+		New: func() any {
+			return new(bytes.Buffer)
+		},
+	}
+
+	preEncodedErrors = map[int][]byte{}
+)
+
+type emptyReaderStruct struct{}
+
+func (emptyReaderStruct) Read(p []byte) (int, error) {
+	return 0, io.EOF
+}
+
+var emptyReader emptyReaderStruct
+
+func init() {
+	for code, msg := range map[int]string{
+		-32700: "Parse error or request too large",
+		-32600: "Invalid Request",
+		-32601: "Method not found",
+		-32000: "Rate limit exceeded",
+	} {
+		b, _ := json.Marshal(Response{
+			JSONRPC: "2.0",
+			Error:   &Error{Code: code, Message: msg},
+		})
+		preEncodedErrors[code] = append(b, '\n')
+	}
+}
+
 // Request is a JSON-RPC 2.0 request.
 type Request struct {
 	JSONRPC string          `json:"jsonrpc"`
@@ -97,20 +130,39 @@ type Server struct {
 	workersMax int
 	metrics    *Metrics
 	obsServer  *ObservabilityServer
+
+	rateLimit    float64 // NEW: cached connection rate limit
+	requestLimit int64   // NEW: cached connection max request size
 }
 
 // NewServer creates a new daemon server.
 func NewServer(socketPath string, workers int, httpAddr string) *Server {
+	rateLimit := 100.0
+	if limitStr := os.Getenv("GOPOSIX_RATE_LIMIT"); limitStr != "" {
+		if r, err := strconv.ParseFloat(limitStr, 64); err == nil && r > 0 {
+			rateLimit = r
+		}
+	}
+
+	requestLimit := int64(1024 * 1024)
+	if limitStr := os.Getenv("GOPOSIX_MAX_REQUEST_SIZE"); limitStr != "" {
+		if l, err := strconv.ParseInt(limitStr, 10, 64); err == nil && l > 0 {
+			requestLimit = l
+		}
+	}
+
 	m := NewMetrics()
 	s := &Server{
-		socketPath: socketPath,
-		pool:       NewWorkerPool(workers),
-		uptime:     time.Now(),
-		sm:         NewSessionManager(30 * time.Minute),
-		connSem:    make(chan struct{}, 100), // Max 100 concurrent connections
-		conns:      make(map[net.Conn]struct{}),
-		workersMax: workers,
-		metrics:    m,
+		socketPath:   socketPath,
+		pool:         NewWorkerPool(workers),
+		uptime:       time.Now(),
+		sm:           NewSessionManager(30 * time.Minute),
+		connSem:      make(chan struct{}, 100), // Max 100 concurrent connections
+		conns:        make(map[net.Conn]struct{}),
+		workersMax:   workers,
+		metrics:      m,
+		rateLimit:    rateLimit,
+		requestLimit: requestLimit,
 	}
 
 	if httpAddr != "" {
@@ -266,21 +318,8 @@ func (pr *PerRequestLimitReader) Reset() {
 func (s *Server) handleConn(conn net.Conn) {
 	defer conn.Close()
 
-	rateLimit := 100.0
-	if limitStr := os.Getenv("GOPOSIX_RATE_LIMIT"); limitStr != "" {
-		if r, err := strconv.ParseFloat(limitStr, 64); err == nil && r > 0 {
-			rateLimit = r
-		}
-	}
-	rl := NewRateLimiter(rateLimit, int(rateLimit))
-
-	requestLimit := int64(1024 * 1024)
-	if limitStr := os.Getenv("GOPOSIX_MAX_REQUEST_SIZE"); limitStr != "" {
-		if l, err := strconv.ParseInt(limitStr, 10, 64); err == nil && l > 0 {
-			requestLimit = l
-		}
-	}
-	limitReader := NewPerRequestLimitReader(conn, requestLimit)
+	rl := NewRateLimiter(s.rateLimit, int(s.rateLimit))
+	limitReader := NewPerRequestLimitReader(conn, s.requestLimit)
 
 	// Parse incoming JSON stream. It can be a single object or array.
 	dec := json.NewDecoder(limitReader)
@@ -392,6 +431,12 @@ func (s *Server) handleSingleAsync(conn net.Conn, req Request) {
 }
 
 func (s *Server) writeError(conn net.Conn, id interface{}, code int, msg string) {
+	if id == nil {
+		if encoded, ok := preEncodedErrors[code]; ok {
+			conn.Write(encoded)
+			return
+		}
+	}
 	enc := json.NewEncoder(conn)
 	enc.Encode(Response{
 		JSONRPC: "2.0",
@@ -417,7 +462,15 @@ func (s *Server) processRequest(req Request) *Response {
 		rpcExitCode int
 		rpcError    string
 		rpcCmd      string
+		params      *GoposixParams
 	)
+
+	if len(req.Params) > 0 {
+		var p GoposixParams
+		if err := json.Unmarshal(req.Params, &p); err == nil {
+			params = &p
+		}
+	}
 
 	atomic.AddInt64(&s.totalRequests, 1)
 	atomic.AddInt32(&s.activeWorkers, 1)
@@ -427,11 +480,8 @@ func (s *Server) processRequest(req Request) *Response {
 		duration := time.Since(start)
 		durationMs := float64(duration.Microseconds()) / 1000.0
 		sessionId := ""
-		if len(req.Params) > 0 {
-			var p GoposixParams
-			if err := json.Unmarshal(req.Params, &p); err == nil {
-				sessionId = p.SessionId
-			}
+		if params != nil {
+			sessionId = params.SessionId
 		}
 		args := []any{
 			"method", req.Method,
@@ -595,41 +645,37 @@ func (s *Server) processRequest(req Request) *Response {
 	var rawOutput bool
 	var stdinReader io.Reader
 
-	if len(req.Params) > 0 {
-		var p GoposixParams
+	if params != nil {
+		rawOutput = params.RawOutput
+		if params.Stdin != "" {
+			stdinReader = strings.NewReader(params.Stdin)
+		}
+		if params.SessionId != "" {
+			session, _ = s.sm.Get(params.SessionId)
+		}
 
-		if err := json.Unmarshal(req.Params, &p); err == nil {
-			rawOutput = p.RawOutput
-			if p.Stdin != "" {
-				stdinReader = strings.NewReader(p.Stdin)
+		if params.Path != "" {
+			base := "/"
+			if session != nil && session.CWD != "" {
+				base = session.CWD
 			}
-			if p.SessionId != "" {
-				session, _ = s.sm.Get(p.SessionId)
-			}
-
-			if p.Path != "" {
-				base := "/"
-				if session != nil && session.CWD != "" {
-					base = session.CWD
+			securePath, err := common.SecurePath(params.Path, base)
+			if err != nil {
+				rpcError = "Path traversal detected"
+				if req.ID != nil {
+					return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Path traversal detected"}}
 				}
-				securePath, err := common.SecurePath(p.Path, base)
-				if err != nil {
-					rpcError = "Path traversal detected"
-					if req.ID != nil {
-						return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Path traversal detected"}}
-					}
-					return nil
-				}
-				p.Path = securePath
+				return nil
 			}
+			params.Path = securePath
+		}
 
-			args = append(args, p.Flags...)
-			if cmdName == "echo" && p.Text != "" {
-				args = append(args, p.Text)
-			}
-			if p.Path != "" {
-				args = append(args, p.Path)
-			}
+		args = append(args, params.Flags...)
+		if cmdName == "echo" && params.Text != "" {
+			args = append(args, params.Text)
+		}
+		if params.Path != "" {
+			args = append(args, params.Path)
 		}
 	}
 
@@ -641,14 +687,17 @@ func (s *Server) processRequest(req Request) *Response {
 		args = append([]string{"--json"}, args...)
 	}
 
-	var buf bytes.Buffer
+	buf := bufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer bufferPool.Put(buf)
+
 	// 50MB response limit to prevent OOM
-	lw := &common.LimitWriter{W: &buf, Limit: 50 * 1024 * 1024}
+	lw := &common.LimitWriter{W: buf, Limit: 50 * 1024 * 1024}
 
 	// Execute the command
 	runStdin := stdinReader
 	if runStdin == nil {
-		runStdin = strings.NewReader("")
+		runStdin = emptyReader
 	}
 	sessionCwd := "/"
 	if session != nil && session.CWD != "" {
