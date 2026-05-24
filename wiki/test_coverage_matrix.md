@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-24 | **BusyBox:** 808 pass / 47 fail / 64 skip | **Branch:** `main` | **Overall Coverage:** 82.4% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-05-24 | **BusyBox:** 831 pass / 54 fail / 34 skip | **Branch:** `main` | **Overall Coverage:** 82.4% | **JSON-RPC:** 115/115 (100.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -89,7 +89,7 @@
 | `du` | 83.9% | 6 | ✅ 6/6 | ✅ |
 | `find` | 89.5% | 13 | ✅ 13/13 | ✅ |
 | `xargs` | 94.1% | 12 | ✅ 12/12 | ✅ |
-| `pidof` | 96.7% | 4 | ✅ 3/4 (1 skip) | ✅ |
+| `pidof` | 96.7% | 4 | ✅ 4/4 | ✅ |
 
 ## Tier 5 — Advanced / Agent Features
 
@@ -169,7 +169,7 @@
 | `ash` | — | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mount` | 80.6% | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mdev` | 87.4% | 0 | ⚠️ 0/12 (12 skip) | ⚠️ skip |
-| `dc` | 90.3% | 36 | ⚠️ 7/36 (29 skip, FEATURE_DC_BIG not enabled) | ✅ |
+| `dc` | 90.2% | 36 | ⚠️ 29/36 (7 fail — scale propagation/string/macro edge cases) | ✅ |
 | `rx` | 72.4% | 1 | ⚠️ 0/1 (1 flaky — intermittent timing) | ✅ |
 | `hexdump` | 83.6% | 3 | ✅ 3/3 | ✅ |
 | `xxd` | 86.4% | 7 | ✅ 7/7 | ✅ |
@@ -196,21 +196,22 @@
 | Total packages | 115 | 115 utilities + client SDK |
 | Unit tests passing | 115/115 | 100% |
 | BusyBox tests run | 919 | 919 total applicable tests |
-| BusyBox passed | 808 | 88.0% (808 of 919) |
-| BusyBox failed | 47 | 17 awk + 22 bc + 7 tar + 1 rx (flaky) |
-| BusyBox skipped | 64 | 29 dc (FEATURE_DC_BIG), 13 mdev (root), 7 cpio, 4 cryptpw, 1 mount, 1 makedevs, 1 pidof, 1 rx, 1 tar-xz, 1 ash, 5+ awk |
+| BusyBox passed | 831 | 90.4% (831 of 919) |
+| BusyBox failed | 54 | 16 awk + 22 bc + 7 dc + 7 tar + 1 rx + 1 makedevs |
+| BusyBox skipped | 34 | 13 mdev (root), 7 cpio, 4 cryptpw, 1 mount, 1 ash, 5 awk, 3 other |
 | Overall statement coverage | 82.3% | Checked via make cover-gate |
 | JSON-RPC daemon tests | 115/115 | 100.0% (all 115 utilities implemented and registered) |
-| Packages below 70% unit coverage | 1 | `bc` (64.3%) |
+| Packages below 70% unit coverage | 2 | `bc` (64.3%), `tar` (74.8%) |
 
 ## Remaining Gaps
 
 | # | Gap | Count |
 |---|-----|-------|
-| 1 | awk BusyBox failures | 17 (goawk v1.31.0 engine limitations) |
+| 1 | awk BusyBox failures | 16 (goawk v1.31.0 engine limitations) |
 | 2 | bc BusyBox failures | 22 (formatting and precision/scale differences) |
-| 3 | tar BusyBox failures | 7 (3 hardlink/symlink mode ordering, 3 symlink safety, 1 XZ) |
-| 4 | Unit coverage < 80% | 1 package: `bc` (64.3%) |
+| 3 | dc BusyBox failures | 7 (scale-propagation, string/macro, -x extended mode) |
+| 4 | tar BusyBox failures | 7 (3 hardlink/symlink mode ordering, 3 symlink safety, 1 XZ) |
+| 5 | Unit coverage < 80% | 2 packages: `bc` (64.3%), `tar` (74.8%) |
 
 ## Notes
 
@@ -218,7 +219,8 @@
 - **unzip**: Corrupted archive handling passes all BusyBox tests (4/4). Added `scanCorruptedZip()` for local file header extraction from damaged zips. ✅
 - **tree**: All 4 BusyBox tests pass including Unicode box-drawing output. ✅
 - **tar**: 4 previously-skipped tests now pass (empty gzip, extract tgz, Pax UTF8, symlinks+hardlinks coexist). Bzip2 auto-detection and `-k` flag added. 7 remaining failures: 3 ordering issues, 3 symlink safety, 1 XZ.
-- **dc**: 7 basic tests pass; 29 behind FEATURE_DC_BIG flag not yet enabled.
+- **dc**: 29 of 36 tests pass (80.6%). 6 bugs fixed: conditional direction, bracket parsing, x command, exit code, -x flag, per-number scale tracking. 7 remaining failures are scale-propagation/string/macro edge cases. See [wiki/todos.md](todos.md).
+- **pidof**: All 4 tests pass including `-o init` (FEATURE_PIDOF_OMIT enabled). ✅
 - **realpath**: All 10 BusyBox tests pass (previously 3 failures — resolved). ✅
 - **Coverage gate:** CI enforces ≥80% overall (run `make cover-gate` for current)
 - **JSON-RPC alias coverage added:** `egrep`, `fgrep` (grep aliases), `gunzip` (gzip alias) tested via daemon.

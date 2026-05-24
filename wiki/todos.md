@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-24 | **Utilities:** 115 | **Coverage:** 82.4% | **BusyBox:** 808/47/64 (94.5%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-05-24 | **Utilities:** 115 | **Coverage:** 82.4% | **BusyBox:** 831/54/34 (90.4%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -12,7 +12,7 @@ This document serves as the live registry of remaining work, active plans, and k
 |--------|-------|
 | **Total Utilities Implemented** | **115** (all registered via `dispatch.Register`) |
 | **Overall Statement Coverage** | **82.3%** (fully compliant with the `>=80%` CI gate) |
-| **BusyBox Suite Passed / Failed / Skipped** | **808 / 47 / 64** (94.5% pass rate, 919 total) |
+| **BusyBox Suite Passed / Failed / Skipped** | **831 / 54 / 34** (90.4% pass rate, 919 total) |
 | **JSON-RPC Daemon Coverage** | **115/115** utilities with structured output tests |
 | **Multicall Compatibility** | Complete dispatching via symlinks or direct subcommands |
 | **CGO Status** | 100% CGO-free Go (`CGO_ENABLED=0`) |
@@ -28,7 +28,7 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 (Tier 5) is also **complete** (
 ### Tier 5 Utilities (11 Utilities - COMPLETE ⚠️ with BusyBox gaps)
 * **Compression & Archiving (2)**: ✅ `ar` (2 tests skipped), ✅ `cpio` (7 tests skipped)
 * **Development & Hex (3)**: ⚠️ `rx` (1 flaky test), ✅ `hexdump`, ✅ `xxd`
-* **Mathematics (2)**: ⚠️ `dc` (29 of 36 tests skipped — `FEATURE_DC_BIG` not enabled), ❌ `bc` (22 failures)
+* **Mathematics (2)**: ⚠️ `dc` (29 of 36 pass, 7 scale/macro failures), ❌ `bc` (22 failures)
 * **Shell (1)**: ✅ `ash` (alias to existing native `shell` implementation)
 * **System Admin & Hardware (3)**: ✅ `mdev` (12 skipped, needs root), ✅ `mkfs.minix`, ✅ `mount` (1 skipped, needs root)
 
@@ -113,9 +113,25 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 (Tier 5) is also **complete** (
 * *Status*: **Needs investigation** — flaky test indicates a non-deterministic timing bug. 72.4% coverage.
 * *See*: [wiki/27_high_complexity_tools.md](27_high_complexity_tools.md).
 
-### 3. `dc` — 29 of 36 BusyBox tests skipped
-* 7 basic dc tests pass (stdin, argv, complex expressions). 29 tests behind `FEATURE_DC_BIG` are skipped. Full categorized TODO list below in [📋 Backlog — Skipped Tests](#-backlog--skipped-tests).
-* *Status*: Feature flag `FEATURE_DC_BIG` needs to be enabled and validated against BusyBox expectations.
+### 3. `dc` — 7 BusyBox failures (scale propagation, string/macro, extended mode)
+
+**Context**: 29 of 36 dc tests pass (80.6%). `FEATURE_DC_BIG` has been enabled in `runtest`. 6 bugs fixed in this session:
+- ✅ Conditional execution direction (`><=!` now compares top vs second, matching BusyBox)
+- ✅ Bracket string parsing (`\]` properly closes bracket)
+- ✅ `x` command no longer pops non-string values
+- ✅ Exit code always returns 0 (matching BusyBox convention)
+- ✅ `-x` flag support (alias for `-e`)
+- ✅ Per-number scale tracking (`fracDigits` propagated through `+`, `-`, `*`, `/`, `%`, `~`, `^`, `v`)
+
+**7 remaining failures** fall into 3 categories:
+1. **Scale propagation edge cases** (5): `dc_divide.dc`, `dc_divmod.dc`, `dc_modulus.dc`, `dc_multiply.dc`, `dc_power.dc` — last-digit precision differences through long operation chains. Same architectural limitation as `bc` (per-value vs global scale).
+2. **String/macro interaction** (1): `dc_strings.dc` — recursive macro `[xz0<x]dsxx` with per-value scale interaction.
+3. **Extended register mode** (1): `dcx_vars.dc` — multi-character register support in `-x` mode not yet implemented.
+
+*Coverage*: 90.2%. *See*: [wiki/test_coverage_matrix.md](test_coverage_matrix.md).
+
+### 4. `pidof` — All 4 BusyBox tests pass ✅
+* `FEATURE_PIDOF_OMIT` enabled in `runtest`. The `-o` omit flag was already implemented — test passes immediately.
 
 ### 4. Compliance and Verification Updates
 * **Resolved**: `realpath` and `readlink` — all BusyBox tests now pass ✅ (previously 3 failures each, now 0).
@@ -138,58 +154,26 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 (Tier 5) is also **complete** (
 
 ---
 
-### 2. Skipped BusyBox Tests — Full Categorized TODO List (82 total)
+### 2. Skipped BusyBox Tests — Full Categorized TODO List (34 total)
 
 Every skipped test is listed below as an actionable checkbox, organized by root cause and difficulty.
 
 ---
 
-#### 🔴 A. `dc` — `FEATURE_DC_BIG` Flag Not Enabled (29 skipped)
+#### 🔴 A. `dc` — Scale Propagation & Extended Mode (7 remaining, 29 resolved ✅)
 
-*Context*: All 29 dc tests are gated behind `optional FEATURE_DC_BIG` in `dc.tests`. The flag is not in `OPTIONFLAGS` in `runtest`. GoPOSIX's dc implementation has 90.3% coverage — these features likely work but are untested against BusyBox expectations.*
+*Context*: 22 of 29 previously-skipped dc tests now pass (80.6% pass rate). `FEATURE_DC_BIG` enabled in `runtest`. 6 bugs fixed (conditional direction, bracket parsing, `x` command, exit code, `-x` flag, per-number scale tracking). 7 remaining failures are scale/macro/extended-mode edge cases — see [Known Limitations §3](#3-dc--7-busybox-failures-scale-propagation-stringmacro-extended-mode) above.
 
-*Fix*: Enable `FEATURE_DC_BIG` in `OPTIONFLAGS` (in `runtest`), run the suite, fix any failures, then leave flag enabled permanently.
+*Resolved tests (now passing)*: x execute strings, x non-string no-op, x work with strings from a, p print invalid/trailing/single backslash strings, read, read string, `>a`/`>aeb` conditional, space/newline as register, Z length, dc_add, dc_boolean, dc_decimal, dc_misc, dc_modexp, dc_sqrt, dc_subtract. ✅
 
-##### Macro Execution (`x`) — 3 tests
-- [ ] **dc: x should execute strings** — `[40 2 +] x f` should produce `42`
-- [ ] **dc: x should not execute or pop non-strings** — `42 x f` should produce `42` (no-op)
-- [ ] **dc: x should work with strings created from a** — `42 112 a x` — ascii-to-string then execute
-
-##### String Printing Edge Cases (`p`) — 4 tests
-- [ ] **dc: p should print invalid escapes** — backslash sequences in printed strings
-- [ ] **dc: p should print trailing backslashes** — strings ending with `\`
-- [ ] **dc: p should parse/print single backslashes** — single `\` in strings
-- [ ] **dc: p should print single backslash strings** — literal backslash output
-
-##### Conditional Execution (`>a`, `>aeb`) — 3 tests
-- [ ] **dc '>a' (conditional execute string) 1** — `>a` register conditional
-- [ ] **dc '>a' (conditional execute string) 2** — second variant
-- [ ] **dc '>aeb' (conditional execute string with else)** — if-then-else conditional
-
-##### Script-Based Tests (dc_*.dc) — 11 tests
-- [ ] **dc dc_add.dc** — addition script
-- [ ] **dc dc_subtract.dc** — subtraction script
-- [ ] **dc dc_multiply.dc** — multiplication script
-- [ ] **dc dc_divide.dc** — division script
-- [ ] **dc dc_modulus.dc** — modulus script
-- [ ] **dc dc_divmod.dc** — divmod (`~`) script
-- [ ] **dc dc_power.dc** — power (`^`) script
-- [ ] **dc dc_sqrt.dc** — sqrt (`v`) script
-- [ ] **dc dc_boolean.dc** — boolean/comparison script
-- [ ] **dc dc_decimal.dc** — decimal/fractional script
-- [ ] **dc dc_modexp.dc** — modular exponentiation (`|`) script
-
-##### Register & Stack Mechanics — 5 tests
-- [ ] **dc dc_misc.dc** — miscellaneous operations
-- [ ] **dc dc_strings.dc** — string manipulation
-- [ ] **dc -x dcx_vars.dc** — variable and register operations with `-x`
-- [ ] **dc space can be a register** — whitespace as register name
-- [ ] **dc newline can be a register** — newline as register name
-
-##### I/O Operations — 3 tests
-- [ ] **dc read** — `?` read from stdin
-- [ ] **dc read string** — reading string input
-- [ ] **dc Z (length) for numbers** — `Z` command for number length
+*Remaining tests (7)*:
+- [ ] **dc dc_divide.dc** — division scale propagation
+- [ ] **dc dc_divmod.dc** — divmod (`~`) scale propagation
+- [ ] **dc dc_modulus.dc** — modulus scale propagation
+- [ ] **dc dc_multiply.dc** — multiplication scale propagation
+- [ ] **dc dc_power.dc** — power (`^`) scale propagation
+- [ ] **dc dc_strings.dc** — string/macro recursive interaction
+- [ ] **dc -x dcx_vars.dc** — extended register mode (`-x`)
 
 ---
 
@@ -311,11 +295,11 @@ Every skipped test is listed below as an actionable checkbox, organized by root 
 
 ---
 
-#### ⚪ J. `pidof` — `-o` Omit Flag (1 skipped)
+#### ⚪ J. `pidof` — `-o` Omit Flag ✅ RESOLVED
 
-- [ ] **pidof -o init** — omit PID 1 (init) from results
+- [x] **pidof -o init** — omit PID 1 (init) from results
 
-*Fix*: Core `pidof` passes BusyBox tests. The `-o` omit flag is a minor feature addition — parse `-o` argument, filter matching PIDs from results.
+*Resolution*: `FEATURE_PIDOF_OMIT` enabled in `runtest`. The `-o` flag was already implemented in `pidof.go` — test passes immediately. All 4 pidof tests pass 100%. ✅
 
 ---
 
