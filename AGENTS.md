@@ -84,7 +84,7 @@ When implementing a new utility or feature, follow this checklist:
 
 - **Daemon-First:** The default Docker image (`goposix:latest`) starts the persistent JSON-RPC daemon. CLI access is available as a secondary interface (`goposix:cli`). The Go SDK (`pkg/client/`) is the primary programmatic interface at 60µs/call.
 - **Root Protection:** Utilities that perform destructive operations (like `rm`) must include guards against destroying the root filesystem (e.g., `rm -rf /` must be refused without `--no-preserve-root`).
-- **BusyBox Test Suite:** 596 passed, 19 failed, 18 skipped (96.9% pass rate, 615 total tested). Failures: 16 in `awk` (goawk limits), 3 in `readlink`. Run `make testsuite` before every commit to prevent regressions.
+- **BusyBox Test Suite:** 798 passed, 39 failed, 82 skipped (95.3% pass rate, 919 total tested). Failures: 17 in `awk` (goawk engine limitations), 22 in `bc` (precision/scale differences). `rx` has 1 flaky test. All `readlink`/`realpath` tests now pass. Run `make testsuite` before every commit to prevent regressions.
 
 ## 6. Current State & Progression
 

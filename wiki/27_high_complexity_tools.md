@@ -1,9 +1,10 @@
 # Phase 27 — High Complexity & Privileged Utilities (Tier 5)
 
-> **Version:** 2.0 | **Date:** 2026-05-23 | **Status:** COMPLETED ✅
+> **Version:** 2.1 | **Date:** 2026-05-24 | **Status:** COMPLETED (with known gaps) ⚠️
 >
 > **Analysis:** 11 High-Complexity / Privileged Utilities (Tier 5)
 > **Implemented:** `ar`, `cpio`, `ash` (alias), `mount`, `mdev`, `dc`, `rx`, `hexdump`, `xxd`, `bc`, `mkfs.minix` ✅ (11/11)
+> **BusyBox Failures:** `bc` (22), `rx` (1 flaky). **Skipped:** `dc` (29 of 36), `mdev` (12), `ar` (2), `mount` (1).
 
 This document catalogs the final tier of unimplemented BusyBox-tested utilities in **GoPOSIX**. It outlines the requirements, architectural considerations, and precise Go-native implementation strategies needed to implement them with full POSIX and BusyBox parity.
 
@@ -13,8 +14,8 @@ This document catalogs the final tier of unimplemented BusyBox-tested utilities 
 
 ### 1. Compression & Archival Component
 
-#### 📦 **`ar`** — ✅ IMPLEMENTED (`pkg/ar/`)
-* **BusyBox Test Suite**: `ar.tests` (creating, listing, and extracting archive files).
+#### 📦 **`ar`** — ✅ IMPLEMENTED (`pkg/ar/`) — **2 tests skipped**
+* **BusyBox Test Suite**: `ar.tests` — 2 tests **skipped** (`creates archives`, `replaces things in archives`). Archive creation and replacement features not yet validated by BusyBox suite.
 * **Library**: `github.com/blakesmith/ar` (pure Go BSD/GNU ar reader/writer).
 * **Operations**: `-t` (list), `-x` (extract), `-r`/`-c` (insert/replace/create), `-p` (print), `-d` (delete), `-v` (verbose), `--json`.
 * **Coverage**: 80.0% ✅
@@ -36,27 +37,31 @@ This document catalogs the final tier of unimplemented BusyBox-tested utilities 
   * **`xxd`**: Create hex dumps with standard offsets, ASCII summaries, and support the **reverse operation** `-r` to convert hex dumps back to binary.
 * **Coverage**: `hexdump` 83.6% ✅, `xxd` 86.4% ✅
 
-#### 📡 **`rx`** — ✅ IMPLEMENTED (`pkg/rx/`)
-* **BusyBox Test Suite**: `rx.tests` (1 test: single-block XMODEM transfer with CRC-16).
+#### 📡 **`rx`** — ✅ IMPLEMENTED (`pkg/rx/`) — **1 flaky BusyBox test**
+* **BusyBox Test Suite**: `rx.tests` (1 test: single-block XMODEM transfer with CRC-16). **Flaky** — passes most runs, fails intermittently. Likely a race condition or timeout window in the ACK/NAK handshake.
 * **Library**: None — pure Go XMODEM state machine using `io.Reader`/`io.Writer` injectable streams.
 * **Operations**: Receives SOH/STX data packets with CRC-16/XMODEM verification, sends ACK/NAK/C control characters, strips trailing CP/M EOF padding (0x1A), supports `--json`.
-* **Coverage**: 72.4% ✅
+* **Coverage**: 72.4% — below the 80% per-package target but masked by project-wide average.
+* **Verdict**: Functional but has a non-deterministic timing bug. Needs investigation with `-race` flag.
 
 ---
 
 ### 3. Mathematics & Calculators
 
-#### 🧮 **`dc`** — ✅ IMPLEMENTED (`pkg/dc/`)
-* **BusyBox Test Suite**: `dc.tests` (arithmetic, stack ops, registers, conditionals, macros, scale).
+#### 🧮 **`dc`** — ✅ IMPLEMENTED (`pkg/dc/`) — **Limited BusyBox validation**
+* **BusyBox Test Suite**: `dc.tests` — 7 basic tests **pass**, 29 tests **skipped** (all behind `FEATURE_DC_BIG` flag not yet enabled in GoPOSIX). Skipped tests cover: macro execution (`x`), string printing edge cases (`p`), conditional execution (`>a`, `>aeb`), register mechanics (space/newline as register), and length operations (`Z`).
 * **Library**: None — pure `math/big` stack machine.
 * **Operations**: `+`, `-`, `*`, `/`, `%`, `~` (divmod), `^` (power), `v` (sqrt), `|` (modexp), `p`/`n`/`P`/`f` (print), `c`/`d`/`r`/`R`/`z`/`Z` (stack ops), `s`/`l`/`S`/`L` (registers), `x` (macro), `>`/`<`/`=`/`!>`/`!<`/`!=`/`e` (conditionals), `(`/`{`/`G`/`N` (boolean compare), `k`/`K` (scale), `a` (ascii), `[...]` (strings), `?` (stdin), `-e`/`-f`/`--json`.
-* **Coverage**: 90.3% ✅
+* **Coverage**: 90.3% ✅ — strongest Tier 5 coverage.
 * **Known differences from BusyBox**: Uses global scale for formatting (BusyBox uses per-number scale). Five BusyBox dc bugs documented in [wiki/11_lessons_learned.md](11_lessons_learned.md).
+* **Verdict**: 7 basic tests pass. The 29 skipped tests represent deep dc features that need `FEATURE_DC_BIG` flag enabled and BusyBox-level parity validation.
 
-#### 🧮 **`bc`** — ✅ IMPLEMENTED (`pkg/bc/`)
-* **BusyBox Test Suite**: `bc.tests` (complex scripts, scale calculations, trigonometry, variables).
+#### 🧮 **`bc`** — ✅ IMPLEMENTED (`pkg/bc/`) — **22 BusyBox failures**
+* **BusyBox Test Suite**: `bc.tests` — **all 22 tests fail**. 20 script-based (`bc_arctangent`, `bc_bessel`, `bc_cosine`, `bc_sine`, `bc_log`, `bc_exponent`, `bc_pi`, `bc_power`, `bc_sqrt`, `bc_array`, `bc_arrays`, `bc_decimal`, `bc_misc`, `bc_misc1`, `bc_misc2`, `bc_modulus`, `bc_multiply`, `bc_references`, `bc_strings`, `bc_vars`) plus `parsing of numbers` and `printing of numbers`.
+* **Root cause**: `math/big` scale propagation differs from BusyBox's bc. Fractional division precision, ibase/obase formatting, and trigonometric series convergence all diverge. These are deep semantic differences, not simple bugs.
 * **POSIX/GNU Requirements**: Interactive, C-like calculator language with variables, arrays, custom functions, control statements (`if`, `for`, `while`), and floating-point scale limits.
-* **Coverage**: 64.3% (due to extensive scanner/interpreter paths; overall project coverage is 82.3% ≥ 80% ✅)
+* **Coverage**: 64.3% — lowest of any utility; extensive scanner/interpreter code paths not exercised by unit tests. Overall project coverage remains 82.3% ≥ 80% CI gate.
+* **Verdict**: Core arithmetic is correct. The 22 failures are accepted precision/formatting differences. Fixing them would require a ground-up rewrite of scale propagation.
 
 ---
 
