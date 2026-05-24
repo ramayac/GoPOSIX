@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-24 | **BusyBox:** 810 pass / 45 fail / 64 skip | **Branch:** `main` | **Overall Coverage:** 82.3% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-05-24 | **BusyBox:** 808 pass / 47 fail / 64 skip | **Branch:** `main` | **Overall Coverage:** 82.4% | **JSON-RPC:** 115/115 (100.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former

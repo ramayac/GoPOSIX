@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-24 | **Utilities:** 115 | **Coverage:** 82.3% | **BusyBox:** 806/39/74 (95.4%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-05-24 | **Utilities:** 115 | **Coverage:** 82.4% | **BusyBox:** 808/47/64 (94.5%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -12,7 +12,7 @@ This document serves as the live registry of remaining work, active plans, and k
 |--------|-------|
 | **Total Utilities Implemented** | **115** (all registered via `dispatch.Register`) |
 | **Overall Statement Coverage** | **82.3%** (fully compliant with the `>=80%` CI gate) |
-| **BusyBox Suite Passed / Failed / Skipped** | **806 / 39 / 74** (95.4% pass rate, 919 total) |
+| **BusyBox Suite Passed / Failed / Skipped** | **808 / 47 / 64** (94.5% pass rate, 919 total) |
 | **JSON-RPC Daemon Coverage** | **115/115** utilities with structured output tests |
 | **Multicall Compatibility** | Complete dispatching via symlinks or direct subcommands |
 | **CGO Status** | 100% CGO-free Go (`CGO_ENABLED=0`) |
