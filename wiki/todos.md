@@ -114,7 +114,7 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 (Tier 5) is also **complete** (
 * *See*: [wiki/27_high_complexity_tools.md](27_high_complexity_tools.md).
 
 ### 3. `dc` — 29 of 36 BusyBox tests skipped
-* 7 basic dc tests pass (stdin, argv, complex expressions). 29 tests behind `FEATURE_DC_BIG` are skipped: macro execution (`x`), string printing edge cases (`p`), conditional execution (`>a`, `>aeb`), register mechanics, length operations (`Z`).
+* 7 basic dc tests pass (stdin, argv, complex expressions). 29 tests behind `FEATURE_DC_BIG` are skipped. Full categorized TODO list below in [📋 Backlog — Skipped Tests](#-backlog--skipped-tests).
 * *Status*: Feature flag `FEATURE_DC_BIG` needs to be enabled and validated against BusyBox expectations.
 
 ### 4. Compliance and Verification Updates
@@ -131,16 +131,213 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 (Tier 5) is also **complete** (
 
 ## 📋 Backlog & Deferred Work
 
-### 1. `awk` — 17 failures (goawk v1.31.0 engine limitations)
+### 1. `awk` — 17 failures + 8 skipped (goawk v1.31.0 engine limitations)
 * Bitwise operations, hex/octal constants, function argument parsing (4 tests), nested loop variable scoping, empty-paren handling, negative field access, continue/break edge cases, and backslash-newline handling are not supported by the underlying parsing engine.
 * 8 tests also skipped: large integer, NUL printf, invalid for/colon syntax, missing delete arg, gcc build bug.
 * *Status*: **Backlog / Deferred** (see [wiki/deferred.md](deferred.md) for full context).
 
-### 2. Skipped Tests Summary (82 total)
-* **Feature-gated skips (37)**: `dc` (29, `FEATURE_DC_BIG`), `cpio` (7, suid/sgid/uid/gid), `ar` (2, create/replace archives).
-* **Root-required skips (14)**: `mdev` (12), `mount` (1), `makedevs` (1).
-* **Other hard-constraint skips (11)**: `ash` (daemon flag conflict), `wget` (network), `cryptpw` (3, sha256/sha512 rounds), `tar` (9, symlink extraction, hardlinks mode, Pax UTF8), `unzip` (3, bad/corrupted archives), `pidof` (1, `-o init`).
-* **Go engine skips (8)**: `awk` (large integer, NUL printf, invalid syntax forms).
+---
+
+### 2. Skipped BusyBox Tests — Full Categorized TODO List (82 total)
+
+Every skipped test is listed below as an actionable checkbox, organized by root cause and difficulty.
+
+---
+
+#### 🔴 A. `dc` — `FEATURE_DC_BIG` Flag Not Enabled (29 skipped)
+
+*Context*: All 29 dc tests are gated behind `optional FEATURE_DC_BIG` in `dc.tests`. The flag is not in `OPTIONFLAGS` in `runtest`. GoPOSIX's dc implementation has 90.3% coverage — these features likely work but are untested against BusyBox expectations.*
+
+*Fix*: Enable `FEATURE_DC_BIG` in `OPTIONFLAGS` (in `runtest`), run the suite, fix any failures, then leave flag enabled permanently.
+
+##### Macro Execution (`x`) — 3 tests
+- [ ] **dc: x should execute strings** — `[40 2 +] x f` should produce `42`
+- [ ] **dc: x should not execute or pop non-strings** — `42 x f` should produce `42` (no-op)
+- [ ] **dc: x should work with strings created from a** — `42 112 a x` — ascii-to-string then execute
+
+##### String Printing Edge Cases (`p`) — 4 tests
+- [ ] **dc: p should print invalid escapes** — backslash sequences in printed strings
+- [ ] **dc: p should print trailing backslashes** — strings ending with `\`
+- [ ] **dc: p should parse/print single backslashes** — single `\` in strings
+- [ ] **dc: p should print single backslash strings** — literal backslash output
+
+##### Conditional Execution (`>a`, `>aeb`) — 3 tests
+- [ ] **dc '>a' (conditional execute string) 1** — `>a` register conditional
+- [ ] **dc '>a' (conditional execute string) 2** — second variant
+- [ ] **dc '>aeb' (conditional execute string with else)** — if-then-else conditional
+
+##### Script-Based Tests (dc_*.dc) — 11 tests
+- [ ] **dc dc_add.dc** — addition script
+- [ ] **dc dc_subtract.dc** — subtraction script
+- [ ] **dc dc_multiply.dc** — multiplication script
+- [ ] **dc dc_divide.dc** — division script
+- [ ] **dc dc_modulus.dc** — modulus script
+- [ ] **dc dc_divmod.dc** — divmod (`~`) script
+- [ ] **dc dc_power.dc** — power (`^`) script
+- [ ] **dc dc_sqrt.dc** — sqrt (`v`) script
+- [ ] **dc dc_boolean.dc** — boolean/comparison script
+- [ ] **dc dc_decimal.dc** — decimal/fractional script
+- [ ] **dc dc_modexp.dc** — modular exponentiation (`|`) script
+
+##### Register & Stack Mechanics — 5 tests
+- [ ] **dc dc_misc.dc** — miscellaneous operations
+- [ ] **dc dc_strings.dc** — string manipulation
+- [ ] **dc -x dcx_vars.dc** — variable and register operations with `-x`
+- [ ] **dc space can be a register** — whitespace as register name
+- [ ] **dc newline can be a register** — newline as register name
+
+##### I/O Operations — 3 tests
+- [ ] **dc read** — `?` read from stdin
+- [ ] **dc read string** — reading string input
+- [ ] **dc Z (length) for numbers** — `Z` command for number length
+
+---
+
+#### 🟠 B. `mdev` — Root + Kernel Hotplug Required (13 skipped)
+
+*Context*: All 13 mdev tests require root privileges and `/sys` kernel infrastructure. Cannot be tested in CI or user containers.*
+
+*Fix*: These can only be validated manually on a real Linux system with `sudo`. Consider adding a `make test-mdev-root` target with `sudo` for manual verification.
+
+##### Hotplug Events — 2 tests
+- [ ] **mdev add /block/sda** — simulate block device hot-add
+- [ ] **mdev deletes /block/sda** — simulate device removal
+
+##### Rule Processing — 7 tests
+- [ ] **mdev stops on first rule** — first-match-wins behavior
+- [ ] **mdev does not stop on dash-rule** — `-` as no-op rule
+- [ ] **mdev $ENVVAR=regex match** — environment variable substitution in rules
+- [ ] **mdev regexp substring match + replace** — regex capture groups in rules
+- [ ] **mdev #maj,min and no explicit uid** — default ownership from major/minor
+- [ ] **mdev move/symlink rule '>bar/baz'** — symlink creation via `>`
+- [ ] **mdev move/symlink rule '>bar/'** — symlink to directory
+
+##### Move & Command Rules — 3 tests
+- [ ] **mdev move rule '=bar/baz/fname'** — move/rename via `=`
+- [ ] **mdev command** — external command execution on event
+- [ ] **mdev move and command** — combined move + command
+
+##### Edge Case — 1 test
+- [ ] **move rule does not delete node with name == device_name** — same-name collision safety
+
+---
+
+#### 🟡 C. `tar` — Feature Gaps (10 skipped)
+
+*Context*: 10 tar tests skipped — compression format support, symlink safety, hardlink mode, Pax extended headers.*
+
+*Fix*: These require implementing specific tar features. Hardest: Pax UTF8 names (custom header parsing). Easiest: symlink extraction guards.
+
+##### Compression Format Detection (auto-extract) — 2 tests
+- [ ] **tar extract tgz** — auto-detect and extract `.tar.gz`
+- [ ] **tar extract txz** — auto-detect and extract `.tar.xz`
+
+##### Symlink Safety — 4 tests
+- [ ] **tar does not extract into symlinks** — prevent symlink traversal attack
+- [ ] **tar -k does not extract into symlinks** — `-k` (keep-old) + symlink safety
+- [ ] **tar Symlink attack: create symlink and then write through it** — classic symlink attack guard
+- [ ] **tar symlinks mode** — symlink permission/mode preservation
+
+##### Hardlink Handling — 2 tests
+- [ ] **tar hardlinks and repeated files** — hardlink detection and dedup
+- [ ] **tar hardlinks mode** — hardlink permission preservation
+
+##### Extended Attributes — 1 test
+- [ ] **tar Pax-encoded UTF8 names and symlinks** — POSIX.1-2001 Pax extended headers for UTF8 filenames
+
+##### Edge Case — 1 test
+- [ ] **tar Empty file is not a tarball.tar.gz** — graceful rejection of empty/zero-byte files
+
+---
+
+#### 🟢 D. `awk` — Goawk Engine Limitations (8 skipped)
+
+*Context*: Same root cause as the 17 awk failures — goawk v1.31.0 doesn't support these features.*
+
+- [ ] **awk large integer** — integers exceeding int64 range
+- [ ] **awk printf('%c') can output NUL** — NUL byte in printf %c
+- [ ] **awk printf('%-10c') can output NUL** — left-justified NUL byte in printf
+- [ ] **awk -e and ARGC** — `-e` program argument and ARGC tracking
+- [ ] **awk handles invalid for loop** — graceful error for malformed for-loops
+- [ ] **awk handles colon not preceded by ternary** — colon outside ternary context
+- [ ] **awk errors on missing delete arg** — `delete` without array element argument
+- [ ] **awk 'gcc build bug'** — regression test for a historical gcc bug
+
+---
+
+#### 🔵 E. `cpio` — POSIX Permission Features (7 skipped)
+
+*Context*: cpio integration tests pass 100% for core functionality. These 7 skipped tests exercise suid/sgid preservation, uid/gid defaults, and zero-size hardlinks — POSIX permission features that require root or are not yet implemented.*
+
+##### Ownership & Permission — 5 tests
+- [ ] **cpio restores suid/sgid bits** — setuid/setgid permission preservation (needs root)
+- [ ] **cpio uses by default uid/gid** — default ownership when no `-R` flag
+- [ ] **cpio -R with create** — `-R owner` flag during archive creation
+- [ ] **cpio -R with extract** — `-R owner` flag during extraction
+- [ ] **cpio -p with absolute paths** — pass-through mode with absolute paths (safety concern)
+
+##### Edge Cases — 2 tests
+- [ ] **cpio extracts zero-sized hardlinks** — hardlinks to zero-byte files
+- [ ] **cpio extracts zero-sized hardlinks 2** — variant of above
+
+---
+
+#### 🟣 F. `ar` — Archive Creation Not Yet Wired (2 skipped)
+
+- [ ] **ar creates archives** — `ar -r -c` create new archive
+- [ ] **ar replaces things in archives** — `ar -r` replace members in existing archive
+
+*Fix*: The `blakesmith/ar` library supports full read/write. These are likely skipped because the `ar` command dispatcher doesn't surface the create/replace flags to the test harness. Check flag parsing and `-r`/`-c` wiring.
+
+---
+
+#### ⚪ G. `cryptpw` — SHA-256/512 with Rounds (4 skipped)
+
+- [ ] **cryptpw sha256** — SHA-256 password hashing (`$5$` prefix)
+- [ ] **cryptpw sha256 rounds=99999** — SHA-256 with custom rounds parameter
+- [ ] **cryptpw sha512** — SHA-512 password hashing (`$6$` prefix)
+- [ ] **cryptpw sha512 rounds=99999** — SHA-512 with custom rounds parameter
+
+*Fix*: Go's `crypto/sha256` and `crypto/sha512` in stdlib. Implement SHA-crypt modular crypt format (PHC string format with `$5$`/`$6$` prefix and `rounds=` parameter).
+
+---
+
+#### ⚪ H. `unzip` — Corrupted Archive Handling (3 skipped)
+
+- [ ] **unzip (bad archive)** — graceful error on completely invalid zip
+- [ ] **unzip (archive with corrupted lzma 1)** — LZMA corruption detection
+- [ ] **unzip (archive with corrupted lzma 2)** — LZMA corruption detection variant
+
+*Fix*: GoPOSIX unzip already handles valid archives. Add error-path tests for corrupted data — likely just need to ensure `archive/zip` errors are surfaced as non-zero exit codes.
+
+---
+
+#### ⚪ I. `tree` — Directory Tree Display (3 skipped)
+
+- [ ] **tree single file** — tree display of a single file
+- [ ] **tree multiple directories** — tree display of multiple directory arguments
+- [ ] **tree nested directories and files** — recursive tree display
+
+*Fix*: `tree` is registered in dispatch but the BusyBox test harness may not be discovering it. Check `--list-commands` output for `tree`, verify symlink is created in `LINKSDIR`.
+
+---
+
+#### ⚪ J. `pidof` — `-o` Omit Flag (1 skipped)
+
+- [ ] **pidof -o init** — omit PID 1 (init) from results
+
+*Fix*: Core `pidof` passes BusyBox tests. The `-o` omit flag is a minor feature addition — parse `-o` argument, filter matching PIDs from results.
+
+---
+
+#### ⚪ K. Root-Required — Can Only Test Manually (2 skipped)
+
+- [ ] **mount (must be root to test this)** — all mount operations require `CAP_SYS_ADMIN`
+- [ ] **makedevs (must be root to test this)** — device node creation requires root
+
+*Fix*: These can never run in CI. Document manual test procedure: `sudo make test-mount` and `sudo make test-makedevs`.
+
+---
 
 ### 3. Aliases
 * **3 aliases** (`egrep`, `fgrep`, `gunzip`) share their parent's RPC method and are tested through `goposix.grep` / `goposix.gzip`.
