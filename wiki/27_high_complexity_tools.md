@@ -1,9 +1,9 @@
 # Phase 27 — High Complexity & Privileged Utilities (Tier 5)
 
-> **Version:** 1.3 | **Date:** 2026-05-26 | **Status:** PARTIALLY IMPLEMENTED
+> **Version:** 2.0 | **Date:** 2026-05-23 | **Status:** COMPLETED ✅
 >
 > **Analysis:** 11 High-Complexity / Privileged Utilities (Tier 5)
-> **Implemented:** `ar`, `cpio`, `ash` (alias), `mount`, `mdev`, `dc`, `rx` ✅ (7/11)
+> **Implemented:** `ar`, `cpio`, `ash` (alias), `mount`, `mdev`, `dc`, `rx`, `hexdump`, `xxd`, `bc`, `mkfs.minix` ✅ (11/11)
 
 This document catalogs the final tier of unimplemented BusyBox-tested utilities in **GoPOSIX**. It outlines the requirements, architectural considerations, and precise Go-native implementation strategies needed to implement them with full POSIX and BusyBox parity.
 
@@ -29,14 +29,12 @@ This document catalogs the final tier of unimplemented BusyBox-tested utilities 
 
 ### 2. Development, Hex & Binary Component
 
-#### 🔍 **`hexdump`** & **`xxd`** (Hexadecimal visualizers)
+#### 🔍 **`hexdump`** — ✅ IMPLEMENTED (`pkg/hexdump/`) & **`xxd`** — ✅ IMPLEMENTED (`pkg/xxd/`)
 * **BusyBox Test Suite**: `hexdump.tests` and `xxd.tests`.
 * **POSIX/GNU Requirements**:
   * **`hexdump`**: Format binary data to hex, octal, decimal, or ASCII. Must support complex format strings via `-e` flag (e.g. `"%08_ax  " 8/1 "%02x " "\n"`).
   * **`xxd`**: Create hex dumps with standard offsets, ASCII summaries, and support the **reverse operation** `-r` to convert hex dumps back to binary.
-* **Implementation Strategy**:
-  * **`hexdump`**: Design a lightweight parser for the formatting strings that compiles format tokens into a slice of print actions.
-  * **`xxd`**: Write standard byte-grid output formatters, and a line-by-line scanner for `-r` that parses hex offsets and hexadecimal character pairs to recreate the binary stream.
+* **Coverage**: `hexdump` 83.6% ✅, `xxd` 86.4% ✅
 
 #### 📡 **`rx`** — ✅ IMPLEMENTED (`pkg/rx/`)
 * **BusyBox Test Suite**: `rx.tests` (1 test: single-block XMODEM transfer with CRC-16).
@@ -55,10 +53,10 @@ This document catalogs the final tier of unimplemented BusyBox-tested utilities 
 * **Coverage**: 90.3% ✅
 * **Known differences from BusyBox**: Uses global scale for formatting (BusyBox uses per-number scale). Five BusyBox dc bugs documented in [wiki/11_lessons_learned.md](11_lessons_learned.md).
 
-#### 🧮 **`bc`** (Arbitrary-precision calculator — not yet implemented)
+#### 🧮 **`bc`** — ✅ IMPLEMENTED (`pkg/bc/`)
 * **BusyBox Test Suite**: `bc.tests` (complex scripts, scale calculations, trigonometry, variables).
 * **POSIX/GNU Requirements**: Interactive, C-like calculator language with variables, arrays, custom functions, control statements (`if`, `for`, `while`), and floating-point scale limits.
-* **Implementation Strategy**: Token scanner + AST parser + `math/big` evaluation engine.
+* **Coverage**: 64.3% (due to extensive scanner/interpreter paths; overall project coverage is 82.3% ≥ 80% ✅)
 
 ---
 
@@ -79,12 +77,10 @@ This document catalogs the final tier of unimplemented BusyBox-tested utilities 
 * **Operations**: `-s` (scan), `-d` (dry-run/discovery), `--json`, hotplug helper mode.
 * **Coverage**: 87.4% ✅
 
-#### 💾 **`mkfs.minix`** (Minix filesystem generator)
+#### 💾 **`mkfs.minix`** — ✅ IMPLEMENTED (`pkg/mkfs_minix/`)
 * **BusyBox Test Suite**: `mkfs.minix.tests`.
 * **POSIX/GNU Requirements**: Build a V1 or V2 Minix filesystem on a target device or image file, writing appropriate Superblocks, Inode bitmaps, Zone bitmaps, Inodes, and root directory directories.
-* **Implementation Strategy**:
-  * Define Go struct equivalents for Minix filesystem blocks (`MinixSuperBlock`, `MinixInode`).
-  * Pack structures into binary streams (`encoding/binary`) and write sequentially to target block devices or mock files.
+* **Coverage**: 82.5% ✅
 
 #### 💾 **`mount`** — ✅ IMPLEMENTED (`pkg/mount/`)
 * **BusyBox Test Suite**: `mount.tests` (requires root privileges).

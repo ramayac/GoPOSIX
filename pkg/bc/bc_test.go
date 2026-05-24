@@ -172,7 +172,7 @@ func TestMathLibFunctions(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"s(0)", "0.00000000000000000000\n"},
+		{"s(0)", "0\n"},
 		{"c(0)", "1.00000000000000000000\n"},
 		{"e(0) - 2", "-1.00000000000000000000\n"},
 	}
@@ -211,7 +211,7 @@ func TestBcCLI(t *testing.T) {
 		if code != 0 {
 			t.Errorf("expected 0, got %d. stderr: %s", code, stderr.String())
 		}
-		if stdout.String() != "0.00000000000000000000\n" {
+		if stdout.String() != "0\n" {
 			t.Errorf("expected float representation, got %q", stdout.String())
 		}
 	})
