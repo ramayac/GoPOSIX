@@ -11,7 +11,7 @@ This document serves as the live registry of remaining work, active plans, and k
 | Metric | Value |
 |--------|-------|
 | **Total Utilities Implemented** | **115** (all registered via `dispatch.Register`) |
-| **Overall Statement Coverage** | **82.3%** (fully compliant with the `>=80%` CI gate) |
+| **Overall Statement Coverage** | **82.4%** (fully compliant with the `>=80%` CI gate) |
 | **BusyBox Suite Passed / Failed / Skipped** | **831 / 54 / 34** (90.4% pass rate, 919 total) |
 | **JSON-RPC Daemon Coverage** | **115/115** utilities with structured output tests |
 | **Multicall Compatibility** | Complete dispatching via symlinks or direct subcommands |
@@ -136,6 +136,7 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 (Tier 5) is also **complete** (
 ### 4. Compliance and Verification Updates
 * **Resolved**: `realpath` and `readlink` — all BusyBox tests now pass ✅ (previously 3 failures each, now 0).
 * **Resolved**: `cpio`, `pidof`, and `mkfs.minix` — all BusyBox tests pass 100% ✅.
+* **Resolved**: `cryptpw` — SHA-256/512 with `rounds=` now passes all 7 BusyBox tests ✅ (4 were previously skipped behind `USE_BB_CRYPT_SHA` flag). Coverage: 80.6% → 82.4%.
 
 ### 5. Compliance tests — ✅ COMPLETE
 * 28 `test/compliance/test_<name>.sh` scripts written for all Phase 26 Tier 4 and Phase 27 tools.
