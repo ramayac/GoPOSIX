@@ -6,16 +6,7 @@ This document serves as the live registry of remaining work, active plans, and k
 
 ---
 
-## 📈 Current Project State
-
-| Metric | Value |
-|--------|-------|
-| **Total Utilities Implemented** | **115** (all registered via `dispatch.Register`) |
-| **Overall Statement Coverage** | **82.4%** (fully compliant with the `>=80%` CI gate) |
-| **BusyBox Suite Passed / Failed / Skipped** | **840 / 54 / 25** (91.4% pass rate, 919 total) |
-| **JSON-RPC Daemon Coverage** | **115/115** utilities with structured output tests |
-| **Multicall Compatibility** | Complete dispatching via symlinks or direct subcommands |
-| **CGO Status** | 100% CGO-free Go (`CGO_ENABLED=0`) |
+> 📊 **Current project state** (coverage, BusyBox stats, per-utility status) → **[wiki/test_coverage_matrix.md](test_coverage_matrix.md)**
 
 ---
 
@@ -106,21 +97,7 @@ Tests that need `CAP_SYS_ADMIN`, kernel hotplug, or interactive shell — can on
 
 ---
 
-## ✅ Completed & Resolved
-
-| Item | Tests | Resolution |
-|------|-------|------------|
-| `realpath` / `readlink` | 3 each → 0 fail | All BusyBox tests pass |
-| `cpio` core | All ~R, ~perm tests pass | Integration tests 100% |
-| `pidof` | 4/4 pass | `FEATURE_PIDOF_OMIT` enabled |
-| `cryptpw` | 7/7 pass | SHA-256/512 with `rounds=` support; coverage 80.6% → 82.4% |
-| `ar` | 2 skipped → pass | `FEATURE_AR_CREATE` enabled |
-| `unzip` | 3 skipped → pass | `scanCorruptedZip()` for damaged archive recovery |
-| `tree` | 3 skipped → pass | `UNICODE_SUPPORT` enabled in runtest |
-| `mkfs.minix` | 1/1 pass | Integration test clean |
-| Compliance tests | 28 scripts, 84 assertions, 0 failures | Phase 26+27 coverage |
-| JSON-RPC daemon | 115/115 utilities tested | 100% structured output coverage |
-| Aliases | 3 (`egrep`, `fgrep`, `gunzip`) | Tested via parent RPC method |
+> ✅ **Completed & resolved** (all phases, per-utility changelog) → **[wiki/log.md](log.md)**
 
 ---
 
