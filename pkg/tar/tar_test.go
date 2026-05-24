@@ -608,3 +608,242 @@ func TestTar_ListVerbose(t *testing.T) {
 		t.Errorf("expected 'src.txt' in listing, got %q", listOut.String())
 	}
 }
+
+func TestTarHardlinkCreateExtract(t *testing.T) {
+	dir := t.TempDir()
+
+	// Create a file and a hardlink to it
+	src := filepath.Join(dir, "original")
+	os.WriteFile(src, []byte("hardlink content"), 0644)
+	link := filepath.Join(dir, "hardlink")
+	if err := os.Link(src, link); err != nil {
+		t.Fatalf("cannot create hardlink: %v", err)
+	}
+
+	// Create archive with both files
+	arc := filepath.Join(dir, "test.tar")
+	var out bytes.Buffer
+	code := run([]string{"-c", "-f", arc, "-C", dir, "original", "hardlink"}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("create: exit %d, stderr: %s", code, out.String())
+	}
+
+	// Verify archive listing shows hardlink
+	var listOut bytes.Buffer
+	code = run([]string{"-t", "-f", arc, "-v"}, nil, &listOut, &out, "")
+	if code != 0 {
+		t.Fatalf("list: exit %d", code)
+	}
+	listing := listOut.String()
+	if !strings.Contains(listing, "original") {
+		t.Error("listing should contain 'original'")
+	}
+	if !strings.Contains(listing, "hardlink") {
+		t.Error("listing should contain 'hardlink'")
+	}
+
+	// Extract and verify hardlink relationship is preserved
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+	var extOut bytes.Buffer
+	code = run([]string{"-x", "-f", arc, "-C", extractDir}, nil, &extOut, &extOut, "")
+	if code != 0 {
+		t.Fatalf("extract: exit %d, stderr: %s", code, extOut.String())
+	}
+
+	// Both files should exist and share the same inode
+	fi1, err := os.Stat(filepath.Join(extractDir, "original"))
+	if err != nil {
+		t.Fatalf("original not extracted: %v", err)
+	}
+	fi2, err := os.Stat(filepath.Join(extractDir, "hardlink"))
+	if err != nil {
+		t.Fatalf("hardlink not extracted: %v", err)
+	}
+	if !os.SameFile(fi1, fi2) {
+		t.Error("extracted files are not hardlinked (different inodes)")
+	}
+}
+
+func TestTarSymlinkTarget(t *testing.T) {
+	dir := t.TempDir()
+
+	// Create a file and a symlink to it
+	src := filepath.Join(dir, "target")
+	os.WriteFile(src, []byte("symlink target content"), 0644)
+	sym := filepath.Join(dir, "link")
+	if err := os.Symlink("target", sym); err != nil {
+		t.Fatalf("cannot create symlink: %v", err)
+	}
+
+	// Archive the symlink
+	arc := filepath.Join(dir, "test.tar")
+	var out bytes.Buffer
+	code := run([]string{"-c", "-f", arc, "-C", dir, "link"}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("create: exit %d, stderr: %s", code, out.String())
+	}
+
+	// List and check symlink target is correct
+	var listOut bytes.Buffer
+	code = run([]string{"-t", "-f", arc, "-v"}, nil, &listOut, &out, "")
+	if code != 0 {
+		t.Fatalf("list: exit %d", code)
+	}
+	listing := listOut.String()
+	if !strings.Contains(listing, "link -> target") {
+		t.Errorf("expected 'link -> target' in listing, got: %s", listing)
+	}
+
+	// Extract and verify symlink
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+	code = run([]string{"-x", "-f", arc, "-C", extractDir}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("extract: exit %d", code)
+	}
+
+	target, err := os.Readlink(filepath.Join(extractDir, "link"))
+	if err != nil {
+		t.Fatalf("cannot readlink: %v", err)
+	}
+	if target != "target" {
+		t.Errorf("symlink target = %q, want 'target'", target)
+	}
+}
+
+func TestTarKeepOldFlag(t *testing.T) {
+	dir := t.TempDir()
+
+	// Create a file for archiving
+	src := filepath.Join(dir, "src.txt")
+	os.WriteFile(src, []byte("original content"), 0644)
+	arc := filepath.Join(dir, "test.tar")
+	var out bytes.Buffer
+	code := run([]string{"-c", "-f", arc, "-C", dir, "src.txt"}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("create: exit %d", code)
+	}
+
+	// Pre-create the file with different content
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+	existing := filepath.Join(extractDir, "src.txt")
+	os.WriteFile(existing, []byte("pre-existing content"), 0644)
+
+	// Extract with -k (keep-old) — should NOT overwrite
+	code = run([]string{"-x", "-k", "-f", arc, "-C", extractDir}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("extract -k: exit %d", code)
+	}
+
+	data, _ := os.ReadFile(existing)
+	if string(data) != "pre-existing content" {
+		t.Errorf("file was overwritten despite -k flag: got %q", string(data))
+	}
+
+	// Extract without -k (default) — SHOULD overwrite
+	code = run([]string{"-x", "-f", arc, "-C", extractDir}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("extract: exit %d", code)
+	}
+
+	data, _ = os.ReadFile(existing)
+	if string(data) != "original content" {
+		t.Errorf("file was NOT overwritten without -k: got %q", string(data))
+	}
+}
+
+func TestTarShortReadError(t *testing.T) {
+	// Test that empty gzipped tar produces "short read" error
+	dir := t.TempDir()
+	arc := filepath.Join(dir, "empty.tar.gz")
+	// Create a valid empty gzip (10-byte gzip header + footer)
+	os.WriteFile(arc, []byte{
+		0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03,
+		0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}, 0644)
+	var out bytes.Buffer
+	code := run([]string{"-x", "-z", "-f", arc}, nil, &out, &out, dir)
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), "short read") {
+		t.Errorf("expected 'short read' error, got: %s", out.String())
+	}
+}
+
+func TestTarSymlinkSafetyUnlink(t *testing.T) {
+	// Verify that extracting a regular file removes an existing symlink first.
+	dir := t.TempDir()
+
+	// Create an archive with a regular file
+	src := filepath.Join(dir, "src.txt")
+	os.WriteFile(src, []byte("safe content"), 0644)
+	arc := filepath.Join(dir, "test.tar")
+	var out bytes.Buffer
+	code := run([]string{"-c", "-f", arc, "-C", dir, "src.txt"}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("create: exit %d", code)
+	}
+
+	// Pre-create a symlink at the extraction target
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+	symTarget := filepath.Join(extractDir, "dangerous")
+	os.WriteFile(symTarget, []byte("should not be touched"), 0644)
+	symlink := filepath.Join(extractDir, "src.txt")
+	if err := os.Symlink(symTarget, symlink); err != nil {
+		t.Fatalf("cannot create symlink: %v", err)
+	}
+
+	// Extract — should unlink the symlink and create a regular file
+	code = run([]string{"-x", "-f", arc, "-C", extractDir}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("extract: exit %d, stderr: %s", code, out.String())
+	}
+
+	// Verify the symlink is gone and replaced with a regular file
+	fi, err := os.Lstat(symlink)
+	if err != nil {
+		t.Fatalf("lstat: %v", err)
+	}
+	if fi.Mode()&os.ModeSymlink != 0 {
+		t.Error("symlink still exists — not replaced with regular file")
+	}
+	// The dangerous target should be untouched
+	dangerData, _ := os.ReadFile(symTarget)
+	if string(dangerData) != "should not be touched" {
+		t.Error("symlink target was modified — attack not prevented")
+	}
+}
+
+func TestTarBzip2Extract(t *testing.T) {
+	dir := t.TempDir()
+	// Test with -j flag (explicit bzip2)
+	src := filepath.Join(dir, "src.txt")
+	os.WriteFile(src, []byte("bzip2 content"), 0644)
+
+	// Create gzip archive first (bzip2 creation not supported, only extraction)
+	arc := filepath.Join(dir, "test.tar")
+	var out bytes.Buffer
+	code := run([]string{"-c", "-f", arc, "-C", dir, "src.txt"}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("create: exit %d", code)
+	}
+
+	// Test that -j flag is parsed correctly (bzip2 decompression on non-bzip2
+	// data will fail, but the flag parsing and plumbing should work)
+	// Just verify the flag is recognized and doesn't cause a parse error.
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+	code = run([]string{"-x", "-j", "-f", arc, "-C", extractDir}, nil, &out, &out, "")
+	// Expected to fail (not bzip2), but -j flag must not cause "unknown flag"
+	if code == 0 {
+		t.Log("extract with -j unexpectedly succeeded on non-bzip2 data")
+	}
+	// The error should not be "unknown flag"
+	if strings.Contains(out.String(), "unknown flag") {
+		t.Error("-j flag not recognized")
+	}
+}

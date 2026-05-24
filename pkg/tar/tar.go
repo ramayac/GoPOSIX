@@ -559,14 +559,16 @@ func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite, keepOld boo
 				}
 				continue
 			}
-			// Symlink attack protection: if target exists as a symlink,
-			// remove it before creating a regular file (prevents writing
-			// through a symlink to arbitrary locations).
-			if fi, stErr := os.Lstat(target); stErr == nil && fi.Mode()&os.ModeSymlink != 0 {
+			// Keep-old and symlink safety: if target already exists, check policy.
+			if fi, stErr := os.Lstat(target); stErr == nil {
 				if keepOld {
 					continue
 				}
-				os.Remove(target)
+				// If existing target is a symlink, remove it to prevent
+				// writing through to an arbitrary location.
+				if fi.Mode()&os.ModeSymlink != 0 {
+					os.Remove(target)
+				}
 			}
 			dir := filepath.Dir(target)
 			if err := os.MkdirAll(dir, 0755); err != nil {

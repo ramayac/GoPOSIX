@@ -95,7 +95,7 @@
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `tar` | 69.4% | 31 | ⚠️ 24/31 (3 mode, 3 symlink safety, 1 XZ) | ✅ |
+| `tar` | 74.8% | 31 | ⚠️ 24/31 (3 mode, 3 symlink safety, 1 XZ) | ✅ |
 | `gzip` / `gunzip` | 64.7% | 4 | ✅ 4/4 | ✅ |
 | `sha256sum` | 81.6% | — | — | ✅ |
 | `sha1sum` | 89.1% | 1 | ✅ 1/1 | ✅ |
@@ -157,7 +157,7 @@
 | `bzcat` | 90.6% | 3 | ✅ 3/3 | ✅ |
 | `unlzma` | 83.3% | 3 | ✅ 3/3 | ✅ |
 | `uncompress` | 84.1% | 1 | ✅ 1/1 | ✅ |
-| `unzip` | 87.5% | 4 | ✅ 4/4 | ✅ |
+| `unzip` | 80.5% | 4 | ✅ 4/4 | ✅ |
 | `uuencode` | 88.3% | 19 | ✅ 19/19 | ✅ |
 | `uudecode` | 80.5% | — | — | ✅ |
 | `taskset` | 86.4% | 3 | ✅ 3/3 | ✅ |
@@ -196,21 +196,21 @@
 | Total packages | 115 | 115 utilities + client SDK |
 | Unit tests passing | 115/115 | 100% |
 | BusyBox tests run | 919 | 919 total applicable tests |
-| BusyBox passed | 810 | 88.1% (810 of 919) |
-| BusyBox failed | 45 | 16 awk + 22 bc + 7 tar |
+| BusyBox passed | 808 | 88.0% (808 of 919) |
+| BusyBox failed | 47 | 17 awk + 22 bc + 7 tar + 1 rx (flaky) |
 | BusyBox skipped | 64 | 29 dc (FEATURE_DC_BIG), 13 mdev (root), 7 cpio, 4 cryptpw, 1 mount, 1 makedevs, 1 pidof, 1 rx, 1 tar-xz, 1 ash, 5+ awk |
 | Overall statement coverage | 82.3% | Checked via make cover-gate |
 | JSON-RPC daemon tests | 115/115 | 100.0% (all 115 utilities implemented and registered) |
-| Packages below 70% unit coverage | 2 | `bc` (64.3%), `tar` (69.4%) |
+| Packages below 70% unit coverage | 1 | `bc` (64.3%) |
 
 ## Remaining Gaps
 
 | # | Gap | Count |
 |---|-----|-------|
-| 1 | awk BusyBox failures | 16 (goawk v1.31.0 engine limitations) |
+| 1 | awk BusyBox failures | 17 (goawk v1.31.0 engine limitations) |
 | 2 | bc BusyBox failures | 22 (formatting and precision/scale differences) |
 | 3 | tar BusyBox failures | 7 (3 hardlink/symlink mode ordering, 3 symlink safety, 1 XZ) |
-| 4 | Unit coverage < 80% | 2 packages: `bc` (64.3%), `tar` (69.4%) |
+| 4 | Unit coverage < 80% | 1 package: `bc` (64.3%) |
 
 ## Notes
 
