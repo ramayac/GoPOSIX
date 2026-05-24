@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-24 | **Utilities:** 115 | **Coverage:** 82.4% | **BusyBox:** 831/54/34 (90.4%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-05-24 | **Utilities:** 115 | **Coverage:** 82.4% | **BusyBox:** 840/54/25 (91.4%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -12,7 +12,7 @@ This document serves as the live registry of remaining work, active plans, and k
 |--------|-------|
 | **Total Utilities Implemented** | **115** (all registered via `dispatch.Register`) |
 | **Overall Statement Coverage** | **82.4%** (fully compliant with the `>=80%` CI gate) |
-| **BusyBox Suite Passed / Failed / Skipped** | **831 / 54 / 34** (90.4% pass rate, 919 total) |
+| **BusyBox Suite Passed / Failed / Skipped** | **840 / 54 / 25** (91.4% pass rate, 919 total) |
 | **JSON-RPC Daemon Coverage** | **115/115** utilities with structured output tests |
 | **Multicall Compatibility** | Complete dispatching via symlinks or direct subcommands |
 | **CGO Status** | 100% CGO-free Go (`CGO_ENABLED=0`) |
@@ -130,9 +130,6 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 (Tier 5) is also **complete** (
 
 *Coverage*: 90.2%. *See*: [wiki/test_coverage_matrix.md](test_coverage_matrix.md).
 
-### 4. `pidof` — All 4 BusyBox tests pass ✅
-* `FEATURE_PIDOF_OMIT` enabled in `runtest`. The `-o` omit flag was already implemented — test passes immediately.
-
 ### 4. Compliance and Verification Updates
 * **Resolved**: `realpath` and `readlink` — all BusyBox tests now pass ✅ (previously 3 failures each, now 0).
 * **Resolved**: `cpio`, `pidof`, and `mkfs.minix` — all BusyBox tests pass 100% ✅.
@@ -155,7 +152,7 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 (Tier 5) is also **complete** (
 
 ---
 
-### 2. Skipped BusyBox Tests — Full Categorized TODO List (34 total)
+### 2. Skipped BusyBox Tests — Full Categorized TODO List (25 total)
 
 Every skipped test is listed below as an actionable checkbox, organized by root cause and difficulty.
 
@@ -267,44 +264,7 @@ Every skipped test is listed below as an actionable checkbox, organized by root 
 
 ---
 
-#### 🟣 F. `ar` — Archive Creation — ✅ 2 RESOLVED
-
-- [x] **ar creates archives** — `ar -r -c` create new archive — ✅ PASSES
-- [x] **ar replaces things in archives** — `ar -r` replace members in existing archive — ✅ PASSES
-
-*Resolution*: Enabled `FEATURE_AR_CREATE` flag in `runtest`. GoPOSIX ar already supported `-r`/`-c` via `arReplace()` with `readArchive()` returning nil for new archives.
-
----
-
-#### ⚪ G. `unzip` — Corrupted Archive Handling — ✅ 3 RESOLVED
-
-- [x] **unzip (bad archive)** — graceful error on completely invalid zip — ✅ PASSES
-- [x] **unzip (archive with corrupted lzma 1)** — LZMA corruption detection — ✅ PASSES
-- [x] **unzip (archive with corrupted lzma 2)** — LZMA corruption detection variant — ✅ PASSES
-
-*Resolution*: Added `scanCorruptedZip()` for local file header scanning in corrupted archives, BusyBox-compatible error messages ("corrupted data" + "inflate error"), `/`-prefix warning detection, and `sanitizeFilename()` for control-character replacement.
-
----
-
-#### ⚪ H. `tree` — Directory Tree Display — ✅ 3 RESOLVED
-
-- [x] **tree single file** — tree display of a single file — ✅ PASSES
-- [x] **tree multiple directories** — tree display of multiple directory arguments — ✅ PASSES
-- [x] **tree nested directories and files** — recursive tree display — ✅ PASSES
-
-*Resolution*: Enabled `UNICODE_SUPPORT` flag in `runtest`. GoPOSIX tree already used Unicode box-drawing characters; all tree output matches BusyBox exactly.
-
----
-
-#### ⚪ J. `pidof` — `-o` Omit Flag ✅ RESOLVED
-
-- [x] **pidof -o init** — omit PID 1 (init) from results
-
-*Resolution*: `FEATURE_PIDOF_OMIT` enabled in `runtest`. The `-o` flag was already implemented in `pidof.go` — test passes immediately. All 4 pidof tests pass 100%. ✅
-
----
-
-#### ⚪ K. Root-Required — Can Only Test Manually (2 skipped)
+#### 🟣 F. Root-Required — Can Only Test Manually (2 skipped)
 
 - [ ] **mount (must be root to test this)** — all mount operations require `CAP_SYS_ADMIN`
 - [ ] **makedevs (must be root to test this)** — device node creation requires root
