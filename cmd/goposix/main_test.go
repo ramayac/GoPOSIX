@@ -140,6 +140,7 @@ var cmdPkgMapping = map[string][]string{
 	"truefalse": {"true", "false"},
 	"testcmd":   {"test"},
 	"shell":     {"shell", "sh", "ash"},
+	"mkfs_minix": {"mkfs.minix"},
 }
 
 // TestListCommandsMatchesPkgDir verifies that every utility package under
