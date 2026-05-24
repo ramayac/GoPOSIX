@@ -14,7 +14,7 @@ func TestRunFloppy(t *testing.T) {
 	blocks := 30
 	inodes := 16
 
-	res, err := Run(&buf, blocks, inodes)
+	res, err := Run(&buf, blocks, inodes, 14)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -48,14 +48,14 @@ func TestRunFloppy(t *testing.T) {
 func TestRunErrorCases(t *testing.T) {
 	var buf bytes.Buffer
 	t.Run("too few blocks", func(t *testing.T) {
-		_, err := Run(&buf, 5, 0)
+		_, err := Run(&buf, 5, 0, 30)
 		if err == nil {
 			t.Error("expected error for too few blocks, got nil")
 		}
 	})
 
 	t.Run("filesystem too small for metadata", func(t *testing.T) {
-		_, err := Run(&buf, 10, 500)
+		_, err := Run(&buf, 10, 500, 30)
 		if err == nil {
 			t.Error("expected error for too small metadata partition, got nil")
 		}

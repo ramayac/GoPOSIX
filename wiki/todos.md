@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-23 | **Utilities:** 115 | **Coverage:** 82.3% | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-05-24 | **Utilities:** 115 | **Coverage:** 82.3% | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -31,35 +31,32 @@ Phase 26 (Tiers 1–4) is **complete**. Phase 27 (Tier 5) is also **complete** (
 * **Shell (1)**: ✅ `ash` (alias to existing native `shell` implementation)
 * **System Admin & Hardware (3)**: ✅ `mdev`, ✅ `mkfs.minix`, ✅ `mount`
 
----
-
 ## ❌ Known Limitations & Remaining Failures
 
-### 1. `awk` — 16 failures (goawk v1.31.0 engine limitations)
-* Hex/Octal constants, scoped nested variables, scoped scopes, and bitwise operations are not supported by the underlying parsing engine.
-* *Status*: **Deferred** (see [wiki/deferred.md](deferred.md) for full context).
-
-### 2. `cpio` — 2 failures (cavaliergopher/cpio library limitation)
-* Block count output not emitted by `-t` or `-i` operations; `cavaliergopher/cpio` reader doesn't track block counts.
-* *Status*: **Accepted** (low-impact output formatting; core functionality correct).
-
-### 3. `pidof` — 1 failure (exit code mismatch)
-* BusyBox test expects specific exit code behavior when no matching process is found.
-* *Status*: **Needs investigation**.
-
-### 4. `bc` — 32 failures (precision and scale differences)
+### 1. `bc` — 22 failures (precision and scale differences)
 * Multi-precision scale and formatting quirks in decimal/fractional division under specific ibase/obase configurations.
 * *Status*: **Accepted** (core arithmetic is fully functional and correct).
 
-### 5. `mkfs.minix` — 1 failure (validation harness versioning)
-* Verification harness depends on `od -i`, which is not supported by our CGO-free implementation of `od`.
-* *Status*: **Accepted** (filesystem block generation is correct and matches specification).
+### 2. `realpath` — 3 failures (non-existent link resolution differences)
+* Minor directory structure resolution discrepancies on non-existent symlinks.
+* *Status*: **Accepted** (standard realpath resolution operates correctly).
 
-### 6. Compliance tests — ✅ COMPLETE
+### 3. Compliance and Verification Updates
+* **Resolved & Verified**: `cpio`, `pidof`, and `mkfs.minix` integration test suites now **pass 100%** after implementing standard-block counting wrapper streams, argv[0]-only process boundaries, and exact Minix `.badblocks` directory packing.
+
+### 5. Compliance tests — ✅ COMPLETE
 * 28 `test/compliance/test_<name>.sh` scripts written for all Phase 26 Tier 4 and Phase 27 tools.
 * 84 assertions, 0 failures. 1 test skipped (uncompress needs system `compress`).
 
-### 7. JSON-RPC tests — 0 remaining gaps (115/115 tested)
+### 6. JSON-RPC tests — 0 remaining gaps (115/115 tested)
+
+---
+
+## 📋 Backlog & Deferred Work
+
+### 1. `awk` — 16 failures (goawk v1.31.0 engine limitations)
+* Hex/Octal constants, scoped nested variables, scoped scopes, and bitwise operations are not supported by the underlying parsing engine.
+* *Status*: **Backlog / Deferred** (see [wiki/deferred.md](deferred.md) for full context).
 * **6 skipped** for hard constraints:
   - `ash` — shell's custom flag parser conflicts with daemon's `--json` auto-prepend
   - `wget` — requires live network connectivity

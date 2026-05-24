@@ -15,6 +15,7 @@ import (
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "i", Long: "inodes", Type: common.FlagValue},
+		{Short: "n", Long: "namelen", Type: common.FlagValue},
 		{Long: "json", Type: common.FlagBool},
 	},
 }
@@ -53,45 +54,63 @@ type MinixInode struct {
 }
 
 // Run creates a Minix V1 filesystem and writes it to w.
-func Run(w io.Writer, blocks, inodes int) (MkfsResult, error) {
+func Run(w io.Writer, blocks, inodes, namelen int) (MkfsResult, error) {
 	if blocks < 10 {
 		return MkfsResult{}, fmt.Errorf("number of blocks must be at least 10")
+	}
+
+	if namelen != 14 && namelen != 30 {
+		namelen = 30
 	}
 
 	// Calculate default inodes if not specified
 	if inodes <= 0 {
 		inodes = blocks / 3
-		if inodes < 16 {
-			inodes = 16
-		}
-		// Inode table size constraints
-		if inodes > 65535 {
-			inodes = 65535
-		}
 	}
 
-	// Sizing block structures
-	imapBlocks := uint16((inodes + 8191) / 8192)
-	zmapBlocks := uint16((blocks + 8191) / 8192)
-	inodeBlocks := uint16((inodes*32 + 1023) / 1024)
-	firstDataZone := uint16(2 + imapBlocks + zmapBlocks + inodeBlocks)
+	// Round up inode count to fill block size (multiple of 32 for V1)
+	inodes = (inodes + 31) &^ 31
+	if inodes < 16 {
+		inodes = 16
+	}
+	if inodes > 65535 {
+		inodes = 65535
+	}
 
-	if int(firstDataZone) >= blocks {
+	imapBlocks := (inodes + 1 + 8191) / 8192
+
+	// Iteratively compute zmapBlocks and firstDataZone
+	zmapBlocks := 0
+	firstDataZone := 0
+	for i := 0; i < 1000; i++ {
+		inodeBlocks := (inodes * 32 + 1023) / 1024
+		firstDataZone = 2 + imapBlocks + zmapBlocks + inodeBlocks
+		sb_zmaps := (blocks - firstDataZone + 1 + 8191) / 8192
+		if zmapBlocks == sb_zmaps {
+			break
+		}
+		zmapBlocks = sb_zmaps
+	}
+
+	if firstDataZone >= blocks {
 		return MkfsResult{}, fmt.Errorf("filesystem too small for requested metadata")
 	}
 
-	// Adjust inodes to exactly match inodeBlocks capacity
-	inodesActual := int(inodeBlocks) * 32
-
 	res := MkfsResult{
-		Inodes:        uint16(inodesActual),
+		Inodes:        uint16(inodes),
 		Zones:         uint16(blocks),
-		FirstDataZone: firstDataZone,
-		IMapBlocks:    imapBlocks,
-		ZMapBlocks:    zmapBlocks,
+		FirstDataZone: uint16(firstDataZone),
+		IMapBlocks:    uint16(imapBlocks),
+		ZMapBlocks:    uint16(zmapBlocks),
 	}
 
-	// 1. Boot Block (Block 0)
+	// Magic: 0x137F for 14-char, 0x138F for 30-char
+	magic := uint16(0x138F)
+	if namelen == 14 {
+		magic = 0x137F
+	}
+
+	// 1. Boot Block (Block 0) - 1024 bytes (first 512 bytes are boot sector, padded to 1024)
 	bootBlock := make([]byte, 1024)
 	if _, err := w.Write(bootBlock); err != nil {
 		return res, err
@@ -99,98 +118,109 @@ func Run(w io.Writer, blocks, inodes int) (MkfsResult, error) {
 
 	// 2. Superblock (Block 1)
 	sb := MinixSuperBlock{
-		NInodes:       uint16(inodesActual),
+		NInodes:       uint16(inodes),
 		NZones:        uint16(blocks),
-		IMapBlocks:    imapBlocks,
-		ZMapBlocks:    zmapBlocks,
-		FirstDataZone: firstDataZone,
+		IMapBlocks:    uint16(imapBlocks),
+		ZMapBlocks:    uint16(zmapBlocks),
+		FirstDataZone: uint16(firstDataZone),
 		LogZoneSize:   0,
-		MaxSize:       268966912, // V1 max file size
-		Magic:         0x137F,    // V1 14-char filename magic
-		State:         1,         // Clean
+		MaxSize:       (7 + 512 + 512*512) * 1024, // V1 max file size
+		Magic:         magic,
+		State:         1, // Clean
 	}
 
 	sbBuf := new(bytes.Buffer)
 	if err := binary.Write(sbBuf, binary.LittleEndian, sb); err != nil {
 		return res, err
 	}
-	// Pad superblock block to 1024 bytes
 	sbBlock := make([]byte, 1024)
 	copy(sbBlock, sbBuf.Bytes())
 	if _, err := w.Write(sbBlock); err != nil {
 		return res, err
 	}
 
-	// 3. Inode Bitmap blocks
-	imapSize := int(imapBlocks) * 1024
-	imap := make([]byte, imapSize)
-	// Inode 0 is reserved. Inode 1 is root directory.
-	// So set bit 0 and bit 1 of inode bitmap to 1.
-	imap[0] = 0x03 // 00000011
-	// Set out-of-bounds bits to 1
-	for bit := inodesActual + 1; bit < imapSize*8; bit++ {
-		byteIdx := bit / 8
-		bitIdx := bit % 8
-		imap[byteIdx] |= 1 << bitIdx
+	// Helpers for bit setting/clearing
+	setBit := func(buf []byte, bit int) {
+		buf[bit/8] |= 1 << (bit % 8)
 	}
+	clearBit := func(buf []byte, bit int) {
+		buf[bit/8] &^= 1 << (bit % 8)
+	}
+
+	// 3. Inode Bitmap blocks
+	imapSize := imapBlocks * 1024
+	imap := make([]byte, imapSize)
+	for i := range imap {
+		imap[i] = 0xff
+	}
+	for i := 1; i <= inodes; i++ {
+		clearBit(imap, i)
+	}
+	setBit(imap, 1) // Mark root inode (1)
 	if _, err := w.Write(imap); err != nil {
 		return res, err
 	}
 
 	// 4. Zone Bitmap blocks
-	zmapSize := int(zmapBlocks) * 1024
+	zmapSize := zmapBlocks * 1024
 	zmap := make([]byte, zmapSize)
-	// Zone 0 is reserved. Zone 1 is root directory.
-	// So set bit 0 and bit 1 of zone bitmap to 1.
-	zmap[0] = 0x03
-	// Set out-of-bounds bits to 1
-	for bit := blocks; bit < zmapSize*8; bit++ {
-		byteIdx := bit / 8
-		bitIdx := bit % 8
-		zmap[byteIdx] |= 1 << bitIdx
+	for i := range zmap {
+		zmap[i] = 0xff
 	}
+	for i := firstDataZone; i < blocks; i++ {
+		clearBit(zmap, i - firstDataZone + 1)
+	}
+	setBit(zmap, 1) // Mark first data block (root directory)
 	if _, err := w.Write(zmap); err != nil {
 		return res, err
 	}
 
 	// 5. Inode Table blocks
-	inodeTableSize := int(inodeBlocks) * 1024
+	inodeBlocks := (inodes * 32 + 1023) / 1024
+	inodeTableSize := inodeBlocks * 1024
 	inodeTable := make([]byte, inodeTableSize)
-	// Write Inode 1 (root directory) at offset 32 bytes
+	
+	dirEntrySize := namelen + 2
 	rootInode := MinixInode{
 		Mode:   040755, // Directory with 755 permissions
 		UID:    0,
-		Size:   32,
+		Size:   uint32(2 * dirEntrySize), // Third entry has inode 0, size is 2 * dirEntrySize
 		Time:   0,
 		GID:    0,
 		NLinks: 2,
 	}
-	rootInode.Zones[0] = firstDataZone
+	rootInode.Zones[0] = uint16(firstDataZone)
 
 	rootInodeBuf := new(bytes.Buffer)
 	if err := binary.Write(rootInodeBuf, binary.LittleEndian, rootInode); err != nil {
 		return res, err
 	}
-	copy(inodeTable[32:64], rootInodeBuf.Bytes())
+	copy(inodeTable[0:32], rootInodeBuf.Bytes())
 	if _, err := w.Write(inodeTable); err != nil {
 		return res, err
 	}
 
 	// 6. First Data Zone (Root Directory Entries)
 	rootBlock := make([]byte, 1024)
-	// Entry 1: "." pointing to Inode 1
+	
+	// Entry 1: "." (Inode 1)
 	binary.LittleEndian.PutUint16(rootBlock[0:2], 1)
-	copy(rootBlock[2:16], ".")
-	// Entry 2: ".." pointing to Inode 1
-	binary.LittleEndian.PutUint16(rootBlock[16:18], 1)
-	copy(rootBlock[18:32], "..")
+	copy(rootBlock[2:2+namelen], ".")
+
+	// Entry 2: ".." (Inode 1)
+	binary.LittleEndian.PutUint16(rootBlock[dirEntrySize:dirEntrySize+2], 1)
+	copy(rootBlock[dirEntrySize+2:dirEntrySize+2+namelen], "..")
+
+	// Entry 3: ".badblocks" (Inode 0)
+	binary.LittleEndian.PutUint16(rootBlock[2*dirEntrySize:2*dirEntrySize+2], 0)
+	copy(rootBlock[2*dirEntrySize+2:2*dirEntrySize+2+namelen], ".badblocks")
 
 	if _, err := w.Write(rootBlock); err != nil {
 		return res, err
 	}
 
 	// 7. Write remaining blocks (fully zero-filled zones)
-	remBlocks := blocks - int(firstDataZone) - 1
+	remBlocks := blocks - firstDataZone - 1
 	zeroBlock := make([]byte, 1024)
 	for i := 0; i < remBlocks; i++ {
 		if _, err := w.Write(zeroBlock); err != nil {
@@ -214,14 +244,30 @@ func mkfsMinixRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd 
 	}
 
 	target := flags.Positional[0]
-	blocks := 1440 // default floppy size
+	blocks := 0
 	if len(flags.Positional) > 1 {
 		fmt.Sscanf(flags.Positional[1], "%d", &blocks)
+	} else {
+		if fi, serr := os.Stat(target); serr == nil {
+			blocks = int(fi.Size() / 1024)
+		}
+		if blocks <= 0 {
+			blocks = 1440 // default floppy size
+		}
 	}
 
 	inodes := 0
 	if val := flags.Get("i"); val != "" {
 		fmt.Sscanf(val, "%d", &inodes)
+	}
+
+	namelen := 30
+	if val := flags.Get("n"); val != "" {
+		fmt.Sscanf(val, "%d", &namelen)
+		if namelen != 14 && namelen != 30 {
+			fmt.Fprintf(errOut, "mkfs.minix: illegal namelen %d\n", namelen)
+			return 2
+		}
 	}
 
 	jsonMode := flags.Has("json")
@@ -234,7 +280,7 @@ func mkfsMinixRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd 
 	}
 	defer file.Close()
 
-	res, err := Run(file, blocks, inodes)
+	res, err := Run(file, blocks, inodes, namelen)
 	if err != nil {
 		fmt.Fprintf(errOut, "mkfs.minix: %v\n", err)
 		return 1

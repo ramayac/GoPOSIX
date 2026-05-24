@@ -364,3 +364,27 @@ func TestOd_Json_Hex(t *testing.T) {
 		t.Errorf("expected JSON with records, got: %q", out.String())
 	}
 }
+
+func TestOd_Ints(t *testing.T) {
+	var out bytes.Buffer
+	in := strings.NewReader("abcdefghijklmnop")
+	code := odRun([]string{"-i"}, in, &out, "")
+	if code != 0 {
+		t.Fatalf("exit code %d, want 0", code)
+	}
+	expected := "1684234849"
+	if !strings.Contains(out.String(), expected) {
+		t.Errorf("expected %q in output, got: %q", expected, out.String())
+	}
+
+	// Test -t i format mapping
+	out.Reset()
+	in2 := strings.NewReader("abcdefghijklmnop")
+	code2 := odRun([]string{"-t", "i4"}, in2, &out, "")
+	if code2 != 0 {
+		t.Fatalf("exit code %d, want 0", code2)
+	}
+	if !strings.Contains(out.String(), expected) {
+		t.Errorf("expected %q under -t i4 format, got: %q", expected, out.String())
+	}
+}

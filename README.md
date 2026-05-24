@@ -1,6 +1,6 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX userland with 115 tools. Runs as a persistent JSON-RPC daemon or multicall CLI, a typed Go SDK and >88% BusyBox test compatibility (788 of 893 tests pass).
+A Go-native, single-binary POSIX userland with 115 tools. Runs as a persistent JSON-RPC daemon or multicall CLI, a typed Go SDK and >89% BusyBox test compatibility (798 of 893 tests pass).
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ramayac/goposix.svg)](https://pkg.go.dev/github.com/ramayac/goposix)

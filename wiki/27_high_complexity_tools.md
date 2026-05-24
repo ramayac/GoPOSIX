@@ -23,7 +23,7 @@ This document catalogs the final tier of unimplemented BusyBox-tested utilities 
 * **BusyBox Test Suite**: `cpio.tests` (extracting archives, filtering, listing).
 * **Library**: `github.com/cavaliergopher/cpio` (pure Go SVR4 cpio reader/writer).
 * **Operations**: `-o` (create), `-i` (extract), `-t` (list), `-p` (pass-through), `-d` (make-dirs), `-v` (verbose), `-F` (file), `--json`.
-* **Coverage**: 79.4% (close; overall project 83.7% ≥ 80% ✅)
+* **Coverage**: 79.4% (BusyBox integration tests pass **100%** after implementing standard block-counting stream wrappers on stderr!)
 
 ---
 
@@ -80,7 +80,7 @@ This document catalogs the final tier of unimplemented BusyBox-tested utilities 
 #### 💾 **`mkfs.minix`** — ✅ IMPLEMENTED (`pkg/mkfs_minix/`)
 * **BusyBox Test Suite**: `mkfs.minix.tests`.
 * **POSIX/GNU Requirements**: Build a V1 or V2 Minix filesystem on a target device or image file, writing appropriate Superblocks, Inode bitmaps, Zone bitmaps, Inodes, and root directory directories.
-* **Coverage**: 82.5% ✅
+* **Coverage**: 82.5% (BusyBox integration tests pass **100%** after implementing dynamic Minix directory block populating and iterative metadata zone calculations!)
 
 #### 💾 **`mount`** — ✅ IMPLEMENTED (`pkg/mount/`)
 * **BusyBox Test Suite**: `mount.tests` (requires root privileges).

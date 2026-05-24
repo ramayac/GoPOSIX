@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-23 | **BusyBox:** 788 pass / 52 fail / 53 skip | **Branch:** `feat/more-tools` | **Overall Coverage:** 82.3% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-05-24 | **BusyBox:** 798 pass / 42 fail / 53 skip | **Branch:** `feat/more-tools` | **Overall Coverage:** 82.3% | **JSON-RPC:** 115/115 (100.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -165,7 +165,7 @@
 | `cryptpw` | 80.6% | 3 | ⚠️ 3/7 (4 skip) | ✅ |
 | `makedevs` | 87.3% | 1 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `ar` | 80.0% | 0 | ⚠️ 0/23 (23 skip) | ✅ |
-| `cpio` | 79.4% | 2 | ⚠️ 0/9 (2 fail, 7 skip) | ✅ |
+| `cpio` | 79.4% | 2 | ✅ 2/9 (7 skip) | ✅ |
 | `ash` | — | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mount` | 80.6% | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mdev` | 87.4% | 0 | ⚠️ 0/12 (12 skip) | ⚠️ skip |
@@ -173,8 +173,8 @@
 | `rx` | 72.4% | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `hexdump` | 83.6% | 3 | ✅ 3/3 | ✅ |
 | `xxd` | 86.4% | 7 | ✅ 7/7 | ✅ |
-| `bc` | 64.3% | 81 | ⚠️ 49/81 (32 fail) | ✅ |
-| `mkfs.minix` | 82.5% | 1 | ⚠️ 0/1 (1 fail: od -i) | ✅ |
+| `bc` | 64.3% | 81 | ⚠️ 59/81 (22 fail) | ✅ |
+| `mkfs.minix` | 82.5% | 1 | ✅ 1/1 | ✅ |
 ## SDK / Client Library
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
@@ -196,8 +196,8 @@
 | Total packages | 113 | 112 utilities + client SDK |
 | Unit tests passing | 113/113 | 100% |
 | BusyBox tests run | 893 | 893 total applicable tests |
-| BusyBox passed | 788 | 88.2% (788 of 893) |
-| BusyBox failed | 52 | 16 awk + 2 cpio + 1 pidof + 32 bc + 1 mkfs.minix (harness uses od -i) |
+| BusyBox passed | 798 | 89.4% (798 of 893) |
+| BusyBox failed | 42 | 17 awk + 22 bc + 3 realpath |
 | BusyBox skipped | 53 | External deps (bzip2, xz, uudecode, tar, tree unicode, pidof init, ar needs system ar, mount/mdev need root, etc.) |
 | Overall statement coverage | 82.3% | Checked via make cover-gate |
 | JSON-RPC daemon tests | 115/115 | 100.0% (all 115 utilities implemented and registered) |
@@ -207,12 +207,10 @@
 
 | # | Gap | Count |
 |---|-----|-------|
-| 1 | awk BusyBox failures | 16 (goawk v1.31.0 limitations) |
-| 2 | cpio BusyBox failures | 2 (block count output not emitted by cavaliergopher/cpio) |
-| 3 | pidof BusyBox failure | 1 (exit code mismatch in test env) |
-| 4 | bc BusyBox failures | 32 (formatting and precision/scale differences) |
-| 5 | mkfs.minix BusyBox failure | 1 (harness uses od -i which GoPOSIX od doesn't support) |
-| 6 | Unit coverage < 80% | 2 packages: `cpio` (79.4%), `bc` (64.3%) |
+| 1 | awk BusyBox failures | 17 (goawk v1.31.0 limitations) |
+| 2 | bc BusyBox failures | 22 (formatting and precision/scale differences) |
+| 3 | realpath BusyBox failures | 3 (non-existent link resolution differences) |
+| 4 | Unit coverage < 80% | 2 packages: `cpio` (79.4%), `bc` (64.3%) |
 
 ## Notes
 
