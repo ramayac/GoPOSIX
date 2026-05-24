@@ -102,4 +102,20 @@ func TestMkfsMinixCLI(t *testing.T) {
 			t.Errorf("expected exit 2, got %d", code)
 		}
 	})
+
+	t.Run("invalid namelen", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		code := mkfsMinixRun([]string{"-n", "20", targetFile}, &stdout, &stderr, nil, "")
+		if code != 2 {
+			t.Errorf("expected exit 2, got %d", code)
+		}
+	})
+
+	t.Run("cannot create file", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		code := mkfsMinixRun([]string{tempDir}, &stdout, &stderr, nil, "")
+		if code != 1 {
+			t.Errorf("expected exit 1, got %d", code)
+		}
+	})
 }

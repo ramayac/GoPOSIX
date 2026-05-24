@@ -89,7 +89,7 @@
 | `du` | 83.9% | 6 | ✅ 6/6 | ✅ |
 | `find` | 89.5% | 13 | ✅ 13/13 | ✅ |
 | `xargs` | 94.1% | 12 | ✅ 12/12 | ✅ |
-| `pidof` | 92.6% | 4 | ✅ 3/4 (1 skip) | ✅ |
+| `pidof` | 96.7% | 4 | ✅ 3/4 (1 skip) | ✅ |
 
 ## Tier 5 — Advanced / Agent Features
 
@@ -115,7 +115,7 @@
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
 | `dd` | 88.8% | 6 | ✅ 6/6 | ✅ |
-| `od` | 84.0% | 4 | ✅ 4/4 | ✅ |
+| `od` | 81.7% | 4 | ✅ 4/4 | ✅ |
 | `patch` | 82.1% | 11 | ✅ 11/11 | ⚠️ |
 | `unexpand` | 82.8% | 24 | ✅ 24/24 | ✅ |
 | `comm` | 88.8% | 9 | ✅ 9/9 | ✅ |
@@ -165,7 +165,7 @@
 | `cryptpw` | 80.6% | 3 | ⚠️ 3/7 (4 skip) | ✅ |
 | `makedevs` | 87.3% | 1 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `ar` | 80.0% | 0 | ⚠️ 0/23 (23 skip) | ✅ |
-| `cpio` | 79.4% | 2 | ✅ 2/9 (7 skip) | ✅ |
+| `cpio` | 82.0% | 2 | ✅ 2/9 (7 skip) | ✅ |
 | `ash` | — | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mount` | 80.6% | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mdev` | 87.4% | 0 | ⚠️ 0/12 (12 skip) | ⚠️ skip |
@@ -174,7 +174,7 @@
 | `hexdump` | 83.6% | 3 | ✅ 3/3 | ✅ |
 | `xxd` | 86.4% | 7 | ✅ 7/7 | ✅ |
 | `bc` | 64.3% | 81 | ⚠️ 59/81 (22 fail) | ✅ |
-| `mkfs.minix` | 82.5% | 1 | ✅ 1/1 | ✅ |
+| `mkfs.minix` | 86.4% | 1 | ✅ 1/1 | ✅ |
 ## SDK / Client Library
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
@@ -210,7 +210,7 @@
 | 1 | awk BusyBox failures | 17 (goawk v1.31.0 limitations) |
 | 2 | bc BusyBox failures | 22 (formatting and precision/scale differences) |
 | 3 | realpath BusyBox failures | 3 (non-existent link resolution differences) |
-| 4 | Unit coverage < 80% | 2 packages: `cpio` (79.4%), `bc` (64.3%) |
+| 4 | Unit coverage < 80% | 1 package: `bc` (64.3%) |
 
 ## Notes
 
