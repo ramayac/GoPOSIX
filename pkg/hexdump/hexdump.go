@@ -114,7 +114,7 @@ func Run(r io.Reader, w io.Writer, formatStrings []FormatString, skipBytes, leng
 	buf := make([]byte, blockSize)
 
 	for {
-		n, err := input.Read(buf)
+		n, err := io.ReadFull(input, buf)
 		if n > 0 {
 			currentBlock := buf[:n]
 
@@ -125,7 +125,7 @@ func Run(r io.Reader, w io.Writer, formatStrings []FormatString, skipBytes, leng
 					folded = true
 				}
 				offset += int64(n)
-				if err == io.EOF {
+				if err == io.EOF || err == io.ErrUnexpectedEOF {
 					break
 				}
 				continue
@@ -235,7 +235,7 @@ func Run(r io.Reader, w io.Writer, formatStrings []FormatString, skipBytes, leng
 			offset += int64(n)
 		}
 
-		if err == io.EOF {
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
 			break
 		}
 		if err != nil {

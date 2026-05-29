@@ -776,3 +776,28 @@ Absorbed 31 new utilities (Phase 26 Tiers 1-4: 26 tools; Phase 27 Tier 5: 5 tool
 11a.7 → 12.1). 12_road_to_gold.md: 4/5 Gold gaps resolved, only 12.3 (coverage
 gate) remains. 13_code_audit.md: 4/6 fixed. phases.md status updated. All
 deferred work from 11a now resolved via Phase 12.
+
+## [2026-05-28] implement | Hardened `dc` utility, resolved all remaining BusyBox failures
+
+Resolved all remaining 7 BusyBox test suite failures for the `dc` (desk calculator) utility. Added unit tests reaching 87.8% statement coverage.
+
+**Changes implemented:**
+- **Recursive stack overflow crash resolved**: Fixed `Z` (length) and `S` (store stack) commands to correctly pop values off the main stack, preventing infinite recursion during recursive macro execution (fixes `dc_strings.dc` failure).
+- **Scale-aware modulus and divmod**: Refactored `%` and `~` operators to be scale-aware under BusyBox conventions (`a - (a / b) * b` evaluated under current scale), resolving scale propagation discrepancies in 0k mode (fixes `dc_modulus.dc` and `dc_divmod.dc` failures).
+- **Decimal truncation**: Implemented scale-aware decimal truncation helper `truncateRat` after arithmetic operations (`*`, `/`, `%`, `~`, `^`, `v`) to avoid cascading high-precision fractions and match BusyBox's math engine.
+- **Formatting cleanup**: Aligned mathematical zero formatting under BusyBox conventions to format zero as bare `"0"` regardless of global/number scale, except when pushed from explicit non-zero literals (fixes zero-value precision in `dc_power.dc` and `dc_multiply.dc`).
+- **Extended registers (`-x` / `extendedReg`)**: Implemented full support for multi-character extended register names (e.g. `s xotj`, `l yotp`). Added identifier character matching (`isIdentChar`) and register parser (`parseRegName`) supporting space and command-terminated extended register names (fixes `dcx_vars.dc` failure).
+- **Unit tests**: Added comprehensive unit tests in `pkg/dc/dc_test.go` covering extended registers and runtime flags, with package coverage reaching 87.8%.
+- **Verification**: Verified 100% compliance rate on the BusyBox test suite (`runtest dc`) with all 36/36 tests passing, and 100% passing rate on GoPOSIX unit tests.
+
+## [2026-05-28] implement | Resolved `rx` XMODEM flakiness and buffered `hexdump` input
+
+Traced the intermittent `rx` BusyBox test failure to GoPOSIX's `hexdump` utility prematurely flushing partial pipe reads instead of buffering blocks. Extended `rx` unit tests and coverage to 86.2%.
+
+**Changes implemented:**
+- **Hexdump input buffering**: Replaced standard `input.Read()` in `pkg/hexdump/hexdump.go` with `io.ReadFull()`. Programmed `hexdump` to accumulate complete blocks up to the defined `blockSize` (e.g. 16 bytes for canonical `-C` mode) before printing, matching POSIX/GNU conventions and preventing lines from being split on partial reads.
+- **Graceful EOF handling**: Configured `hexdump` to safely handle `io.ErrUnexpectedEOF` to format and print final partial blocks before gracefully breaking the loop.
+- **XMODEM test hardening**: Expanded `pkg/rx/rx_test.go` with comprehensive test coverage including duplicate blocks, invalid inverse block numbers, unexpected block numbers, loops cancellation, write errors, and handshake failures. Raised statement coverage from 72.4% to 86.2%.
+- **Verification**: Verified 100% stable pass rate on `runtest rx` (20/20 loop iterations pass).
+
+

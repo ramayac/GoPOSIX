@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-24 | **Utilities:** 115 | **Coverage:** 82.4% | **BusyBox:** 840/54/25 (91.4%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-05-28 | **Utilities:** 115 | **Coverage:** 82.4% | **BusyBox:** 845/49/25 (92.0%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -13,24 +13,6 @@ This document serves as the live registry of remaining work, active plans, and k
 ## 🛠️ Open Issues by Tool
 
 ### 🔴 Highest Priority — Active Development
-
-#### `dc` — 7 failures (29/36 pass, 80.6%) · coverage 90.2%
-
-**Context**: `FEATURE_DC_BIG` enabled. 22 previously-skipped tests now pass from prior session fixes (conditional direction, bracket parsing, `x` command, exit code, `-x` flag, per-number scale tracking). 7 failures remain:
-
-| # | Test | Category | Difficulty | Symptoms |
-|---|------|----------|------------|----------|
-| 1 | `dc_strings.dc` | String/macro | 🟡 Medium | Stack overflow — recursive macro `[xz0<x]dsxx` infinite-recurses when leftover stack strings contain `[` that triggers nested string pushes |
-| 2 | `dc_modulus.dc` | Scale propagation | 🔴 Hard | `%` operator uses integer truncation instead of scale-aware division; in 0k mode produces wrong values + trailing-zero formatting |
-| 3 | `dc_divmod.dc` | Scale propagation | 🟡 Medium | `~` divmod integer formatting in 0k mode (`.000…` instead of bare ints); uses same broken `%` as modulus |
-| 4 | `dc_power.dc` | Formatting | 🟢 Easy | `0` formatted as `.00000000000000000000` and `-0` as `-.000…` instead of bare `0`; also some last-digit precision diffs |
-| 5 | `dc_multiply.dc` | Formatting | 🟢 Easy | Zero formatting (same root cause as power); 1 last-digit precision diff |
-| 6 | `dc_divide.dc` | Scale propagation | 🟢 Easy | 1 last-digit precision diff (line 32 of 32) |
-| 7 | `dcx_vars.dc` | Extended mode | 🟡 Medium | Multi-character register names (`s xotj`, `l yotp`) not supported — only single-rune registers implemented |
-
-**Recommended attack order**: #1 (crash fix) → #4+#5 (formatRat zero/integer cleanup — fixes most diffs in one change) → #2+#3 (scale-aware modulus/divmod) → #7 (string registers) → #6 (last digit quirks)
-
----
 
 #### `bc` — 22 failures (59/81 pass, 72.8%) · coverage 64.3%
 
@@ -62,13 +44,6 @@ This document serves as the live registry of remaining work, active plans, and k
 | 6 | Skipped | 2 | 🟡 Medium | Hardlink detection/dedup + mode preservation |
 | 7 | Skipped | 1 | 🟡 Medium | Pax-encoded UTF8 filenames and symlinks (extended headers) |
 | 8 | Skipped | 1 | 🟢 Easy | Graceful rejection of empty `.tar.gz` files |
-
----
-
-#### `rx` — 1 flaky test · coverage 72.4%
-
-- [ ] **XMODEM timing race** — intermittent pass/fail in `rx.tests`. Likely ACK/NAK handshake timeout or race condition.
-- *Estimate*: 2-4 hours investigation.
 
 ---
 

@@ -138,3 +138,142 @@ func TestRxCRCTable(t *testing.T) {
 		t.Errorf("CRC of '123456789': got %04X, want 29B1", crc)
 	}
 }
+
+func TestRxCoverageExt(t *testing.T) {
+	t.Run("duplicate block (expected-1)", func(t *testing.T) {
+		data := make([]byte, blockSize)
+		copy(data, "hello")
+		for i := 5; i < blockSize; i++ {
+			data[i] = 0x1A
+		}
+		packet := buildXMODEMPacket(data, 1)
+
+		// Send block 1, then duplicate block 1, then EOT
+		var stream []byte
+		stream = append(stream, packet...)
+		stream = append(stream, packet...)
+		stream = append(stream, EOT)
+
+		var stdout strings.Builder
+		outFile := t.TempDir() + "/rx_dup.out"
+		n, err := receiveFile(strings.NewReader(string(stream)), &stdout, outFile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if n != 5 {
+			t.Errorf("bytes written: got %d, want 5", n)
+		}
+	})
+
+	t.Run("invalid inverse block number", func(t *testing.T) {
+		data1 := make([]byte, blockSize)
+		copy(data1, "first")
+		for i := 5; i < blockSize; i++ {
+			data1[i] = 0x1A
+		}
+		packet1 := buildXMODEMPacket(data1, 1)
+
+		data2 := make([]byte, blockSize)
+		// SOH, block 2, bad inverse (not 253)
+		packet2 := []byte{SOH, 2, 0xFF}
+		packet2 = append(packet2, data2...)
+		crcBytes := make([]byte, 2)
+		binary.BigEndian.PutUint16(crcBytes, crc16(data2))
+		packet2 = append(packet2, crcBytes...)
+
+		var stream []byte
+		stream = append(stream, packet1...)
+		stream = append(stream, packet2...)
+
+		var stdout strings.Builder
+		outFile := t.TempDir() + "/rx_bad_inv.out"
+		n, err := receiveFile(strings.NewReader(string(stream)), &stdout, outFile)
+		if err != nil {
+			t.Fatalf("expected graceful completion, got error: %v", err)
+		}
+		if n != 5 {
+			t.Errorf("expected only first block of 5 bytes to be written, got %d", n)
+		}
+	})
+
+	t.Run("unexpected block number", func(t *testing.T) {
+		data1 := make([]byte, blockSize)
+		copy(data1, "first")
+		for i := 5; i < blockSize; i++ {
+			data1[i] = 0x1A
+		}
+		packet1 := buildXMODEMPacket(data1, 1)
+
+		data3 := make([]byte, blockSize)
+		packet3 := buildXMODEMPacket(data3, 3) // expecting 2, got 3
+
+		var stream []byte
+		stream = append(stream, packet1...)
+		stream = append(stream, packet3...)
+
+		var stdout strings.Builder
+		outFile := t.TempDir() + "/rx_unexpected.out"
+		n, err := receiveFile(strings.NewReader(string(stream)), &stdout, outFile)
+		if err != nil {
+			t.Fatalf("expected graceful completion, got error: %v", err)
+		}
+		if n != 5 {
+			t.Errorf("expected only first block of 5 bytes to be written, got %d", n)
+		}
+	})
+
+	t.Run("cancel command in loop", func(t *testing.T) {
+		data := make([]byte, blockSize)
+		packet1 := buildXMODEMPacket(data, 1)
+
+		var stream []byte
+		stream = append(stream, packet1...)
+		stream = append(stream, CAN)
+
+		var stdout strings.Builder
+		outFile := t.TempDir() + "/rx_cancel_loop.out"
+		_, err := receiveFile(strings.NewReader(string(stream)), &stdout, outFile)
+		if err == nil || !strings.Contains(err.Error(), "cancelled") {
+			t.Errorf("expected cancel error, got %v", err)
+		}
+	})
+
+	t.Run("incomplete read in loop", func(t *testing.T) {
+		data := make([]byte, blockSize)
+		packet1 := buildXMODEMPacket(data, 1)
+
+		// Send block 1, then incomplete block 2 (just SOH)
+		var stream []byte
+		stream = append(stream, packet1...)
+		stream = append(stream, SOH, 2) // truncated
+
+		var stdout strings.Builder
+		outFile := t.TempDir() + "/rx_inc.out"
+		_, err := receiveFile(strings.NewReader(string(stream)), &stdout, outFile)
+		if err != nil {
+			t.Fatal("expected graceful exit to done on incomplete read")
+		}
+	})
+
+	t.Run("write file error", func(t *testing.T) {
+		var stdout strings.Builder
+		// Write to non-existent folder
+		_, err := receiveFile(strings.NewReader(string([]byte{EOT})), &stdout, "/nonexistent/rx.out")
+		if err == nil {
+			t.Fatal("expected write file error")
+		}
+	})
+
+	t.Run("handshake invalid first block", func(t *testing.T) {
+		// SOH followed by bad block number (not 1)
+		packet := []byte{SOH, 2, 0xFD}
+		packet = append(packet, make([]byte, blockSize+2)...)
+
+		var stdout strings.Builder
+		outFile := t.TempDir() + "/rx_handshake_err.out"
+		_, err := receiveFile(strings.NewReader(string(packet)), &stdout, outFile)
+		if err == nil {
+			t.Fatal("expected error for invalid first block in handshake")
+		}
+	})
+}
