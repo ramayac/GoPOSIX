@@ -76,6 +76,13 @@ const (
 	TokKeywordContinue
 	TokKeywordHalt
 	TokKeywordPrint
+	TokPlusAssign  // +=
+	TokMinusAssign // -=
+	TokMulAssign   // *=
+	TokDivAssign   // /=
+	TokPowAssign   // ^=
+	TokModAssign   // %=
+	TokDot         // . (alias for 'last')
 )
 
 type Token struct {
@@ -171,6 +178,10 @@ func (l *Lexer) NextToken() Token {
 		// Division slash (re-evaluated after skipping comments)
 		if ch == '/' {
 			l.next()
+			if l.peek() == '=' {
+				l.next()
+				return Token{Type: TokDivAssign, Val: "/="}
+			}
 			return Token{Type: TokDiv, Val: "/"}
 		}
 
@@ -206,6 +217,10 @@ func (l *Lexer) NextToken() Token {
 				l.next()
 				return Token{Type: TokInc, Val: "++"}
 			}
+			if l.peek() == '=' {
+				l.next()
+				return Token{Type: TokPlusAssign, Val: "+="}
+			}
 			return Token{Type: TokPlus, Val: "+"}
 		case '-':
 			l.next()
@@ -213,16 +228,42 @@ func (l *Lexer) NextToken() Token {
 				l.next()
 				return Token{Type: TokDec, Val: "--"}
 			}
+			if l.peek() == '=' {
+				l.next()
+				return Token{Type: TokMinusAssign, Val: "-="}
+			}
 			return Token{Type: TokMinus, Val: "-"}
 		case '*':
 			l.next()
+			if l.peek() == '=' {
+				l.next()
+				return Token{Type: TokMulAssign, Val: "*="}
+			}
 			return Token{Type: TokMul, Val: "*"}
 		case '%':
 			l.next()
+			if l.peek() == '=' {
+				l.next()
+				return Token{Type: TokModAssign, Val: "%="}
+			}
 			return Token{Type: TokMod, Val: "%"}
 		case '^':
 			l.next()
+			if l.peek() == '=' {
+				l.next()
+				return Token{Type: TokPowAssign, Val: "^="}
+			}
 			return Token{Type: TokPower, Val: "^"}
+		case '.':
+			// If '.' is followed by a digit, it's a number literal like .5
+			// Otherwise it's the 'last' special variable
+			nextPos := l.pos + 1
+			if nextPos < len(l.input) && isDigit(l.input[nextPos]) {
+				// Fall through to number parsing below — do nothing in the switch
+			} else {
+				l.next()
+				return Token{Type: TokDot, Val: "."}
+			}
 		case '=':
 			l.next()
 			if l.peek() == '=' {
@@ -835,13 +876,38 @@ func (p *Parser) parseAssignment() (Expr, error) {
 	if err != nil {
 		return nil, err
 	}
-	if p.peek().Type == TokAssign {
-		p.next() // skip '='
+	tok := p.peek()
+	switch tok.Type {
+	case TokAssign:
+		p.next()
 		rhs, err := p.parseAssignment()
 		if err != nil {
 			return nil, err
 		}
 		return &AssignExpr{Lhs: expr, Rhs: rhs}, nil
+	case TokPlusAssign, TokMinusAssign, TokMulAssign, TokDivAssign, TokPowAssign, TokModAssign:
+		p.next()
+		rhs, err := p.parseAssignment()
+		if err != nil {
+			return nil, err
+		}
+		// Desugar: x op= y  →  x = x op y
+		var binOp TokenType
+		switch tok.Type {
+		case TokPlusAssign:
+			binOp = TokPlus
+		case TokMinusAssign:
+			binOp = TokMinus
+		case TokMulAssign:
+			binOp = TokMul
+		case TokDivAssign:
+			binOp = TokDiv
+		case TokPowAssign:
+			binOp = TokPower
+		case TokModAssign:
+			binOp = TokMod
+		}
+		return &AssignExpr{Lhs: expr, Rhs: &BinaryExpr{Op: binOp, Lhs: expr, Rhs: rhs}}, nil
 	}
 	return expr, nil
 }
@@ -1034,6 +1100,16 @@ func (p *Parser) parsePrimary() (Expr, error) {
 		}
 		return expr, nil
 
+	case TokDot:
+		p.next()
+		// '.' is an alias for the 'last' special variable
+		expr := Expr(&VarExpr{Name: "last"})
+		if p.peek().Type == TokInc || p.peek().Type == TokDec {
+			postTok := p.next()
+			expr = &UnaryExpr{Op: postTok.Type, Expr: expr, PostIncDec: true}
+		}
+		return expr, nil
+
 	default:
 		return nil, fmt.Errorf("unexpected token %v", tok)
 	}
@@ -1169,6 +1245,7 @@ type Interpreter struct {
 	Stdin       io.Reader
 	StdinReader *bufio.Reader
 	Halted      bool
+	Last        Val // 'last' / '.' special variable
 }
 
 func NewInterpreter(stdout io.Writer, stdin io.Reader, mathLib bool) *Interpreter {
@@ -1191,6 +1268,7 @@ func NewInterpreter(stdout io.Writer, stdin io.Reader, mathLib bool) *Interprete
 		Stdout:      stdout,
 		Stdin:       stdin,
 		StdinReader: stdinReader,
+		Last:        newValNum(big.NewRat(0, 1), 0),
 	}
 }
 
@@ -1233,6 +1311,7 @@ func (ip *Interpreter) execStmt(stmt Stmt) (ExecResult, error) {
 			return ExecResult{Flow: FlowNormal}, err
 		}
 		if val.Type == ValNum && isTopLevelPrintable(s.Expr) {
+			ip.Last = val // track 'last' printed value
 			printWrapped(ip.Stdout, formatRat(val.Rat, ip.Obase, val.Scale))
 			fmt.Fprintln(ip.Stdout)
 		} else if val.Type == ValStr && isTopLevelPrintable(s.Expr) {
@@ -1393,6 +1472,8 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			return newValNum(big.NewRat(int64(ip.Ibase), 1), 0), nil
 		case "obase":
 			return newValNum(big.NewRat(int64(ip.Obase), 1), 0), nil
+		case "last":
+			return ip.Last, nil
 		default:
 			return ip.Locals.Get(e.Name), nil
 		}
@@ -1433,6 +1514,8 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 				}
 			case "obase":
 				ip.Obase = int(ratToInt64(rhsVal.Rat))
+			case "last":
+				ip.Last = rhsVal
 			default:
 				ip.Locals.Set(lhs.Name, rhsVal)
 			}
@@ -1490,6 +1573,9 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 				resScale = limit
 			}
 			res = truncateRat(res, resScale)
+			if res.Sign() == 0 {
+				resScale = 0
+			}
 		case TokDiv:
 			if rhsVal.Rat.Sign() == 0 {
 				return newValVoid(), fmt.Errorf("division by zero")
@@ -1497,20 +1583,26 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			res.Quo(lhsVal.Rat, rhsVal.Rat)
 			resScale = ip.Scale
 			res = truncateRat(res, resScale)
+			if res.Sign() == 0 {
+				resScale = 0
+			}
 		case TokMod:
 			if rhsVal.Rat.Sign() == 0 {
 				return newValVoid(), fmt.Errorf("modulo by zero")
 			}
 			div := big.NewRat(0, 1).Quo(lhsVal.Rat, rhsVal.Rat)
-			divInt := big.NewInt(0).Div(div.Num(), div.Denom())
-			term := big.NewRat(0, 1).Mul(rhsVal.Rat, big.NewRat(0, 1).SetInt(divInt))
+			divTruncated := truncateRat(div, ip.Scale)
+			term := big.NewRat(0, 1).Mul(rhsVal.Rat, divTruncated)
 			res.Sub(lhsVal.Rat, term)
 
-			resScale = rhsVal.Scale + ip.Scale
+			resScale = ip.Scale + rhsVal.Scale
 			if lhsVal.Scale > resScale {
 				resScale = lhsVal.Scale
 			}
 			res = truncateRat(res, resScale)
+			if res.Sign() == 0 {
+				resScale = 0
+			}
 		case TokPower:
 			exponent := ratToInt64(rhsVal.Rat)
 			res = ratPower(lhsVal.Rat, exponent)
@@ -1530,6 +1622,9 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 				}
 			}
 			res = truncateRat(res, resScale)
+			if res.Sign() == 0 {
+				resScale = 0
+			}
 		case TokEq, TokNe, TokLt, TokLe, TokGt, TokGe, TokAnd, TokOr:
 			resScale = 0
 			switch e.Op {
@@ -1590,6 +1685,40 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 				arrayIdx = idxString(idxVal.Rat)
 			default:
 				return newValVoid(), fmt.Errorf("invalid increment target")
+			}
+
+			// Handle special variables for ++/--
+			switch varName {
+			case "scale", "ibase", "obase", "last":
+				curr, _ := ip.eval(&VarExpr{Name: varName})
+				next := big.NewRat(0, 1)
+				if e.Op == TokInc {
+					next.Add(curr.Rat, big.NewRat(1, 1))
+				} else {
+					next.Sub(curr.Rat, big.NewRat(1, 1))
+				}
+				nextVal := newValNum(next, 0)
+				switch varName {
+				case "scale":
+					ip.Scale = int(ratToInt64(next))
+				case "ibase":
+					v := int(ratToInt64(next))
+					if v < 2 {
+						v = 2
+					}
+					if v > 36 {
+						v = 36
+					}
+					ip.Ibase = v
+				case "obase":
+					ip.Obase = int(ratToInt64(next))
+				case "last":
+					ip.Last = nextVal
+				}
+				if e.PostIncDec {
+					return curr, nil
+				}
+				return nextVal, nil
 			}
 
 			var curr Val
@@ -1839,7 +1968,8 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 }
 
 func ratToInt64(r *big.Rat) int64 {
-	intPart := big.NewInt(0).Div(r.Num(), r.Denom())
+	// Quo truncates toward zero, matching bc's integer truncation semantics
+	intPart := big.NewInt(0).Quo(r.Num(), r.Denom())
 	return intPart.Int64()
 }
 
@@ -1849,6 +1979,10 @@ func ratPower(r *big.Rat, exponent int64) *big.Rat {
 	}
 	neg := exponent < 0
 	if neg {
+		// 0^(-n) is undefined, return 0 (matches BusyBox bc behavior)
+		if r.Sign() == 0 {
+			return big.NewRat(0, 1)
+		}
 		exponent = -exponent
 	}
 
@@ -1953,11 +2087,7 @@ func printWrapped(w io.Writer, s string) {
 			fmt.Fprint(w, "\n")
 			continue
 		}
-		left := 0
-		for k := i; k < len(s) && s[k] != '\n'; k++ {
-			left++
-		}
-		if col == 68 && left > 1 {
+		if col == 68 {
 			fmt.Fprint(w, "\\\n")
 			col = 0
 		}
@@ -1981,6 +2111,12 @@ func formatRat(r *big.Rat, obase int, scale int) string {
 	rem := big.NewInt(0).Mod(num, denom)
 	fracPart := big.NewRat(0, 1).SetFrac(rem, denom)
 
+	printScale := scale
+	if obase != 10 && scale > 0 {
+		factor := math.Log(10) / math.Log(float64(obase))
+		printScale = int(math.Ceil(float64(scale) * factor))
+	}
+
 	var intDigits []string
 	temp := big.NewInt(0).Set(intPart)
 	base := big.NewInt(int64(obase))
@@ -1997,7 +2133,7 @@ func formatRat(r *big.Rat, obase int, scale int) string {
 		intDigits[i], intDigits[j] = intDigits[j], intDigits[i]
 	}
 	var intStr string
-	if intPart.Cmp(zero) == 0 && scale > 0 {
+	if intPart.Cmp(zero) == 0 && printScale > 0 {
 		intStr = ""
 	} else if obase > 16 {
 		var spaced []string
@@ -2009,7 +2145,7 @@ func formatRat(r *big.Rat, obase int, scale int) string {
 		intStr = strings.Join(intDigits, "")
 	}
 
-	if scale <= 0 {
+	if printScale <= 0 {
 		if neg {
 			return "-" + intStr
 		}
@@ -2019,7 +2155,7 @@ func formatRat(r *big.Rat, obase int, scale int) string {
 	var fracDigits []string
 	fracTemp := big.NewRat(0, 1).Set(fracPart)
 	obaseRat := big.NewRat(int64(obase), 1)
-	for s := 0; s < scale; s++ {
+	for s := 0; s < printScale; s++ {
 		fracTemp.Mul(fracTemp, obaseRat)
 		digitInt := big.NewInt(0).Div(fracTemp.Num(), fracTemp.Denom())
 		fracDigits = append(fracDigits, formatDigit(digitInt.Int64(), obase))
@@ -2160,7 +2296,8 @@ func arrayLength(arr map[string]Val) int {
 }
 
 func idxString(r *big.Rat) string {
-	idxInt := big.NewInt(0).Div(r.Num(), r.Denom())
+	// Quo truncates toward zero for POSIX bc array index truncation
+	idxInt := big.NewInt(0).Quo(r.Num(), r.Denom())
 	return idxInt.String()
 }
 
@@ -2178,7 +2315,8 @@ func truncateRat(r *big.Rat, scale int) *big.Rat {
 
 	num := temp.Num()
 	denom := temp.Denom()
-	intPart := big.NewInt(0).Div(num, denom)
+	// Use Quo (truncation toward zero) not Div (floor toward -infinity)
+	intPart := big.NewInt(0).Quo(num, denom)
 
 	res := big.NewRat(0, 1).SetFrac(intPart, factor)
 	return res

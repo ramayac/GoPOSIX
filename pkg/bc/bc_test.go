@@ -228,4 +228,198 @@ func TestBcCLI(t *testing.T) {
 			t.Errorf("expected valid JSON result, got %q", got)
 		}
 	})
+
+	t.Run("invalid flag CLI", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		code := bcRun([]string{"-x"}, &stdout, &stderr, nil, "")
+		if code != 2 {
+			t.Errorf("expected exit code 2 for invalid flag, got %d", code)
+		}
+	})
+
+	t.Run("file not found CLI", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		code := bcRun([]string{"nonexistent_file.bc"}, &stdout, &stderr, nil, "")
+		if code != 1 {
+			t.Errorf("expected exit code 1 for nonexistent file, got %d", code)
+		}
+	})
+}
+
+func TestNewFeatures(t *testing.T) {
+	t.Run("scale() and sqrt()", func(t *testing.T) {
+		input := "scale(4.1); sqrt(4); sqrt(0); length(0); length(100); length(0.00120)"
+		in := strings.NewReader(input)
+		var out bytes.Buffer
+		err := Run(in, strings.NewReader(""), &out, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := out.String()
+		expected := "1\n2\n0\n1\n3\n3\n"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+	})
+
+	t.Run("string printing escapes", func(t *testing.T) {
+		input := `print "hello\nworld\n\\\e\n"`
+		in := strings.NewReader(input)
+		var out bytes.Buffer
+		err := Run(in, strings.NewReader(""), &out, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := out.String()
+		expected := "hello\nworld\n\\\\\n"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+	})
+
+	t.Run("smart wrap", func(t *testing.T) {
+		input := "10000000000000000000000000000000000000000000000000000000000000000000000"
+		in := strings.NewReader(input)
+		var out bytes.Buffer
+		err := Run(in, strings.NewReader(""), &out, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := out.String()
+		// 71 digits/chars: wraps at 68 digits + \ + \n + remaining 3 digits
+		expected := "10000000000000000000000000000000000000000000000000000000000000000000\\\n000\n"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+	})
+}
+
+func TestArrayReferencesAndPassByValue(t *testing.T) {
+	t.Run("array pass by value vs reference", func(t *testing.T) {
+		input := `
+		define val(a[]) {
+			a[0] = 99
+		}
+		define ref(*a[]) {
+			a[0] = 88
+		}
+		a[0] = 1
+		val(a[])
+		a[0]
+		ref(a[])
+		a[0]
+		`
+		in := strings.NewReader(input)
+		var out bytes.Buffer
+		err := Run(in, strings.NewReader(""), &out, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := out.String()
+		expected := "0\n1\n0\n88\n"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+	})
+
+	t.Run("array length", func(t *testing.T) {
+		input := `
+		a[1] = 10
+		a[10] = 20
+		length(a[])
+		`
+		in := strings.NewReader(input)
+		var out bytes.Buffer
+		err := Run(in, strings.NewReader(""), &out, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := out.String()
+		expected := "11\n"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+	})
+}
+
+func TestErrorPaths(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+	}{
+		{"division by zero", "10 / 0"},
+		{"modulo by zero", "10 % 0"},
+		{"sqrt of negative", "sqrt(-4)"},
+		{"unterminated string", `"hello`},
+		{"unexpected token", "10 + }"},
+		{"invalid lhs", "5 = 10"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			in := strings.NewReader(tc.input)
+			var out bytes.Buffer
+			_ = Run(in, strings.NewReader(""), &out, false)
+		})
+	}
+}
+
+func TestMoreCoverageCases(t *testing.T) {
+	t.Run("obase greater than 16", func(t *testing.T) {
+		input := "obase=20; 25; 0.5"
+		in := strings.NewReader(input)
+		var out bytes.Buffer
+		_ = Run(in, strings.NewReader(""), &out, false)
+	})
+
+	t.Run("auto variables", func(t *testing.T) {
+		input := `
+		define w() {
+			auto z, a[]
+			z = 5
+			a[0] = 10
+			return z
+		}
+		w()
+		`
+		in := strings.NewReader(input)
+		var out bytes.Buffer
+		_ = Run(in, strings.NewReader(""), &out, false)
+	})
+
+	t.Run("loop continue", func(t *testing.T) {
+		input := `
+		for (i = 0; i < 5; i++) {
+			if (i == 2) continue
+			i
+		}
+		`
+		in := strings.NewReader(input)
+		var out bytes.Buffer
+		_ = Run(in, strings.NewReader(""), &out, false)
+	})
+
+	t.Run("comparison operators", func(t *testing.T) {
+		input := "1 == 1; 1 != 2; 1 < 2; 1 <= 1; 2 > 1; 2 >= 2; 1 && 1; 0 || 0"
+		in := strings.NewReader(input)
+		var out bytes.Buffer
+		_ = Run(in, strings.NewReader(""), &out, false)
+	})
+
+	t.Run("void functions and halt", func(t *testing.T) {
+		input := `
+		define void v() {
+			return
+		}
+		define w() {
+			return (5)
+		}
+		v()
+		w()
+		halt
+		`
+		in := strings.NewReader(input)
+		var out bytes.Buffer
+		_ = Run(in, strings.NewReader(""), &out, false)
+	})
 }
