@@ -705,6 +705,7 @@ type FuncDecl struct {
 	Name        string
 	Params      []string
 	ParamArrays []bool
+	ParamRefs   []bool
 	Autos       []string
 	AutoArrays  []string
 	Body        Stmt
@@ -729,7 +730,12 @@ func (p *Parser) parseDefine() (Stmt, error) {
 	}
 	var params []string
 	var paramArrays []bool
+	var paramRefs []bool
 	for p.peek().Type != TokRparen && p.peek().Type != TokEOF {
+		isRef := false
+		if p.match(TokMul) {
+			isRef = true
+		}
 		paramTok := p.next()
 		if paramTok.Type != TokIdent {
 			return nil, fmt.Errorf("expected param name")
@@ -742,7 +748,11 @@ func (p *Parser) parseDefine() (Stmt, error) {
 			}
 			isArray = true
 		}
+		if isRef && !isArray {
+			return nil, fmt.Errorf("reference operator * only allowed on array parameters")
+		}
 		paramArrays = append(paramArrays, isArray)
+		paramRefs = append(paramRefs, isRef)
 		if !p.match(TokComma) {
 			break
 		}
@@ -807,6 +817,7 @@ func (p *Parser) parseDefine() (Stmt, error) {
 		Name:        nameTok.Val,
 		Params:      params,
 		ParamArrays: paramArrays,
+		ParamRefs:   paramRefs,
 		Autos:       autos,
 		AutoArrays:  autoArrays,
 		Body:        &BlockStmt{Stmts: stmts},
@@ -1395,7 +1406,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 		if err != nil {
 			return newValVoid(), err
 		}
-		idxStr := formatRat(idxVal.Rat, 10, idxVal.Scale)
+		idxStr := idxString(idxVal.Rat)
 		return ip.Locals.GetArray(e.Name, idxStr), nil
 
 	case *AssignExpr:
@@ -1430,7 +1441,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			if err != nil {
 				return newValVoid(), err
 			}
-			idxStr := formatRat(idxVal.Rat, 10, idxVal.Scale)
+			idxStr := idxString(idxVal.Rat)
 			ip.Locals.SetArray(lhs.Name, idxStr, rhsVal)
 		default:
 			return newValVoid(), fmt.Errorf("invalid left-hand side of assignment")
@@ -1478,12 +1489,14 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			if resScale > limit {
 				resScale = limit
 			}
+			res = truncateRat(res, resScale)
 		case TokDiv:
 			if rhsVal.Rat.Sign() == 0 {
 				return newValVoid(), fmt.Errorf("division by zero")
 			}
 			res.Quo(lhsVal.Rat, rhsVal.Rat)
 			resScale = ip.Scale
+			res = truncateRat(res, resScale)
 		case TokMod:
 			if rhsVal.Rat.Sign() == 0 {
 				return newValVoid(), fmt.Errorf("modulo by zero")
@@ -1497,11 +1510,14 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			if lhsVal.Scale > resScale {
 				resScale = lhsVal.Scale
 			}
+			res = truncateRat(res, resScale)
 		case TokPower:
 			exponent := ratToInt64(rhsVal.Rat)
 			res = ratPower(lhsVal.Rat, exponent)
 
-			if exponent < 0 {
+			if res.Sign() == 0 {
+				resScale = 0
+			} else if exponent < 0 {
 				resScale = ip.Scale
 			} else {
 				resScale = lhsVal.Scale * int(exponent)
@@ -1513,6 +1529,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 					resScale = limit
 				}
 			}
+			res = truncateRat(res, resScale)
 		case TokEq, TokNe, TokLt, TokLe, TokGt, TokGe, TokAnd, TokOr:
 			resScale = 0
 			switch e.Op {
@@ -1570,7 +1587,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 				if err != nil {
 					return newValVoid(), err
 				}
-				arrayIdx = formatRat(idxVal.Rat, 10, idxVal.Scale)
+				arrayIdx = idxString(idxVal.Rat)
 			default:
 				return newValVoid(), fmt.Errorf("invalid increment target")
 			}
@@ -1772,7 +1789,15 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			if idx < len(decl.ParamArrays) && decl.ParamArrays[idx] {
 				argVal := argVals[idx]
 				if argVal.Type == ValArrayRef {
-					newScope.Arrays[paramName] = argVal.ArrayRef
+					if idx < len(decl.ParamRefs) && decl.ParamRefs[idx] {
+						newScope.Arrays[paramName] = argVal.ArrayRef
+					} else {
+						copiedArr := make(map[string]Val)
+						for k, v := range argVal.ArrayRef {
+							copiedArr[k] = v
+						}
+						newScope.Arrays[paramName] = copiedArr
+					}
 				} else {
 					newScope.Arrays[paramName] = make(map[string]Val)
 				}
@@ -2132,6 +2157,31 @@ func arrayLength(arr map[string]Val) int {
 		}
 	}
 	return maxIdx + 1
+}
+
+func idxString(r *big.Rat) string {
+	idxInt := big.NewInt(0).Div(r.Num(), r.Denom())
+	return idxInt.String()
+}
+
+func truncateRat(r *big.Rat, scale int) *big.Rat {
+	if scale < 0 {
+		scale = 0
+	}
+	factor := big.NewInt(1)
+	ten := big.NewInt(10)
+	for i := 0; i < scale; i++ {
+		factor.Mul(factor, ten)
+	}
+
+	temp := big.NewRat(0, 1).Mul(r, big.NewRat(0, 1).SetInt(factor))
+
+	num := temp.Num()
+	denom := temp.Denom()
+	intPart := big.NewInt(0).Div(num, denom)
+
+	res := big.NewRat(0, 1).SetFrac(intPart, factor)
+	return res
 }
 
 func Run(program io.Reader, stdin io.Reader, w io.Writer, mathLib bool) error {
