@@ -22,16 +22,17 @@ var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Long: "expression", Short: "e", Type: common.FlagValue},
 		{Long: "file", Short: "f", Type: common.FlagValue},
-		{Long: "x", Short: "x", Type: common.FlagValue}, // extended register mode (same as -e in GoPOSIX)
+		{Long: "x", Short: "x", Type: common.FlagBool}, // extended register mode
 		{Long: "json", Type: common.FlagBool},
 	},
 }
 
 // dcState holds the execution state of dc.
 type dcState struct {
-	stack []dcValue          // main stack
-	regs  map[rune][]dcValue // registers (each holds a stack)
-	scale int                // current scale
+	stack       []dcValue            // main stack
+	regs        map[string][]dcValue // registers (each holds a stack)
+	extendedReg bool                 // extended register mode enabled
+	scale       int                  // current scale
 }
 
 // dcValue is either a *big.Rat (number) or string.
@@ -39,7 +40,8 @@ type dcValue struct {
 	isStr      bool
 	str        string
 	rat        *big.Rat
-	fracDigits int // original number of fractional digits (for Z command)
+	fracDigits int  // original number of fractional digits (for Z command)
+	negZero    bool // value is mathematically zero but should be printed as negative
 }
 
 func newNumStr(s string) (*big.Rat, int, error) {
@@ -126,32 +128,32 @@ func popVal(state *dcState) (dcValue, bool) {
 	return v, true
 }
 
-// popNumVal pops the top value as a number, also returning its fracDigits.
-func popNumValFD(state *dcState) (*big.Rat, int, bool) {
+// popNumValFD pops the top value as a number, also returning it as a dcValue.
+func popNumValFD(state *dcState) (dcValue, bool) {
 	v, ok := popVal(state)
 	if !ok {
-		return nil, 0, false
+		return dcValue{}, false
 	}
 	if v.isStr {
-		return new(big.Rat), 0, true
+		return dcValue{rat: new(big.Rat)}, true
 	}
-	return v.rat, v.fracDigits, true
+	return v, true
 }
 
 func popNumVal(state *dcState) (*big.Rat, bool) {
-	r, _, ok := popNumValFD(state)
-	return r, ok
+	v, ok := popNumValFD(state)
+	return v.rat, ok
 }
 
-// popTwoNumFD pops the top two values as numbers, also returning their fracDigits.
-func popTwoNumFD(state *dcState) (a, b *big.Rat, aFrac, bFrac int, ok bool) {
-	b, bFrac, ok = popNumValFD(state)
+// popTwoNumFD pops the top two values as dcValue numbers.
+func popTwoNumFD(state *dcState) (a, b dcValue, ok bool) {
+	b, ok = popNumValFD(state)
 	if !ok {
 		return
 	}
-	a, aFrac, ok = popNumValFD(state)
+	a, ok = popNumValFD(state)
 	if !ok {
-		state.stack = append(state.stack, dcValue{rat: b, fracDigits: bFrac})
+		state.stack = append(state.stack, b)
 		return
 	}
 	return
@@ -193,17 +195,22 @@ func ratToInt64(r *big.Rat) int64 {
 	return q.Int64()
 }
 
-func formatRat(r *big.Rat, scale int) string {
+func formatRat(r *big.Rat, scale int, negZero bool) string {
 	if r.Sign() == 0 {
 		return "0"
 	}
 	if r.IsInt() && scale == 0 {
-		return r.Num().String()
+		sign := ""
+		if r.Sign() < 0 {
+			sign = "-"
+		}
+		a := new(big.Int).Abs(r.Num())
+		return sign + a.String()
 	}
 
 	// Get sign
 	sign := ""
-	if r.Sign() < 0 {
+	if r.Sign() < 0 || (r.Sign() == 0 && negZero) {
 		sign = "-"
 	}
 
@@ -273,7 +280,35 @@ func (v dcValue) String(scale int) string {
 	}
 	// Use per-number fracDigits for formatting precision.
 	// fracDigits == 0 means "no explicit decimal places" — format as-is.
-	return formatRat(v.rat, v.fracDigits)
+	return formatRat(v.rat, v.fracDigits, v.negZero)
+}
+
+func isIdentChar(ch rune) bool {
+	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '_'
+}
+
+func parseRegName(state *dcState, runes []rune, i *int) string {
+	n := len(runes)
+	if *i >= n {
+		return ""
+	}
+	if state.extendedReg && runes[*i] == ' ' {
+		*i++ // skip space
+		var sb strings.Builder
+		for *i < n {
+			ch := runes[*i]
+			if !isIdentChar(ch) {
+				break
+			}
+			*i++
+			sb.WriteRune(ch)
+		}
+		return sb.String()
+	}
+	// Standard single-character register
+	reg := string(runes[*i])
+	*i++
+	return reg
 }
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
@@ -284,18 +319,16 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	jsonMode := flags.Has("json")
+	extendedMode := flags.Has("x")
 
 	state := &dcState{
-		regs: make(map[rune][]dcValue),
+		regs:        make(map[string][]dcValue),
+		extendedReg: extendedMode,
 	}
 
 	var buf strings.Builder
 
 	for _, expr := range flags.GetAll("expression") {
-		buf.WriteString(expr)
-		buf.WriteByte(' ')
-	}
-	for _, expr := range flags.GetAll("x") {
 		buf.WriteString(expr)
 		buf.WriteByte(' ')
 	}
@@ -357,13 +390,16 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 // wrapOutput wraps long output lines with \\ continuation (matching BusyBox dc).
 func wrapOutput(lines []string) []string {
 	var result []string
-	for _, line := range lines {
-		const maxLen = 69
-		for len(line) > maxLen {
-			result = append(result, line[:maxLen]+"\\")
-			line = line[maxLen:]
+	for _, item := range lines {
+		parts := strings.Split(item, "\n")
+		for _, line := range parts {
+			const maxLen = 69
+			for len(line) > maxLen {
+				result = append(result, line[:maxLen]+"\\")
+				line = line[maxLen:]
+			}
+			result = append(result, line)
 		}
-		result = append(result, line)
 	}
 	return result
 }
@@ -528,13 +564,12 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 			state.stack = append(state.stack, dcValue{rat: r})
 
 		case 'Z':
-			if len(state.stack) > 0 {
-				v := state.stack[len(state.stack)-1]
+			if v, ok := popVal(state); ok {
 				var length int64
 				if v.isStr {
 					length = int64(len(v.str))
 				} else {
-					s := formatRat(v.rat, state.scale)
+					s := formatRat(v.rat, state.scale, v.negZero)
 					// Remove minus, decimal point, leading zeros
 					s = strings.TrimPrefix(s, "-")
 					s = strings.ReplaceAll(s, ".", "")
@@ -558,118 +593,167 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 
 		// ---- Arithmetic ----
 		case '+':
-			a, b, aFrac, bFrac, ok := popTwoNumFD(state)
+			a, b, ok := popTwoNumFD(state)
 			if !ok {
 				return fmt.Errorf("stack empty")
 			}
-			r := new(big.Rat).Add(a, b)
-			state.stack = append(state.stack, dcValue{rat: r, fracDigits: maxInt(aFrac, bFrac)})
+			r := new(big.Rat).Add(a.rat, b.rat)
+			state.stack = append(state.stack, dcValue{
+				rat:        r,
+				fracDigits: maxInt(a.fracDigits, b.fracDigits),
+				negZero:    false,
+			})
 
 		case '-':
-			a, b, aFrac, bFrac, ok := popTwoNumFD(state)
+			a, b, ok := popTwoNumFD(state)
 			if !ok {
 				return fmt.Errorf("stack empty")
 			}
-			r := new(big.Rat).Sub(a, b)
-			state.stack = append(state.stack, dcValue{rat: r, fracDigits: maxInt(aFrac, bFrac)})
+			r := new(big.Rat).Sub(a.rat, b.rat)
+			state.stack = append(state.stack, dcValue{
+				rat:        r,
+				fracDigits: maxInt(a.fracDigits, b.fracDigits),
+				negZero:    false,
+			})
 
 		case '*':
-			a, b, aFrac, bFrac, ok := popTwoNumFD(state)
+			a, b, ok := popTwoNumFD(state)
 			if !ok {
 				return fmt.Errorf("stack empty")
 			}
-			r := new(big.Rat).Mul(a, b)
-			// BusyBox dc: result scale = min(scale(a)+scale(b), max(scale, scale(a), scale(b)))
-			fd := aFrac + bFrac
-			maxScale := maxInt(maxInt(state.scale, aFrac), bFrac)
+			r := new(big.Rat).Mul(a.rat, b.rat)
+			fd := a.fracDigits + b.fracDigits
+			maxScale := maxInt(maxInt(state.scale, a.fracDigits), b.fracDigits)
 			if fd > maxScale {
 				fd = maxScale
 			}
-			state.stack = append(state.stack, dcValue{rat: r, fracDigits: fd})
+			r = truncateRat(r, fd)
+			neg := isNegVal(a) != isNegVal(b)
+			state.stack = append(state.stack, dcValue{
+				rat:        r,
+				fracDigits: fd,
+				negZero:    neg && r.Sign() == 0,
+			})
 
 		case '/':
-			a, b, _, _, ok := popTwoNumFD(state)
+			a, b, ok := popTwoNumFD(state)
 			if !ok {
 				return fmt.Errorf("stack empty")
 			}
-			if b.Sign() == 0 {
+			if b.rat.Sign() == 0 {
 				return fmt.Errorf("divide by zero")
 			}
-			r := new(big.Rat).Quo(a, b)
-			state.stack = append(state.stack, dcValue{rat: r, fracDigits: state.scale})
+			r := new(big.Rat).Quo(a.rat, b.rat)
+			r = truncateRat(r, state.scale)
+			neg := isNegVal(a) != isNegVal(b)
+			state.stack = append(state.stack, dcValue{
+				rat:        r,
+				fracDigits: state.scale,
+				negZero:    neg && r.Sign() == 0,
+			})
 
 		case '%':
-			a, b, aFrac, bFrac, ok := popTwoNumFD(state)
+			a, b, ok := popTwoNumFD(state)
 			if !ok {
 				return fmt.Errorf("stack empty")
 			}
-			if b.Sign() == 0 {
+			if b.rat.Sign() == 0 {
 				return fmt.Errorf("remainder by zero")
 			}
-			// Truncation toward zero (C/Go semantics)
-			quot := new(big.Rat).Quo(a, b)
-			qInt := new(big.Int).Quo(quot.Num(), quot.Denom())
-			prod := new(big.Rat).SetInt(qInt)
-			prod.Mul(prod, b)
-			r := new(big.Rat).Sub(a, prod)
-			state.stack = append(state.stack, dcValue{rat: r, fracDigits: maxInt(maxInt(aFrac, bFrac), state.scale)})
+			// Scale-aware modulus: a - (a / b) * b
+			q := new(big.Rat).Quo(a.rat, b.rat)
+			q = truncateRat(q, state.scale)
+			prod := new(big.Rat).Mul(q, b.rat)
+			r := new(big.Rat).Sub(a.rat, prod)
+			fd := maxInt(a.fracDigits, state.scale+b.fracDigits)
+			r = truncateRat(r, fd)
+			neg := isNegVal(a)
+			state.stack = append(state.stack, dcValue{
+				rat:        r,
+				fracDigits: fd,
+				negZero:    neg && r.Sign() == 0,
+			})
 
 		case '~':
-			a, b, aFrac, bFrac, ok := popTwoNumFD(state)
+			a, b, ok := popTwoNumFD(state)
 			if !ok {
 				return fmt.Errorf("stack empty")
 			}
-			if b.Sign() == 0 {
+			if b.rat.Sign() == 0 {
 				return fmt.Errorf("divide by zero")
 			}
-			quot := new(big.Rat).Quo(a, b)
-			qInt := new(big.Int).Quo(quot.Num(), quot.Denom())
-			qRat := new(big.Rat).SetInt(qInt)
-			prod := new(big.Rat).Mul(b, qRat)
-			rem := new(big.Rat).Sub(a, prod)
-			remScale := maxInt(maxInt(aFrac, bFrac), state.scale)
-			state.stack = append(state.stack, dcValue{rat: qRat, fracDigits: state.scale})
-			state.stack = append(state.stack, dcValue{rat: rem, fracDigits: remScale})
+			q := new(big.Rat).Quo(a.rat, b.rat)
+			q = truncateRat(q, state.scale)
+			prod := new(big.Rat).Mul(q, b.rat)
+			rem := new(big.Rat).Sub(a.rat, prod)
+			remScale := maxInt(a.fracDigits, state.scale+b.fracDigits)
+			rem = truncateRat(rem, remScale)
+
+			qNeg := isNegVal(a) != isNegVal(b)
+			remNeg := isNegVal(a)
+
+			state.stack = append(state.stack, dcValue{
+				rat:        q,
+				fracDigits: state.scale,
+				negZero:    qNeg && q.Sign() == 0,
+			})
+			state.stack = append(state.stack, dcValue{
+				rat:        rem,
+				fracDigits: remScale,
+				negZero:    remNeg && rem.Sign() == 0,
+			})
 
 		case '^':
-			a, b, aFrac, _, ok := popTwoNumFD(state)
+			a, b, ok := popTwoNumFD(state)
 			if !ok {
 				return fmt.Errorf("stack empty")
 			}
-			exp := ratToInt64(b)
+			exp := ratToInt64(b.rat)
 			r := new(big.Rat)
 			var resultFrac int
+			var neg bool
 			if exp == 0 {
 				r.SetInt64(1)
-			} else if a.Sign() == 0 {
-				// 0^n → 0 (BusyBox convention for all n != 0)
+			} else if a.rat.Sign() == 0 {
 				r.SetInt64(0)
+				neg = isNegVal(a) && (exp%2 != 0)
 			} else if exp < 0 {
-				r = ratPowInt(a, -exp)
+				r = ratPowInt(a.rat, -exp)
 				r.Inv(r)
+				r = truncateRat(r, state.scale)
 				resultFrac = state.scale
+				neg = isNegVal(a) && ((-exp)%2 != 0)
 			} else {
-				r = ratPowInt(a, exp)
-				// Result scale: min(exp * base_scale, max(global_scale, base_scale))
-				fd := int(exp) * aFrac
-				maxScale := maxInt(state.scale, aFrac)
+				r = ratPowInt(a.rat, exp)
+				fd := int(exp) * a.fracDigits
+				maxScale := maxInt(state.scale, a.fracDigits)
 				if fd > maxScale {
 					fd = maxScale
 				}
+				r = truncateRat(r, fd)
 				resultFrac = fd
+				neg = isNegVal(a) && (exp%2 != 0)
 			}
-			state.stack = append(state.stack, dcValue{rat: r, fracDigits: resultFrac})
+			state.stack = append(state.stack, dcValue{
+				rat:        r,
+				fracDigits: resultFrac,
+				negZero:    neg && r.Sign() == 0,
+			})
 
 		case 'v':
-			a, aFrac, ok := popNumValFD(state)
+			a, ok := popNumValFD(state)
 			if !ok {
 				return fmt.Errorf("stack empty")
 			}
-			if a.Sign() < 0 {
+			if a.rat.Sign() < 0 {
 				return fmt.Errorf("square root of negative number")
 			}
-			r := ratSqrtNewton(a, state.scale)
-			state.stack = append(state.stack, dcValue{rat: r, fracDigits: maxInt(state.scale, aFrac)})
+			r := ratSqrtNewton(a.rat, state.scale)
+			r = truncateRat(r, maxInt(state.scale, a.fracDigits))
+			state.stack = append(state.stack, dcValue{
+				rat:        r,
+				fracDigits: maxInt(state.scale, a.fracDigits),
+			})
 
 		case '|':
 			// Modular exponentiation: mod, exp, base → base^exp % mod
@@ -709,9 +793,8 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 
 		// ---- Registers ----
 		case 's':
-			if i < n {
-				reg := runes[i]
-				i++
+			reg := parseRegName(state, runes, &i)
+			if reg != "" {
 				if v, ok := popVal(state); ok {
 					state.regs[reg] = []dcValue{dupVal(v)}
 				} else {
@@ -720,9 +803,8 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 			}
 
 		case 'l':
-			if i < n {
-				reg := runes[i]
-				i++
+			reg := parseRegName(state, runes, &i)
+			if reg != "" {
 				if vals, ok := state.regs[reg]; ok && len(vals) > 0 {
 					state.stack = append(state.stack, dupVal(vals[len(vals)-1]))
 				} else {
@@ -732,19 +814,16 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 			}
 
 		case 'S':
-			if i < n {
-				reg := runes[i]
-				i++
-				if len(state.stack) > 0 {
-					v := state.stack[len(state.stack)-1]
+			reg := parseRegName(state, runes, &i)
+			if reg != "" {
+				if v, ok := popVal(state); ok {
 					state.regs[reg] = append(state.regs[reg], dupVal(v))
 				}
 			}
 
 		case 'L':
-			if i < n {
-				reg := runes[i]
-				i++
+			reg := parseRegName(state, runes, &i)
+			if reg != "" {
 				if vals, ok := state.regs[reg]; ok && len(vals) > 0 {
 					v := vals[len(vals)-1]
 					state.regs[reg] = vals[:len(vals)-1]
@@ -814,10 +893,9 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 
 		// ---- Conditional execute ----
 		case '>', '<', '=':
-			if i < n {
-				condOp := ch
-				reg := runes[i]
-				i++
+			condOp := ch
+			reg := parseRegName(state, runes, &i)
+			if reg != "" {
 				a, b, ok := popTwoNumVal(state)
 				if !ok {
 					return fmt.Errorf("stack empty")
@@ -833,16 +911,21 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 				}
 				if execute {
 					if vals, ok := state.regs[reg]; ok && len(vals) > 0 && vals[len(vals)-1].isStr {
-						evalDC(state, vals[len(vals)-1].str, stdin, output)
+						if err := evalDC(state, vals[len(vals)-1].str, stdin, output); err != nil {
+							return err
+						}
 					}
 				} else {
 					// Check for else clause (>aeb)
-					if i < n && runes[i] == 'e' && i+1 < n {
+					if i < n && runes[i] == 'e' {
 						i++
-						elseReg := runes[i]
-						i++
-						if vals, ok := state.regs[elseReg]; ok && len(vals) > 0 && vals[len(vals)-1].isStr {
-							evalDC(state, vals[len(vals)-1].str, stdin, output)
+						elseReg := parseRegName(state, runes, &i)
+						if elseReg != "" {
+							if vals, ok := state.regs[elseReg]; ok && len(vals) > 0 && vals[len(vals)-1].isStr {
+								if err := evalDC(state, vals[len(vals)-1].str, stdin, output); err != nil {
+									return err
+								}
+							}
 						}
 					}
 				}
@@ -854,9 +937,8 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 				condOp := runes[i]
 				if condOp == '>' || condOp == '<' || condOp == '=' {
 					i++
-					if i < n {
-						reg := runes[i]
-						i++
+					reg := parseRegName(state, runes, &i)
+					if reg != "" {
 						a, b, ok := popTwoNumVal(state)
 						if !ok {
 							return fmt.Errorf("stack empty")
@@ -872,15 +954,20 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 						}
 						if execute {
 							if vals, ok := state.regs[reg]; ok && len(vals) > 0 && vals[len(vals)-1].isStr {
-								evalDC(state, vals[len(vals)-1].str, stdin, output)
+								if err := evalDC(state, vals[len(vals)-1].str, stdin, output); err != nil {
+									return err
+								}
 							}
 						} else {
-							if i < n && runes[i] == 'e' && i+1 < n {
+							if i < n && runes[i] == 'e' {
 								i++
-								elseReg := runes[i]
-								i++
-								if vals, ok := state.regs[elseReg]; ok && len(vals) > 0 && vals[len(vals)-1].isStr {
-									evalDC(state, vals[len(vals)-1].str, stdin, output)
+								elseReg := parseRegName(state, runes, &i)
+								if elseReg != "" {
+									if vals, ok := state.regs[elseReg]; ok && len(vals) > 0 && vals[len(vals)-1].isStr {
+										if err := evalDC(state, vals[len(vals)-1].str, stdin, output); err != nil {
+											return err
+										}
+									}
 								}
 							}
 						}
@@ -1025,6 +1112,32 @@ func parseStringEscapes(s string) string {
 		}
 	}
 	return sb.String()
+}
+
+func truncateRat(r *big.Rat, scale int) *big.Rat {
+	if r.Sign() == 0 {
+		return new(big.Rat)
+	}
+	if scale <= 0 {
+		scale = 0
+	}
+	scaleFactor := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
+	scaled := new(big.Rat).Set(r)
+	scaled.Mul(scaled, new(big.Rat).SetInt(scaleFactor))
+
+	num := scaled.Num()
+	den := scaled.Denom()
+	q := new(big.Int).Quo(num, den)
+
+	result := new(big.Rat).SetFrac(q, scaleFactor)
+	return result
+}
+
+func isNegVal(v dcValue) bool {
+	if v.isStr {
+		return false
+	}
+	return v.rat.Sign() < 0 || (v.rat.Sign() == 0 && v.negZero)
 }
 
 func init() {

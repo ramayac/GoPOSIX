@@ -10,7 +10,7 @@ import (
 
 func testDC(t *testing.T, name, input string, expected string) {
 	t.Helper()
-	state := &dcState{regs: make(map[rune][]dcValue)}
+	state := &dcState{regs: make(map[string][]dcValue)}
 	var output []string
 	err := evalDC(state, input, nil, &output)
 	if err != nil {
@@ -27,7 +27,7 @@ func testDC(t *testing.T, name, input string, expected string) {
 
 func testDCFail(t *testing.T, name, input string, wantErr string) {
 	t.Helper()
-	state := &dcState{regs: make(map[rune][]dcValue)}
+	state := &dcState{regs: make(map[string][]dcValue)}
 	var output []string
 	err := evalDC(state, input, nil, &output)
 	if err == nil {
@@ -94,7 +94,7 @@ func TestDcPrintOps(t *testing.T) {
 	})
 	// P: pop string and print with escapes processed
 	t.Run("P string", func(t *testing.T) {
-		state := &dcState{regs: make(map[rune][]dcValue)}
+		state := &dcState{regs: make(map[string][]dcValue)}
 		var output []string
 		pushStrDC(state, "foo")
 		if err := evalDC(state, "P", nil, &output); err != nil {
@@ -107,7 +107,7 @@ func TestDcPrintOps(t *testing.T) {
 	})
 	// p on empty stack - no output
 	t.Run("p empty", func(t *testing.T) {
-		state := &dcState{regs: make(map[rune][]dcValue)}
+		state := &dcState{regs: make(map[string][]dcValue)}
 		var output []string
 		if err := evalDC(state, "p", nil, &output); err != nil {
 			t.Fatal(err)
@@ -160,14 +160,14 @@ func TestDcBoolean(t *testing.T) {
 
 func TestDcRegisters(t *testing.T) {
 	t.Run("store and load", func(t *testing.T) {
-		state := &dcState{regs: make(map[rune][]dcValue)}
+		state := &dcState{regs: make(map[string][]dcValue)}
 		var output []string
 		evalDC(state, "[Hello]sa", nil, &output)
 		output = nil
 		testEval(t, state, "lapR", "Hello\n")
 	})
 	t.Run("S push and L pop", func(t *testing.T) {
-		state := &dcState{regs: make(map[rune][]dcValue)}
+		state := &dcState{regs: make(map[string][]dcValue)}
 		var output []string
 		evalDC(state, "1Sx 2Sx", nil, &output)
 		output = nil
@@ -181,13 +181,13 @@ func TestDcRegisters(t *testing.T) {
 		testDC(t, "undef", "lzpR", "0\n")
 	})
 	t.Run("s empty stack", func(t *testing.T) {
-		state := &dcState{regs: make(map[rune][]dcValue)}
+		state := &dcState{regs: make(map[string][]dcValue)}
 		var output []string
 		if err := evalDC(state, "sa", nil, &output); err != nil {
 			t.Fatal(err)
 		}
 		// Store empty string on empty stack
-		if vals, ok := state.regs['a']; !ok || len(vals) == 0 {
+		if vals, ok := state.regs["a"]; !ok || len(vals) == 0 {
 			t.Error("expected register 'a' to exist")
 		} else if !vals[0].isStr || vals[0].str != "" {
 			t.Errorf("expected empty string, got %v", vals[0])
@@ -212,42 +212,42 @@ func testEval(t *testing.T, state *dcState, input, expected string) {
 
 func TestDcConditionals(t *testing.T) {
 	t.Run("> true", func(t *testing.T) {
-		state := &dcState{regs: make(map[rune][]dcValue)}
+		state := &dcState{regs: make(map[string][]dcValue)}
 		var output []string
 		evalDC(state, "[1p]sa", nil, &output)
 		output = nil
 		testEval(t, state, "1 2>a 9p", "1\n9\n")
 	})
 	t.Run("< true", func(t *testing.T) {
-		state := &dcState{regs: make(map[rune][]dcValue)}
+		state := &dcState{regs: make(map[string][]dcValue)}
 		var output []string
 		evalDC(state, "[2p]sb", nil, &output)
 		output = nil
 		testEval(t, state, "2 1<b 9p", "2\n9\n")
 	})
 	t.Run("= true", func(t *testing.T) {
-		state := &dcState{regs: make(map[rune][]dcValue)}
+		state := &dcState{regs: make(map[string][]dcValue)}
 		var output []string
 		evalDC(state, "[5p]sc", nil, &output)
 		output = nil
 		testEval(t, state, "3 3=c 9p", "5\n9\n")
 	})
 	t.Run("> false", func(t *testing.T) {
-		state := &dcState{regs: make(map[rune][]dcValue)}
+		state := &dcState{regs: make(map[string][]dcValue)}
 		var output []string
 		evalDC(state, "[1p]sa", nil, &output)
 		output = nil
 		testEval(t, state, "2 1>a 9p", "9\n")
 	})
 	t.Run("else clause", func(t *testing.T) {
-		state := &dcState{regs: make(map[rune][]dcValue)}
+		state := &dcState{regs: make(map[string][]dcValue)}
 		var output []string
 		evalDC(state, "[1p]sa [2p]sb", nil, &output)
 		output = nil
 		testEval(t, state, "2 1>aeb 9p", "2\n9\n")
 	})
 	t.Run("! negated", func(t *testing.T) {
-		state := &dcState{regs: make(map[rune][]dcValue)}
+		state := &dcState{regs: make(map[string][]dcValue)}
 		var output []string
 		evalDC(state, "[1p]sa", nil, &output)
 		output = nil
@@ -261,7 +261,7 @@ func TestDcMacros(t *testing.T) {
 		testDC(t, "x", "[1 2 + p]xpR", "3\n3\n")
 	})
 	t.Run("x non-string", func(t *testing.T) {
-		state := &dcState{regs: make(map[rune][]dcValue)}
+		state := &dcState{regs: make(map[string][]dcValue)}
 		var output []string
 		evalDC(state, "42 x", nil, &output)
 		if len(output) != 0 {
@@ -431,7 +431,7 @@ func TestDcFormatRat(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.expect, func(t *testing.T) {
-			got := formatRat(tt.rat, tt.scale)
+			got := formatRat(tt.rat, tt.scale, false)
 			if got != tt.expect {
 				t.Errorf("formatRat(%s, %d) = %q, want %q",
 					tt.rat.RatString(), tt.scale, got, tt.expect)
@@ -482,7 +482,7 @@ func TestDcRatSqrt(t *testing.T) {
 		t.Run(tt.input, func(t *testing.T) {
 			r, _ := new(big.Rat).SetString(tt.input)
 			got := ratSqrtNewton(r, tt.scale)
-			s := formatRat(got, tt.scale)
+			s := formatRat(got, tt.scale, false)
 			if s != tt.expect {
 				t.Errorf("sqrt(%s, %d) = %q, want %q",
 					tt.input, tt.scale, s, tt.expect)
@@ -531,10 +531,51 @@ func TestDcRunError(t *testing.T) {
 }
 
 func TestDcPopTwoNumVal(t *testing.T) {
-	state := &dcState{regs: make(map[rune][]dcValue)}
+	state := &dcState{regs: make(map[string][]dcValue)}
 	state.stack = append(state.stack, dcValue{rat: new(big.Rat).SetInt64(42)})
 	a, b, ok := popTwoNumVal(state)
 	if ok {
 		t.Errorf("popTwoNumVal with one element should fail, got a=%v b=%v", a, b)
+	}
+}
+
+func TestDcExtendedRegisters(t *testing.T) {
+	state := &dcState{
+		regs:        make(map[string][]dcValue),
+		extendedReg: true,
+	}
+	var output []string
+	// Test storing and loading multi-char register
+	err := evalDC(state, "42S xotj l xotj p", nil, &output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := strings.Join(output, "\n")
+	if got != "42" {
+		t.Errorf("expected 42, got %q", got)
+	}
+
+	// Test conditionals with extended register name
+	output = nil
+	err = evalDC(state, "[1p]S cond 1 2> cond", nil, &output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got = strings.Join(output, "\n")
+	if got != "1" {
+		t.Errorf("expected 1, got %q", got)
+	}
+}
+
+func TestDcRunExtendedMode(t *testing.T) {
+	var stdout, stderr strings.Builder
+	// Test running run function with -x flag
+	rc := run([]string{"-x", "42S reg l reg p"}, nil, &stdout, &stderr, "")
+	if rc != 0 {
+		t.Fatalf("run failed: %s", stderr.String())
+	}
+	got := stdout.String()
+	if got != "42\n" {
+		t.Errorf("expected 42, got %q", got)
 	}
 }
