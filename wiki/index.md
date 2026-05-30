@@ -43,6 +43,8 @@
 - [22_hardening_iii.md](22_hardening_iii.md) | Hardening III: Daemon-First Pivot.
 - [23_flags_rewrite.md](23_flags_rewrite.md) | Flags Rewrite: zero-allocation POSIX scanner (COMPLETED).
 - [25_awesome_go_submission.md](25_awesome_go_submission.md) | Awesome-Go submission plan, checklists, and compliance validation.
+- [30_performance_improvements.md](30_performance_improvements.md) | Phase 30: Performance improvements (30 actionable optimizations).
+- [31_hardening_v.md](31_hardening_v.md) | Phase 31: Hardening V (coverage and tar compliance audit).
 
 ## Deferred / Future
 

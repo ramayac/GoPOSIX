@@ -65,31 +65,39 @@ goposix binary (single static ELF, <12MB)
 
 | Phase | Scope | Status |
 |-------|-------|--------|
-| 00–01 | Foundation + Tier 1 utilities | ✅ |
-| 02 | Docker CI & `scratch` pipeline | ✅ |
-| 03 | Filesystem utils (ls, cat, rm, cp, mv, ...) | ✅ |
-| 04 | Text utils (grep, sed, sort, wc, ...) | ✅ |
-| 05 | JSON-RPC daemon core | ✅ |
-| 06 | System & process utils (ps, find, df, du, ...) | ✅ |
-| 07 | Agent-ready features (diff, tar, shell) | ✅ |
-| 08 | Security hardening | ✅ |
-| 09 | Release & automation | ✅ |
-| 10 | POSIX test framework + BusyBox suite | ✅ |
-| 11 | Post-MVP cleanup, lessons learned | ✅ |
-| 12 | Road to Gold — supply chain, macOS, coverage, BusyBox parity | ✅ |
-| 13 | Coverage & hardening (76.7% reached) | ✅ |
-| 14a-c | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage | ✅ |
-| 15–18 | Post-MVP utilities, quality fixes | ✅ |
-| 19 | Performance benchmarking | ✅ |
-| 20 | Hardening II — flag audit, code cleanup, coverage, input safety | ✅ |
-| 22 | Hardening III — Daemon-First Pivot | ✅ |
-| 23 | Flags Rewrite — zero-allocation POSIX scanner | ✅ |
-| 24 | Hardening IV Part 1 — 21 compliance gaps resolved, 6 remain | 🟡 |
-| 25 | Awesome-Go Prep & Daemon Stdin — checklists, Codecov & LICENSE, 25 lints fixed | ✅ |
-| 07a | `awk` — Platinum gate (integrated goawk v1.31.0) | ✅ |
-| 26 | Missing Tools Tier 1–4 — 26 utilities, 100% BusyBox compatibility | ✅ |
-| 27 | High-Complexity Tier 5 — 5 of 11 implemented (`ar`, `cpio`, `ash`, `mount`, `mdev`) | 🔨 |
-| 31 | Hardening V — Coverage & Tar Compliance Audit (tar unit & BusyBox tests passing, 25 low-coverage packages sorted) | ✅ |
+| 00 | Foundation | completed |
+| 01 | Tier 1 utilities | completed |
+| 02 | Docker CI & `scratch` pipeline | completed |
+| 03 | Filesystem utils (ls, cat, rm, cp, mv, ...) | completed |
+| 04 | Text utils (grep, sed, sort, wc, ...) | completed |
+| 05 | JSON-RPC daemon core | completed |
+| 06 | System & process utils (ps, find, df, du, ...) | completed |
+| 07 | Agent-ready features (diff, tar, shell) | completed |
+| 08 | Security hardening | completed |
+| 09 | Release & automation | completed |
+| 10 | POSIX test framework + BusyBox suite | completed |
+| 11 | Post-MVP cleanup, lessons learned | completed |
+| 12 | Road to Gold — supply chain, macOS, coverage, BusyBox parity | completed |
+| 13 | Coverage & hardening (76.7% reached) | completed |
+| 14 | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage | completed |
+| 15 | Post-MVP utilities, quality fixes | completed |
+| 16 | Post-MVP utilities part II | completed |
+| 17 | Post-MVP utilities part III | completed |
+| 18 | Post-MVP utilities part IV | completed |
+| 19 | Performance benchmarking | completed |
+| 20 | Hardening II — flag audit, code cleanup, coverage, input safety | completed |
+| 21 | Honest-takes audit | completed |
+| 22 | Hardening III — Daemon-First Pivot | completed |
+| 23 | Flags Rewrite — zero-allocation POSIX scanner | completed |
+| 24 | Hardening IV Part 1 — 21 compliance gaps resolved, 6 remain | completed |
+| 25 | Awesome-Go Prep & Daemon Stdin — checklists, Codecov & LICENSE, 25 lints fixed | completed |
+| 07a | `awk` — Platinum gate (integrated goawk v1.31.0) | completed |
+| 26 | Missing Tools Tier 1–4 — 26 utilities, 100% BusyBox compatibility | completed |
+| 27 | High-Complexity Tier 5 — 5 of 11 implemented (`ar`, `cpio`, `ash`, `mount`, `mdev`) | completed |
+| 28 | High-Complexity Tier 5 planning | completed |
+| 29 | High-Complexity Tier 5 execution | completed |
+| 30 | Performance improvements | completed |
+| 31 | Hardening V — Coverage & Tar Compliance Audit (tar unit & BusyBox tests passing, 25 low-coverage packages sorted) | completed |
 
 
 ---

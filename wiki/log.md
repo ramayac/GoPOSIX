@@ -41,6 +41,29 @@ Updated: `pkg/tar/tar.go`, `pkg/tar/tar_test.go`, `pkg/ls/ls.go`,
 `test/compliance/test_tar.sh`, `go.mod`, `go.sum`, `wiki/todos.md`,
 `wiki/test_coverage_matrix.md`, `README.md`, `wiki/log.md`.
 
+## [2026-05-28] implement | Resolved `rx` XMODEM flakiness and buffered `hexdump` input
+
+Traced the intermittent `rx` BusyBox test failure to GoPOSIX's `hexdump` utility prematurely flushing partial pipe reads instead of buffering blocks. Extended `rx` unit tests and coverage to 86.2%.
+
+**Changes implemented:**
+- **Hexdump input buffering**: Replaced standard `input.Read()` in `pkg/hexdump/hexdump.go` with `io.ReadFull()`. Programmed `hexdump` to accumulate complete blocks up to the defined `blockSize` (e.g. 16 bytes for canonical `-C` mode) before printing, matching POSIX/GNU conventions and preventing lines from being split on partial reads.
+- **Graceful EOF handling**: Configured `hexdump` to safely handle `io.ErrUnexpectedEOF` to format and print final partial blocks before gracefully breaking the loop.
+- **XMODEM test hardening**: Expanded `pkg/rx/rx_test.go` with comprehensive test coverage including duplicate blocks, invalid inverse block numbers, unexpected block numbers, loops cancellation, write errors, and handshake failures. Raised statement coverage from 72.4% to 86.2%.
+- **Verification**: Verified 100% stable pass rate on `runtest rx` (20/20 loop iterations pass).
+
+## [2026-05-28] implement | Hardened `dc` utility, resolved all remaining BusyBox failures
+
+Resolved all remaining 7 BusyBox test suite failures for the `dc` (desk calculator) utility. Added unit tests reaching 87.8% statement coverage.
+
+**Changes implemented:**
+- **Recursive stack overflow crash resolved**: Fixed `Z` (length) and `S` (store stack) commands to correctly pop values off the main stack, preventing infinite recursion during recursive macro execution (fixes `dc_strings.dc` failure).
+- **Scale-aware modulus and divmod**: Refactored `%` and `~` operators to be scale-aware under BusyBox conventions (`a - (a / b) * b` evaluated under current scale), resolving scale propagation discrepancies in 0k mode (fixes `dc_modulus.dc` and `dc_divmod.dc` failures).
+- **Decimal truncation**: Implemented scale-aware decimal truncation helper `truncateRat` after arithmetic operations (`*`, `/`, `%`, `~`, `^`, `v`) to avoid cascading high-precision fractions and match BusyBox's math engine.
+- **Formatting cleanup**: Aligned mathematical zero formatting under BusyBox conventions to format zero as bare `"0"` regardless of global/number scale, except when pushed from explicit non-zero literals (fixes zero-value precision in `dc_power.dc` and `dc_multiply.dc`).
+- **Extended registers (`-x` / `extendedReg`)**: Implemented full support for multi-character extended register names (e.g. `s xotj`, `l yotp`). Added identifier character matching (`isIdentChar`) and register parser (`parseRegName`) supporting space and command-terminated extended register names (fixes `dcx_vars.dc` failure).
+- **Unit tests**: Added comprehensive unit tests in `pkg/dc/dc_test.go` covering extended registers and runtime flags, with package coverage reaching 87.8%.
+- **Verification**: Verified 100% compliance rate on the BusyBox test suite (`runtest dc`) with all 36/36 tests passing, and 100% passing rate on GoPOSIX unit tests.
+
 ## [2026-05-22] cleanup | Wiki dedup + README de-staling (branch `docs/wiki-cleanup-2`)
 
 **Duplicate elimination:** Deleted `.wiki-instructions/wiki-maintainer.instructions.md`
@@ -67,6 +90,30 @@ contract vs. `wiki/json_schema.md` output schemas). Added Alpine links to
 Updated: `README.md`, `wiki/alpine_integration.md`, `wiki/index.md`,
 `wiki/schema.md`, `wiki/log.md`. Deleted:
 `.wiki-instructions/wiki-maintainer.instructions.md`.
+
+## [2026-05-22] ingest | Phase 26 complete + Phase 27 partial (branch `feat/missing-tools-tier4`)
+
+Absorbed 31 new utilities (Phase 26 Tiers 1-4: 26 tools; Phase 27 Tier 5: 5 tools).
+
+**Files ingested:**
+- `wiki/26_missing_tools.md` — marked Tier 4 complete, updated counts
+- `wiki/27_high_complexity_tools.md` — marked 5 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`
+- `wiki/test_coverage_matrix.md` — added Tier 8 section (16 tools), updated to 115 utils, 729/19/53 BusyBox, 106/115 JSON-RPC, 82.9% coverage
+- `wiki/todos.md` — updated project state, added cpio/pidof limitations, 28 compliance tests missing
+- `wiki/phases.md` — added Phase 26 (✅) and Phase 27 (🔨), bumped version to 6.0
+- `wiki/index.md` — added link to `27_high_complexity_tools.md`
+- `wiki/11_lessons_learned.md` — added Phase 26/27 lessons
+
+**Code changes absorbed:**
+- `test/posix-json/tier8_phase26_27_test.go` — 30 new daemon tests (24 running, 6 skipped)
+- `cmd/goposix/main_test.go` — added `ash` to cmdPkgMapping (CI fix)
+- `pkg/cpio/cpio.go` — fixed stdout leak in JSON list mode (was printing filenames before JSON, corrupting daemon output)
+- `test/compliance/test_ar.sh`, `test/compliance/test_ash.sh` — fixed path/exit code bugs
+- 31 new `pkg/<tool>/` packages at >= 80% coverage
+
+**BusyBox delta:** +50 pass (679→729), -1 fail (20→19), +31 skip (22→53). 2 new cpio failures (block count from cavaliergopher/cpio).
+
+**JSON-RPC delta:** +31 tests (82→106/115), 9 remaining gaps (6 hard-skipped: ash `--json` conflict, wget network, daemon recursive, mount/mdev/makedevs root).
 
 ## [2026-05-21] cleanup | Prune todos.md — removed all resolved sections
 
@@ -704,19 +751,6 @@ LLM provider interface (OpenAI / Anthropic / local), CLI + JSON-RPC dual interfa
 workspace management, security model, Docker compose integration, and state machine.
 No code changes; design-only phase. (Later promoted to Phase 14.)
 
-## [2026-05-12] update | Document .goreleaser.yml file location convention
-
-Added explanation to `09_release_docs.md` for why `.goreleaser.yml` lives at the repo
-root rather than `.github/`: GoReleaser is a tool-level config, not a GitHub-specific
-feature. The root is its conventional default location.
-
-## [2026-05-12] annotate | Add source links to utility docs
-
-Added `[pkg/<name>/](../pkg/<name>/)` links to every utility header in phase
-pages (01, 03, 04, 06, 07). Also linked infrastructure packages in phases 00
-and 05. All 55 utility packages now have clickable source links from their
-wiki documentation.
-
 ## [2026-05-13] consolidate | Merge redundant wiki content, resolve inconsistencies
 
 Consolidated awk content: 07a_awk.md is now the canonical awk document. Removed
@@ -783,30 +817,6 @@ docs/SECURITY.md artifact verification section with cosign verify, SBOM inspect,
 and slsa-verifier commands. Updated 09_release_docs.md with supply chain section
 (09.2b) and milestone items.
 
-## [2026-05-22] ingest | Phase 26 complete + Phase 27 partial (branch `feat/missing-tools-tier4`)
-
-Absorbed 31 new utilities (Phase 26 Tiers 1-4: 26 tools; Phase 27 Tier 5: 5 tools).
-
-**Files ingested:**
-- `wiki/26_missing_tools.md` — marked Tier 4 complete, updated counts
-- `wiki/27_high_complexity_tools.md` — marked 5 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`
-- `wiki/test_coverage_matrix.md` — added Tier 8 section (16 tools), updated to 115 utils, 729/19/53 BusyBox, 106/115 JSON-RPC, 82.9% coverage
-- `wiki/todos.md` — updated project state, added cpio/pidof limitations, 28 compliance tests missing
-- `wiki/phases.md` — added Phase 26 (✅) and Phase 27 (🔨), bumped version to 6.0
-- `wiki/index.md` — added link to `27_high_complexity_tools.md`
-- `wiki/11_lessons_learned.md` — added Phase 26/27 lessons
-
-**Code changes absorbed:**
-- `test/posix-json/tier8_phase26_27_test.go` — 30 new daemon tests (24 running, 6 skipped)
-- `cmd/goposix/main_test.go` — added `ash` to cmdPkgMapping (CI fix)
-- `pkg/cpio/cpio.go` — fixed stdout leak in JSON list mode (was printing filenames before JSON, corrupting daemon output)
-- `test/compliance/test_ar.sh`, `test/compliance/test_ash.sh` — fixed path/exit code bugs
-- 31 new `pkg/<tool>/` packages at >= 80% coverage
-
-**BusyBox delta:** +50 pass (679→729), -1 fail (20→19), +31 skip (22→53). 2 new cpio failures (block count from cavaliergopher/cpio).
-
-**JSON-RPC delta:** +31 tests (82→106/115), 9 remaining gaps (6 hard-skipped: ash `--json` conflict, wget network, daemon recursive, mount/mdev/makedevs root).
-
 ## [2026-05-13] update | Phase 11a complete, Gold 4/5 resolved
 
 11a_lower_priority.md milestone: 8/8 complete (11a.3 → 12.2, 11a.4 → 12.4,
@@ -814,27 +824,17 @@ Absorbed 31 new utilities (Phase 26 Tiers 1-4: 26 tools; Phase 27 Tier 5: 5 tool
 gate) remains. 13_code_audit.md: 4/6 fixed. phases.md status updated. All
 deferred work from 11a now resolved via Phase 12.
 
-## [2026-05-28] implement | Hardened `dc` utility, resolved all remaining BusyBox failures
+## [2026-05-12] update | Document .goreleaser.yml file location convention
 
-Resolved all remaining 7 BusyBox test suite failures for the `dc` (desk calculator) utility. Added unit tests reaching 87.8% statement coverage.
+Added explanation to `09_release_docs.md` for why `.goreleaser.yml` lives at the repo
+root rather than `.github/`: GoReleaser is a tool-level config, not a GitHub-specific
+feature. The root is its conventional default location.
 
-**Changes implemented:**
-- **Recursive stack overflow crash resolved**: Fixed `Z` (length) and `S` (store stack) commands to correctly pop values off the main stack, preventing infinite recursion during recursive macro execution (fixes `dc_strings.dc` failure).
-- **Scale-aware modulus and divmod**: Refactored `%` and `~` operators to be scale-aware under BusyBox conventions (`a - (a / b) * b` evaluated under current scale), resolving scale propagation discrepancies in 0k mode (fixes `dc_modulus.dc` and `dc_divmod.dc` failures).
-- **Decimal truncation**: Implemented scale-aware decimal truncation helper `truncateRat` after arithmetic operations (`*`, `/`, `%`, `~`, `^`, `v`) to avoid cascading high-precision fractions and match BusyBox's math engine.
-- **Formatting cleanup**: Aligned mathematical zero formatting under BusyBox conventions to format zero as bare `"0"` regardless of global/number scale, except when pushed from explicit non-zero literals (fixes zero-value precision in `dc_power.dc` and `dc_multiply.dc`).
-- **Extended registers (`-x` / `extendedReg`)**: Implemented full support for multi-character extended register names (e.g. `s xotj`, `l yotp`). Added identifier character matching (`isIdentChar`) and register parser (`parseRegName`) supporting space and command-terminated extended register names (fixes `dcx_vars.dc` failure).
-- **Unit tests**: Added comprehensive unit tests in `pkg/dc/dc_test.go` covering extended registers and runtime flags, with package coverage reaching 87.8%.
-- **Verification**: Verified 100% compliance rate on the BusyBox test suite (`runtest dc`) with all 36/36 tests passing, and 100% passing rate on GoPOSIX unit tests.
+## [2026-05-12] annotate | Add source links to utility docs
 
-## [2026-05-28] implement | Resolved `rx` XMODEM flakiness and buffered `hexdump` input
-
-Traced the intermittent `rx` BusyBox test failure to GoPOSIX's `hexdump` utility prematurely flushing partial pipe reads instead of buffering blocks. Extended `rx` unit tests and coverage to 86.2%.
-
-**Changes implemented:**
-- **Hexdump input buffering**: Replaced standard `input.Read()` in `pkg/hexdump/hexdump.go` with `io.ReadFull()`. Programmed `hexdump` to accumulate complete blocks up to the defined `blockSize` (e.g. 16 bytes for canonical `-C` mode) before printing, matching POSIX/GNU conventions and preventing lines from being split on partial reads.
-- **Graceful EOF handling**: Configured `hexdump` to safely handle `io.ErrUnexpectedEOF` to format and print final partial blocks before gracefully breaking the loop.
-- **XMODEM test hardening**: Expanded `pkg/rx/rx_test.go` with comprehensive test coverage including duplicate blocks, invalid inverse block numbers, unexpected block numbers, loops cancellation, write errors, and handshake failures. Raised statement coverage from 72.4% to 86.2%.
-- **Verification**: Verified 100% stable pass rate on `runtest rx` (20/20 loop iterations pass).
+Added `[pkg/<name>/]` source links to every utility header in phase
+pages (01, 03, 04, 06, 07). Also linked infrastructure packages in phases 00
+and 05. All 55 utility packages now have clickable source links from their
+wiki documentation.
 
 
