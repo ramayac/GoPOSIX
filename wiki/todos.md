@@ -8,6 +8,7 @@ This document serves as the live registry of remaining work, active plans, and k
 
 > 📊 **Current project state** (coverage, BusyBox stats, per-utility status) → **[wiki/test_coverage_matrix.md](test_coverage_matrix.md)**
 > 🛡️ **Hardening V: Coverage & Tar Compliance Audit** → **[wiki/31_hardening_v.md](31_hardening_v.md)**
+> ⚡ **Performance Improvements (30 Actionable Optimizations)** → **[wiki/30_performance_improvements.md](30_performance_improvements.md)**
 
 ---
 
@@ -33,6 +34,10 @@ All tar BusyBox failures resolved. Symlink safety, hardlink dedup, XZ auto-detec
 **Status**: Deferred. Root cause is the `goawk` v1.31.0 engine — upstream doesn't support bitwise ops, hex/octal constants, function arg parsing (4 tests), nested loop scoping, empty-paren handling, negative field access, continue/break edge cases, and backslash-newline handling.
 - 8 additional tests skipped (large integer, NUL printf, invalid for/colon syntax, missing delete arg, gcc build bug).
 - *See*: [wiki/deferred.md](deferred.md).
+
+#### Go-Alpine Coexistence Daemon Target
+* **Reference**: [wiki/alpine_plan.md](alpine_plan.md)
+* **Status**: Deferred / Planning. Implement a Docker target where `goposix` runs as a daemon alongside Alpine's native BusyBox/shell tools, serving JSON-RPC on a socket, rather than completely replacing the base BusyBox userland. (Note: A graphical Alpine container target using symlink-based co-existence is already implemented at [docker/Dockerfile.openbox](file:///home/ramayac/git/GoPOSIX/docker/Dockerfile.openbox).)
 
 ---
 
