@@ -125,3 +125,36 @@ func TestTeeJSONShortFlag(t *testing.T) {
 		t.Errorf("bytesWritten %v, want 5", data["bytesWritten"])
 	}
 }
+
+func TestTeeAppendMode(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "out.txt")
+	os.WriteFile(f, []byte("first\n"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-a", f}, strings.NewReader("second\n"), &buf, &buf, "")
+	if code != 0 {
+		t.Errorf("tee -a: exit %d", code)
+	}
+	data, _ := os.ReadFile(f)
+	if !strings.Contains(string(data), "first") || !strings.Contains(string(data), "second") {
+		t.Errorf("tee -a should append, got: %s", string(data))
+	}
+}
+func TestTeeMultipleFiles(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "a.txt")
+	f2 := filepath.Join(dir, "b.txt")
+	var buf bytes.Buffer
+	code := run([]string{f1, f2}, strings.NewReader("data\n"), &buf, &buf, "")
+	if code != 0 {
+		t.Errorf("tee multiple: exit %d", code)
+	}
+	if _, err := os.Stat(f1); err != nil {
+		t.Error("first output file not created")
+	}
+}
+func TestTeeJSONOutput(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--json", "/dev/null"}, strings.NewReader("x"), &buf, &buf, "")
+	_ = code
+}

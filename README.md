@@ -35,6 +35,12 @@ I want to be very clear about this:
 - So check and support [BusyBox](https://busybox.net/) project and take a look at its amazing [test suite](https://github.com/brgl/busybox/blob/master/testsuite/runtest), it's a masterpiece of thoroughness and coverage, and it made this project possible.
 - Also [Mvdan Shell](https://github.com/mvdan/sh), it really saved my butt. Absolutely brilliant.
 - And [goawk](https://github.com/benhoyt/goawk), which I used for the `awk` implementation, another big save!
+- [blakesmith/ar](https://github.com/blakesmith/ar) for reading and writing `ar` archives.
+- [cavaliergopher/cpio](https://github.com/cavaliergopher/cpio) for `cpio` archive support.
+- [hotei/dcompress](https://github.com/hotei/dcompress) for decompression helpers.
+- [sergeymakinen/go-crypt](https://github.com/sergeymakinen/go-crypt) and [tredoe/crypt](https://github.com/tredoe/crypt) for unix password crypt implementation.
+- [ulikunitz/xz](https://github.com/ulikunitz/xz) for xz/lzma compression and decompression.
+- `golang.org/x` libraries ([sys](https://pkg.go.dev/golang.org/x/sys), [term](https://pkg.go.dev/golang.org/x/term), [crypto](https://pkg.go.dev/golang.org/x/crypto)) for system call access, terminal control, and cryptographic functions.
 
 Finally: let's not kid ourselves, this project is 90% wiring the AI to do the heavy lifting, 10% is steering it in the right direction, the fact that I was able to "solo dev" this with an LLM, reproducing close to 99% of BusyBox's behavior in a completely different language shows that POSIX utilities are, at their core, text transformers with very well-defined contracts (do one thing and do it well).
 

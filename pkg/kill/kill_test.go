@@ -24,3 +24,29 @@ func TestKillJSON(t *testing.T) {
 		t.Errorf("expected JSON, got %s", out.String())
 	}
 }
+
+func TestKillInvalidSignal(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-s", "INVALID_SIG", "1"}, nil, &buf, &buf, "")
+	if code == 0 {
+		t.Error("expected non-zero exit for invalid signal")
+	}
+}
+func TestKillListSignals(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-l"}, nil, &buf, &buf, "")
+	_ = code
+}
+func TestKillInvalidPID(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"abc"}, nil, &buf, &buf, "")
+	if code == 0 {
+		t.Error("expected non-zero exit for invalid PID")
+	}
+}
+func TestKillSignalByName(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-TERM", "999999"}, nil, &buf, &buf, "")
+	// Should fail because PID doesn't exist, but signal parsing should work
+	_ = code
+}

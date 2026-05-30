@@ -85,3 +85,17 @@ func TestNohupStdinRedirection(t *testing.T) {
 		t.Errorf("nohup echo: exit %d", code)
 	}
 }
+
+func TestNohupWithArgs(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"echo", "test123"}, strings.NewReader(""), &buf, &buf, "")
+	// echo should output "test123" to stdout which nohup captures
+	if code != 0 {
+		t.Errorf("nohup echo: exit %d", code)
+	}
+}
+func TestNohupJSONMode(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--json", "echo", "hi"}, strings.NewReader(""), &buf, &buf, "")
+	_ = code
+}

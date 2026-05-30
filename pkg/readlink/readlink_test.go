@@ -238,3 +238,14 @@ func TestReadlinkMissingArg(t *testing.T) {
 		t.Errorf("readlink no args: exit %d, want 1", code)
 	}
 }
+
+func TestReadlinkCanonicalizeMissing(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "nonexistent")
+	var buf bytes.Buffer
+	code := run([]string{"-f", f}, nil, &buf, &buf, "")
+	// -f should fail for non-existent paths
+	if code != 1 {
+		t.Errorf("readlink -f missing: exit %d, want 1", code)
+	}
+}
