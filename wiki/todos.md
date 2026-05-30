@@ -1,12 +1,13 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-30 | **Utilities:** 115 | **Coverage:** 83.7% | **BusyBox:** 878/16/25 (98.2%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-05-30 | **Utilities:** 115 | **Coverage:** 83.7% | **BusyBox:** 877/17/25 (98.1%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
 ---
 
 > 📊 **Current project state** (coverage, BusyBox stats, per-utility status) → **[wiki/test_coverage_matrix.md](test_coverage_matrix.md)**
+> 🛡️ **Hardening V: Coverage & Tar Compliance Audit** → **[wiki/31_hardening_v.md](31_hardening_v.md)**
 
 ---
 

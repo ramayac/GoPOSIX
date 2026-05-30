@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-30 | **BusyBox:** 878 pass / 16 fail / 25 skip | **Branch:** `feat/tar-fixes` | **Overall Coverage:** 83.7% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-05-30 | **BusyBox:** 877 pass / 17 fail / 25 skip | **Branch:** `feat/tar-fixes` | **Overall Coverage:** 83.7% | **JSON-RPC:** 115/115 (100.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -106,7 +106,7 @@
 | `test` / `[` | 82.9% | — | — | ❌ |
 | `printf` | 83.7% | 26 | ✅ 26/26 | ✅ |
 | `expr` | 83.5% | 2 | ✅ 2/2 | ✅ |
-| `awk` | 90.0% | 53 | ⚠️ 36/53 (17 fail) | ✅ |
+| `awk` | 90.0% | 53 | ⚠️ 36/53 (17 fail, deferred) | ✅ |
 | `shell` | 66.7% | — | — | ✅ |
 | `wget` | 81.4% | 4 | ✅ 4/4 | ✅ |
 
@@ -196,19 +196,17 @@
 | Total packages | 115 | 115 utilities + client SDK |
 | Unit tests passing | 115/115 | 100% |
 | BusyBox tests run | 919 | 919 total applicable tests |
-| BusyBox passed | 878 | 98.2% (878 of 919) |
-| BusyBox failed | 16 | 16 awk (deferred) |
+| BusyBox passed | 877 | 98.1% (877 of 919) |
+| BusyBox failed | 17 | 17 awk (deferred) |
 | BusyBox skipped | 25 | 13 mdev (root), 7 cpio, 2 mount/makedevs (root), 1 ash, 2 awk (deferred) |
-| Overall statement coverage | 83.6% | Checked via make cover-gate |
+| Overall statement coverage | 83.7% | Checked via make cover-gate |
 | JSON-RPC daemon tests | 115/115 | 100.0% (all 115 utilities implemented and registered) |
 | Packages below 70% unit coverage | 0 | None (all packages ≥70%) |
-
 ## Remaining Gaps
 
 | # | Gap | Count |
 |---|-----|-------|
 | 1 | awk BusyBox failures | 17 (goawk v1.31.0 engine limitations) |
-| 2 | awk BusyBox failures | 16 (goawk v1.31.0 engine limitations) |
 
 
 ## Notes
