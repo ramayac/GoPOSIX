@@ -153,13 +153,13 @@ Schemas are test artifacts — they validate golden fixtures in CI — not docum
 
 ## Performance & Benchmarking
 
-### Daemon-first: Go SDK is 11× faster than BusyBox fork+exec
+### Benchmark through the SDK, not socat
 
-Persistent Go SDK client achieves 60µs per RPC call vs 680µs for BusyBox fork+exec. Benchmark through the SDK, not socat — socat-per-call measures socat overhead, not daemon performance.
+Socat-per-call measures socat process overhead, not daemon performance. The Go SDK with a persistent connection is the only valid way to benchmark (see [performance.md](performance.md) for numbers).
 
 ### Quick smoke before full benchmark
 
-Run `make bench-quick SCALE=0.1` (~30s) before `make bench-all SCALE=1.0` (~8 min). Catches timing bugs, syntax errors, and daemon startup failures fast.
+Run `make bench-quick SCALE=0.1` (~30s) before `make bench-all SCALE=1.0` (~8 min). Catches 90% of timing bugs and daemon startup failures before the 8-minute run wastes time. See [performance.md](performance.md) for the full benchmark reference.
 
 ---
 

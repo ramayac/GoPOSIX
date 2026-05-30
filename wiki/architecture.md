@@ -61,7 +61,7 @@ Other wins: `grep` on 100MB file is 0.16s vs BusyBox 0.86s (5.4× faster, RE2 vs
                     ┌───────────┼───────────┐
                     ▼           ▼           ▼
               ┌─────────┐ ┌─────────┐ ┌─────────┐
-              │ pkg/ls  │ │ pkg/cat │ │ pkg/... │  (79 utilities)
+              │ pkg/ls  │ │ pkg/cat │ │ pkg/... │  (115 utilities)
               └────┬────┘ └────┬────┘ └────┬────┘
                    │           │           │
                    └───────────┼───────────┘
@@ -88,7 +88,7 @@ GoPOSIX/
 │   ├── client/          Go JSON-RPC client (connection pool, retry, typed helpers)
 │   ├── daemon/          Daemon bootstrap + CLI entry point
 │   ├── shell/           Shell CLI wrapper
-│   └── <utility>/       79 POSIX utility implementations (ls, cat, grep, sed, ...)
+│   └── <utility>/       115 POSIX utility implementations
 ├── docker/              Dockerfiles
 │   ├── Dockerfile       Default: daemon (FROM scratch, ~10 MB)
 │   ├── Dockerfile.cli   CLI-only (FROM scratch, ~10 MB)
@@ -104,11 +104,7 @@ GoPOSIX/
 
 ## Docker Images
 
-| Image | Base | Size | Use case |
-|-------|------|:---:|----------|
-| `goposix:latest` | `FROM scratch` | ~10 MB | Default: daemon with JSON-RPC + HTTP metrics |
-| `goposix:cli` | `FROM scratch` | ~10 MB | One-shot CLI invocations (`docker run --rm goposix:cli ls -la /`) |
-| `goposix:debug` | `alpine:3.20` | ~28 MB | Shell, strace, file — interactive debugging |
+See [repo-map.md](repo-map.md) for the canonical Docker image catalog.
 
 Both production images use `# syntax=docker/dockerfile:1` + `COPY --chown=1000:1000`
 to preserve directory ownership in `FROM scratch`. The daemon socket lives at
@@ -126,21 +122,14 @@ to preserve directory ownership in `FROM scratch`. The daemon socket lives at
 | `pkg/client` | Go SDK for JSON-RPC clients. Connection pooling, batch requests, exponential backoff, typed wrappers for every utility. |
 | `pkg/<util>` | One package per POSIX utility. Library layer (testable `Run()`) + CLI layer (`run()`) wired via `init()` → dispatch. |
 
-## Utilities Implemented (79)
+## Utilities Implemented (115)
 
-`awk`, `basename`, `cat`, `chgrp`, `chmod`, `chown`, `cp`, `cut`, `date`, `df`, `diff`, `dirname`,
-`du`, `echo`, `env`, `expr`, `find`, `grep`, `gzip`, `head`, `hostname`, `id`, `kill`,
-`ln`, `ls`, `md5sum`, `mkdir`, `mv`, `printenv`, `printf`, `ps`, `pwd`, `readlink`, `rm`,
-`rmdir`, `sed`, `sha256sum`, `sleep`, `sort`, `stat`, `tail`, `tar`, `tee`, `testcmd`,
-`touch`, `tr`, `truefalse` (`true`/`false`), `uname`, `uniq`, `wc`, `whoami`, `xargs`, `yes`
-
-## BusyBox Test Suite
-
-Check [wiki/test_coverage_matrix.md](wiki/test_coverage_matrix.md) for the breakdown of unit test coverage, BusyBox test suite status, and JSON-RPC support for each utility.
+All 115 utilities are cataloged in the [test coverage matrix](test_coverage_matrix.md) with
+per-utility unit coverage, BusyBox test status, and JSON-RPC daemon registration status.
 
 ## Phase History
 
-All build phases (00–20, 22) are complete. See [phases.md](phases.md) for the full phase index.
+All 31 phases are complete. See [phases.md](phases.md) for the full phase index and current state.
 
 ## Related Documentation
 

@@ -1892,8 +1892,6 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			return finalVal, nil
 		}
 
-
-
 		decl, exists := ip.Functions[e.Name]
 		if !exists {
 			return newValVoid(), fmt.Errorf("undefined function %s", e.Name)
@@ -2320,8 +2318,6 @@ func idxString(r *big.Rat) string {
 	idxInt := big.NewInt(0).Quo(r.Num(), r.Denom())
 	return idxInt.String()
 }
-
-
 
 func truncateRat(r *big.Rat, scale int) *big.Rat {
 	if scale < 0 {

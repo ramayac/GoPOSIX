@@ -100,10 +100,4 @@ goposix binary (single static ELF, <12MB)
 
 ## Active Work
 
-| # | Item | Doc |
-|---|------|-----|
-| — | Observability exports (A–D done, E external) | [observability_exports.md](observability_exports.md) |
-| — | Multi-agent observability (deferred) | [observability_exports.md](observability_exports.md) |
-| — | Daemon pipeline composition (planning) | [deferred.md](deferred.md) |
-| — | 18 performance optimizations remaining | [performance.md](performance.md) |
-| — | Ongoing maintenance | [todos.md](todos.md), [deferred.md](deferred.md) |
+See [todos.md](todos.md) for the canonical registry of remaining work, and [deferred.md](deferred.md) for planning-phase architectural work.

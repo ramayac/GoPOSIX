@@ -1,76 +1,22 @@
-# RPC Client API
+# RPC Client API — Type Signature Reference
 
-Go client library for the GoPOSIX daemon. Import path: `github.com/ramayac/goposix/pkg/client`.
+> **This is a type-signature catalog.** For usage, connection lifecycle, error handling,
+> context propagation, retry behavior, and performance, see [sdk.md](sdk.md).
 
-## Quick Start
+Import path: `github.com/ramayac/goposix/pkg/client`.
 
-```go
-package main
+---
 
-import (
-    "context"
-    "fmt"
-    "github.com/ramayac/goposix/pkg/client"
-)
-
-func main() {
-    c, _ := client.New("/var/run/goposix.sock", client.WithPoolSize(4))
-    defer c.Close()
-    ctx := context.Background()
-
-    ping, _ := c.Ping(ctx)
-    fmt.Printf("daemon version: %s\n", ping.Version)
-
-    result, _ := c.Ls(ctx, "/var/log", []string{"-l"})
-    for _, f := range result.Files {
-        fmt.Printf("%s (%d bytes)\n", f.Name, f.Size)
-    }
-}
-```
-
-## Connection Lifecycle
+## Core Low-Level Methods
 
 ```go
-c, err := client.New("/tmp/goposix.sock",
-    client.WithPoolSize(4),
-    client.WithTimeout(30*time.Second),
-    client.WithMaxRetries(2),
-)
-defer c.Close()
+func (c *Client) Call(ctx context.Context, method string, params interface{}, result interface{}) error
+func (c *Client) CallRaw(ctx context.Context, method string, params interface{}) (json.RawMessage, error)
+func (c *Client) Batch(ctx context.Context, reqs []BatchRequest) ([]BatchResponse, error)
+func (c *Client) Notify(ctx context.Context, method string, params interface{}) error
 ```
 
-Connections are pooled and reused. The pool grows up to `poolSize` concurrent connections.
-
-## Core Methods
-
-### Call — generic JSON-RPC
-
-```go
-var result MyType
-err := c.Call(ctx, "goposix.ls", params, &result)
-```
-
-### CallRaw — returns raw JSON
-
-```go
-raw, err := c.CallRaw(ctx, "goposix.someMethod", params)
-```
-
-### Batch — multiple requests in one round-trip
-
-```go
-reqs := []client.BatchRequest{
-    {Method: "goposix.echo", Params: map[string]string{"text": "a"}},
-    {Method: "goposix.echo", Params: map[string]string{"text": "b"}},
-}
-resps, err := c.Batch(ctx, reqs)
-```
-
-### Notify — fire-and-forget (no response)
-
-```go
-err := c.Notify(ctx, "goposix.true", nil)
-```
+---
 
 ## Typed Utility Helpers
 
@@ -180,10 +126,8 @@ c.SessionDestroy(ctx, s.SessionID)
 c.ShellExec(ctx, sessionID, "echo hello && ls -la")
 ```
 
-The `sessionID` parameter is optional — pass `""` for stateless one-off commands. When provided,
-the shell inherits the session's working directory and environment. All executions are subject to
-the timeout configured by `GOPOSIX_SHELL_TIMEOUT` (default `30s`, accepts Go duration strings like
-`"60s"`, `"5m"`). See [Security Model](security.md) for the full sandbox and resource limit details.
+The `sessionID` parameter is optional — pass `""` for stateless one-off commands.
+See [security.md](security.md) for sandbox and resource limit details.
 
 ### Ping
 
@@ -191,34 +135,9 @@ the timeout configured by `GOPOSIX_SHELL_TIMEOUT` (default `30s`, accepts Go dur
 c.Ping(ctx)
 ```
 
-## Context Propagation
+---
 
-All methods accept `context.Context`:
+## See Also
 
-```go
-ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-defer cancel()
-result, err := c.Ls(ctx, "/tmp", nil)
-```
-
-## Retry Behavior
-
-Transient errors (connection refused, broken pipe, timeout, EOF) retry with exponential backoff:
-
-- Attempt 0: immediate
-- Attempt 1: 100ms
-- Attempt 2: 200ms
-
-Non-retryable errors (RPC errors, invalid params) return immediately.
-
-## Error Handling
-
-RPC errors include standard JSON-RPC 2.0 codes:
-
-| Code | Meaning |
-|------|---------|
-| -32700 | Parse error |
-| -32600 | Invalid Request |
-| -32601 | Method not found |
-| -32602 | Invalid params (includes path traversal) |
-| -32000 | Server error / rate limited |
+- [sdk.md](sdk.md) — Go SDK guide: connection, error handling, context propagation, retry, performance.
+- [rpc_quickstart.md](rpc_quickstart.md) — Raw JSON-RPC protocol for non-Go clients.

@@ -204,9 +204,11 @@
 | Packages below 70% unit coverage | 0 | None (all packages ≥70%) |
 ## Remaining Gaps
 
-| # | Gap | Count |
-|---|-----|-------|
-| 1 | awk BusyBox failures | 17 (goawk v1.31.0 engine limitations) |
+See [todos.md](todos.md) for the canonical list of remaining work:
+
+- awk: 17 BusyBox failures (deferred — goawk v1.31.0 engine limitations)
+- Coverage: 13 packages below 80% (blocked by syscall/I/O error mocking)
+- Alpine daemon target: planning
 
 
 ## Notes

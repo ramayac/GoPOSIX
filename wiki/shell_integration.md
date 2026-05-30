@@ -61,7 +61,7 @@ _goposix_rpc() {
     return "${exit_code:-0}"
 }
 
-# Generate aliases for all 77 commands.
+# Generate aliases for all commands.
 _goposix_commands() {
     goposix --list-commands 2>/dev/null || echo ""
 }
