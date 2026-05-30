@@ -353,3 +353,63 @@ func TestGzip_StdinDash(t *testing.T) {
 		t.Error("roundtrip mismatch")
 	}
 }
+
+func TestGunzipWrongSuffix(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "test.txt")
+	os.WriteFile(f, []byte("not gzipped"), 0644)
+	var stdout, stderr bytes.Buffer
+	code := runGunzip([]string{"-d", f}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Errorf("gunzip wrong suffix: exit %d, want 1", code)
+	}
+}
+
+func TestGzipOutputExistsWithoutForce(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.txt")
+	os.WriteFile(src, []byte("hello"), 0644)
+	out := filepath.Join(dir, "src.txt.gz")
+	os.WriteFile(out, []byte("existing"), 0644)
+	var stdout, stderr bytes.Buffer
+	code := runGzip([]string{src}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Errorf("gzip existing output: exit %d, want 1", code)
+	}
+}
+
+func TestGunzipOutputExistsWithoutForce(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.txt")
+	os.WriteFile(src, []byte("hello"), 0644)
+	// Create .gz
+	var buf bytes.Buffer
+	code := runGzip([]string{"-c", src}, nil, &buf, &buf, "")
+	if code != 0 {
+		t.Fatal("gzip -c failed")
+	}
+	gzFile := filepath.Join(dir, "src.txt.gz")
+	os.WriteFile(gzFile, buf.Bytes(), 0644)
+	// Create output file that would conflict
+	outFile := filepath.Join(dir, "src.txt")
+	os.WriteFile(outFile, []byte("existing"), 0644)
+	var stdout, stderr bytes.Buffer
+	code = runGunzip([]string{"-d", gzFile}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Errorf("gunzip existing output: exit %d, want 1", code)
+	}
+}
+
+func TestGzipJSONMode(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "j.txt")
+	os.WriteFile(src, []byte("json test"), 0644)
+	var stdout, stderr bytes.Buffer
+	code := runGzip([]string{"--json", "-c", src}, nil, &stdout, &stderr, "")
+	if code != 0 {
+		t.Fatalf("gzip --json -c: exit %d", code)
+	}
+	if !strings.Contains(stdout.String(), "command") {
+		t.Errorf("expected JSON output, got: %s", stdout.String())
+	}
+}

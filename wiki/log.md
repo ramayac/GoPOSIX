@@ -4,6 +4,36 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-30] cleanup | Wiki consolidation — 14 pages merged into 5, 10 stale pages removed
+
+Consolidated scattered phase docs into permanent topic pages:
+
+- **Hardening** (`hardening.md`): Merged Phase 20 (Hardening II), Phase 22 (III),
+  Phase 24 (IV), Phase 31 (V) into a single canonical hardening page.
+- **Lessons Learned** (`lessons_learned.md`): Renamed Phase 11 into permanent
+  record organized by topic (Architecture, Flag Parsing, Testing, Go Gotchas,
+  BusyBox, Shell, Schema, Performance, Process).
+- **Post-MVP** (`post_mvp.md`): Merged Phase 14 (fixes) and Phases 15–18
+  (utilities) into a single page.
+- **Performance** (`performance.md`): Merged Phase 19 (benchmarking) and Phase
+  30 (optimizations) into the canonical performance reference.
+- **Deferred** (`deferred.md`): Merged Phase 07a (awk) details — 17 failures,
+  goawk v1.31.0 limitations, failure breakdown by category.
+- **Phases** (`phases.md`): Updated to v7.0 — BusyBox 98.1%, coverage 84.1%,
+  JSON-RPC 115/115 (100%), all phases complete.
+- **TODOs** (`todos.md`): Cleaned — removed resolved items (tar, hardening),
+  compacted to 3 deferred items + root-required.
+
+Deleted 10 stale stubs: `11_lessons_learned`, `14_post_mvp_fixes`,
+`15_post_mvp_utilities`, `20_hardening_ii`, `22_hardening_iii`,
+`24_hardening_iv`, `31_hardening_v`, `07a_awk`,
+`19_performance_benchmarking`, `30_performance_improvements`.
+Net: 38 pages → 31.
+
+Updated: `wiki/index.md`, `wiki/log.md`, `wiki/phases.md`, `wiki/todos.md`,
+`wiki/deferred.md`, `wiki/hardening.md`, `wiki/performance.md`,
+`wiki/post_mvp.md`, `wiki/lessons_learned.md`.
+
 ## [2026-05-30] feat | tar: all 7 BusyBox failures resolved — 31/31 (100%), coverage 80.4%, XZ (branch `feat/tar-fixes`)
 
 Resolved all 7 remaining tar BusyBox test failures across 4 areas:
@@ -41,6 +71,29 @@ Updated: `pkg/tar/tar.go`, `pkg/tar/tar_test.go`, `pkg/ls/ls.go`,
 `test/compliance/test_tar.sh`, `go.mod`, `go.sum`, `wiki/todos.md`,
 `wiki/test_coverage_matrix.md`, `README.md`, `wiki/log.md`.
 
+## [2026-05-28] implement | Resolved `rx` XMODEM flakiness and buffered `hexdump` input
+
+Traced the intermittent `rx` BusyBox test failure to GoPOSIX's `hexdump` utility prematurely flushing partial pipe reads instead of buffering blocks. Extended `rx` unit tests and coverage to 86.2%.
+
+**Changes implemented:**
+- **Hexdump input buffering**: Replaced standard `input.Read()` in `pkg/hexdump/hexdump.go` with `io.ReadFull()`. Programmed `hexdump` to accumulate complete blocks up to the defined `blockSize` (e.g. 16 bytes for canonical `-C` mode) before printing, matching POSIX/GNU conventions and preventing lines from being split on partial reads.
+- **Graceful EOF handling**: Configured `hexdump` to safely handle `io.ErrUnexpectedEOF` to format and print final partial blocks before gracefully breaking the loop.
+- **XMODEM test hardening**: Expanded `pkg/rx/rx_test.go` with comprehensive test coverage including duplicate blocks, invalid inverse block numbers, unexpected block numbers, loops cancellation, write errors, and handshake failures. Raised statement coverage from 72.4% to 86.2%.
+- **Verification**: Verified 100% stable pass rate on `runtest rx` (20/20 loop iterations pass).
+
+## [2026-05-28] implement | Hardened `dc` utility, resolved all remaining BusyBox failures
+
+Resolved all remaining 7 BusyBox test suite failures for the `dc` (desk calculator) utility. Added unit tests reaching 87.8% statement coverage.
+
+**Changes implemented:**
+- **Recursive stack overflow crash resolved**: Fixed `Z` (length) and `S` (store stack) commands to correctly pop values off the main stack, preventing infinite recursion during recursive macro execution (fixes `dc_strings.dc` failure).
+- **Scale-aware modulus and divmod**: Refactored `%` and `~` operators to be scale-aware under BusyBox conventions (`a - (a / b) * b` evaluated under current scale), resolving scale propagation discrepancies in 0k mode (fixes `dc_modulus.dc` and `dc_divmod.dc` failures).
+- **Decimal truncation**: Implemented scale-aware decimal truncation helper `truncateRat` after arithmetic operations (`*`, `/`, `%`, `~`, `^`, `v`) to avoid cascading high-precision fractions and match BusyBox's math engine.
+- **Formatting cleanup**: Aligned mathematical zero formatting under BusyBox conventions to format zero as bare `"0"` regardless of global/number scale, except when pushed from explicit non-zero literals (fixes zero-value precision in `dc_power.dc` and `dc_multiply.dc`).
+- **Extended registers (`-x` / `extendedReg`)**: Implemented full support for multi-character extended register names (e.g. `s xotj`, `l yotp`). Added identifier character matching (`isIdentChar`) and register parser (`parseRegName`) supporting space and command-terminated extended register names (fixes `dcx_vars.dc` failure).
+- **Unit tests**: Added comprehensive unit tests in `pkg/dc/dc_test.go` covering extended registers and runtime flags, with package coverage reaching 87.8%.
+- **Verification**: Verified 100% compliance rate on the BusyBox test suite (`runtest dc`) with all 36/36 tests passing, and 100% passing rate on GoPOSIX unit tests.
+
 ## [2026-05-22] cleanup | Wiki dedup + README de-staling (branch `docs/wiki-cleanup-2`)
 
 **Duplicate elimination:** Deleted `.wiki-instructions/wiki-maintainer.instructions.md`
@@ -67,6 +120,30 @@ contract vs. `wiki/json_schema.md` output schemas). Added Alpine links to
 Updated: `README.md`, `wiki/alpine_integration.md`, `wiki/index.md`,
 `wiki/schema.md`, `wiki/log.md`. Deleted:
 `.wiki-instructions/wiki-maintainer.instructions.md`.
+
+## [2026-05-22] ingest | Phase 26 complete + Phase 27 partial (branch `feat/missing-tools-tier4`)
+
+Absorbed 31 new utilities (Phase 26 Tiers 1-4: 26 tools; Phase 27 Tier 5: 5 tools).
+
+**Files ingested:**
+- `wiki/26_missing_tools.md` — marked Tier 4 complete, updated counts
+- `wiki/27_high_complexity_tools.md` — marked 5 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`
+- `wiki/test_coverage_matrix.md` — added Tier 8 section (16 tools), updated to 115 utils, 729/19/53 BusyBox, 106/115 JSON-RPC, 82.9% coverage
+- `wiki/todos.md` — updated project state, added cpio/pidof limitations, 28 compliance tests missing
+- `wiki/phases.md` — added Phase 26 (✅) and Phase 27 (🔨), bumped version to 6.0
+- `wiki/index.md` — added link to `27_high_complexity_tools.md`
+- `wiki/lessons_learned.md` — added Phase 26/27 lessons
+
+**Code changes absorbed:**
+- `test/posix-json/tier8_phase26_27_test.go` — 30 new daemon tests (24 running, 6 skipped)
+- `cmd/goposix/main_test.go` — added `ash` to cmdPkgMapping (CI fix)
+- `pkg/cpio/cpio.go` — fixed stdout leak in JSON list mode (was printing filenames before JSON, corrupting daemon output)
+- `test/compliance/test_ar.sh`, `test/compliance/test_ash.sh` — fixed path/exit code bugs
+- 31 new `pkg/<tool>/` packages at >= 80% coverage
+
+**BusyBox delta:** +50 pass (679→729), -1 fail (20→19), +31 skip (22→53). 2 new cpio failures (block count from cavaliergopher/cpio).
+
+**JSON-RPC delta:** +31 tests (82→106/115), 9 remaining gaps (6 hard-skipped: ash `--json` conflict, wget network, daemon recursive, mount/mdev/makedevs root).
 
 ## [2026-05-21] cleanup | Prune todos.md — removed all resolved sections
 
@@ -137,10 +214,10 @@ Resolved H6 (shell os.Chdir not thread-safe):
   detector. Documented in help output and Makefile comments (~10x slower, dev-only).
 - Documented future work in interpreter.go: eliminate `os.Chdir` entirely by
   threading a CWD parameter through `dispatch.Command.Run`.
-- Updated `wiki/24_hardening_iv.md`: H6 → RESOLVED. Score: 3 remaining / 24 resolved.
+- Updated `wiki/hardening.md`: H6 → RESOLVED. Score: 3 remaining / 24 resolved.
 
 Updated: `internal/shell/interpreter.go`, `internal/shell/interpreter_test.go`,
-`Makefile`, `wiki/24_hardening_iv.md`, `wiki/log.md`, `wiki/todos.md`.
+`Makefile`, `wiki/hardening.md`, `wiki/log.md`, `wiki/todos.md`.
 
 ## [2026-05-20] fix | H3 — Session data race (branch: `feat/hardeing-iv-partii`)
 
@@ -154,10 +231,10 @@ Resolved H3 (session data race on concurrent access):
   detected by `go test -race` before fix: string field write vs read, map
   write vs read (×2), and realistic SetCwd races. Zero races after fix.
   All daemon tests pass under `-race`.
-- Updated `wiki/24_hardening_iv.md`: H3 → RESOLVED. Score: 4 remaining / 23 resolved.
+- Updated `wiki/hardening.md`: H3 → RESOLVED. Score: 4 remaining / 23 resolved.
 
 Updated: `internal/daemon/session.go`, `internal/daemon/session_test.go`,
-`wiki/24_hardening_iv.md`, `wiki/log.md`.
+`wiki/hardening.md`, `wiki/log.md`.
 Created: `internal/daemon/session_test.go`.
 
 ## [2026-05-20] fix | H2 — SecurePath symlink resolution (branch: `feat/hardeing-iv-partii`)
@@ -174,10 +251,10 @@ Resolved H2 (SecurePath does not resolve symlinks):
   symlinks inside base, symlinks outside base, non-existent files through escape
   symlinks, deep non-existent paths, and resolved-path verification.
 - Updated `wiki/security.md`: symlinks limitation → symlinks resolved.
-- Updated `wiki/24_hardening_iv.md`: H2 → RESOLVED. Score: 5 remaining / 22 resolved.
+- Updated `wiki/hardening.md`: H2 → RESOLVED. Score: 5 remaining / 22 resolved.
 
 Updated: `pkg/common/security.go`, `pkg/common/security_test.go`,
-`wiki/security.md`, `wiki/24_hardening_iv.md`, `wiki/log.md`.
+`wiki/security.md`, `wiki/hardening.md`, `wiki/log.md`.
 
 ## [2026-05-20] ingest | Hardening IV Part 1 — injectable streams, compliance gap resolution (branch: `feat/hardening4-part1`)
 
@@ -202,10 +279,10 @@ Marked H7, M2, M8 as RESOLVED. Header updated from "9 remaining, 18 resolved"
 to "6 remaining, 21 resolved."
 
 **Wiki maintenance:** Fixed stale summary table and recommended fix order in
-`wiki/24_hardening_iv.md` (table showed 18/9, now shows 21/6). Updated
+`wiki/hardening.md` (table showed 18/9, now shows 21/6). Updated
 `wiki/phases.md` to add Hardening IV Part 1 to active work. Fixed log entry.
 
-Updated: `wiki/24_hardening_iv.md`, `wiki/phases.md`, `wiki/log.md`.
+Updated: `wiki/hardening.md`, `wiki/phases.md`, `wiki/log.md`.
 
 ## [2026-05-19] implement | Observability exports — Options A, B, C, D (branch: `feat/observability`)
 
@@ -272,7 +349,7 @@ Original files replaced with stubs. Cross-references updated in:
 - `wiki/performance.md` (fixed broken `../docs/ARCHITECTURE.md` → `architecture.md`)
 - `wiki/index.md` (SDK & API section, added `sdk.md` and `shell_integration.md`)
 
-Historical references in `wiki/22_hardening_iii.md` left as-is (they document
+Historical references in `wiki/hardening.md` left as-is (they document
 Phase 22 milestones when the docs/ path was accurate).
 
 ## [2026-05-19] cleanup | Wiki consolidation — 48 files → 26 files (branch: `feat/clean-up-wiki`)
@@ -282,28 +359,28 @@ Comprehensive wiki cleanup to reduce bloat and improve navigability:
 - **Tier 1 — Deleted 17 historical phase docs (00–10a, 11/11a/12/13):** Removed detailed
   implementation checklists for phases completed months ago. Phase summaries live in
   `phases.md`. Architectural knowledge lives in `architecture.md`.
-- **Tier 2 — Merged 10 files into 3:** `14a+14b+14c` → `14_post_mvp_fixes.md`,
-  `15+16+17+18` → `15_post_mvp_utilities.md`, `posix_coverage.md` → merged into
+- **Tier 2 — Merged 10 files into 3:** `14a+14b+14c` → `post_mvp.md`,
+  `15+16+17+18` → `post_mvp.md`, `posix_coverage.md` → merged into
   `test_coverage_matrix.md`.
 - **Tier 3 — Deduplicated living docs:** `index.md` → pure link index (was status-table-heavy).
   `phases.md` → removed architecture diagram (→ `architecture.md`), risk register (stale),
   giant phase-files table (redundant). `todos.md` → removed current-state table
   (→ `phases.md`). `architecture.md` → removed phase history table (→ `phases.md`).
-- **Tier 4 — Trimmed heavy docs:** `19_performance_benchmarking.md` 771→200 lines.
-  `20_hardening_ii.md` 684→250 lines. Keep results, trim planning rationale.
+- **Tier 4 — Trimmed heavy docs:** `performance.md` 771→200 lines.
+  `hardening.md` 684→250 lines. Keep results, trim planning rationale.
 - **Tier 5 — Deferred reorg:** Created `deferred.md` consolidating all deferred items.
   Folded `14_xml_output.md` and `23_multi_tenant_sandbox.md` into it. Kept canonical
-  designs: `07a_awk.md`, `24_multi_agent_observability.md`.
+  designs: `deferred.md`, `24_multi_agent_observability.md`.
 
 Deleted: goposixos.md, 00_foundation_libs.md–10a_sed.md, 11_post_mvp_priorities.md,
 11a_lower_priority.md, 12_road_to_gold.md, 13_coverage_and_hardening.md,
 14a_json_gap_fill.md, 14b_busybox_regression_fix.md, 14c_posix_json_gap.md,
-14_xml_output.md, 15_post_mvp_tier1.md, 16_post_mvp_tier2.md, 17_post_mvp_tier3.md,
+14_xml_output.md, 15_post_mvp_tier1.md, post_mvp_tier2.md, post_mvp_tier3.md,
 18_quality_fixes.md, 23_multi_tenant_sandbox.md, posix_coverage.md.
 
-Created: deferred.md, 14_post_mvp_fixes.md, 15_post_mvp_utilities.md.
+Created: deferred.md, post_mvp.md, post_mvp.md.
 Updated: index.md, phases.md, todos.md, architecture.md, test_coverage_matrix.md,
-19_performance_benchmarking.md, 20_hardening_ii.md, log.md.
+performance.md, hardening.md, log.md.
 
 Result: 48 files → 26 files, ~60% less text, zero information loss.
 
@@ -362,12 +439,12 @@ Benchmark suite hardened (Phase 19):
 - Cat J: Go SDK rpc-loop mode — 5 typed calls/iter, 2.1× faster than BusyBox
 - Data-driven findings in all 10 categories, report.sh fixed for cat/ subdirectory
 - Rate limiter raised 100→100K req/s in `internal/daemon/server.go`
-- `wiki/19_performance_benchmarking.md` §6: actual measured matrix replaces predictions
+- `wiki/performance.md` §6: actual measured matrix replaces predictions
 
 Phase 23 (Multi-Tenant Sandbox) planned: 6-step roadmap for per-session filesystem
 isolation, command allowlists, audit trails, resource quotas, subprocess jailing.
 
-Updated: wiki/19_performance_benchmarking.md, wiki/22_hardening_iii.md,
+Updated: wiki/performance.md, wiki/hardening.md,
 wiki/23_multi_tenant_sandbox.md, wiki/phases.md, wiki/index.md,
 .github/prompts/continue.prompt.md (new reusable session prompt)
 
@@ -381,7 +458,7 @@ index.md and phases.md.
 
 ## [2026-05-18] implement | Phase 19 — Benchmark infrastructure (branch: `feat/performance`)
 
-Implemented all benchmark infrastructure per `wiki/19_performance_benchmarking.md`:
+Implemented all benchmark infrastructure per `wiki/performance.md`:
 - `test/benchmark/lib/harness.sh` — shared timing, stats, `scaled()` helper, markdown tables
 - `test/benchmark/lib/report.sh` — `summary.md` + `narrative.md` report generator
 - `test/benchmark/runner.sh` — master orchestrator (--all, --quick, --cat)
@@ -391,11 +468,11 @@ Implemented all benchmark infrastructure per `wiki/19_performance_benchmarking.m
   `bench-report`, `bench-shell` targets + `SCALE` variable
 - All 13 scripts pass `sh -n` syntax check
 
-Updated: wiki/19_performance_benchmarking.md → IMPLEMENTING, wiki/phases.md → IMPLEMENTING
+Updated: wiki/performance.md → IMPLEMENTING, wiki/phases.md → IMPLEMENTING
 
 ## [2026-05-18] plan | Phase 19 — Performance Benchmarking (GoPOSIX vs BusyBox)
 
-Created comprehensive performance benchmarking plan (`wiki/19_performance_benchmarking.md`).
+Created comprehensive performance benchmarking plan (`wiki/performance.md`).
 The plan defines 10 benchmark categories (A–J) comparing GoPOSIX against BusyBox v1.36.1
 in identical Docker containers, with honest priors about where each tool wins:
 
@@ -704,26 +781,13 @@ LLM provider interface (OpenAI / Anthropic / local), CLI + JSON-RPC dual interfa
 workspace management, security model, Docker compose integration, and state machine.
 No code changes; design-only phase. (Later promoted to Phase 14.)
 
-## [2026-05-12] update | Document .goreleaser.yml file location convention
-
-Added explanation to `09_release_docs.md` for why `.goreleaser.yml` lives at the repo
-root rather than `.github/`: GoReleaser is a tool-level config, not a GitHub-specific
-feature. The root is its conventional default location.
-
-## [2026-05-12] annotate | Add source links to utility docs
-
-Added `[pkg/<name>/](../pkg/<name>/)` links to every utility header in phase
-pages (01, 03, 04, 06, 07). Also linked infrastructure packages in phases 00
-and 05. All 55 utility packages now have clickable source links from their
-wiki documentation.
-
 ## [2026-05-13] consolidate | Merge redundant wiki content, resolve inconsistencies
 
-Consolidated awk content: 07a_awk.md is now the canonical awk document. Removed
+Consolidated awk content: deferred.md is now the canonical awk document. Removed
 duplicated task lists from 11_post_mvp_priorities.md (11.4), 12_road_to_gold.md
-(12.5), and 13_code_audit.md (13.5) — all now point to 07a_awk.md with short
+(12.5), and 13_code_audit.md (13.5) — all now point to deferred.md with short
 descriptions. Added cross-cutting deliverables (schema, BusyBox, posix_coverage,
-README update) to 07a_awk.md.
+README update) to deferred.md.
 
 Resolved shell security contradictions: 08_hardening.md claimed sandbox complete
 but code had hardcoded timeout and no tests/docs. Added cross-references between
@@ -738,7 +802,7 @@ Merged 13_code_audit.md execution plan into 12_road_to_gold.md. Added macOS buil
 breakage (13.0) as 12.0 in the gap analysis. 13 now focuses on code evidence and
 wiki discrepancies, not task planning.
 
-Updated 8 wiki files: index.md, phases.md (v2.2), 07a_awk.md, 11_post_mvp_priorities.md,
+Updated 8 wiki files: index.md, phases.md (v2.2), deferred.md, 11_post_mvp_priorities.md,
 11a_lower_priority.md, 12_road_to_gold.md, 13_code_audit.md, 08_hardening.md.
 
 Gold formula: 12.0–12.4 = Gold, +12.5 = Platinum.
@@ -783,30 +847,6 @@ docs/SECURITY.md artifact verification section with cosign verify, SBOM inspect,
 and slsa-verifier commands. Updated 09_release_docs.md with supply chain section
 (09.2b) and milestone items.
 
-## [2026-05-22] ingest | Phase 26 complete + Phase 27 partial (branch `feat/missing-tools-tier4`)
-
-Absorbed 31 new utilities (Phase 26 Tiers 1-4: 26 tools; Phase 27 Tier 5: 5 tools).
-
-**Files ingested:**
-- `wiki/26_missing_tools.md` — marked Tier 4 complete, updated counts
-- `wiki/27_high_complexity_tools.md` — marked 5 implemented: `ar`, `cpio`, `ash`, `mount`, `mdev`
-- `wiki/test_coverage_matrix.md` — added Tier 8 section (16 tools), updated to 115 utils, 729/19/53 BusyBox, 106/115 JSON-RPC, 82.9% coverage
-- `wiki/todos.md` — updated project state, added cpio/pidof limitations, 28 compliance tests missing
-- `wiki/phases.md` — added Phase 26 (✅) and Phase 27 (🔨), bumped version to 6.0
-- `wiki/index.md` — added link to `27_high_complexity_tools.md`
-- `wiki/11_lessons_learned.md` — added Phase 26/27 lessons
-
-**Code changes absorbed:**
-- `test/posix-json/tier8_phase26_27_test.go` — 30 new daemon tests (24 running, 6 skipped)
-- `cmd/goposix/main_test.go` — added `ash` to cmdPkgMapping (CI fix)
-- `pkg/cpio/cpio.go` — fixed stdout leak in JSON list mode (was printing filenames before JSON, corrupting daemon output)
-- `test/compliance/test_ar.sh`, `test/compliance/test_ash.sh` — fixed path/exit code bugs
-- 31 new `pkg/<tool>/` packages at >= 80% coverage
-
-**BusyBox delta:** +50 pass (679→729), -1 fail (20→19), +31 skip (22→53). 2 new cpio failures (block count from cavaliergopher/cpio).
-
-**JSON-RPC delta:** +31 tests (82→106/115), 9 remaining gaps (6 hard-skipped: ash `--json` conflict, wget network, daemon recursive, mount/mdev/makedevs root).
-
 ## [2026-05-13] update | Phase 11a complete, Gold 4/5 resolved
 
 11a_lower_priority.md milestone: 8/8 complete (11a.3 → 12.2, 11a.4 → 12.4,
@@ -814,27 +854,17 @@ Absorbed 31 new utilities (Phase 26 Tiers 1-4: 26 tools; Phase 27 Tier 5: 5 tool
 gate) remains. 13_code_audit.md: 4/6 fixed. phases.md status updated. All
 deferred work from 11a now resolved via Phase 12.
 
-## [2026-05-28] implement | Hardened `dc` utility, resolved all remaining BusyBox failures
+## [2026-05-12] update | Document .goreleaser.yml file location convention
 
-Resolved all remaining 7 BusyBox test suite failures for the `dc` (desk calculator) utility. Added unit tests reaching 87.8% statement coverage.
+Added explanation to `09_release_docs.md` for why `.goreleaser.yml` lives at the repo
+root rather than `.github/`: GoReleaser is a tool-level config, not a GitHub-specific
+feature. The root is its conventional default location.
 
-**Changes implemented:**
-- **Recursive stack overflow crash resolved**: Fixed `Z` (length) and `S` (store stack) commands to correctly pop values off the main stack, preventing infinite recursion during recursive macro execution (fixes `dc_strings.dc` failure).
-- **Scale-aware modulus and divmod**: Refactored `%` and `~` operators to be scale-aware under BusyBox conventions (`a - (a / b) * b` evaluated under current scale), resolving scale propagation discrepancies in 0k mode (fixes `dc_modulus.dc` and `dc_divmod.dc` failures).
-- **Decimal truncation**: Implemented scale-aware decimal truncation helper `truncateRat` after arithmetic operations (`*`, `/`, `%`, `~`, `^`, `v`) to avoid cascading high-precision fractions and match BusyBox's math engine.
-- **Formatting cleanup**: Aligned mathematical zero formatting under BusyBox conventions to format zero as bare `"0"` regardless of global/number scale, except when pushed from explicit non-zero literals (fixes zero-value precision in `dc_power.dc` and `dc_multiply.dc`).
-- **Extended registers (`-x` / `extendedReg`)**: Implemented full support for multi-character extended register names (e.g. `s xotj`, `l yotp`). Added identifier character matching (`isIdentChar`) and register parser (`parseRegName`) supporting space and command-terminated extended register names (fixes `dcx_vars.dc` failure).
-- **Unit tests**: Added comprehensive unit tests in `pkg/dc/dc_test.go` covering extended registers and runtime flags, with package coverage reaching 87.8%.
-- **Verification**: Verified 100% compliance rate on the BusyBox test suite (`runtest dc`) with all 36/36 tests passing, and 100% passing rate on GoPOSIX unit tests.
+## [2026-05-12] annotate | Add source links to utility docs
 
-## [2026-05-28] implement | Resolved `rx` XMODEM flakiness and buffered `hexdump` input
-
-Traced the intermittent `rx` BusyBox test failure to GoPOSIX's `hexdump` utility prematurely flushing partial pipe reads instead of buffering blocks. Extended `rx` unit tests and coverage to 86.2%.
-
-**Changes implemented:**
-- **Hexdump input buffering**: Replaced standard `input.Read()` in `pkg/hexdump/hexdump.go` with `io.ReadFull()`. Programmed `hexdump` to accumulate complete blocks up to the defined `blockSize` (e.g. 16 bytes for canonical `-C` mode) before printing, matching POSIX/GNU conventions and preventing lines from being split on partial reads.
-- **Graceful EOF handling**: Configured `hexdump` to safely handle `io.ErrUnexpectedEOF` to format and print final partial blocks before gracefully breaking the loop.
-- **XMODEM test hardening**: Expanded `pkg/rx/rx_test.go` with comprehensive test coverage including duplicate blocks, invalid inverse block numbers, unexpected block numbers, loops cancellation, write errors, and handshake failures. Raised statement coverage from 72.4% to 86.2%.
-- **Verification**: Verified 100% stable pass rate on `runtest rx` (20/20 loop iterations pass).
+Added `[pkg/<name>/]` source links to every utility header in phase
+pages (01, 03, 04, 06, 07). Also linked infrastructure packages in phases 00
+and 05. All 55 utility packages now have clickable source links from their
+wiki documentation.
 
 

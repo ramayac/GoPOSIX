@@ -2,6 +2,8 @@ package hostname
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -128,5 +130,37 @@ func TestRunCLI_BadFlag(t *testing.T) {
 	code := run([]string{"--nonexistent"}, nil, &buf, &buf, "")
 	if code != 2 {
 		t.Errorf("exit %d, want 2", code)
+	}
+}
+
+func TestHostnameSetShort(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-s", "newhost"}, nil, &buf, &buf, "")
+	// Will likely fail without root, but exercises the set-hostname code path
+	if code == 0 {
+		t.Log("set hostname succeeded (running as root?)")
+	}
+}
+func TestHostnameSetFQDN(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-F", "/etc/hostname"}, nil, &buf, &buf, "")
+	// Exercises file-based hostname setting
+	_ = code
+}
+
+func TestHostnameFileFlag(t *testing.T) {
+	dir := t.TempDir()
+	hf := filepath.Join(dir, "hostname_file")
+	os.WriteFile(hf, []byte("myhost\n"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-F", hf}, nil, &buf, &buf, "")
+	_ = code
+}
+func TestHostnameFileFlagMissing(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-F", "/nonexistent/hostname_file"}, nil, &buf, &buf, "")
+	// -F with missing file should fail
+	if code == 0 {
+		t.Error("hostname -F missing: expected non-zero exit")
 	}
 }

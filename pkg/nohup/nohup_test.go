@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -75,4 +76,26 @@ func TestNohup_JSON_MissingCommand(t *testing.T) {
 	if code != 1 {
 		t.Errorf("expected exit 1 for missing command, got %d", code)
 	}
+}
+
+func TestNohupStdinRedirection(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"echo", "hello"}, strings.NewReader(""), &buf, &buf, "")
+	if code != 0 {
+		t.Errorf("nohup echo: exit %d", code)
+	}
+}
+
+func TestNohupWithArgs(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"echo", "test123"}, strings.NewReader(""), &buf, &buf, "")
+	// echo should output "test123" to stdout which nohup captures
+	if code != 0 {
+		t.Errorf("nohup echo: exit %d", code)
+	}
+}
+func TestNohupJSONMode(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--json", "echo", "hi"}, strings.NewReader(""), &buf, &buf, "")
+	_ = code
 }

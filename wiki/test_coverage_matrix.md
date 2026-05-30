@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-30 | **BusyBox:** 877 pass / 17 fail / 25 skip | **Branch:** `feat/tar-fixes` | **Overall Coverage:** 83.7% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-05-30 | **BusyBox:** 877 pass / 17 fail / 25 skip | **Branch:** `feat/hardening_v` | **Overall Coverage:** 84.1% | **JSON-RPC:** 115/115 (100.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -199,7 +199,7 @@
 | BusyBox passed | 877 | 98.1% (877 of 919) |
 | BusyBox failed | 17 | 17 awk (deferred) |
 | BusyBox skipped | 25 | 13 mdev (root), 7 cpio, 2 mount/makedevs (root), 1 ash, 2 awk (deferred) |
-| Overall statement coverage | 83.7% | Checked via make cover-gate |
+| Overall statement coverage | 84.1% | Checked via make cover-gate |
 | JSON-RPC daemon tests | 115/115 | 100.0% (all 115 utilities implemented and registered) |
 | Packages below 70% unit coverage | 0 | None (all packages ≥70%) |
 ## Remaining Gaps

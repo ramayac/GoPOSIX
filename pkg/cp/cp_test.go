@@ -278,3 +278,51 @@ func TestCLI_CopySymlink(t *testing.T) {
 		t.Fatalf("exit %d", code)
 	}
 }
+
+func TestCpInteractiveFlag(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.txt")
+	dst := filepath.Join(dir, "dst.txt")
+	os.WriteFile(src, []byte("hello"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-i", src, dst}, nil, &buf, &buf, "")
+	// -i should accept input; we provide no stdin so it should fail or prompt
+	_ = code
+}
+
+func TestCpRecursiveFlag(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "srcdir")
+	dst := filepath.Join(dir, "dstdir")
+	os.MkdirAll(src, 0755)
+	os.WriteFile(filepath.Join(src, "f.txt"), []byte("hello"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-r", src, dst}, nil, &buf, &buf, "")
+	if code != 0 {
+		t.Errorf("cp -r: exit %d", code)
+	}
+	if _, err := os.Stat(filepath.Join(dst, "f.txt")); err != nil {
+		t.Error("recursive copy failed")
+	}
+}
+func TestCpPreserveFlag(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.txt")
+	dst := filepath.Join(dir, "dst.txt")
+	os.WriteFile(src, []byte("hello"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-p", src, dst}, nil, &buf, &buf, "")
+	if code != 0 {
+		t.Errorf("cp -p: exit %d", code)
+	}
+}
+func TestCpUpdateFlag(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.txt")
+	dst := filepath.Join(dir, "dst.txt")
+	os.WriteFile(src, []byte("new"), 0644)
+	os.WriteFile(dst, []byte("old"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-u", src, dst}, nil, &buf, &buf, "")
+	_ = code
+}

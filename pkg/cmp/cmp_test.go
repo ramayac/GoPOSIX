@@ -3,6 +3,7 @@ package cmp
 import (
 	"bytes"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -243,5 +244,43 @@ func TestCmp_CLIRun(t *testing.T) {
 	rc := run([]string{}, nil, &outBuf, &errBuf, "")
 	if rc != 2 {
 		t.Errorf("expected exit 2 for missing operand, got %d", rc)
+	}
+}
+
+func TestCmpRunVerboseL(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "a")
+	f2 := filepath.Join(dir, "b")
+	os.WriteFile(f1, []byte("hello"), 0644)
+	os.WriteFile(f2, []byte("hxllo"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-l", f1, f2}, nil, &buf, &buf, "")
+	if code != 1 {
+		t.Errorf("cmp -l diff: exit %d, want 1", code)
+	}
+}
+func TestCmpRunNoArgs(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{}, nil, &buf, &buf, "")
+	if code == 0 {
+		t.Error("expected non-zero exit for no args")
+	}
+}
+
+func TestCmpRunStdinDash(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-", "-"}, strings.NewReader("same"), &buf, &buf, "")
+	if code != 0 {
+		t.Errorf("cmp stdin: exit %d", code)
+	}
+}
+func TestCmpRunStdinVsFile(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "a")
+	os.WriteFile(f, []byte("hello"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-", f}, strings.NewReader("hello"), &buf, &buf, "")
+	if code != 0 {
+		t.Errorf("cmp stdin vs file: exit %d", code)
 	}
 }

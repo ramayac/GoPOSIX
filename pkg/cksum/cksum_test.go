@@ -108,3 +108,28 @@ func TestCksumJson(t *testing.T) {
 		t.Error("JSON output missing checksum field")
 	}
 }
+
+func TestCksumStdinPiped(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{}, strings.NewReader("test data"), &buf, &buf, "")
+	if code != 0 {
+		t.Errorf("cksum stdin: exit %d", code)
+	}
+	// Just verify we get numeric output
+	out := strings.TrimSpace(buf.String())
+	if out == "" {
+		t.Error("cksum stdin produced no output")
+	}
+}
+func TestCksumMultipleFiles(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "a.txt")
+	f2 := filepath.Join(dir, "b.txt")
+	os.WriteFile(f1, []byte("hello"), 0644)
+	os.WriteFile(f2, []byte("world"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{f1, f2}, nil, &buf, &buf, "")
+	if code != 0 {
+		t.Errorf("cksum multiple: exit %d", code)
+	}
+}

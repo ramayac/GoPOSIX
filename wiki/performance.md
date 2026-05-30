@@ -1,6 +1,6 @@
 # Performance Benchmarking — Quick Reference
 
-> **Branch:** `feat/performance` | **Status:** IMPLEMENTING | **Plan:** [19_performance_benchmarking.md](19_performance_benchmarking.md)
+> **Branch:** `feat/performance` | **Status:** IMPLEMENTING | **Plan:** [30_performance_improvements.md](30_performance_improvements.md)
 
 ---
 
@@ -218,6 +218,44 @@ make bench-report
 
 ## See Also
 
-- [Full Benchmark Plan](19_performance_benchmarking.md) — 10 categories in detail, methodology, CI integration
+- [Architecture](architecture.md) — GoPOSIX component layout
 - [Architecture](architecture.md) — GoPOSIX component layout
 - Speed Targets: `<1ms daemon latency, <15MB binary, <100ms CLI startup` (see [phases.md](phases.md))
+
+
+---
+
+## Performance Optimizations (12/30 completed)
+
+> **Status:** PARTIALLY IMPLEMENTED | **Date:** 2026-05-23
+
+### Completed (Sprint 1 & 2)
+
+1. **wc Ultra-Fast ASCII Scanning** — 64KB buffer Peek-based scanning. 10KB of text in 25µs, 2 allocations.
+2. **tr Translation & Squeezing (100–500× speedup)** — Cached squeeze sets, 32KB `bufio.Writer`.
+3. **ls UID/GID Cache & Buffered Printing** — `sync.Map` caches with 30s TTL, 32KB buffered writer.
+4. **Daemon latency 2× reduction** — `BenchmarkDaemonLs` from 1.18ms to 0.61ms/op.
+5. Zero functional regressions across unit and BusyBox tests.
+
+### Remaining Optimizations (18)
+
+| # | Improvement | Severity | Tool |
+|---|-------------|----------|------|
+| 1 | Eliminate double JSON serialization in daemon | 🔴 Critical | daemon |
+| 2 | `sync.Pool` for JSON encoder/decoder | 🟡 High | daemon |
+| 3 | Replace `fmt.Sprintf` with `strconv.AppendInt` | 🟡 High | cat, wc, grep, ls, sort |
+| 4 | grep: `bytes.Contains` for fixed-string mode | 🟡 High | grep |
+| 5 | grep `-r`: parallelize directory walk | 🟡 High | grep |
+| 6 | grep `scanWithContext()`: sliding window | 🟡 High | grep |
+| 7 | sort: pre-allocate `lineItem` slices | 🟡 High | sort |
+| 8 | sort: `bufio.Writer` for output | 🟡 High | sort |
+| 9 | sed: `bufio.Writer`, reduce `fmt.Fprint` | 🟡 High | sed |
+| 10 | cat: `io.Copy` unbuffered, pre-computed lookup table | 🟡 High | cat |
+| 11 | ls: `DirEntry.Info()` instead of re-statting | 🟢 Medium | ls |
+| 12 | find: parallelize directory walk | 🟡 High | find |
+| 13 | dd: larger default block sizes | 🟢 Medium | dd |
+| 14 | Client SDK: buffer RPC writes | 🟢 Medium | client |
+| 15 | wc: memory-mapped I/O for large files | 🟢 Medium | wc |
+| 16 | tr: use `bytes.Map` for single-byte translations | 🟢 Medium | tr |
+| 17 | cp: `io.CopyBuffer` with larger buffer | 🟢 Medium | cp |
+| 18 | daemon: connection write pooling | 🟢 Medium | daemon |

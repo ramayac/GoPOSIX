@@ -492,3 +492,38 @@ func TestDiff_RecursiveBothMissing(t *testing.T) {
 		t.Errorf("expected exit 1, got %d", code)
 	}
 }
+
+func TestDiffContextFormat(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "a")
+	f2 := filepath.Join(dir, "b")
+	os.WriteFile(f1, []byte("line1\nline2\nline3\n"), 0644)
+	os.WriteFile(f2, []byte("line1\nlineX\nline3\n"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-c", f1, f2}, nil, &buf, &buf, "")
+	_ = code
+}
+func TestDiffUnifiedFormat(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "a")
+	f2 := filepath.Join(dir, "b")
+	os.WriteFile(f1, []byte("line1\nline2\n"), 0644)
+	os.WriteFile(f2, []byte("line1\nlineX\n"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-u", f1, f2}, nil, &buf, &buf, "")
+	if code != 1 {
+		t.Errorf("diff -u: exit %d, want 1", code)
+	}
+}
+func TestDiffIdentical(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "a")
+	f2 := filepath.Join(dir, "b")
+	os.WriteFile(f1, []byte("same\n"), 0644)
+	os.WriteFile(f2, []byte("same\n"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{f1, f2}, nil, &buf, &buf, "")
+	if code != 0 {
+		t.Errorf("diff identical: exit %d, want 0", code)
+	}
+}

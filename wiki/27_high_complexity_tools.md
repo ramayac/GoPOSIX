@@ -53,7 +53,7 @@ This document catalogs the final tier of unimplemented BusyBox-tested utilities 
 * **Library**: None — pure `math/big` stack machine.
 * **Operations**: `+`, `-`, `*`, `/`, `%`, `~` (divmod), `^` (power), `v` (sqrt), `|` (modexp), `p`/`n`/`P`/`f` (print), `c`/`d`/`r`/`R`/`z`/`Z` (stack ops), `s`/`l`/`S`/`L` (registers), `x` (macro), `>`/`<`/`=`/`!>`/`!<`/`!=`/`e` (conditionals), `(`/`{`/`G`/`N` (boolean compare), `k`/`K` (scale), `a` (ascii), `[...]` (strings), `?` (stdin), `-e`/`-f`/`--json`.
 * **Coverage**: 90.3% ✅ — strongest Tier 5 coverage.
-* **Known differences from BusyBox**: Uses global scale for formatting (BusyBox uses per-number scale). Five BusyBox dc bugs documented in [wiki/11_lessons_learned.md](11_lessons_learned.md).
+* **Known differences from BusyBox**: Uses global scale for formatting (BusyBox uses per-number scale). Five BusyBox dc bugs documented in [wiki/lessons_learned.md](lessons_learned.md).
 * **Verdict**: 29 of 36 tests pass (80.6%). `FEATURE_DC_BIG` enabled. 6 bugs fixed (conditional direction, bracket parsing, `x` command, exit code, `-x` flag, per-number scale). 7 remaining failures are scale-propagation/string/macro edge cases.
 
 #### 🧮 **`bc`** — ✅ IMPLEMENTED (`pkg/bc/`) — **22 BusyBox failures**
