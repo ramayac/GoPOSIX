@@ -1,6 +1,7 @@
 package tar
 
 import (
+	"archive/tar"
 	"bytes"
 	"encoding/json"
 	"os"
@@ -845,5 +846,217 @@ func TestTarBzip2Extract(t *testing.T) {
 	// The error should not be "unknown flag"
 	if strings.Contains(out.String(), "unknown flag") {
 		t.Error("-j flag not recognized")
+	}
+}
+
+// createTarWithEntries creates a tar archive in dir with the given entries.
+// Each entry is a []string: {name, typeflag, linkname, content}.
+// typeflag is "reg", "symlink", or "dir". For symlink, linkname is the target.
+// For reg, content is the file content. Returns the archive path.
+func createTarWithEntries(t *testing.T, dir, arcName string, entries [][]string) string {
+	t.Helper()
+	arc := filepath.Join(dir, arcName)
+	f, err := os.Create(arc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tw := tar.NewWriter(f)
+	for _, e := range entries {
+		name := e[0]
+		typ := e[1]
+		var hdr *tar.Header
+		switch typ {
+		case "reg":
+			content := ""
+			if len(e) > 3 {
+				content = e[3]
+			}
+			hdr = &tar.Header{
+				Name:     name,
+				Size:     int64(len(content)),
+				Typeflag: tar.TypeReg,
+				Mode:     0644,
+			}
+			if err := tw.WriteHeader(hdr); err != nil {
+				t.Fatal(err)
+			}
+			if content != "" {
+				if _, err := tw.Write([]byte(content)); err != nil {
+					t.Fatal(err)
+				}
+			}
+		case "symlink":
+			linkname := ""
+			if len(e) > 2 {
+				linkname = e[2]
+			}
+			hdr = &tar.Header{
+				Name:     name,
+				Linkname: linkname,
+				Typeflag: tar.TypeSymlink,
+				Mode:     0777,
+			}
+			if err := tw.WriteHeader(hdr); err != nil {
+				t.Fatal(err)
+			}
+		case "dir":
+			hdr = &tar.Header{
+				Name:     name,
+				Typeflag: tar.TypeDir,
+				Mode:     0755,
+			}
+			if err := tw.WriteHeader(hdr); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	tw.Close()
+	f.Close()
+	return arc
+}
+
+func TestTarSymlinkSafetyAbsoluteTarget(t *testing.T) {
+	// BusyBox test: "tar does not extract into symlinks"
+	// Archive: symlink passwd -> /tmp/passwd, then regular file passwd.
+	// Tar must refuse the symlink with a warning, extract the regular file.
+	dir := t.TempDir()
+	arc := createTarWithEntries(t, dir, "attack.tar", [][]string{
+		{"passwd", "symlink", "/tmp/passwd"},
+		{"passwd", "reg", "", "safe"},
+	})
+
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-x", "-f", arc, "-C", extractDir}, nil, &stdout, &stderr, "")
+
+	// Should exit 0 (warning, not error — no child entries depend on the symlink)
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+
+	// Must print the symlink safety warning
+	if !strings.Contains(stderr.String(), "can't create symlink") {
+		t.Errorf("expected symlink safety warning, got stderr: %s", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "passwd") {
+		t.Errorf("expected warning to mention 'passwd', got: %s", stderr.String())
+	}
+
+	// The regular file must be extracted (since symlink was refused, target is free)
+	data, err := os.ReadFile(filepath.Join(extractDir, "passwd"))
+	if err != nil {
+		t.Fatalf("regular file not extracted: %v", err)
+	}
+	if string(data) != "safe" {
+		t.Errorf("file content = %q, want 'safe'", string(data))
+	}
+
+	// The symlink must NOT exist
+	if fi, err := os.Lstat(filepath.Join(extractDir, "passwd")); err == nil {
+		if fi.Mode()&os.ModeSymlink != 0 {
+			t.Error("dangerous symlink was created — security violation")
+		}
+	}
+}
+
+func TestTarSymlinkSafetyKeepOld(t *testing.T) {
+	// BusyBox test: "tar -k does not extract into symlinks"
+	// Same archive as above but with -k. The symlink warning still prints.
+	dir := t.TempDir()
+	arc := createTarWithEntries(t, dir, "attack.tar", [][]string{
+		{"passwd", "symlink", "/tmp/passwd"},
+		{"passwd", "reg", "", "safe"},
+	})
+
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-x", "-k", "-f", arc, "-C", extractDir}, nil, &stdout, &stderr, "")
+
+	// Must print the symlink safety warning
+	if !strings.Contains(stderr.String(), "can't create symlink") {
+		t.Errorf("expected symlink safety warning, got stderr: %s", stderr.String())
+	}
+
+	// With -k, if target doesn't exist, the regular file should be extracted.
+	// The symlink was refused so the regular file path is free.
+	data, err := os.ReadFile(filepath.Join(extractDir, "passwd"))
+	if err != nil {
+		t.Fatalf("regular file not extracted: %v", err)
+	}
+	if string(data) != "safe" {
+		t.Errorf("file content = %q, want 'safe'", string(data))
+	}
+
+	// Should exit 0
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestTarSymlinkAttackPrevention(t *testing.T) {
+	// BusyBox test: "tar Symlink attack: create symlink and then write through it"
+	// Archive: anything.txt, symlink -> /tmp, symlink/bb_test_evilfile.
+	// Tar must refuse the symlink, create child file safely, exit 1.
+	dir := t.TempDir()
+	arc := createTarWithEntries(t, dir, "attack.tar", [][]string{
+		{"anything.txt", "reg", "", "safe"},
+		{"symlink", "symlink", "/tmp"},
+		{"symlink/bb_test_evilfile", "reg", "", "evil"},
+	})
+
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-x", "-f", arc, "-C", extractDir}, nil, &stdout, &stderr, "")
+
+	// Must print the symlink safety warning
+	if !strings.Contains(stderr.String(), "can't create symlink") {
+		t.Errorf("expected symlink safety warning, got stderr: %s", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "/tmp") {
+		t.Errorf("expected warning to mention '/tmp', got: %s", stderr.String())
+	}
+
+	// First file should be extracted normally
+	data, err := os.ReadFile(filepath.Join(extractDir, "anything.txt"))
+	if err != nil {
+		t.Fatalf("anything.txt not extracted: %v", err)
+	}
+	if string(data) != "safe" {
+		t.Errorf("anything.txt content = %q, want 'safe'", string(data))
+	}
+
+	// The dangerous symlink must NOT exist
+	if fi, err := os.Lstat(filepath.Join(extractDir, "symlink")); err == nil {
+		if fi.Mode()&os.ModeSymlink != 0 {
+			t.Error("dangerous symlink to /tmp was created — security violation")
+		}
+	}
+
+	// The child file must be extracted safely INSIDE the extraction dir
+	// (not at /tmp/bb_test_evilfile). Since the symlink was refused,
+	// symlink/ is created as a real directory.
+	evilPath := filepath.Join(extractDir, "symlink", "bb_test_evilfile")
+	data, err = os.ReadFile(evilPath)
+	if err != nil {
+		t.Fatalf("symlink/bb_test_evilfile not extracted: %v", err)
+	}
+	if string(data) != "evil" {
+		t.Errorf("bb_test_evilfile content = %q, want 'evil'", string(data))
+	}
+
+	// The file must NOT have been written to /tmp
+	if _, err := os.Stat("/tmp/bb_test_evilfile"); err == nil {
+		t.Error("bb_test_evilfile was written to /tmp — symlink attack succeeded!")
+	}
+
+	// Exit code must be 1: symlink had child entries depending on it
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
 	}
 }

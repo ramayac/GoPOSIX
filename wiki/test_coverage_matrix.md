@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-28 | **BusyBox:** 845 pass / 49 fail / 25 skip | **Branch:** `main` | **Overall Coverage:** 82.4% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-05-30 | **BusyBox:** 873 pass / 21 fail / 25 skip | **Branch:** `feat/bc-fixes` | **Overall Coverage:** 83.5% | **JSON-RPC:** 115/115 (100.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -95,7 +95,7 @@
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `tar` | 74.8% | 31 | ⚠️ 24/31 (3 mode, 3 symlink safety, 1 XZ) | ✅ |
+| `tar` | 75.4% | 31 | ⚠️ 27/31 (3 mode, 1 XZ) | ✅ |
 | `gzip` / `gunzip` | 64.7% | 4 | ✅ 4/4 | ✅ |
 | `sha256sum` | 81.6% | — | — | ✅ |
 | `sha1sum` | 89.1% | 1 | ✅ 1/1 | ✅ |
@@ -173,7 +173,7 @@
 | `rx` | 86.2% | 1 | ✅ 1/1 | ✅ |
 | `hexdump` | 83.6% | 3 | ✅ 3/3 | ✅ |
 | `xxd` | 86.4% | 7 | ✅ 7/7 | ✅ |
-| `bc` | 64.3% | 81 | ⚠️ 59/81 (22 fail) | ✅ |
+| `bc` | 80.9% | 81 | ✅ 81/81 | ✅ |
 | `mkfs.minix` | 86.4% | 1 | ✅ 1/1 | ✅ |
 ## SDK / Client Library
 
@@ -196,28 +196,28 @@
 | Total packages | 115 | 115 utilities + client SDK |
 | Unit tests passing | 115/115 | 100% |
 | BusyBox tests run | 919 | 919 total applicable tests |
-| BusyBox passed | 845 | 92.0% (845 of 919) |
-| BusyBox failed | 49 | 17 awk + 22 bc + 7 tar + 3 realpath |
+| BusyBox passed | 873 | 97.7% (873 of 919) |
+| BusyBox failed | 21 | 17 awk + 4 tar |
 | BusyBox skipped | 25 | 13 mdev (root), 7 cpio, 2 mount/makedevs (root), 1 ash, 2 awk (deferred) |
-| Overall statement coverage | 82.4% | Checked via make cover-gate |
+| Overall statement coverage | 83.6% | Checked via make cover-gate |
 | JSON-RPC daemon tests | 115/115 | 100.0% (all 115 utilities implemented and registered) |
-| Packages below 70% unit coverage | 1 | `bc` (64.3%) |
+| Packages below 70% unit coverage | 0 | None (all packages ≥70%) |
 
 ## Remaining Gaps
 
 | # | Gap | Count |
 |---|-----|-------|
 | 1 | awk BusyBox failures | 17 (goawk v1.31.0 engine limitations) |
-| 2 | bc BusyBox failures | 22 (formatting and precision/scale differences) |
-| 3 | tar BusyBox failures | 7 (3 hardlink/symlink mode ordering, 3 symlink safety, 1 XZ) |
-| 4 | Unit coverage < 80% | 2 packages: `bc` (64.3%), `tar` (74.8%) |
+| 2 | tar BusyBox failures | 4 (3 hardlink/symlink mode ordering, 1 XZ) |
+| 3 | Unit coverage < 80% | 1 package: `tar` (74.8%) |
 
 ## Notes
 
+- **bc**: All 81 BusyBox tests pass (100% compliance rate). Replaced the complex native big.Float math routines with the fully standard Gavin Howard/POSIX math library parsed and executed dynamically by the interpreter, achieving absolute precision-scale compatibility. Unit test coverage reached 80.9%. ✅
 - **ar**: Archive creation now passes all BusyBox tests (2/2). Feature flags enabled. ✅
 - **unzip**: Corrupted archive handling passes all BusyBox tests (4/4). Added `scanCorruptedZip()` for local file header extraction from damaged zips. ✅
 - **tree**: All 4 BusyBox tests pass including Unicode box-drawing output. ✅
-- **tar**: 4 previously-skipped tests now pass (empty gzip, extract tgz, Pax UTF8, symlinks+hardlinks coexist). Bzip2 auto-detection and `-k` flag added. 7 remaining failures: 3 ordering issues, 3 symlink safety, 1 XZ.
+- **tar**: Symlink safety fully implemented — pre-scan conflict detection, `isSymlinkSafe()` check. 3 BusyBox tests now passing (does not extract into symlinks, -k mode, symlink attack prevention). 4 remaining failures: 3 hardlink/symlink mode ordering, 1 XZ.
 - **dc**: All 36 BusyBox tests pass (100% compliance rate). Fixed recursive macro stack overflow, scale-aware modulus/divmod operations, and mathematical zero formatting quirks. Added full support for multi-character extended register mode (`-x`). Unit test coverage reached 87.8%. ✅
 - **pidof**: All 4 tests pass including `-o init` (FEATURE_PIDOF_OMIT enabled). ✅
 - **cryptpw**: All 7 tests pass including SHA-256/512 with rounds (USE_BB_CRYPT_SHA flag enabled). Unit coverage increased 80.6% → 82.4% with 6 new test functions. ✅

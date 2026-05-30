@@ -305,7 +305,16 @@ func lsRun(args []string, out, errOut io.Writer, stdin io.Reader, cwd string) in
 	paths := flags.Positional
 	results, err := Run(paths, showAll, almostAll, recursive, directoryMode)
 	if err != nil {
-		fmt.Fprintf(errOut, "ls: %v\n", err)
+		errMsg := err.Error()
+		// Go's os.Lstat errors include the function name (e.g. "lstat /path: ...").
+		// Strip it and capitalize to match BusyBox/gnu ls format: "ls: /path: ..."
+		errMsg = strings.TrimPrefix(errMsg, "lstat ")
+		errMsg = strings.TrimPrefix(errMsg, "stat ")
+		// Find ": " separator and capitalize the message after it
+		if idx := strings.Index(errMsg, ": "); idx > 0 {
+			errMsg = errMsg[:idx+2] + strings.ToUpper(errMsg[idx+2:idx+3]) + errMsg[idx+3:]
+		}
+		fmt.Fprintf(errOut, "ls: %s\n", errMsg)
 		common.RenderError("ls", 2, "ENOENT", err.Error(), jsonMode, out)
 		return 2
 	}

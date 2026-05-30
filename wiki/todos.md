@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-28 | **Utilities:** 115 | **Coverage:** 82.4% | **BusyBox:** 845/49/25 (92.0%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-05-30 | **Utilities:** 115 | **Coverage:** 83.5% | **BusyBox:** 873/21/25 (97.7%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -14,36 +14,20 @@ This document serves as the live registry of remaining work, active plans, and k
 
 ### 🔴 Highest Priority — Active Development
 
-#### `bc` — 22 failures (59/81 pass, 72.8%) · coverage 64.3%
-
-**Root cause**: Global scale model (`math/big.Rat`) vs BusyBox's per-number scale tracking. Architectural mismatch cascades through all precision-sensitive operations.
-
-| # | Group | Count | Difficulty | Description |
-|---|-------|-------|------------|-------------|
-| 1 | Number parsing/printing | 2 | 🟢 Easy | `ibase=16; FF` parsing, `obase=16` uppercase hex output. Pure lexer/printer — no scale dependency. |
-| 2 | String & decimal formatting | 5 | 🟢 Easy | Leading/trailing zeros, string concat, scientific notation, function return formatting. Output rendering only. |
-| 3 | High-precision arithmetic | 4 | 🟡 Medium | Multiply/modulus/power/sqrt scale propagation through operations. Per-operation fixes. |
-| 4 | Per-value scale (vars/arrays/refs) | 4 | 🔴 Hard | Scale lost when storing in arrays/variables, across function boundaries. Requires architectural redesign. |
-| 5 | Series convergence (trig/bessel/exp/log) | 7 | 🔴 Hard | `s(x)`, `c(x)`, `a(x)`, `e(x)`, `l(x)`, `j(n,x)`, `4*a(1)` — need `scale+10` guard digits. **Blocked by group 4** (per-value scale). |
-
-**Recommended attack order**: 1 → 2 → 3 → 4 → 5 (groups 4-5 require the architectural per-value scale change first).
 
 ---
 
 ### 🟡 Medium Priority — Well-Defined, Scoped
 
-#### `tar` — 7 failures + 10 skipped (24/31 pass, 77.4%) · coverage 74.8%
+#### `tar` — 4 failures + 4 skipped (27/31 pass, 87.1%) · coverage 75.4%
 
 | # | Type | Count | Difficulty | Description |
 |---|------|-------|------------|-------------|
 | 1 | Failures | 3 | 🟡 Medium | Hardlink/symlink mode ordering — permission bits applied in wrong order |
-| 2 | Failures | 3 | 🟡 Medium | Symlink safety — no traversal-attack guard during extraction |
-| 3 | Failures | 1 | 🟡 Medium | XZ compression auto-detect (`.tar.xz`) not implemented |
-| 4 | Skipped | 2 | 🟡 Medium | Auto-detect `.tar.gz`/`.tar.xz` on extract |
-| 5 | Skipped | 4 | 🟡 Medium | Symlink safety guards (extraction into symlinks, `-k` mode, symlink attack) |
-| 6 | Skipped | 2 | 🟡 Medium | Hardlink detection/dedup + mode preservation |
-| 7 | Skipped | 1 | 🟡 Medium | Pax-encoded UTF8 filenames and symlinks (extended headers) |
-| 8 | Skipped | 1 | 🟢 Easy | Graceful rejection of empty `.tar.gz` files |
+| 2 | Failures | 1 | 🟡 Medium | XZ compression auto-detect (`.tar.xz`) not implemented |
+| 3 | Skipped | 2 | 🟡 Medium | Auto-detect `.tar.gz`/`.tar.xz` on extract |
+| 4 | Skipped | 2 | 🟡 Medium | Hardlink detection/dedup + mode preservation |
+| 5 | Skipped | 1 | 🟢 Easy | Graceful rejection of empty `.tar.gz` files |
 
 ---
 

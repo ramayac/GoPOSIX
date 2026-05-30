@@ -3,6 +3,7 @@ package tar
 import (
 	"archive/tar"
 	"bufio"
+	"bytes"
 	"compress/bzip2"
 	"compress/gzip"
 	"fmt"
@@ -495,26 +496,78 @@ func buildIncludeSet(positional []string) map[string]bool {
 
 // extractArchiveStream reads a tar (optionally gzipped) from r and extracts
 // entries to the current directory. This is the testable core.
-func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite, keepOld bool, excludePatterns []string, includeSet map[string]bool, logOut, stdOut io.Writer) ([]TarFileStat, bool, error) {
+func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite, keepOld bool, excludePatterns []string, includeSet map[string]bool, logOut, stdOut, errOut io.Writer) ([]TarFileStat, bool, bool, error) {
 	hasIncludeList := includeSet != nil
-	matchedAny := false
 
+	// Determine extraction root for symlink safety checks.
+	rootDir, _ := os.Getwd()
+
+	// Peek to detect completely empty input vs valid empty tarball.
 	br := bufio.NewReader(r)
 	if _, err := br.Peek(1); err == io.EOF {
-		return nil, false, fmt.Errorf("short read")
+		return nil, false, false, fmt.Errorf("short read")
 	}
 
+	// Pre-scan: read all entries into memory to detect symlink conflicts.
+	type tarEntry struct {
+		header *tar.Header
+		body   []byte
+	}
+	var entries []tarEntry
 	tr := tar.NewReader(br)
-	var stats []TarFileStat
-
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return stats, matchedAny, err
+			return nil, false, false, err
 		}
+		body, _ := io.ReadAll(tr)
+		entries = append(entries, tarEntry{header: header, body: body})
+	}
+
+	// Build a count of all cleaned target paths for conflict detection.
+	allTargets := make(map[string]int)
+	for i := range entries {
+		tgt := filepath.Clean(entries[i].header.Name)
+		if strings.HasPrefix(tgt, "..") || strings.HasPrefix(tgt, "/") {
+			continue
+		}
+		allTargets[tgt]++
+	}
+
+	// Track dangerous symlinks that were refused for security reasons.
+	dangerousSymlinks := make(map[string]bool)
+	hadSymlinkDependents := false
+	matchedAny := false
+	var stats []TarFileStat
+
+	// Print all verbose output before extraction (matches BusyBox ordering).
+	if verbose {
+		for i := range entries {
+			header := entries[i].header
+			if isExcluded(header.Name, excludePatterns) {
+				continue
+			}
+			if includeSet != nil && !includeSet[header.Name] {
+				continue
+			}
+			target := filepath.Clean(header.Name)
+			if strings.HasPrefix(target, "..") || strings.HasPrefix(target, "/") {
+				continue
+			}
+			name := header.Name
+			if header.Typeflag == tar.TypeDir && !strings.HasSuffix(name, "/") {
+				name += "/"
+			}
+			fmt.Fprintln(logOut, name)
+		}
+	}
+
+	for i := range entries {
+		header := entries[i].header
+		body := entries[i].body
 
 		if isExcluded(header.Name, excludePatterns) {
 			continue
@@ -529,14 +582,6 @@ func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite, keepOld boo
 			continue
 		}
 
-		if verbose {
-			name := header.Name
-			if header.Typeflag == tar.TypeDir && !strings.HasSuffix(name, "/") {
-				name += "/"
-			}
-			fmt.Fprintln(logOut, name)
-		}
-
 		stats = append(stats, TarFileStat{
 			Name: header.Name,
 			Size: header.Size,
@@ -549,15 +594,19 @@ func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite, keepOld boo
 				continue
 			}
 			if err := os.MkdirAll(target, os.FileMode(header.Mode)|0300); err != nil {
-				return stats, matchedAny, err
+				return stats, matchedAny, hadSymlinkDependents, err
 			}
 			defer os.Chmod(target, os.FileMode(header.Mode))
 		case tar.TypeReg:
 			if toStdout {
-				if _, err := io.Copy(stdOut, tr); err != nil {
-					return stats, matchedAny, err
+				if _, err := io.Copy(stdOut, bytes.NewReader(body)); err != nil {
+					return stats, matchedAny, hadSymlinkDependents, err
 				}
 				continue
+			}
+			// Check if this entry descends from a dangerous (refused) symlink.
+			if hasDangerousParent(target, dangerousSymlinks) {
+				hadSymlinkDependents = true
 			}
 			// Keep-old and symlink safety: if target already exists, check policy.
 			if fi, stErr := os.Lstat(target); stErr == nil {
@@ -572,7 +621,7 @@ func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite, keepOld boo
 			}
 			dir := filepath.Dir(target)
 			if err := os.MkdirAll(dir, 0755); err != nil {
-				return stats, matchedAny, err
+				return stats, matchedAny, hadSymlinkDependents, err
 			}
 			var flag int
 			if overwrite {
@@ -582,11 +631,11 @@ func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite, keepOld boo
 			}
 			f, err := os.OpenFile(target, flag, os.FileMode(header.Mode))
 			if err != nil {
-				return stats, matchedAny, err
+				return stats, matchedAny, hadSymlinkDependents, err
 			}
-			if _, err := io.Copy(f, tr); err != nil {
+			if _, err := io.Copy(f, bytes.NewReader(body)); err != nil {
 				f.Close()
-				return stats, matchedAny, err
+				return stats, matchedAny, hadSymlinkDependents, err
 			}
 			f.Close()
 			os.Chtimes(target, header.AccessTime, header.ModTime)
@@ -594,7 +643,15 @@ func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite, keepOld boo
 			if toStdout {
 				continue
 			}
-			// Symlink: always allow (symlink attack protection is done on file extraction).
+			// Symlink safety: refuse symlinks that point outside the extraction root
+			// ONLY when there is a conflicting entry (same name or child entry).
+			if !isSymlinkSafe(rootDir, target, header.Linkname) {
+				if hasConflict(target, allTargets) {
+					fmt.Fprintf(errOut, "tar: can't create symlink '%s' to '%s'\n", header.Name, header.Linkname)
+					dangerousSymlinks[target] = true
+					continue
+				}
+			}
 			if _, stErr := os.Lstat(target); stErr == nil {
 				if keepOld {
 					continue
@@ -629,9 +686,55 @@ func extractArchiveStream(r io.Reader, verbose, toStdout, overwrite, keepOld boo
 	}
 
 	if hasIncludeList && !matchedAny {
-		return stats, false, fmt.Errorf("file not found in archive")
+		return stats, false, hadSymlinkDependents, fmt.Errorf("file not found in archive")
 	}
-	return stats, matchedAny, nil
+	return stats, matchedAny, hadSymlinkDependents, nil
+}
+
+// isSymlinkSafe checks if a symlink target stays within the extraction root.
+func isSymlinkSafe(rootDir, symlinkTarget, linkTarget string) bool {
+	// Absolute paths always escape the extraction root.
+	if filepath.IsAbs(linkTarget) {
+		return false
+	}
+	// Resolve the link target relative to the symlink's parent directory.
+	symDir := filepath.Dir(symlinkTarget)
+	resolved := filepath.Join(symDir, linkTarget)
+	resolved = filepath.Clean(resolved)
+
+	// Compute absolute path of the resolved target within the extraction root.
+	absTarget := filepath.Join(rootDir, resolved)
+	absTarget = filepath.Clean(absTarget)
+	cleanRoot := filepath.Clean(rootDir)
+
+	return absTarget == cleanRoot || strings.HasPrefix(absTarget, cleanRoot+string(os.PathSeparator))
+}
+
+// hasDangerousParent checks if any ancestor directory of target was a refused symlink.
+func hasDangerousParent(target string, dangerous map[string]bool) bool {
+	parent := filepath.Dir(target)
+	for parent != "." && parent != "/" && parent != "" {
+		if dangerous[parent] {
+			return true
+		}
+		parent = filepath.Dir(parent)
+	}
+	return false
+}
+
+// hasConflict checks if any other archive entry has the same name as target
+// or is a child entry under target.
+func hasConflict(target string, allTargets map[string]int) bool {
+	if allTargets[target] > 1 {
+		return true
+	}
+	prefix := target + "/"
+	for name, count := range allTargets {
+		if count > 0 && strings.HasPrefix(name, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func doExtract(archive string, useGzip, useBzip2, keepOld, verbose, toStdout, overwrite, isJSON bool, excludePatterns, positional []string, stdout io.Writer, errOut io.Writer, stdin io.Reader) int {
@@ -689,7 +792,7 @@ func doExtract(archive string, useGzip, useBzip2, keepOld, verbose, toStdout, ov
 		logOut = io.Discard
 	}
 
-	stats, matchedAny, err := extractArchiveStream(r, verbose && !isJSON, toStdout, overwrite, keepOld, excludePatterns, includeSet, logOut, stdout)
+	stats, matchedAny, hadSymlinkDependents, err := extractArchiveStream(r, verbose && !isJSON, toStdout, overwrite, keepOld, excludePatterns, includeSet, logOut, stdout, errOut)
 	if err != nil {
 		common.RenderError("tar", 1, "IO", err.Error(), isJSON, stdout)
 		if !isJSON {
@@ -710,6 +813,11 @@ func doExtract(archive string, useGzip, useBzip2, keepOld, verbose, toStdout, ov
 
 	if isJSON {
 		common.Render("tar", stats, true, stdout, func() {})
+	}
+
+	// If a dangerous symlink was refused and child entries depended on it, exit 1.
+	if hadSymlinkDependents {
+		return 1
 	}
 	return 0
 }

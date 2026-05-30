@@ -9,6 +9,7 @@ import (
 	"math"
 	"math/big"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -75,6 +76,13 @@ const (
 	TokKeywordContinue
 	TokKeywordHalt
 	TokKeywordPrint
+	TokPlusAssign  // +=
+	TokMinusAssign // -=
+	TokMulAssign   // *=
+	TokDivAssign   // /=
+	TokPowAssign   // ^=
+	TokModAssign   // %=
+	TokDot         // . (alias for 'last')
 )
 
 type Token struct {
@@ -156,6 +164,10 @@ func (l *Lexer) NextToken() Token {
 					}
 				}
 				continue
+			} else if l.peek() == '=' {
+				// /= compound assignment
+				l.next()
+				return Token{Type: TokDivAssign, Val: "/="}
 			} else {
 				// Division
 				return Token{Type: TokDiv, Val: "/"}
@@ -170,6 +182,10 @@ func (l *Lexer) NextToken() Token {
 		// Division slash (re-evaluated after skipping comments)
 		if ch == '/' {
 			l.next()
+			if l.peek() == '=' {
+				l.next()
+				return Token{Type: TokDivAssign, Val: "/="}
+			}
 			return Token{Type: TokDiv, Val: "/"}
 		}
 
@@ -205,6 +221,10 @@ func (l *Lexer) NextToken() Token {
 				l.next()
 				return Token{Type: TokInc, Val: "++"}
 			}
+			if l.peek() == '=' {
+				l.next()
+				return Token{Type: TokPlusAssign, Val: "+="}
+			}
 			return Token{Type: TokPlus, Val: "+"}
 		case '-':
 			l.next()
@@ -212,16 +232,42 @@ func (l *Lexer) NextToken() Token {
 				l.next()
 				return Token{Type: TokDec, Val: "--"}
 			}
+			if l.peek() == '=' {
+				l.next()
+				return Token{Type: TokMinusAssign, Val: "-="}
+			}
 			return Token{Type: TokMinus, Val: "-"}
 		case '*':
 			l.next()
+			if l.peek() == '=' {
+				l.next()
+				return Token{Type: TokMulAssign, Val: "*="}
+			}
 			return Token{Type: TokMul, Val: "*"}
 		case '%':
 			l.next()
+			if l.peek() == '=' {
+				l.next()
+				return Token{Type: TokModAssign, Val: "%="}
+			}
 			return Token{Type: TokMod, Val: "%"}
 		case '^':
 			l.next()
+			if l.peek() == '=' {
+				l.next()
+				return Token{Type: TokPowAssign, Val: "^="}
+			}
 			return Token{Type: TokPower, Val: "^"}
+		case '.':
+			// If '.' is followed by a digit, it's a number literal like .5
+			// Otherwise it's the 'last' special variable
+			nextPos := l.pos + 1
+			if nextPos < len(l.input) && isDigit(l.input[nextPos]) {
+				// Fall through to number parsing below — do nothing in the switch
+			} else {
+				l.next()
+				return Token{Type: TokDot, Val: "."}
+			}
 		case '=':
 			l.next()
 			if l.peek() == '=' {
@@ -280,22 +326,8 @@ func (l *Lexer) NextToken() Token {
 					if nextChar == 0 {
 						return Token{Type: TokError, Val: "unterminated string"}
 					}
-					switch nextChar {
-					case 'n':
-						sb.WriteRune('\n')
-					case 't':
-						sb.WriteRune('\t')
-					case 'r':
-						sb.WriteRune('\r')
-					case 'b':
-						sb.WriteRune('\b')
-					case 'f':
-						sb.WriteRune('\f')
-					case 'a':
-						sb.WriteRune('\a')
-					default:
-						sb.WriteRune(nextChar)
-					}
+					sb.WriteRune('\\')
+					sb.WriteRune(nextChar)
 				} else {
 					sb.WriteRune(c)
 				}
@@ -470,6 +502,12 @@ type CallExpr struct {
 type AssignExpr struct {
 	Lhs Expr
 	Rhs Expr
+}
+
+// ParenExpr wraps a parenthesized expression so isTopLevelPrintable
+// can detect that (x = 5) should print but bare x = 5 should not.
+type ParenExpr struct {
+	Expr Expr
 }
 
 // Parser parses a slice of Tokens into Statement AST.
@@ -715,12 +753,14 @@ func (p *Parser) parseStmt() (Stmt, error) {
 }
 
 type FuncDecl struct {
-	Name       string
-	Params     []string
-	Autos      []string
-	AutoArrays []string
-	Body       Stmt
-	Void       bool
+	Name        string
+	Params      []string
+	ParamArrays []bool
+	ParamRefs   []bool
+	Autos       []string
+	AutoArrays  []string
+	Body        Stmt
+	Void        bool
 }
 
 func (p *Parser) parseDefine() (Stmt, error) {
@@ -740,17 +780,30 @@ func (p *Parser) parseDefine() (Stmt, error) {
 		return nil, fmt.Errorf("expected (")
 	}
 	var params []string
+	var paramArrays []bool
+	var paramRefs []bool
 	for p.peek().Type != TokRparen && p.peek().Type != TokEOF {
+		isRef := false
+		if p.match(TokMul) {
+			isRef = true
+		}
 		paramTok := p.next()
 		if paramTok.Type != TokIdent {
 			return nil, fmt.Errorf("expected param name")
 		}
 		params = append(params, paramTok.Val)
+		isArray := false
 		if p.match(TokLbracket) {
 			if !p.match(TokRbracket) {
 				return nil, fmt.Errorf("expected ] in param array")
 			}
+			isArray = true
 		}
+		if isRef && !isArray {
+			return nil, fmt.Errorf("reference operator * only allowed on array parameters")
+		}
+		paramArrays = append(paramArrays, isArray)
+		paramRefs = append(paramRefs, isRef)
 		if !p.match(TokComma) {
 			break
 		}
@@ -812,12 +865,14 @@ func (p *Parser) parseDefine() (Stmt, error) {
 	}
 
 	return &FuncDecl{
-		Name:       nameTok.Val,
-		Params:     params,
-		Autos:      autos,
-		AutoArrays: autoArrays,
-		Body:       &BlockStmt{Stmts: stmts},
-		Void:       isVoid,
+		Name:        nameTok.Val,
+		Params:      params,
+		ParamArrays: paramArrays,
+		ParamRefs:   paramRefs,
+		Autos:       autos,
+		AutoArrays:  autoArrays,
+		Body:        &BlockStmt{Stmts: stmts},
+		Void:        isVoid,
 	}, nil
 }
 
@@ -831,13 +886,38 @@ func (p *Parser) parseAssignment() (Expr, error) {
 	if err != nil {
 		return nil, err
 	}
-	if p.peek().Type == TokAssign {
-		p.next() // skip '='
+	tok := p.peek()
+	switch tok.Type {
+	case TokAssign:
+		p.next()
 		rhs, err := p.parseAssignment()
 		if err != nil {
 			return nil, err
 		}
 		return &AssignExpr{Lhs: expr, Rhs: rhs}, nil
+	case TokPlusAssign, TokMinusAssign, TokMulAssign, TokDivAssign, TokPowAssign, TokModAssign:
+		p.next()
+		rhs, err := p.parseAssignment()
+		if err != nil {
+			return nil, err
+		}
+		// Desugar: x op= y  →  x = x op y
+		var binOp TokenType
+		switch tok.Type {
+		case TokPlusAssign:
+			binOp = TokPlus
+		case TokMinusAssign:
+			binOp = TokMinus
+		case TokMulAssign:
+			binOp = TokMul
+		case TokDivAssign:
+			binOp = TokDiv
+		case TokPowAssign:
+			binOp = TokPower
+		case TokModAssign:
+			binOp = TokMod
+		}
+		return &AssignExpr{Lhs: expr, Rhs: &BinaryExpr{Op: binOp, Lhs: expr, Rhs: rhs}}, nil
 	}
 	return expr, nil
 }
@@ -998,6 +1078,9 @@ func (p *Parser) parsePrimary() (Expr, error) {
 		}
 		// Array access
 		if p.match(TokLbracket) {
+			if p.match(TokRbracket) {
+				return &ArrayAccessExpr{Name: name, Index: nil}, nil
+			}
 			idx, err := p.parseExpr()
 			if err != nil {
 				return nil, err
@@ -1025,6 +1108,16 @@ func (p *Parser) parsePrimary() (Expr, error) {
 		if !p.match(TokRparen) {
 			return nil, fmt.Errorf("expected )")
 		}
+		return &ParenExpr{Expr: expr}, nil
+
+	case TokDot:
+		p.next()
+		// '.' is an alias for the 'last' special variable
+		expr := Expr(&VarExpr{Name: "last"})
+		if p.peek().Type == TokInc || p.peek().Type == TokDec {
+			postTok := p.next()
+			expr = &UnaryExpr{Op: postTok.Type, Expr: expr, PostIncDec: true}
+		}
 		return expr, nil
 
 	default:
@@ -1039,17 +1132,24 @@ const (
 	ValNum ValType = iota
 	ValStr
 	ValVoid
+	ValArrayRef
 )
 
 type Val struct {
-	Type  ValType
-	Rat   *big.Rat
-	Str   string
-	Scale int
+	Type     ValType
+	Rat      *big.Rat
+	Str      string
+	Scale    int
+	IsNeg    bool
+	ArrayRef map[string]Val
 }
 
 func newValNum(r *big.Rat, scale int) Val {
-	return Val{Type: ValNum, Rat: r, Scale: scale}
+	return Val{Type: ValNum, Rat: r, Scale: scale, IsNeg: r.Sign() < 0}
+}
+
+func newValNumNeg(r *big.Rat, scale int, isNeg bool) Val {
+	return Val{Type: ValNum, Rat: r, Scale: scale, IsNeg: isNeg || r.Sign() < 0}
 }
 
 func newValStr(s string) Val {
@@ -1058,6 +1158,10 @@ func newValStr(s string) Val {
 
 func newValVoid() Val {
 	return Val{Type: ValVoid, Scale: 0}
+}
+
+func newValArrayRef(arr map[string]Val) Val {
+	return Val{Type: ValArrayRef, ArrayRef: arr, Scale: 0}
 }
 
 func (v Val) IsTrue() bool {
@@ -1132,6 +1236,19 @@ func (s *Scope) SetArray(name string, index string, val Val) {
 	s.Arrays[name][index] = val
 }
 
+func (s *Scope) GetArrayRef(name string) map[string]Val {
+	curr := s
+	for curr != nil {
+		if arr, ok := curr.Arrays[name]; ok {
+			return arr
+		}
+		curr = curr.Parent
+	}
+	arr := make(map[string]Val)
+	s.Arrays[name] = arr
+	return arr
+}
+
 type Interpreter struct {
 	Globals     *Scope
 	Locals      *Scope
@@ -1143,6 +1260,7 @@ type Interpreter struct {
 	Stdin       io.Reader
 	StdinReader *bufio.Reader
 	Halted      bool
+	Last        Val // 'last' / '.' special variable
 }
 
 func NewInterpreter(stdout io.Writer, stdin io.Reader, mathLib bool) *Interpreter {
@@ -1155,7 +1273,7 @@ func NewInterpreter(stdout io.Writer, stdin io.Reader, mathLib bool) *Interprete
 	if stdin != nil {
 		stdinReader = bufio.NewReader(stdin)
 	}
-	return &Interpreter{
+	ip := &Interpreter{
 		Globals:     g,
 		Locals:      g,
 		Functions:   make(map[string]*FuncDecl),
@@ -1165,7 +1283,21 @@ func NewInterpreter(stdout io.Writer, stdin io.Reader, mathLib bool) *Interprete
 		Stdout:      stdout,
 		Stdin:       stdin,
 		StdinReader: stdinReader,
+		Last:        newValNum(big.NewRat(0, 1), 0),
 	}
+	if mathLib {
+		lex := NewLexer(MathLibSource)
+		parser := NewParser(lex)
+		stmts, err := parser.Parse()
+		if err != nil {
+			panic("failed to parse math lib: " + err.Error())
+		}
+		err = ip.Execute(stmts)
+		if err != nil {
+			panic("failed to execute math lib: " + err.Error())
+		}
+	}
+	return ip
 }
 
 func (ip *Interpreter) Execute(stmts []Stmt) error {
@@ -1207,7 +1339,8 @@ func (ip *Interpreter) execStmt(stmt Stmt) (ExecResult, error) {
 			return ExecResult{Flow: FlowNormal}, err
 		}
 		if val.Type == ValNum && isTopLevelPrintable(s.Expr) {
-			printWrapped(ip.Stdout, formatRat(val.Rat, ip.Obase, val.Scale))
+			ip.Last = val // track 'last' printed value
+			printWrapped(ip.Stdout, formatRat(val.Rat, ip.Obase, val.Scale, val.IsNeg))
 			fmt.Fprintln(ip.Stdout)
 		} else if val.Type == ValStr && isTopLevelPrintable(s.Expr) {
 			fmt.Fprint(ip.Stdout, val.Str)
@@ -1324,9 +1457,9 @@ func (ip *Interpreter) execStmt(stmt Stmt) (ExecResult, error) {
 				return ExecResult{Flow: FlowNormal}, err
 			}
 			if val.Type == ValNum {
-				printWrapped(ip.Stdout, formatRat(val.Rat, ip.Obase, val.Scale))
+				printWrapped(ip.Stdout, formatRat(val.Rat, ip.Obase, val.Scale, val.IsNeg))
 			} else if val.Type == ValStr {
-				fmt.Fprint(ip.Stdout, val.Str)
+				fmt.Fprint(ip.Stdout, unescapeBcString(val.Str))
 			}
 		}
 		return ExecResult{Flow: FlowNormal}, nil
@@ -1337,7 +1470,11 @@ func (ip *Interpreter) execStmt(stmt Stmt) (ExecResult, error) {
 func isTopLevelPrintable(expr Expr) bool {
 	switch expr.(type) {
 	case *AssignExpr:
+		// Bare assignment: x = 5 → don't print
 		return false
+	case *ParenExpr:
+		// Parenthesized expression: (x = 5) → always print
+		return true
 	default:
 		return true
 	}
@@ -1345,6 +1482,10 @@ func isTopLevelPrintable(expr Expr) bool {
 
 func (ip *Interpreter) eval(expr Expr) (Val, error) {
 	switch e := expr.(type) {
+	case *ParenExpr:
+		// Transparently evaluate inner expression
+		return ip.eval(e.Expr)
+
 	case *NumExpr:
 		r, err := parseNumberInBase(e.Val, ip.Ibase)
 		if err != nil {
@@ -1367,16 +1508,22 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			return newValNum(big.NewRat(int64(ip.Ibase), 1), 0), nil
 		case "obase":
 			return newValNum(big.NewRat(int64(ip.Obase), 1), 0), nil
+		case "last":
+			return ip.Last, nil
 		default:
 			return ip.Locals.Get(e.Name), nil
 		}
 
 	case *ArrayAccessExpr:
+		if e.Index == nil {
+			arr := ip.Locals.GetArrayRef(e.Name)
+			return newValArrayRef(arr), nil
+		}
 		idxVal, err := ip.eval(e.Index)
 		if err != nil {
 			return newValVoid(), err
 		}
-		idxStr := formatRat(idxVal.Rat, 10, idxVal.Scale)
+		idxStr := idxString(idxVal.Rat)
 		return ip.Locals.GetArray(e.Name, idxStr), nil
 
 	case *AssignExpr:
@@ -1403,6 +1550,8 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 				}
 			case "obase":
 				ip.Obase = int(ratToInt64(rhsVal.Rat))
+			case "last":
+				ip.Last = rhsVal
 			default:
 				ip.Locals.Set(lhs.Name, rhsVal)
 			}
@@ -1411,7 +1560,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			if err != nil {
 				return newValVoid(), err
 			}
-			idxStr := formatRat(idxVal.Rat, 10, idxVal.Scale)
+			idxStr := idxString(idxVal.Rat)
 			ip.Locals.SetArray(lhs.Name, idxStr, rhsVal)
 		default:
 			return newValVoid(), fmt.Errorf("invalid left-hand side of assignment")
@@ -1459,30 +1608,44 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			if resScale > limit {
 				resScale = limit
 			}
+			res = truncateRat(res, resScale)
+			if res.Sign() == 0 {
+				resScale = 0
+			}
 		case TokDiv:
 			if rhsVal.Rat.Sign() == 0 {
 				return newValVoid(), fmt.Errorf("division by zero")
 			}
 			res.Quo(lhsVal.Rat, rhsVal.Rat)
 			resScale = ip.Scale
+			res = truncateRat(res, resScale)
+			if res.Sign() == 0 {
+				resScale = 0
+			}
 		case TokMod:
 			if rhsVal.Rat.Sign() == 0 {
 				return newValVoid(), fmt.Errorf("modulo by zero")
 			}
 			div := big.NewRat(0, 1).Quo(lhsVal.Rat, rhsVal.Rat)
-			divInt := big.NewInt(0).Div(div.Num(), div.Denom())
-			term := big.NewRat(0, 1).Mul(rhsVal.Rat, big.NewRat(0, 1).SetInt(divInt))
+			divTruncated := truncateRat(div, ip.Scale)
+			term := big.NewRat(0, 1).Mul(rhsVal.Rat, divTruncated)
 			res.Sub(lhsVal.Rat, term)
 
-			resScale = rhsVal.Scale + ip.Scale
+			resScale = ip.Scale + rhsVal.Scale
 			if lhsVal.Scale > resScale {
 				resScale = lhsVal.Scale
+			}
+			res = truncateRat(res, resScale)
+			if res.Sign() == 0 {
+				resScale = 0
 			}
 		case TokPower:
 			exponent := ratToInt64(rhsVal.Rat)
 			res = ratPower(lhsVal.Rat, exponent)
 
-			if exponent < 0 {
+			if res.Sign() == 0 {
+				resScale = 0
+			} else if exponent < 0 {
 				resScale = ip.Scale
 			} else {
 				resScale = lhsVal.Scale * int(exponent)
@@ -1493,6 +1656,10 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 				if resScale > limit {
 					resScale = limit
 				}
+			}
+			res = truncateRat(res, resScale)
+			if res.Sign() == 0 {
+				resScale = 0
 			}
 		case TokEq, TokNe, TokLt, TokLe, TokGt, TokGe, TokAnd, TokOr:
 			resScale = 0
@@ -1551,9 +1718,43 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 				if err != nil {
 					return newValVoid(), err
 				}
-				arrayIdx = formatRat(idxVal.Rat, 10, idxVal.Scale)
+				arrayIdx = idxString(idxVal.Rat)
 			default:
 				return newValVoid(), fmt.Errorf("invalid increment target")
+			}
+
+			// Handle special variables for ++/--
+			switch varName {
+			case "scale", "ibase", "obase", "last":
+				curr, _ := ip.eval(&VarExpr{Name: varName})
+				next := big.NewRat(0, 1)
+				if e.Op == TokInc {
+					next.Add(curr.Rat, big.NewRat(1, 1))
+				} else {
+					next.Sub(curr.Rat, big.NewRat(1, 1))
+				}
+				nextVal := newValNum(next, 0)
+				switch varName {
+				case "scale":
+					ip.Scale = int(ratToInt64(next))
+				case "ibase":
+					v := int(ratToInt64(next))
+					if v < 2 {
+						v = 2
+					}
+					if v > 36 {
+						v = 36
+					}
+					ip.Ibase = v
+				case "obase":
+					ip.Obase = int(ratToInt64(next))
+				case "last":
+					ip.Last = nextVal
+				}
+				if e.PostIncDec {
+					return curr, nil
+				}
+				return nextVal, nil
 			}
 
 			var curr Val
@@ -1592,11 +1793,14 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 		}
 
 		res := big.NewRat(0, 1)
+		isNeg := false
 		switch e.Op {
 		case TokMinus:
 			res.Neg(val.Rat)
+			isNeg = !val.IsNeg
 		case TokPlus:
 			res.Set(val.Rat)
+			isNeg = val.IsNeg
 		case TokNot:
 			if !val.IsTrue() {
 				res.SetInt64(1)
@@ -1604,7 +1808,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 		default:
 			return newValVoid(), fmt.Errorf("unrecognized unary operator")
 		}
-		return newValNum(res, val.Scale), nil
+		return newValNumNeg(res, val.Scale, isNeg), nil
 
 	case *CallExpr:
 		if e.Name == "length" {
@@ -1615,8 +1819,38 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			if err != nil {
 				return newValVoid(), err
 			}
+			if argVal.Type == ValArrayRef {
+				length := arrayLength(argVal.ArrayRef)
+				return newValNum(big.NewRat(int64(length), 1), 0), nil
+			}
 			length := valLength(argVal.Rat, argVal.Scale)
 			return newValNum(big.NewRat(int64(length), 1), 0), nil
+		}
+
+		if e.Name == "scale" {
+			if len(e.Args) != 1 {
+				return newValVoid(), fmt.Errorf("scale() expects exactly 1 argument")
+			}
+			argVal, err := ip.eval(e.Args[0])
+			if err != nil {
+				return newValVoid(), err
+			}
+			return newValNum(big.NewRat(int64(argVal.Scale), 1), 0), nil
+		}
+
+		if e.Name == "sqrt" {
+			if len(e.Args) != 1 {
+				return newValVoid(), fmt.Errorf("sqrt() expects exactly 1 argument")
+			}
+			argVal, err := ip.eval(e.Args[0])
+			if err != nil {
+				return newValVoid(), err
+			}
+			resRat, resScale, err := valSqrt(argVal.Rat, argVal.Scale, ip.Scale)
+			if err != nil {
+				return newValVoid(), err
+			}
+			return newValNum(resRat, resScale), nil
 		}
 
 		if e.Name == "read" {
@@ -1658,45 +1892,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			return finalVal, nil
 		}
 
-		if e.Name == "s" || e.Name == "c" || e.Name == "e" || e.Name == "l" || e.Name == "a" || e.Name == "j" {
-			if len(e.Args) < 1 {
-				return newValVoid(), fmt.Errorf("%s() expects at least 1 argument", e.Name)
-			}
-			argVal, err := ip.eval(e.Args[0])
-			if err != nil {
-				return newValVoid(), err
-			}
-			fVal, _ := argVal.Rat.Float64()
-			var resFloat float64
 
-			switch e.Name {
-			case "s":
-				resFloat = math.Sin(fVal)
-			case "c":
-				resFloat = math.Cos(fVal)
-			case "e":
-				resFloat = math.Exp(fVal)
-			case "l":
-				resFloat = math.Log(fVal)
-			case "a":
-				resFloat = math.Atan(fVal)
-			case "j":
-				if len(e.Args) < 2 {
-					return newValVoid(), fmt.Errorf("j() expects exactly 2 arguments")
-				}
-				argVal2, err := ip.eval(e.Args[1])
-				if err != nil {
-					return newValVoid(), err
-				}
-				fVal2, _ := argVal2.Rat.Float64()
-				resFloat = math.Jn(int(fVal), fVal2)
-			}
-			resRat := big.NewRat(0, 1).SetFloat64(resFloat)
-			if resRat == nil {
-				return newValVoid(), fmt.Errorf("float to rational overflow")
-			}
-			return newValNum(resRat, ip.Scale), nil
-		}
 
 		decl, exists := ip.Functions[e.Name]
 		if !exists {
@@ -1720,7 +1916,24 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 		newScope := NewScope(ip.Globals)
 
 		for idx, paramName := range decl.Params {
-			newScope.Vars[paramName] = argVals[idx]
+			if idx < len(decl.ParamArrays) && decl.ParamArrays[idx] {
+				argVal := argVals[idx]
+				if argVal.Type == ValArrayRef {
+					if idx < len(decl.ParamRefs) && decl.ParamRefs[idx] {
+						newScope.Arrays[paramName] = argVal.ArrayRef
+					} else {
+						copiedArr := make(map[string]Val)
+						for k, v := range argVal.ArrayRef {
+							copiedArr[k] = v
+						}
+						newScope.Arrays[paramName] = copiedArr
+					}
+				} else {
+					newScope.Arrays[paramName] = make(map[string]Val)
+				}
+			} else {
+				newScope.Vars[paramName] = argVals[idx]
+			}
 		}
 		for _, autoName := range decl.Autos {
 			newScope.Vars[autoName] = newValNum(big.NewRat(0, 1), 0)
@@ -1756,7 +1969,8 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 }
 
 func ratToInt64(r *big.Rat) int64 {
-	intPart := big.NewInt(0).Div(r.Num(), r.Denom())
+	// Quo truncates toward zero, matching bc's integer truncation semantics
+	intPart := big.NewInt(0).Quo(r.Num(), r.Denom())
 	return intPart.Int64()
 }
 
@@ -1766,6 +1980,10 @@ func ratPower(r *big.Rat, exponent int64) *big.Rat {
 	}
 	neg := exponent < 0
 	if neg {
+		// 0^(-n) is undefined, return 0 (matches BusyBox bc behavior)
+		if r.Sign() == 0 {
+			return big.NewRat(0, 1)
+		}
 		exponent = -exponent
 	}
 
@@ -1805,7 +2023,7 @@ func parseNumberInBase(s string, ibase int) (*big.Rat, error) {
 	isSingleDigit := len(parts) == 1
 	if isSingleDigit {
 		trimmed := strings.TrimLeft(intStr, "0")
-		isSingleDigit = len(trimmed) == 1 && trimmed[0] >= 'A' && trimmed[0] <= 'Z'
+		isSingleDigit = len(trimmed) == 1 || (len(trimmed) == 0 && len(intStr) == 1)
 	}
 
 	// Integer part
@@ -1862,6 +2080,12 @@ func digitVal(c byte) int {
 }
 
 func printWrapped(w io.Writer, s string) {
+	lineLength := 70
+	if envVal := os.Getenv("BC_LINE_LENGTH"); envVal != "" {
+		if val, err := strconv.Atoi(envVal); err == nil {
+			lineLength = val
+		}
+	}
 	col := 0
 	for i := 0; i < len(s); i++ {
 		ch := s[i]
@@ -1870,7 +2094,7 @@ func printWrapped(w io.Writer, s string) {
 			fmt.Fprint(w, "\n")
 			continue
 		}
-		if col == 68 && i+1 < len(s) {
+		if lineLength > 1 && col == lineLength-2 {
 			fmt.Fprint(w, "\\\n")
 			col = 0
 		}
@@ -1879,12 +2103,25 @@ func printWrapped(w io.Writer, s string) {
 	}
 }
 
-func formatRat(r *big.Rat, obase int, scale int) string {
+func formatRat(r *big.Rat, obase int, scale int, forceNeg bool) string {
 	if r.Sign() == 0 {
+		if scale <= 0 {
+			return "0"
+		}
+		if forceNeg {
+			if obase > 16 {
+				var zeroes []string
+				for i := 0; i < scale; i++ {
+					zeroes = append(zeroes, "00")
+				}
+				return "-." + strings.Join(zeroes, " ")
+			}
+			return "-." + strings.Repeat("0", scale)
+		}
 		return "0"
 	}
 
-	neg := r.Sign() < 0
+	neg := r.Sign() < 0 || forceNeg
 	val := big.NewRat(0, 1).Abs(r)
 
 	num := val.Num()
@@ -1893,6 +2130,12 @@ func formatRat(r *big.Rat, obase int, scale int) string {
 	intPart := big.NewInt(0).Div(num, denom)
 	rem := big.NewInt(0).Mod(num, denom)
 	fracPart := big.NewRat(0, 1).SetFrac(rem, denom)
+
+	printScale := scale
+	if obase != 10 && scale > 0 {
+		factor := math.Log(10) / math.Log(float64(obase))
+		printScale = int(math.Ceil(float64(scale) * factor))
+	}
 
 	var intDigits []string
 	temp := big.NewInt(0).Set(intPart)
@@ -1910,7 +2153,7 @@ func formatRat(r *big.Rat, obase int, scale int) string {
 		intDigits[i], intDigits[j] = intDigits[j], intDigits[i]
 	}
 	var intStr string
-	if intPart.Cmp(zero) == 0 && scale > 0 {
+	if intPart.Cmp(zero) == 0 && printScale > 0 {
 		intStr = ""
 	} else if obase > 16 {
 		var spaced []string
@@ -1922,7 +2165,7 @@ func formatRat(r *big.Rat, obase int, scale int) string {
 		intStr = strings.Join(intDigits, "")
 	}
 
-	if scale <= 0 {
+	if printScale <= 0 {
 		if neg {
 			return "-" + intStr
 		}
@@ -1932,7 +2175,7 @@ func formatRat(r *big.Rat, obase int, scale int) string {
 	var fracDigits []string
 	fracTemp := big.NewRat(0, 1).Set(fracPart)
 	obaseRat := big.NewRat(int64(obase), 1)
-	for s := 0; s < scale; s++ {
+	for s := 0; s < printScale; s++ {
 		fracTemp.Mul(fracTemp, obaseRat)
 		digitInt := big.NewInt(0).Div(fracTemp.Num(), fracTemp.Denom())
 		fracDigits = append(fracDigits, formatDigit(digitInt.Int64(), obase))
@@ -1969,7 +2212,7 @@ func valLength(r *big.Rat, scale int) int {
 		}
 		return 1
 	}
-	s := formatRat(r, 10, scale)
+	s := formatRat(r, 10, scale, r.Sign() < 0)
 	s = strings.ReplaceAll(s, "-", "")
 	parts := strings.Split(s, ".")
 	intStr := parts[0]
@@ -1984,6 +2227,121 @@ func valLength(r *big.Rat, scale int) int {
 		trimmed := strings.TrimLeft(fracStr, "0")
 		return len(trimmed)
 	}
+}
+
+func valSqrt(r *big.Rat, xValScale, globalScale int) (*big.Rat, int, error) {
+	if r.Sign() < 0 {
+		return nil, 0, fmt.Errorf("square root of negative number")
+	}
+	if r.Sign() == 0 {
+		targetScale := xValScale
+		if globalScale > targetScale {
+			targetScale = globalScale
+		}
+		return big.NewRat(0, 1), targetScale, nil
+	}
+
+	targetScale := xValScale
+	if globalScale > targetScale {
+		targetScale = globalScale
+	}
+
+	prec := uint(targetScale)*4 + 128
+	if prec < 256 {
+		prec = 256
+	}
+
+	f := new(big.Float).SetPrec(prec).SetRat(r)
+	sqrtF := new(big.Float).SetPrec(prec).Sqrt(f)
+
+	resRat := new(big.Rat)
+	sqrtF.Rat(resRat)
+
+	return resRat, targetScale, nil
+}
+
+func unescapeBcString(s string) string {
+	var sb strings.Builder
+	runes := []rune(s)
+	n := len(runes)
+	for i := 0; i < n; i++ {
+		if runes[i] == '\\' && i+1 < n {
+			next := runes[i+1]
+			switch next {
+			case 'a':
+				sb.WriteRune('\a')
+				i++
+			case 'b':
+				sb.WriteRune('\b')
+				i++
+			case 'f':
+				sb.WriteRune('\f')
+				i++
+			case 'n':
+				sb.WriteRune('\n')
+				i++
+			case 'r':
+				sb.WriteRune('\r')
+				i++
+			case 't':
+				sb.WriteRune('\t')
+				i++
+			case '\\':
+				sb.WriteRune('\\')
+				i++
+			case '"':
+				sb.WriteRune('"')
+				i++
+			default:
+				sb.WriteRune('\\')
+				i++
+			}
+		} else {
+			sb.WriteRune(runes[i])
+		}
+	}
+	return sb.String()
+}
+
+func arrayLength(arr map[string]Val) int {
+	maxIdx := -1
+	for k := range arr {
+		if idx, err := strconv.Atoi(k); err == nil {
+			if idx > maxIdx {
+				maxIdx = idx
+			}
+		}
+	}
+	return maxIdx + 1
+}
+
+func idxString(r *big.Rat) string {
+	// Quo truncates toward zero for POSIX bc array index truncation
+	idxInt := big.NewInt(0).Quo(r.Num(), r.Denom())
+	return idxInt.String()
+}
+
+
+
+func truncateRat(r *big.Rat, scale int) *big.Rat {
+	if scale < 0 {
+		scale = 0
+	}
+	factor := big.NewInt(1)
+	ten := big.NewInt(10)
+	for i := 0; i < scale; i++ {
+		factor.Mul(factor, ten)
+	}
+
+	temp := big.NewRat(0, 1).Mul(r, big.NewRat(0, 1).SetInt(factor))
+
+	num := temp.Num()
+	denom := temp.Denom()
+	// Use Quo (truncation toward zero) not Div (floor toward -infinity)
+	intPart := big.NewInt(0).Quo(num, denom)
+
+	res := big.NewRat(0, 1).SetFrac(intPart, factor)
+	return res
 }
 
 func Run(program io.Reader, stdin io.Reader, w io.Writer, mathLib bool) error {
@@ -2058,3 +2416,170 @@ func init() {
 		},
 	})
 }
+
+const MathLibSource = `define e(x){
+	auto b,s,n,r,d,i,p,f,v
+	b=ibase
+	ibase=A
+	if(x<0){
+		n=1
+		x=-x
+	}
+	s=scale
+	r=6+s+.44*x
+	scale=scale(x)+1
+	while(x>1){
+		d+=1
+		x/=2
+		scale+=1
+	}
+	scale=r
+	r=x+1
+	p=x
+	f=v=1
+	for(i=2;v;++i){
+		p*=x
+		f*=i
+		v=p/f
+		r+=v
+	}
+	while(d--)r*=r
+	scale=s
+	ibase=b
+	if(n)return(1/r)
+	return(r/1)
+}
+define l(x){
+	auto b,s,r,p,a,q,i,v
+	if(x<=0)return((1-A^scale)/1)
+	b=ibase
+	ibase=A
+	s=scale
+	scale+=6
+	p=2
+	while(x>=2){
+		p*=2
+		x=sqrt(x)
+	}
+	while(x<=.5){
+		p*=2
+		x=sqrt(x)
+	}
+	r=a=(x-1)/(x+1)
+	q=a*a
+	v=1
+	for(i=3;v;i+=2){
+		a*=q
+		v=a/i
+		r+=v
+	}
+	r*=p
+	scale=s
+	ibase=b
+	return(r/1)
+}
+define s(x){
+	auto b,s,r,a,q,i
+	if(x<0)return(-s(-x))
+	b=ibase
+	ibase=A
+	s=scale
+	scale=1.1*s+2
+	a=a(1)
+	scale=0
+	q=(x/a+2)/4
+	x-=4*q*a
+	if(q%2)x=-x
+	scale=s+2
+	r=a=x
+	q=-x*x
+	for(i=3;a;i+=2){
+		a*=q/(i*(i-1))
+		r+=a
+	}
+	scale=s
+	ibase=b
+	return(r/1)
+}
+define c(x){
+	auto b,s
+	b=ibase
+	ibase=A
+	s=scale
+	scale*=1.2
+	x=s(2*a(1)+x)
+	scale=s
+	ibase=b
+	return(x/1)
+}
+define a(x){
+	auto b,s,r,n,a,m,t,f,i,u
+	b=ibase
+	ibase=A
+	n=1
+	if(x<0){
+		n=-1
+		x=-x
+	}
+	if(scale<65){
+		if(x==1){
+			r=.7853981633974483096156608458198757210492923498437764552437361480/n
+			ibase=b
+			return(r)
+		}
+		if(x==.2){
+			r=.1973955598498807583700497651947902934475851037878521015176889402/n
+			ibase=b
+			return(r)
+		}
+	}
+	s=scale
+	if(x>.2){
+		scale+=5
+		a=a(.2)
+	}
+	scale=s+3
+	while(x>.2){
+		m+=1
+		x=(x-.2)/(1+.2*x)
+	}
+	r=u=x
+	f=-x*x
+	t=1
+	for(i=3;t;i+=2){
+		u*=f
+		t=u/i
+		r+=t
+	}
+	scale=s
+	ibase=b
+	return((m*a+r)/n)
+}
+define j(n,x){
+	auto b,s,o,a,i,r,v,f
+	b=ibase
+	ibase=A
+	s=scale
+	scale=0
+	n/=1
+	if(n<0){
+		n=-n
+		o=n%2
+	}
+	a=1
+	for(i=2;i<=n;++i)a*=i
+	scale=1.5*s
+	a=(x^n)/2^n/a
+	r=v=1
+	f=-x*x/4
+	scale+=length(a)-scale(a)
+	for(i=1;v;++i){
+		v=v*f/i/(n+i)
+		r+=v
+	}
+	scale=s
+	ibase=b
+	if(o)a=-a
+	return(a*r/1)
+}
+`
