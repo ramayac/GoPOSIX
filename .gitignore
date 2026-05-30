@@ -6,3 +6,4 @@ test/busybox_testsuite/grep.testdir//runtest-tempdir-links/
 .antigravitycli/
 coverage.out
 coverage.txt
+bin/goposix

@@ -1,6 +1,6 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX userland with 115 tools. Runs as a persistent JSON-RPC daemon or multicall CLI, a typed Go SDK and ~92.7% BusyBox test compatibility (852 of 919 tests pass).
+A Go-native, single-binary POSIX userland with 115 tools. Runs as a persistent JSON-RPC daemon or multicall CLI, a typed Go SDK and ~94.7% BusyBox test compatibility (870 of 919 tests pass).
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ramayac/goposix.svg)](https://pkg.go.dev/github.com/ramayac/goposix)
@@ -114,7 +114,7 @@ c.Wc(ctx, []string{"-l"}, client.WithStdin("line1\nline2\nline3\n"))
 - [Architecture](wiki/architecture.md)
 - [Security Model](wiki/security.md)
 - [JSON Schema](wiki/json_schema.md) — `--json` output schemas for every utility
-- [Test Coverage & Compliance Matrix](wiki/test_coverage_matrix.md) — 845/919 (92.0%) BusyBox pass rate
+- [Test Coverage & Compliance Matrix](wiki/test_coverage_matrix.md) — 870/919 (94.7%) BusyBox pass rate
 - [POSIX FAQ](wiki/posix_faq.md)
 - [Performance Quick Reference](wiki/performance.md)
 

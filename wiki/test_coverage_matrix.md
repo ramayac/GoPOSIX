@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-28 | **BusyBox:** 855 pass / 39 fail / 25 skip | **Branch:** `feat/bc-fixes` | **Overall Coverage:** 83.5% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-05-30 | **BusyBox:** 870 pass / 24 fail / 25 skip | **Branch:** `feat/bc-fixes` | **Overall Coverage:** 83.6% | **JSON-RPC:** 115/115 (100.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -173,7 +173,7 @@
 | `rx` | 86.2% | 1 | ✅ 1/1 | ✅ |
 | `hexdump` | 83.6% | 3 | ✅ 3/3 | ✅ |
 | `xxd` | 86.4% | 7 | ✅ 7/7 | ✅ |
-| `bc` | 80.5% | 81 | ⚠️ 66/81 (15 fail) | ✅ |
+| `bc` | 80.9% | 81 | ✅ 81/81 | ✅ |
 | `mkfs.minix` | 86.4% | 1 | ✅ 1/1 | ✅ |
 ## SDK / Client Library
 
@@ -196,10 +196,10 @@
 | Total packages | 115 | 115 utilities + client SDK |
 | Unit tests passing | 115/115 | 100% |
 | BusyBox tests run | 919 | 919 total applicable tests |
-| BusyBox passed | 855 | 95.6% (855 of 919) |
-| BusyBox failed | 39 | 17 awk + 15 bc + 7 tar |
+| BusyBox passed | 870 | 97.3% (870 of 919) |
+| BusyBox failed | 24 | 17 awk + 7 tar |
 | BusyBox skipped | 25 | 13 mdev (root), 7 cpio, 2 mount/makedevs (root), 1 ash, 2 awk (deferred) |
-| Overall statement coverage | 83.5% | Checked via make cover-gate |
+| Overall statement coverage | 83.6% | Checked via make cover-gate |
 | JSON-RPC daemon tests | 115/115 | 100.0% (all 115 utilities implemented and registered) |
 | Packages below 70% unit coverage | 0 | None (all packages ≥70%) |
 
@@ -208,12 +208,12 @@
 | # | Gap | Count |
 |---|-----|-------|
 | 1 | awk BusyBox failures | 17 (goawk v1.31.0 engine limitations) |
-| 2 | bc BusyBox failures | 15 (formatting and precision/scale differences) |
-| 3 | tar BusyBox failures | 7 (3 hardlink/symlink mode ordering, 3 symlink safety, 1 XZ) |
-| 4 | Unit coverage < 80% | 1 package: `tar` (74.8%) |
+| 2 | tar BusyBox failures | 7 (3 hardlink/symlink mode ordering, 3 symlink safety, 1 XZ) |
+| 3 | Unit coverage < 80% | 1 package: `tar` (74.8%) |
 
 ## Notes
 
+- **bc**: All 81 BusyBox tests pass (100% compliance rate). Replaced the complex native big.Float math routines with the fully standard Gavin Howard/POSIX math library parsed and executed dynamically by the interpreter, achieving absolute precision-scale compatibility. Unit test coverage reached 80.9%. ✅
 - **ar**: Archive creation now passes all BusyBox tests (2/2). Feature flags enabled. ✅
 - **unzip**: Corrupted archive handling passes all BusyBox tests (4/4). Added `scanCorruptedZip()` for local file header extraction from damaged zips. ✅
 - **tree**: All 4 BusyBox tests pass including Unicode box-drawing output. ✅

@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-28 | **Utilities:** 115 | **Coverage:** 83.5% | **BusyBox:** 855/39/25 (95.6%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-05-30 | **Utilities:** 115 | **Coverage:** 83.6% | **BusyBox:** 870/24/25 (97.3%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -14,19 +14,6 @@ This document serves as the live registry of remaining work, active plans, and k
 
 ### 🔴 Highest Priority — Active Development
 
-#### `bc` — 15 failures (66/81 pass, 81.5%) · coverage 80.5%
-
-**Root cause**: Global scale model (`math/big.Rat`) vs BusyBox's per-number scale tracking. Architectural mismatch cascades through all precision-sensitive operations.
-
-| # | Group | Count | Difficulty | Description | Status |
-|---|-------|-------|------------|-------------|--------|
-| 1 | Number parsing/printing | 0 | 🟢 Easy | `ibase=16; FF` parsing, `obase=16` uppercase hex output. Pure lexer/printer — no scale dependency. | ✅ Completed |
-| 2 | String & decimal formatting | 0 | 🟢 Easy | Leading/trailing zeros, string concat, scientific notation, function return formatting. Output rendering only. | ✅ Completed |
-| 3 | High-precision arithmetic | 4 | 🟡 Medium | Multiply/modulus/power/sqrt scale propagation through operations. Per-operation fixes. | 🟡 In-Progress |
-| 4 | Per-value scale (vars/arrays/refs) | 4 | 🔴 Hard | Scale lost when storing in arrays/variables, across function boundaries. Requires architectural redesign. | 🔴 Pending |
-| 5 | Series convergence (trig/bessel/exp/log) | 7 | 🔴 Hard | `s(x)`, `c(x)`, `a(x)`, `e(x)`, `l(x)`, `j(n,x)`, `4*a(1)` — need `scale+10` guard digits. **Blocked by group 4** (per-value scale). | 🔴 Pending |
-
-**Recommended attack order**: 3 → 4 → 5 (groups 4-5 require the architectural per-value scale change first).
 
 ---
 

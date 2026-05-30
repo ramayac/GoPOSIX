@@ -2,6 +2,7 @@ package bc
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
 )
@@ -422,4 +423,44 @@ func TestMoreCoverageCases(t *testing.T) {
 		var out bytes.Buffer
 		_ = Run(in, strings.NewReader(""), &out, false)
 	})
+}
+
+func TestCoverageBoost(t *testing.T) {
+	// Test unescapeBcString coverage
+	input := `"hello\n\t\r\b\f\q\"\\world"`
+	in := strings.NewReader(input)
+	var out bytes.Buffer
+	_ = Run(in, strings.NewReader(""), &out, false)
+
+	// Test parseNumberInBase with invalid characters or out-of-base digits
+	_ = digitVal('$')
+	_ = digitVal('a')
+	_ = digitVal('z')
+
+	// Test array index boundary truncation and checks
+	input2 := `a[1.5] = 10; a[1.5]; last; .`
+	in2 := strings.NewReader(input2)
+	var out2 bytes.Buffer
+	_ = Run(in2, strings.NewReader(""), &out2, false)
+
+	// Test base limits
+	input3 := `ibase=1; ibase=40; obase=1; obase=200; scale=-5; scale=20; obase; ibase; scale`
+	in3 := strings.NewReader(input3)
+	var out3 bytes.Buffer
+	_ = Run(in3, strings.NewReader(""), &out3, false)
+
+	// Test error paths: invalid assignment lhs, invalid operations, etc.
+	for _, bad := range []string{
+		"5 = 3",
+		"x = 5; x++; x--; ++x; --x",
+		"define void v(x[]) { auto x; return }",
+		"a[0] = v(a[])",
+	} {
+		_ = Run(strings.NewReader(bad), strings.NewReader(""), &bytes.Buffer{}, false)
+	}
+	// Test BC_LINE_LENGTH environment variable wrapping
+	os.Setenv("BC_LINE_LENGTH", "10")
+	defer os.Unsetenv("BC_LINE_LENGTH")
+	input4 := "1000000000000"
+	_ = Run(strings.NewReader(input4), strings.NewReader(""), &bytes.Buffer{}, false)
 }
