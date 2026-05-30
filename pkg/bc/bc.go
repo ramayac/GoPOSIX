@@ -164,6 +164,10 @@ func (l *Lexer) NextToken() Token {
 					}
 				}
 				continue
+			} else if l.peek() == '=' {
+				// /= compound assignment
+				l.next()
+				return Token{Type: TokDivAssign, Val: "/="}
 			} else {
 				// Division
 				return Token{Type: TokDiv, Val: "/"}
@@ -498,6 +502,12 @@ type CallExpr struct {
 type AssignExpr struct {
 	Lhs Expr
 	Rhs Expr
+}
+
+// ParenExpr wraps a parenthesized expression so isTopLevelPrintable
+// can detect that (x = 5) should print but bare x = 5 should not.
+type ParenExpr struct {
+	Expr Expr
 }
 
 // Parser parses a slice of Tokens into Statement AST.
@@ -1098,7 +1108,7 @@ func (p *Parser) parsePrimary() (Expr, error) {
 		if !p.match(TokRparen) {
 			return nil, fmt.Errorf("expected )")
 		}
-		return expr, nil
+		return &ParenExpr{Expr: expr}, nil
 
 	case TokDot:
 		p.next()
@@ -1130,11 +1140,16 @@ type Val struct {
 	Rat      *big.Rat
 	Str      string
 	Scale    int
+	IsNeg    bool
 	ArrayRef map[string]Val
 }
 
 func newValNum(r *big.Rat, scale int) Val {
-	return Val{Type: ValNum, Rat: r, Scale: scale}
+	return Val{Type: ValNum, Rat: r, Scale: scale, IsNeg: r.Sign() < 0}
+}
+
+func newValNumNeg(r *big.Rat, scale int, isNeg bool) Val {
+	return Val{Type: ValNum, Rat: r, Scale: scale, IsNeg: isNeg || r.Sign() < 0}
 }
 
 func newValStr(s string) Val {
@@ -1312,7 +1327,7 @@ func (ip *Interpreter) execStmt(stmt Stmt) (ExecResult, error) {
 		}
 		if val.Type == ValNum && isTopLevelPrintable(s.Expr) {
 			ip.Last = val // track 'last' printed value
-			printWrapped(ip.Stdout, formatRat(val.Rat, ip.Obase, val.Scale))
+			printWrapped(ip.Stdout, formatRat(val.Rat, ip.Obase, val.Scale, val.IsNeg))
 			fmt.Fprintln(ip.Stdout)
 		} else if val.Type == ValStr && isTopLevelPrintable(s.Expr) {
 			fmt.Fprint(ip.Stdout, val.Str)
@@ -1429,7 +1444,7 @@ func (ip *Interpreter) execStmt(stmt Stmt) (ExecResult, error) {
 				return ExecResult{Flow: FlowNormal}, err
 			}
 			if val.Type == ValNum {
-				printWrapped(ip.Stdout, formatRat(val.Rat, ip.Obase, val.Scale))
+				printWrapped(ip.Stdout, formatRat(val.Rat, ip.Obase, val.Scale, val.IsNeg))
 			} else if val.Type == ValStr {
 				fmt.Fprint(ip.Stdout, unescapeBcString(val.Str))
 			}
@@ -1442,7 +1457,11 @@ func (ip *Interpreter) execStmt(stmt Stmt) (ExecResult, error) {
 func isTopLevelPrintable(expr Expr) bool {
 	switch expr.(type) {
 	case *AssignExpr:
+		// Bare assignment: x = 5 → don't print
 		return false
+	case *ParenExpr:
+		// Parenthesized expression: (x = 5) → always print
+		return true
 	default:
 		return true
 	}
@@ -1450,6 +1469,10 @@ func isTopLevelPrintable(expr Expr) bool {
 
 func (ip *Interpreter) eval(expr Expr) (Val, error) {
 	switch e := expr.(type) {
+	case *ParenExpr:
+		// Transparently evaluate inner expression
+		return ip.eval(e.Expr)
+
 	case *NumExpr:
 		r, err := parseNumberInBase(e.Val, ip.Ibase)
 		if err != nil {
@@ -1757,11 +1780,14 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 		}
 
 		res := big.NewRat(0, 1)
+		isNeg := false
 		switch e.Op {
 		case TokMinus:
 			res.Neg(val.Rat)
+			isNeg = !val.IsNeg
 		case TokPlus:
 			res.Set(val.Rat)
+			isNeg = val.IsNeg
 		case TokNot:
 			if !val.IsTrue() {
 				res.SetInt64(1)
@@ -1769,7 +1795,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 		default:
 			return newValVoid(), fmt.Errorf("unrecognized unary operator")
 		}
-		return newValNum(res, val.Scale), nil
+		return newValNumNeg(res, val.Scale, isNeg), nil
 
 	case *CallExpr:
 		if e.Name == "length" {
@@ -1861,20 +1887,28 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			if err != nil {
 				return newValVoid(), err
 			}
-			fVal, _ := argVal.Rat.Float64()
-			var resFloat float64
+
+			targetScale := ip.Scale
+			// Use extra guard digits and a high minimum precision to prevent underflow on large values
+			prec := uint((targetScale+100)*8 + 1024)
+			if prec < 2048 {
+				prec = 2048
+			}
+
+			x := new(big.Float).SetPrec(prec).SetRat(argVal.Rat)
+			var resFloat *big.Float
 
 			switch e.Name {
-			case "s":
-				resFloat = math.Sin(fVal)
-			case "c":
-				resFloat = math.Cos(fVal)
 			case "e":
-				resFloat = math.Exp(fVal)
+				resFloat = bigFloatExp(x, prec)
 			case "l":
-				resFloat = math.Log(fVal)
+				resFloat = bigFloatLog(x, prec)
+			case "s":
+				resFloat = bigFloatSin(x, prec)
+			case "c":
+				resFloat = bigFloatCos(x, prec)
 			case "a":
-				resFloat = math.Atan(fVal)
+				resFloat = bigFloatAtan(x, prec)
 			case "j":
 				if len(e.Args) < 2 {
 					return newValVoid(), fmt.Errorf("j() expects exactly 2 arguments")
@@ -1883,14 +1917,22 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 				if err != nil {
 					return newValVoid(), err
 				}
-				fVal2, _ := argVal2.Rat.Float64()
-				resFloat = math.Jn(int(fVal), fVal2)
+				nInt := int(ratToInt64(argVal.Rat))
+				x2 := new(big.Float).SetPrec(prec).SetRat(argVal2.Rat)
+				resFloat = bigFloatBessel(nInt, x2, prec)
 			}
-			resRat := big.NewRat(0, 1).SetFloat64(resFloat)
+
+			if resFloat == nil {
+				return newValVoid(), fmt.Errorf("math function returned nil")
+			}
+
+			resRat, _ := resFloat.Rat(nil)
 			if resRat == nil {
-				return newValVoid(), fmt.Errorf("float to rational overflow")
+				resRat = big.NewRat(0, 1)
 			}
-			return newValNum(resRat, ip.Scale), nil
+			resRat = truncateRat(resRat, targetScale)
+			isNeg := resFloat.Signbit()
+			return newValNumNeg(resRat, targetScale, isNeg), nil
 		}
 
 		decl, exists := ip.Functions[e.Name]
@@ -2096,12 +2138,25 @@ func printWrapped(w io.Writer, s string) {
 	}
 }
 
-func formatRat(r *big.Rat, obase int, scale int) string {
+func formatRat(r *big.Rat, obase int, scale int, forceNeg bool) string {
 	if r.Sign() == 0 {
+		if scale <= 0 {
+			return "0"
+		}
+		if forceNeg {
+			if obase > 16 {
+				var zeroes []string
+				for i := 0; i < scale; i++ {
+					zeroes = append(zeroes, "00")
+				}
+				return "-." + strings.Join(zeroes, " ")
+			}
+			return "-." + strings.Repeat("0", scale)
+		}
 		return "0"
 	}
 
-	neg := r.Sign() < 0
+	neg := r.Sign() < 0 || forceNeg
 	val := big.NewRat(0, 1).Abs(r)
 
 	num := val.Num()
@@ -2192,7 +2247,7 @@ func valLength(r *big.Rat, scale int) int {
 		}
 		return 1
 	}
-	s := formatRat(r, 10, scale)
+	s := formatRat(r, 10, scale, r.Sign() < 0)
 	s = strings.ReplaceAll(s, "-", "")
 	parts := strings.Split(s, ".")
 	intStr := parts[0]
@@ -2299,6 +2354,283 @@ func idxString(r *big.Rat) string {
 	// Quo truncates toward zero for POSIX bc array index truncation
 	idxInt := big.NewInt(0).Quo(r.Num(), r.Denom())
 	return idxInt.String()
+}
+
+// bigFloatExp computes e^x using Taylor series with big.Float precision.
+func bigFloatExp(x *big.Float, prec uint) *big.Float {
+	// Handle negative: e^x = 1/e^(-x)
+	if x.Sign() < 0 {
+		nx := new(big.Float).SetPrec(prec).Neg(x)
+		r := bigFloatExp(nx, prec)
+		one := new(big.Float).SetPrec(prec).SetInt64(1)
+		return one.Quo(one, r)
+	}
+
+	// Range reduction: if x > 1, use e^x = (e^(x/2))^2
+	one := new(big.Float).SetPrec(prec).SetInt64(1)
+	if x.Cmp(one) > 0 {
+		half := new(big.Float).SetPrec(prec).Quo(x, new(big.Float).SetPrec(prec).SetInt64(2))
+		r := bigFloatExp(half, prec)
+		return new(big.Float).SetPrec(prec).Mul(r, r)
+	}
+
+	// Taylor series: sum x^n/n!
+	result := new(big.Float).SetPrec(prec).SetInt64(1)
+	term := new(big.Float).SetPrec(prec).SetInt64(1)
+	for i := int64(1); i < int64(prec)+50; i++ {
+		term.Mul(term, x)
+		term.Quo(term, new(big.Float).SetPrec(prec).SetInt64(i))
+		result.Add(result, term)
+		// Convergence check
+		abs := new(big.Float).SetPrec(prec).Abs(term)
+		tiny := new(big.Float).SetPrec(prec).SetMantExp(one, -int(prec))
+		if abs.Cmp(tiny) < 0 {
+			break
+		}
+	}
+	return result
+}
+
+// bigFloatLog computes ln(x) using Newton's method: ln(x) = 2*atanh((x-1)/(x+1))
+func bigFloatLog(x *big.Float, prec uint) *big.Float {
+	if x.Sign() <= 0 {
+		return new(big.Float).SetPrec(prec).SetInt64(0)
+	}
+	one := new(big.Float).SetPrec(prec).SetInt64(1)
+
+	// Range reduction: ln(x) = ln(x/2^k) + k*ln(2), where x/2^k is in [0.5,1.5]
+	k := 0
+	xc := new(big.Float).SetPrec(prec).Set(x)
+	threshold := new(big.Float).SetPrec(prec).SetFloat64(1.5)
+	half := new(big.Float).SetPrec(prec).SetFloat64(0.5)
+	two := new(big.Float).SetPrec(prec).SetInt64(2)
+	for xc.Cmp(threshold) > 0 {
+		xc.Quo(xc, two)
+		k++
+	}
+	for xc.Cmp(half) < 0 {
+		xc.Mul(xc, two)
+		k--
+	}
+
+	// ln(xc) using atanh series: 2*atanh((xc-1)/(xc+1))
+	num := new(big.Float).SetPrec(prec).Sub(xc, one)
+	den := new(big.Float).SetPrec(prec).Add(xc, one)
+	y := new(big.Float).SetPrec(prec).Quo(num, den)
+	lnxc := bigFloatAtanh(y, prec)
+	lnxc.Mul(lnxc, two)
+
+	if k == 0 {
+		return lnxc
+	}
+
+	// Add k*ln(2)
+	ln2 := bigFloatLog2(prec)
+	kf := new(big.Float).SetPrec(prec).SetInt64(int64(k))
+	kf.Mul(kf, ln2)
+	return lnxc.Add(lnxc, kf)
+}
+
+// bigFloatLog2 computes ln(2) to the required precision using atanh series.
+func bigFloatLog2(prec uint) *big.Float {
+	// ln(2) = 2*atanh(1/3) + 2*atanh(1/... actually use: ln(2) = atanh series
+	// Use: ln(2) = 2*(1/3 + 1/(3*3^3) + 1/(5*3^5) + ...) * 2 ... simpler:
+	// ln(2) ≈ direct atanh: 2*atanh(1/3) + ln(9/8)... too complex.
+	// Simple: ln(2) with the atanh approach y=(2-1)/(2+1)=1/3
+	one := new(big.Float).SetPrec(prec).SetInt64(1)
+	two := new(big.Float).SetPrec(prec).SetInt64(2)
+	y := new(big.Float).SetPrec(prec).Quo(one, new(big.Float).SetPrec(prec).SetInt64(3))
+	ln2 := bigFloatAtanh(y, prec)
+	ln2.Mul(ln2, two)
+	return ln2
+}
+
+// bigFloatAtanh computes atanh(x) = sum x^(2k+1)/(2k+1) for |x|<1
+func bigFloatAtanh(x *big.Float, prec uint) *big.Float {
+	one := new(big.Float).SetPrec(prec).SetInt64(1)
+	result := new(big.Float).SetPrec(prec).Set(x)
+	x2 := new(big.Float).SetPrec(prec).Mul(x, x)
+	term := new(big.Float).SetPrec(prec).Set(x)
+	for i := int64(3); i < int64(prec)*4+50; i += 2 {
+		term.Mul(term, x2)
+		t := new(big.Float).SetPrec(prec).Quo(term, new(big.Float).SetPrec(prec).SetInt64(i))
+		result.Add(result, t)
+		abs := new(big.Float).SetPrec(prec).Abs(t)
+		tiny := new(big.Float).SetPrec(prec).SetMantExp(one, -int(prec))
+		if abs.Cmp(tiny) < 0 {
+			break
+		}
+	}
+	return result
+}
+
+// bigFloatSin computes sin(x) using Taylor series with range reduction.
+func bigFloatSin(x *big.Float, prec uint) *big.Float {
+	// Range reduce to [-pi, pi] then use Taylor series
+	pi := bigFloatPi(prec)
+	twoPi := new(big.Float).SetPrec(prec).Mul(pi, new(big.Float).SetPrec(prec).SetInt64(2))
+
+	// Reduce x mod 2*pi
+	xc := new(big.Float).SetPrec(prec).Set(x)
+	k := new(big.Float).SetPrec(prec).Quo(xc, twoPi)
+	ki, _ := k.Int(nil)
+	kf := new(big.Float).SetPrec(prec).SetInt(ki)
+	xc.Sub(xc, new(big.Float).SetPrec(prec).Mul(kf, twoPi))
+
+	// sin Taylor: x - x^3/3! + x^5/5! - ...
+	one := new(big.Float).SetPrec(prec).SetInt64(1)
+	result := new(big.Float).SetPrec(prec).Set(xc)
+	term := new(big.Float).SetPrec(prec).Set(xc)
+	x2 := new(big.Float).SetPrec(prec).Mul(xc, xc)
+	for i := int64(2); i < int64(prec)+50; i += 2 {
+		term.Mul(term, x2)
+		term.Quo(term, new(big.Float).SetPrec(prec).SetInt64(i))
+		term.Quo(term, new(big.Float).SetPrec(prec).SetInt64(i+1))
+		term.Neg(term)
+		result.Add(result, term)
+		abs := new(big.Float).SetPrec(prec).Abs(term)
+		tiny := new(big.Float).SetPrec(prec).SetMantExp(one, -int(prec))
+		if abs.Cmp(tiny) < 0 {
+			break
+		}
+	}
+	return result
+}
+
+// bigFloatCos computes cos(x) using Taylor series.
+func bigFloatCos(x *big.Float, prec uint) *big.Float {
+	// Range reduce to [-pi, pi]
+	pi := bigFloatPi(prec)
+	twoPi := new(big.Float).SetPrec(prec).Mul(pi, new(big.Float).SetPrec(prec).SetInt64(2))
+	xc := new(big.Float).SetPrec(prec).Set(x)
+	k := new(big.Float).SetPrec(prec).Quo(xc, twoPi)
+	ki, _ := k.Int(nil)
+	kf := new(big.Float).SetPrec(prec).SetInt(ki)
+	xc.Sub(xc, new(big.Float).SetPrec(prec).Mul(kf, twoPi))
+
+	// cos Taylor: 1 - x^2/2! + x^4/4! - ...
+	one := new(big.Float).SetPrec(prec).SetInt64(1)
+	result := new(big.Float).SetPrec(prec).SetInt64(1)
+	term := new(big.Float).SetPrec(prec).SetInt64(1)
+	x2 := new(big.Float).SetPrec(prec).Mul(xc, xc)
+	for i := int64(1); i < int64(prec)+50; i += 2 {
+		term.Mul(term, x2)
+		term.Quo(term, new(big.Float).SetPrec(prec).SetInt64(i))
+		term.Quo(term, new(big.Float).SetPrec(prec).SetInt64(i+1))
+		term.Neg(term)
+		result.Add(result, term)
+		abs := new(big.Float).SetPrec(prec).Abs(term)
+		tiny := new(big.Float).SetPrec(prec).SetMantExp(one, -int(prec))
+		if abs.Cmp(tiny) < 0 {
+			break
+		}
+	}
+	return result
+}
+
+// bigFloatPi computes pi using Machin-like formula: pi = 16*atan(1/5) - 4*atan(1/239)
+func bigFloatPi(prec uint) *big.Float {
+	a := bigFloatAtanRecip(5, prec)
+	b := bigFloatAtanRecip(239, prec)
+	sixteen := new(big.Float).SetPrec(prec).SetInt64(16)
+	four := new(big.Float).SetPrec(prec).SetInt64(4)
+	a.Mul(a, sixteen)
+	b.Mul(b, four)
+	return a.Sub(a, b)
+}
+
+// bigFloatAtanRecip computes atan(1/n) using Taylor series.
+func bigFloatAtanRecip(n int64, prec uint) *big.Float {
+	one := new(big.Float).SetPrec(prec).SetInt64(1)
+	x := new(big.Float).SetPrec(prec).Quo(one, new(big.Float).SetPrec(prec).SetInt64(n))
+	return bigFloatAtan(x, prec)
+}
+
+// bigFloatAtan computes atan(x) = sum (-1)^n * x^(2n+1)/(2n+1)
+func bigFloatAtan(x *big.Float, prec uint) *big.Float {
+	one := new(big.Float).SetPrec(prec).SetInt64(1)
+	// For |x| > 1: atan(x) = pi/2 - atan(1/x)
+	absX := new(big.Float).SetPrec(prec).Abs(x)
+	if absX.Cmp(one) > 0 {
+		pi := bigFloatPi(prec)
+		half := new(big.Float).SetPrec(prec).Quo(pi, new(big.Float).SetPrec(prec).SetInt64(2))
+		inv := new(big.Float).SetPrec(prec).Quo(one, x)
+		r := bigFloatAtan(inv, prec)
+		if x.Sign() > 0 {
+			return half.Sub(half, r)
+		}
+		return half.Sub(r, half)
+	}
+
+	// For |x| > 0.5: atan(x) = 2*atan(x/(1+sqrt(1+x^2)))
+	threshold := new(big.Float).SetPrec(prec).SetFloat64(0.5)
+	if absX.Cmp(threshold) > 0 {
+		x2 := new(big.Float).SetPrec(prec).Mul(x, x)
+		inner := new(big.Float).SetPrec(prec).Add(one, x2)
+		inner.Sqrt(inner)
+		inner.Add(inner, one)
+		xHalf := new(big.Float).SetPrec(prec).Quo(x, inner)
+		r := bigFloatAtan(xHalf, prec)
+		return r.Mul(r, new(big.Float).SetPrec(prec).SetInt64(2))
+	}
+
+	// Taylor series for small |x|
+	result := new(big.Float).SetPrec(prec).Set(x)
+	term := new(big.Float).SetPrec(prec).Set(x)
+	x2 := new(big.Float).SetPrec(prec).Mul(x, x)
+	neg := new(big.Float).SetPrec(prec).SetInt64(-1)
+	for i := int64(3); i < int64(prec)*4+100; i += 2 {
+		term.Mul(term, x2)
+		term.Mul(term, neg)
+		t := new(big.Float).SetPrec(prec).Quo(term, new(big.Float).SetPrec(prec).SetInt64(i))
+		result.Add(result, t)
+		abs := new(big.Float).SetPrec(prec).Abs(t)
+		tiny := new(big.Float).SetPrec(prec).SetMantExp(one, -int(prec))
+		if abs.Cmp(tiny) < 0 {
+			break
+		}
+	}
+	return result
+}
+
+// bigFloatBessel computes J_n(x) using the Bessel function recurrence or series.
+func bigFloatBessel(n int, x *big.Float, prec uint) *big.Float {
+	if n < 0 {
+		res := bigFloatBessel(-n, x, prec)
+		if (-n)%2 != 0 {
+			res.Neg(res)
+		}
+		return res
+	}
+	// J_n(x) = sum_{k=0}^{inf} (-1)^k/(k!(k+n)!) * (x/2)^(2k+n)
+	half := new(big.Float).SetPrec(prec).SetFloat64(0.5)
+	xHalf := new(big.Float).SetPrec(prec).Mul(x, half)
+	one := new(big.Float).SetPrec(prec).SetInt64(1)
+
+	result := new(big.Float).SetPrec(prec).SetInt64(0)
+	term := new(big.Float).SetPrec(prec).SetInt64(1)
+
+	// Compute xHalf^n / n!
+	for i := 1; i <= n; i++ {
+		term.Mul(term, xHalf)
+		term.Quo(term, new(big.Float).SetPrec(prec).SetInt64(int64(i)))
+	}
+
+	x2 := new(big.Float).SetPrec(prec).Mul(xHalf, xHalf)
+	for k := 0; k < int(prec)+100; k++ {
+		result.Add(result, term)
+		// term(k+1) = term(k) * -(x/2)^2 / ((k+1)*(k+n+1))
+		factor := new(big.Float).SetPrec(prec).SetInt64(int64((k + 1) * (k + n + 1)))
+		term.Mul(term, x2)
+		term.Quo(term, factor)
+		term.Neg(term)
+		abs := new(big.Float).SetPrec(prec).Abs(term)
+		tiny := new(big.Float).SetPrec(prec).SetMantExp(one, -int(prec))
+		if abs.Cmp(tiny) < 0 {
+			break
+		}
+	}
+	return result
 }
 
 func truncateRat(r *big.Rat, scale int) *big.Rat {
