@@ -15,8 +15,8 @@ via the SDK, and `FROM scratch` containers needing a minimal POSIX userland.
 | `goposix.go` | Public API for downstream multicall binaries. `Main()`, `Run()`, `RunWithWriter()`. |
 | `forwarder.go` | M5 daemon forwarding — detects running daemon socket and forwards CLI commands (not yet wired into `main.go`). |
 | `pkg/common/` | Foundation libraries: `flags.go` (POSIX flag parser), `output.go` (JSON/text rendering), `security.go` (path traversal prevention), `io.go` (LimitWriter). |
-| `pkg/client/` | Go SDK for JSON-RPC daemon. Typed methods for all 77 utilities. Connection pooling, retry, batch requests. |
-| `pkg/<utility>/` | 77 POSIX utility packages. Each has `Run()` (library) + `run()` (CLI glue). Register via `dispatch.Register()` in `init()`. |
+| `pkg/client/` | Go SDK for JSON-RPC daemon. Typed methods for all 115 utilities. Connection pooling, retry, batch requests. |
+| `pkg/<utility>/` | 115 POSIX utility packages. Each has `Run()` (library) + `run()` (CLI glue). Register via `dispatch.Register()` in `init()`. See [test_coverage_matrix.md](test_coverage_matrix.md) for the full catalog. |
 | `internal/daemon/` | JSON-RPC 2.0 daemon server. Session manager, rate limiter, observability (Prometheus + Go runtime stats + JSON /status + healthz/readyz), thread naming (`proctitle_*.go`, `threadname_*.go`), connection tracking for graceful shutdown. |
 | `internal/dispatch/` | Command registry. `Register()`, `Lookup()`, `List()`. |
 | `internal/shell/` | Sandboxed shell interpreter via `mvdan.cc/sh`. Path confinement, output limits. |
@@ -40,6 +40,14 @@ via the SDK, and `FROM scratch` containers needing a minimal POSIX userland.
 | `runtest-tempdir-links/` | BusyBox test suite harness (temporary symlinks) |
 | Docker images | `make image` (daemon), `make image-cli` (CLI), `make bench-image` (benchmark) |
 | Benchmark results | `make bench-all` → Docker volume `goposix-bench-data` |
+
+## ## Docker Images
+
+| Image | Base | Size | Use case |
+|-------|------|:---:|----------|
+| `goposix:latest` | `FROM scratch` | ~10 MB | Default: daemon with JSON-RPC + HTTP metrics |
+| `goposix:cli` | `FROM scratch` | ~10 MB | One-shot CLI invocations |
+| `goposix:debug` | `alpine:3.20` | ~28 MB | Shell, strace, file — interactive debugging |
 
 ## Build and Run Path
 

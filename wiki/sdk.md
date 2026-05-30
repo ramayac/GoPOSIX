@@ -95,7 +95,7 @@ type BatchResponse struct {
 
 ## Typed Utility Methods
 
-All 77 POSIX utilities have typed helper methods on `*client.Client`. Each method
+All 115 POSIX utilities have typed helper methods on `*client.Client`. Each method
 handles parameter marshaling and returns the utility's specific result type.
 
 ### Filesystem

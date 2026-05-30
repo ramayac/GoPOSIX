@@ -4,6 +4,29 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-30] wiki-consolidation | Deduplication pass — link-don't-duplicate, stale counts fixed
+
+Applied the "link, don't duplicate" principle across the wiki:
+
+- **Deleted** `alpine_integration.md` (6-line redirect stub).
+- **SDK/RPC dedup:** Trimmed `rpc_api.md` to a type-signature catalog (~70→30 lines).
+  Moved connection/error/retry/context content into `sdk.md` (canonical). Removed
+  duplicate Go SDK section from `rpc_quickstart.md`; linked to `sdk.md` instead.
+- **Stale utility counts:** Fixed `architecture.md` (79→115), `repo-map.md` (77→115),
+  `sdk.md` (77→115), `shell_integration.md` (77→removed count). Removed hardcoded
+  utility list from `architecture.md`; linked to `test_coverage_matrix.md`.
+- **Architecture / repo-map dedup:** Moved Docker images table from `architecture.md`
+  into `repo-map.md` (canonical location).
+- **Status triangulation fix:** Removed "Active Work" table from `phases.md` (links
+  to `todos.md`). Removed awk/cov breakdowns from `deferred.md` (links to `todos.md`).
+- **Index dedup:** Collapsed 6 duplicated entries (post_mvp, hardening, performance,
+  deferred each listed 2–3×); merged two "Deploy" sections.
+- **Performance section in lessons_learned.md:** Trimmed to insights, not duplicate
+  benchmark numbers (linked to `performance.md`).
+- **test_coverage_matrix.md:** Replaced repeated "Remaining Gaps" with link to `todos.md`.
+
+Result: ~300 lines of duplicate content removed. Each fact lives in one canonical place.
+
 ## [2026-05-30] cleanup | Wiki consolidation — 14 pages merged into 5, 10 stale pages removed
 
 Consolidated scattered phase docs into permanent topic pages:
