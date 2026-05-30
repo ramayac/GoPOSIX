@@ -3,12 +3,15 @@ package tar
 import (
 	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ulikunitz/xz"
 )
 
 func TestTarCreateExtract(t *testing.T) {
@@ -1058,5 +1061,425 @@ func TestTarSymlinkAttackPrevention(t *testing.T) {
 	// Exit code must be 1: symlink had child entries depending on it
 	if code != 1 {
 		t.Errorf("expected exit 1, got %d", code)
+	}
+}
+
+func TestTarXZCompressionAutoDetect(t *testing.T) {
+	// Create a tar archive, compress with XZ, extract via auto-detect.
+	dir := t.TempDir()
+
+	// Create source file
+	srcDir := filepath.Join(dir, "src")
+	os.MkdirAll(srcDir, 0755)
+	os.WriteFile(filepath.Join(srcDir, "hello.txt"), []byte("hello xz"), 0644)
+
+	// Create tar archive
+	tarPath := filepath.Join(dir, "test.tar")
+	var out bytes.Buffer
+	code := run([]string{"-c", "-f", tarPath, "-C", dir, "src"}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("create: exit %d", code)
+	}
+
+	// Compress with XZ
+	tarData, err := os.ReadFile(tarPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	xzPath := filepath.Join(dir, "test.tar.xz")
+	var xzBuf bytes.Buffer
+	w, err := xz.NewWriter(&xzBuf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.Write(tarData); err != nil {
+		t.Fatal(err)
+	}
+	w.Close()
+	os.WriteFile(xzPath, xzBuf.Bytes(), 0644)
+
+	// Extract with auto-detect (no -z or -j flag)
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+	var stderr bytes.Buffer
+	code = run([]string{"-x", "-f", xzPath, "-C", extractDir}, nil, &stderr, &stderr, "")
+	if code != 0 {
+		t.Fatalf("extract xz: exit %d, stderr: %s", code, stderr.String())
+	}
+
+	data, err := os.ReadFile(filepath.Join(extractDir, "src", "hello.txt"))
+	if err != nil {
+		t.Fatalf("extracted file not found: %v", err)
+	}
+	if string(data) != "hello xz" {
+		t.Errorf("content = %q, want 'hello xz'", string(data))
+	}
+}
+
+func TestTarXZListAutoDetect(t *testing.T) {
+	// Test listing an XZ-compressed archive via auto-detect.
+	dir := t.TempDir()
+
+	// Create tar archive with a known file
+	srcDir := filepath.Join(dir, "src")
+	os.MkdirAll(srcDir, 0755)
+	os.WriteFile(filepath.Join(srcDir, "listme.txt"), []byte("data"), 0644)
+
+	tarPath := filepath.Join(dir, "test.tar")
+	var out bytes.Buffer
+	code := run([]string{"-c", "-f", tarPath, "-C", dir, "src"}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatalf("create: exit %d", code)
+	}
+
+	// Compress with XZ
+	tarData, _ := os.ReadFile(tarPath)
+	var xzBuf bytes.Buffer
+	w, _ := xz.NewWriter(&xzBuf)
+	w.Write(tarData)
+	w.Close()
+	xzPath := filepath.Join(dir, "list.tar.xz")
+	os.WriteFile(xzPath, xzBuf.Bytes(), 0644)
+
+	// List the XZ archive
+	var stdout, stderr bytes.Buffer
+	code = run([]string{"-t", "-f", xzPath}, nil, &stdout, &stderr, "")
+	if code != 0 {
+		t.Fatalf("list xz: exit %d, stderr: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "listme.txt") {
+		t.Errorf("expected 'listme.txt' in listing, got: %s", stdout.String())
+	}
+}
+
+func TestTarSymlinkSafetyRelativeSafe(t *testing.T) {
+	// Symlink with a target that stays within the extraction root is allowed.
+	dir := t.TempDir()
+	arc := createTarWithEntries(t, dir, "safe.tar", [][]string{
+		{"dir/file", "reg", "", "content"},
+		{"link", "symlink", "dir/file"},
+	})
+
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+
+	var stderr bytes.Buffer
+	code := run([]string{"-x", "-f", arc, "-C", extractDir}, nil, &stderr, &stderr, "")
+	if code != 0 {
+		t.Fatalf("extract: exit %d, stderr: %s", code, stderr.String())
+	}
+
+	// Symlink should exist and point to dir/file
+	target, err := os.Readlink(filepath.Join(extractDir, "link"))
+	if err != nil {
+		t.Fatalf("symlink not created: %v", err)
+	}
+	if target != "dir/file" {
+		t.Errorf("symlink target = %q, want 'dir/file'", target)
+	}
+
+	// No warning for safe symlinks
+	if strings.Contains(stderr.String(), "can't create symlink") {
+		t.Error("unexpected safety warning for safe symlink")
+	}
+}
+
+func TestTarSymlinkSafetyRelativeEscape(t *testing.T) {
+	// Symlink that escapes via .. is refused when there's a conflict.
+	dir := t.TempDir()
+	arc := createTarWithEntries(t, dir, "escape.tar", [][]string{
+		{"escape", "symlink", "../../../etc/passwd"},
+		{"escape/child", "reg", "", "bad"},
+	})
+
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+
+	var stderr bytes.Buffer
+	code := run([]string{"-x", "-f", arc, "-C", extractDir}, nil, &stderr, &stderr, "")
+
+	// Should warn about the dangerous symlink
+	if !strings.Contains(stderr.String(), "can't create symlink") {
+		t.Errorf("expected symlink safety warning for .. escape, got: %s", stderr.String())
+	}
+
+	// Should exit 1: child entry depended on the refused symlink
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+
+	// Symlink must NOT exist (a real directory for child entries is OK)
+	fi, err := os.Lstat(filepath.Join(extractDir, "escape"))
+	if err == nil && fi.Mode()&os.ModeSymlink != 0 {
+		t.Error("dangerous ../ symlink was created")
+	}
+
+	// Child file should be extracted safely inside extraction dir
+	childPath := filepath.Join(extractDir, "escape", "child")
+	if data, err := os.ReadFile(childPath); err != nil {
+		t.Logf("child file not extracted (expected if dir created): %v", err)
+	} else if string(data) != "bad" {
+		t.Errorf("child content = %q, want 'bad'", string(data))
+	}
+}
+
+func TestTarSymlinkSafetyNoConflict(t *testing.T) {
+	// Absolute symlink with NO conflicting entry is allowed.
+	dir := t.TempDir()
+	arc := createTarWithEntries(t, dir, "safe_abs.tar", [][]string{
+		{"mylink", "symlink", "/usr/share/something"},
+	})
+
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+
+	var stderr bytes.Buffer
+	code := run([]string{"-x", "-f", arc, "-C", extractDir}, nil, &stderr, &stderr, "")
+	if code != 0 {
+		t.Fatalf("extract: exit %d, stderr: %s", code, stderr.String())
+	}
+
+	// Symlink should exist
+	fi, err := os.Lstat(filepath.Join(extractDir, "mylink"))
+	if err != nil {
+		t.Fatalf("symlink not created: %v", err)
+	}
+	if fi.Mode()&os.ModeSymlink == 0 {
+		t.Error("expected symlink, got regular file")
+	}
+
+	// No warning (no conflict)
+	if strings.Contains(stderr.String(), "can't create symlink") {
+		t.Error("unexpected safety warning for non-conflicting absolute symlink")
+	}
+}
+
+func TestTarExtractToStdout(t *testing.T) {
+	dir := t.TempDir()
+	arc := createTarWithEntries(t, dir, "test.tar", [][]string{
+		{"hello.txt", "reg", "", "hello stdout"},
+		{"sub/world.txt", "reg", "", "world stdout"},
+	})
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-x", "-O", "-f", arc}, nil, &stdout, &stderr, "")
+	if code != 0 {
+		t.Fatalf("extract -O: exit %d, stderr: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "hello stdout") {
+		t.Errorf("expected 'hello stdout' in stdout, got: %s", stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "world stdout") {
+		t.Errorf("expected 'world stdout' in stdout, got: %s", stdout.String())
+	}
+}
+
+func TestTarExtractWithOverwrite(t *testing.T) {
+	dir := t.TempDir()
+	arc := createTarWithEntries(t, dir, "test.tar", [][]string{
+		{"file.txt", "reg", "", "new content"},
+	})
+
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+
+	// Pre-create the file
+	os.WriteFile(filepath.Join(extractDir, "file.txt"), []byte("old content"), 0644)
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-x", "--overwrite", "-f", arc, "-C", extractDir}, nil, &stdout, &stderr, "")
+	if code != 0 {
+		t.Fatalf("extract --overwrite: exit %d, stderr: %s", code, stderr.String())
+	}
+
+	data, _ := os.ReadFile(filepath.Join(extractDir, "file.txt"))
+	if string(data) != "new content" {
+		t.Errorf("content = %q, want 'new content'", string(data))
+	}
+}
+
+func TestTarExtractWithIncludeList(t *testing.T) {
+	dir := t.TempDir()
+	arc := createTarWithEntries(t, dir, "test.tar", [][]string{
+		{"a.txt", "reg", "", "A"},
+		{"b.txt", "reg", "", "B"},
+		{"c.txt", "reg", "", "C"},
+	})
+
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-x", "-f", arc, "-C", extractDir, "a.txt", "c.txt"}, nil, &stdout, &stderr, "")
+	if code != 0 {
+		t.Fatalf("extract with include: exit %d, stderr: %s", code, stderr.String())
+	}
+
+	// a.txt and c.txt should exist, b.txt should not
+	for _, name := range []string{"a.txt", "c.txt"} {
+		if _, err := os.Stat(filepath.Join(extractDir, name)); err != nil {
+			t.Errorf("expected %s to exist", name)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(extractDir, "b.txt")); err == nil {
+		t.Error("b.txt should not have been extracted")
+	}
+}
+
+func TestTarListGzipAutoDetect(t *testing.T) {
+	dir := t.TempDir()
+
+	// Create tar archive
+	tarPath := filepath.Join(dir, "test.tar")
+	var out bytes.Buffer
+	os.WriteFile(filepath.Join(dir, "f.txt"), []byte("x"), 0644)
+	code := run([]string{"-c", "-f", tarPath, "-C", dir, "f.txt"}, nil, &out, &out, "")
+	if code != 0 {
+		t.Fatal("create failed")
+	}
+
+	// Compress with gzip
+	tarData, _ := os.ReadFile(tarPath)
+	var gzBuf bytes.Buffer
+	w := gzip.NewWriter(&gzBuf)
+	w.Write(tarData)
+	w.Close()
+
+	gzPath := filepath.Join(dir, "list.tar.gz")
+	os.WriteFile(gzPath, gzBuf.Bytes(), 0644)
+
+	var stdout, stderr bytes.Buffer
+	code = run([]string{"-t", "-f", gzPath}, nil, &stdout, &stderr, "")
+	if code != 0 {
+		t.Fatalf("list gz: exit %d, stderr: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "f.txt") {
+		t.Errorf("expected 'f.txt' in gzip listing, got: %s", stdout.String())
+	}
+}
+
+func TestTarVerboseCreate(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "v.txt"), []byte("verbose test"), 0644)
+
+	arc := filepath.Join(dir, "test.tar")
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-c", "-v", "-f", arc, "-C", dir, "v.txt"}, nil, &stdout, &stderr, "")
+	if code != 0 {
+		t.Fatalf("create -v: exit %d", code)
+	}
+	if !strings.Contains(stdout.String(), "v.txt") {
+		t.Errorf("expected 'v.txt' in verbose create output, got: %s", stdout.String())
+	}
+}
+
+func TestTarStdinList(t *testing.T) {
+	dir := t.TempDir()
+	arc := createTarWithEntries(t, dir, "test.tar", [][]string{
+		{"stdin_test.txt", "reg", "", "stdin"},
+	})
+
+	tarData, _ := os.ReadFile(arc)
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-t"}, bytes.NewReader(tarData), &stdout, &stderr, "")
+	if code != 0 {
+		t.Fatalf("list stdin: exit %d, stderr: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "stdin_test.txt") {
+		t.Errorf("expected 'stdin_test.txt' in listing, got: %s", stdout.String())
+	}
+}
+
+func TestResolveTarPath(t *testing.T) {
+	tests := []struct {
+		input        string
+		wantResolved string
+	}{
+		{"a/b/c", "a/b/c"},
+		{"./a/b", "a/b"},
+		{"a/b/../c", "a/c"},
+		{"../a", ""},
+		{"././a", "a"},
+		{"a/./b", "a/b"},
+		{"a//b", "a/b"},
+		{"../../etc/passwd", "passwd"},
+	}
+	for _, tc := range tests {
+		resolved, stripped := resolveTarPath(tc.input)
+		if resolved != tc.wantResolved {
+			t.Errorf("resolveTarPath(%q) resolved = %q, want %q", tc.input, resolved, tc.wantResolved)
+		}
+		// Just verify stripped is non-empty when input has leading ./ or ..
+		if strings.HasPrefix(tc.input, ".") && stripped == "" && resolved != tc.input {
+			t.Errorf("resolveTarPath(%q) stripped should not be empty when prefix was stripped", tc.input)
+		}
+		_ = stripped
+	}
+}
+
+func TestTarJSONListOutput(t *testing.T) {
+	dir := t.TempDir()
+	arc := createTarWithEntries(t, dir, "test.tar", [][]string{
+		{"j.txt", "reg", "", "json"},
+	})
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-t", "--json", "-f", arc}, nil, &stdout, &stderr, "")
+	if code != 0 {
+		t.Fatalf("list --json: exit %d, stderr: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "\"name\"") {
+		t.Errorf("expected JSON output, got: %s", stdout.String())
+	}
+}
+
+func TestTarMissingArchiveError(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-x", "-f", "/nonexistent/archive.tar"}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Errorf("expected exit 1 for missing archive, got %d", code)
+	}
+}
+
+func TestTarCorruptGzipError(t *testing.T) {
+	dir := t.TempDir()
+	// Write corrupt gzip data
+	arc := filepath.Join(dir, "bad.tar.gz")
+	os.WriteFile(arc, []byte("not a gzip file"), 0644)
+
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-x", "-z", "-f", arc}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Errorf("expected exit 1 for corrupt gzip, got %d", code)
+	}
+}
+
+func TestTarExcludeFromFile(t *testing.T) {
+	dir := t.TempDir()
+
+	// Create archive with two files
+	arc := createTarWithEntries(t, dir, "test.tar", [][]string{
+		{"keep.txt", "reg", "", "keep"},
+		{"skip_me.txt", "reg", "", "skip"},
+	})
+
+	// Create exclude file for extraction
+	excludeFile := filepath.Join(dir, "exclude.txt")
+	os.WriteFile(excludeFile, []byte("skip_me.txt\n"), 0644)
+
+	// Extract with exclude — only keep.txt should be extracted
+	extractDir := filepath.Join(dir, "out")
+	os.MkdirAll(extractDir, 0755)
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"-x", "-f", arc, "-X", excludeFile, "-C", extractDir}, nil, &stdout, &stderr, "")
+	if code != 0 {
+		t.Fatalf("extract with exclude: exit %d, stderr: %s", code, stderr.String())
+	}
+
+	if _, err := os.Stat(filepath.Join(extractDir, "keep.txt")); err != nil {
+		t.Error("keep.txt should have been extracted")
+	}
+	if _, err := os.Stat(filepath.Join(extractDir, "skip_me.txt")); err == nil {
+		t.Error("skip_me.txt should have been excluded")
 	}
 }
