@@ -36,3 +36,16 @@ func TestRunCLIJSON(t *testing.T) {
 		t.Error("expected JSON output")
 	}
 }
+
+func TestUnameAllFlags(t *testing.T) {
+	flags := []string{"-s", "-n", "-r", "-m", "-a"}
+	for _, f := range flags {
+		t.Run(f, func(t *testing.T) {
+			var buf bytes.Buffer
+			code := run([]string{f}, nil, &buf, &buf, "")
+			if code != 0 {
+				t.Errorf("uname %s: exit %d", f, code)
+			}
+		})
+	}
+}

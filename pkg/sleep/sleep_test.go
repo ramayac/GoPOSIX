@@ -64,3 +64,25 @@ func TestSleepJSONShortFlag(t *testing.T) {
 		t.Errorf("interrupted %v, want false", data["interrupted"])
 	}
 }
+
+func TestSleepInvalidDuration(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"abc"}, nil, &buf, &buf, "")
+	if code == 0 {
+		t.Error("expected non-zero exit for invalid duration")
+	}
+}
+func TestSleepInvalidSuffix(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"2x"}, nil, &buf, &buf, "")
+	if code == 0 {
+		t.Error("expected non-zero exit for invalid suffix")
+	}
+}
+func TestSleepMissingArg(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{}, nil, &buf, &buf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+}

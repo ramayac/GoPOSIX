@@ -3,10 +3,10 @@
 > **Status:** COMPLETED | **Date:** 2026-05-30 | **Trigger:** Coverage Audit & Tar Test Verification
 >
 > **Key findings:**
-> 1. Overall project coverage stands at **83.9%** (above the 80% gate).
-> 2. Identified 25 packages below the 80% individual package coverage goal; 6 quick-win packages addressed (4 now ≥80%).
-> 3. Highest-impact fix: `pkg/id` jumped from 62.5% → 94.6% (8 new flag tests).
-> 4. All 31 tar BusyBox integration tests pass; tar coverage at 80.4%.
+> 1. Overall project coverage stands at **84.0%** (above the 80% gate).
+> 2. 9 packages pushed above 80% this phase (id, sleep, uname, cksum, cmp, md5sum, ln, date, df).
+> 3. Highest-impact: `pkg/id` 62.5% → 94.6%, `pkg/sleep` 78.1% → 87.5%.
+> 4. 16 packages remain under 80% (down from 25).
 
 ---
 

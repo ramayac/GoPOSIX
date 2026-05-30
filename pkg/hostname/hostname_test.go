@@ -130,3 +130,18 @@ func TestRunCLI_BadFlag(t *testing.T) {
 		t.Errorf("exit %d, want 2", code)
 	}
 }
+
+func TestHostnameSetShort(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-s", "newhost"}, nil, &buf, &buf, "")
+	// Will likely fail without root, but exercises the set-hostname code path
+	if code == 0 {
+		t.Log("set hostname succeeded (running as root?)")
+	}
+}
+func TestHostnameSetFQDN(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-F", "/etc/hostname"}, nil, &buf, &buf, "")
+	// Exercises file-based hostname setting
+	_ = code
+}

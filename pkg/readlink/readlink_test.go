@@ -219,3 +219,22 @@ func TestRunCanonicalize_RecursiveSymlinks(t *testing.T) {
 		t.Errorf("got target %q, want logical target %q", result.Target, expectedTarget)
 	}
 }
+
+func TestReadlinkNonSymlink(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "regular.txt")
+	os.WriteFile(f, []byte("content"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-f", f}, nil, &buf, &buf, "")
+	// -f canonicalize should work on non-symlinks too
+	if code != 0 {
+		t.Errorf("readlink -f regular: exit %d", code)
+	}
+}
+func TestReadlinkMissingArg(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{}, nil, &buf, &buf, "")
+	if code != 1 {
+		t.Errorf("readlink no args: exit %d, want 1", code)
+	}
+}
