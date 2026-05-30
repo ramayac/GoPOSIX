@@ -295,6 +295,41 @@ func createArchiveStream(w io.Writer, targets []string, archiveAbsPath string, v
 				if rerr != nil {
 					return rerr
 				}
+				// Check for hardlinks to symlinks (same inode).
+				if fi.Sys() != nil {
+					if stat, ok := fi.Sys().(*syscall.Stat_t); ok && stat.Nlink > 1 {
+						inodeKey := fmt.Sprintf("%d:%d", stat.Dev, stat.Ino)
+						if first, exists := seenInodes[inodeKey]; exists {
+							// Hardlink to a previously-seen symlink.
+							header := &tar.Header{
+								Name:     memberName,
+								Linkname: first.name,
+								Typeflag: tar.TypeLink,
+								Mode:     int64(fi.Mode() & os.ModePerm),
+								ModTime:  fi.ModTime(),
+								Uname:    first.uname,
+								Gname:    first.gname,
+								Uid:      first.uid,
+								Gid:      first.gid,
+							}
+							if err := tw.WriteHeader(header); err != nil {
+								return err
+							}
+							stats = append(stats, TarFileStat{
+								Name: header.Name,
+								Size: header.Size,
+								Mode: fi.Mode().String(),
+							})
+							if verbose {
+								fmt.Fprintln(logOut, memberName)
+							}
+							return nil
+						}
+						seenInodes[inodeKey] = inodeInfo{
+							name: memberName,
+						}
+					}
+				}
 				header := &tar.Header{
 					Name:     memberName,
 					Linkname: linkTarget,

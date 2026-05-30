@@ -130,11 +130,16 @@ func groupName(gid uint32) string {
 
 func buildFileInfo(path string, info fs.FileInfo) FileInfo {
 	inode, links, blocks, uid, gid := statInfo(info)
+	modeStr := info.Mode().String()
+	// Go uses uppercase 'L' for symlinks; POSIX/GNU uses lowercase 'l'.
+	if info.Mode()&fs.ModeSymlink != 0 && len(modeStr) > 0 && modeStr[0] == 'L' {
+		modeStr = "l" + modeStr[1:]
+	}
 	fi := FileInfo{
 		Name:    info.Name(),
 		Path:    path,
 		Size:    info.Size(),
-		Mode:    info.Mode().String(),
+		Mode:    modeStr,
 		ModTime: info.ModTime(),
 		IsDir:   info.IsDir(),
 		Owner:   ownerName(uid),
@@ -172,7 +177,23 @@ func Run(paths []string, showAll, almostAll, recursive, directoryMode bool) ([]L
 	}
 
 	var results []LsResult
+
+	// Reorder: non-directory args first, then directories (GNU/BusyBox convention).
+	var filesFirst, dirsLater []string
 	for _, p := range paths {
+		info, err := os.Lstat(p)
+		if err != nil {
+			return nil, err
+		}
+		if info.IsDir() {
+			dirsLater = append(dirsLater, p)
+		} else {
+			filesFirst = append(filesFirst, p)
+		}
+	}
+	ordered := append(filesFirst, dirsLater...)
+
+	for _, p := range ordered {
 		info, err := os.Lstat(p)
 		if err != nil {
 			return nil, err
