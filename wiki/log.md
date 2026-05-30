@@ -329,8 +329,8 @@ Comprehensive wiki cleanup to reduce bloat and improve navigability:
 - **Tier 1 — Deleted 17 historical phase docs (00–10a, 11/11a/12/13):** Removed detailed
   implementation checklists for phases completed months ago. Phase summaries live in
   `phases.md`. Architectural knowledge lives in `architecture.md`.
-- **Tier 2 — Merged 10 files into 3:** `14a+14b+14c` → `14_post_mvp_fixes.md`,
-  `15+16+17+18` → `15_post_mvp_utilities.md`, `posix_coverage.md` → merged into
+- **Tier 2 — Merged 10 files into 3:** `14a+14b+14c` → `post_mvp.md`,
+  `15+16+17+18` → `post_mvp.md`, `posix_coverage.md` → merged into
   `test_coverage_matrix.md`.
 - **Tier 3 — Deduplicated living docs:** `index.md` → pure link index (was status-table-heavy).
   `phases.md` → removed architecture diagram (→ `architecture.md`), risk register (stale),
@@ -345,10 +345,10 @@ Comprehensive wiki cleanup to reduce bloat and improve navigability:
 Deleted: goposixos.md, 00_foundation_libs.md–10a_sed.md, 11_post_mvp_priorities.md,
 11a_lower_priority.md, 12_road_to_gold.md, 13_coverage_and_hardening.md,
 14a_json_gap_fill.md, 14b_busybox_regression_fix.md, 14c_posix_json_gap.md,
-14_xml_output.md, 15_post_mvp_tier1.md, 16_post_mvp_tier2.md, 17_post_mvp_tier3.md,
+14_xml_output.md, 15_post_mvp_tier1.md, post_mvp_tier2.md, post_mvp_tier3.md,
 18_quality_fixes.md, 23_multi_tenant_sandbox.md, posix_coverage.md.
 
-Created: deferred.md, 14_post_mvp_fixes.md, 15_post_mvp_utilities.md.
+Created: deferred.md, post_mvp.md, post_mvp.md.
 Updated: index.md, phases.md, todos.md, architecture.md, test_coverage_matrix.md,
 19_performance_benchmarking.md, hardening.md, log.md.
 

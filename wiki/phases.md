@@ -79,10 +79,7 @@ goposix binary (single static ELF, <12MB)
 | 12 | Road to Gold — supply chain, macOS, coverage, BusyBox parity | completed |
 | 13 | Coverage & hardening (76.7% reached) | completed |
 | 14 | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage | completed |
-| 15 | Post-MVP utilities, quality fixes | completed |
-| 16 | Post-MVP utilities part II | completed |
-| 17 | Post-MVP utilities part III | completed |
-| 18 | Post-MVP utilities part IV | completed |
+| 15–18 | Post-MVP utilities (dd, od, patch, expand, comm, paste, fold, sum, nl, cmp, strings, which, realpath, pidof, seq, cal, hostid, factor, uptime, wget, rev, tree, tsort, sha*) — consolidated into [wiki/post_mvp.md](post_mvp.md) | completed |
 | 19 | Performance benchmarking | completed |
 | 20 | Hardening II — flag audit, code cleanup, coverage, input safety | completed |
 | 21 | Honest-takes audit | completed |

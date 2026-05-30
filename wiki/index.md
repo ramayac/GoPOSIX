@@ -36,8 +36,8 @@
 ## Completed Phase Summaries
 
 - [lessons_learned.md](lessons_learned.md) | Architectural lessons, gotchas, and validated patterns.
-- [14_post_mvp_fixes.md](14_post_mvp_fixes.md) | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage.
-- [15_post_mvp_utilities.md](15_post_mvp_utilities.md) | Post-MVP utilities: `dd`, `od`, text tools, stubs, quality fixes.
+- [post_mvp.md](post_mvp.md) | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage.
+- [post_mvp.md](post_mvp.md) | Post-MVP utilities: `dd`, `od`, text tools, stubs, quality fixes.
 - [19_performance_benchmarking.md](19_performance_benchmarking.md) | Benchmark results: GoPOSIX vs BusyBox (DONE).
 - [hardening.md](hardening.md) | Hardening II: flag audit, code cleanup, coverage, input safety.
 - [hardening.md](hardening.md) | Hardening III: Daemon-First Pivot.
