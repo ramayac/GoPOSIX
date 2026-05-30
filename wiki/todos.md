@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-30 | **Utilities:** 115 | **Coverage:** 83.5% | **BusyBox:** 873/21/25 (97.7%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-05-30 | **Utilities:** 115 | **Coverage:** 83.4% | **BusyBox:** 877/17/25 (98.1%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -19,15 +19,13 @@ This document serves as the live registry of remaining work, active plans, and k
 
 ### 🟡 Medium Priority — Well-Defined, Scoped
 
-#### `tar` — 4 failures + 4 skipped (27/31 pass, 87.1%) · coverage 75.4%
+#### `tar` — ✅ All 31 BusyBox tests pass (100% compliance) · coverage 72.4%
 
 | # | Type | Count | Difficulty | Description |
 |---|------|-------|------------|-------------|
-| 1 | Failures | 3 | 🟡 Medium | Hardlink/symlink mode ordering — permission bits applied in wrong order |
-| 2 | Failures | 1 | 🟡 Medium | XZ compression auto-detect (`.tar.xz`) not implemented |
-| 3 | Skipped | 2 | 🟡 Medium | Auto-detect `.tar.gz`/`.tar.xz` on extract |
-| 4 | Skipped | 2 | 🟡 Medium | Hardlink detection/dedup + mode preservation |
-| 5 | Skipped | 1 | 🟢 Easy | Graceful rejection of empty `.tar.gz` files |
+| 1 | Skipped | 2 | 🟡 Medium | Auto-detect `.tar.gz`/`.tar.xz` on extract |
+| 2 | Skipped | 2 | 🟡 Medium | Hardlink detection/dedup + mode preservation |
+| 3 | Skipped | 1 | 🟢 Easy | Graceful rejection of empty `.tar.gz` files |
 
 ---
 

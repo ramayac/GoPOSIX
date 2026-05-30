@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-30 | **BusyBox:** 873 pass / 21 fail / 25 skip | **Branch:** `feat/bc-fixes` | **Overall Coverage:** 83.5% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-05-30 | **BusyBox:** 877 pass / 17 fail / 25 skip | **Branch:** `feat/tar-fixes` | **Overall Coverage:** 83.4% | **JSON-RPC:** 115/115 (100.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -95,7 +95,7 @@
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `tar` | 75.4% | 31 | ⚠️ 27/31 (3 mode, 1 XZ) | ✅ |
+| `tar` | 72.4% | 31 | ✅ 31/31 | ✅ |
 | `gzip` / `gunzip` | 64.7% | 4 | ✅ 4/4 | ✅ |
 | `sha256sum` | 81.6% | — | — | ✅ |
 | `sha1sum` | 89.1% | 1 | ✅ 1/1 | ✅ |
@@ -196,8 +196,8 @@
 | Total packages | 115 | 115 utilities + client SDK |
 | Unit tests passing | 115/115 | 100% |
 | BusyBox tests run | 919 | 919 total applicable tests |
-| BusyBox passed | 873 | 97.7% (873 of 919) |
-| BusyBox failed | 21 | 17 awk + 4 tar |
+| BusyBox passed | 877 | 98.1% (877 of 919) |
+| BusyBox failed | 17 | 17 awk (deferred) |
 | BusyBox skipped | 25 | 13 mdev (root), 7 cpio, 2 mount/makedevs (root), 1 ash, 2 awk (deferred) |
 | Overall statement coverage | 83.6% | Checked via make cover-gate |
 | JSON-RPC daemon tests | 115/115 | 100.0% (all 115 utilities implemented and registered) |
@@ -208,8 +208,8 @@
 | # | Gap | Count |
 |---|-----|-------|
 | 1 | awk BusyBox failures | 17 (goawk v1.31.0 engine limitations) |
-| 2 | tar BusyBox failures | 4 (3 hardlink/symlink mode ordering, 1 XZ) |
-| 3 | Unit coverage < 80% | 1 package: `tar` (74.8%) |
+| 2 | awk BusyBox failures | 17 (goawk v1.31.0 engine limitations) |
+| 3 | Unit coverage < 80% | 1 package: `tar` (72.4%) |
 
 ## Notes
 
@@ -217,7 +217,7 @@
 - **ar**: Archive creation now passes all BusyBox tests (2/2). Feature flags enabled. ✅
 - **unzip**: Corrupted archive handling passes all BusyBox tests (4/4). Added `scanCorruptedZip()` for local file header extraction from damaged zips. ✅
 - **tree**: All 4 BusyBox tests pass including Unicode box-drawing output. ✅
-- **tar**: Symlink safety fully implemented — pre-scan conflict detection, `isSymlinkSafe()` check. 3 BusyBox tests now passing (does not extract into symlinks, -k mode, symlink attack prevention). 4 remaining failures: 3 hardlink/symlink mode ordering, 1 XZ.
+- **tar**: All 31 BusyBox tests now passing (100% compliance). Symlink safety with pre-scan conflict detection, hardlink dedup for symlinks, XZ compression auto-detect. ✅
 - **dc**: All 36 BusyBox tests pass (100% compliance rate). Fixed recursive macro stack overflow, scale-aware modulus/divmod operations, and mathematical zero formatting quirks. Added full support for multi-character extended register mode (`-x`). Unit test coverage reached 87.8%. ✅
 - **pidof**: All 4 tests pass including `-o init` (FEATURE_PIDOF_OMIT enabled). ✅
 - **cryptpw**: All 7 tests pass including SHA-256/512 with rounds (USE_BB_CRYPT_SHA flag enabled). Unit coverage increased 80.6% → 82.4% with 6 new test functions. ✅
