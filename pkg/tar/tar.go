@@ -17,6 +17,7 @@ import (
 
 	"github.com/ramayac/goposix/internal/dispatch"
 	"github.com/ramayac/goposix/pkg/common"
+	"github.com/ulikunitz/xz"
 )
 
 // TarFileStat holds metadata for a single file in the archive for JSON output.
@@ -294,6 +295,41 @@ func createArchiveStream(w io.Writer, targets []string, archiveAbsPath string, v
 				linkTarget, rerr := os.Readlink(file)
 				if rerr != nil {
 					return rerr
+				}
+				// Check for hardlinks to symlinks (same inode).
+				if fi.Sys() != nil {
+					if stat, ok := fi.Sys().(*syscall.Stat_t); ok && stat.Nlink > 1 {
+						inodeKey := fmt.Sprintf("%d:%d", stat.Dev, stat.Ino)
+						if first, exists := seenInodes[inodeKey]; exists {
+							// Hardlink to a previously-seen symlink.
+							header := &tar.Header{
+								Name:     memberName,
+								Linkname: first.name,
+								Typeflag: tar.TypeLink,
+								Mode:     int64(fi.Mode() & os.ModePerm),
+								ModTime:  fi.ModTime(),
+								Uname:    first.uname,
+								Gname:    first.gname,
+								Uid:      first.uid,
+								Gid:      first.gid,
+							}
+							if err := tw.WriteHeader(header); err != nil {
+								return err
+							}
+							stats = append(stats, TarFileStat{
+								Name: header.Name,
+								Size: header.Size,
+								Mode: fi.Mode().String(),
+							})
+							if verbose {
+								fmt.Fprintln(logOut, memberName)
+							}
+							return nil
+						}
+						seenInodes[inodeKey] = inodeInfo{
+							name: memberName,
+						}
+					}
 				}
 				header := &tar.Header{
 					Name:     memberName,
@@ -757,14 +793,18 @@ func doExtract(archive string, useGzip, useBzip2, keepOld, verbose, toStdout, ov
 	}
 
 	// Auto-detect compression from magic bytes if no explicit flag.
+	useXz := false
 	if !useGzip && !useBzip2 {
 		br := bufio.NewReader(r)
-		magic, perr := br.Peek(4)
+		magic, perr := br.Peek(6)
 		if perr == nil {
 			if len(magic) >= 2 && magic[0] == 0x1f && magic[1] == 0x8b {
 				useGzip = true
 			} else if len(magic) >= 3 && magic[0] == 'B' && magic[1] == 'Z' && magic[2] == 'h' {
 				useBzip2 = true
+			} else if len(magic) >= 6 && magic[0] == 0xFD && magic[1] == '7' && magic[2] == 'z' &&
+				magic[3] == 'X' && magic[4] == 'Z' && magic[5] == 0x00 {
+				useXz = true
 			}
 		}
 		r = br
@@ -785,6 +825,17 @@ func doExtract(archive string, useGzip, useBzip2, keepOld, verbose, toStdout, ov
 	}
 	if useBzip2 {
 		r = bzip2.NewReader(r)
+	}
+	if useXz {
+		xr, err := xz.NewReader(r)
+		if err != nil {
+			if !isJSON {
+				fmt.Fprintf(errOut, "tar: %v\n", err)
+			}
+			common.RenderError("tar", 1, "XZ", err.Error(), isJSON, stdout)
+			return 1
+		}
+		r = xr
 	}
 
 	logOut := stdout
@@ -990,14 +1041,18 @@ func doList(archive string, useGzip, useBzip2, verbose, isJSON bool, excludePatt
 	}
 
 	// Auto-detect compression when neither flag is explicit.
+	useXz := false
 	if !useGzip && !useBzip2 {
 		br := bufio.NewReader(r)
-		magic, perr := br.Peek(4)
+		magic, perr := br.Peek(6)
 		if perr == nil {
 			if len(magic) >= 2 && magic[0] == 0x1f && magic[1] == 0x8b {
 				useGzip = true
 			} else if len(magic) >= 3 && magic[0] == 'B' && magic[1] == 'Z' && magic[2] == 'h' {
 				useBzip2 = true
+			} else if len(magic) >= 6 && magic[0] == 0xFD && magic[1] == '7' && magic[2] == 'z' &&
+				magic[3] == 'X' && magic[4] == 'Z' && magic[5] == 0x00 {
+				useXz = true
 			}
 		}
 		r = br
@@ -1017,6 +1072,17 @@ func doList(archive string, useGzip, useBzip2, verbose, isJSON bool, excludePatt
 	}
 	if useBzip2 {
 		r = bzip2.NewReader(r)
+	}
+	if useXz {
+		xr, err := xz.NewReader(r)
+		if err != nil {
+			common.RenderError("tar", 1, "XZ", err.Error(), isJSON, stdout)
+			if !isJSON {
+				fmt.Fprintf(errOut, "tar: %v\n", err)
+			}
+			return 1
+		}
+		r = xr
 	}
 
 	listOut := stdout

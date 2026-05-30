@@ -45,6 +45,29 @@ CMD ["/bin/sh"]
 
 ---
 
+## 🖼️ Graphical Openbox Desktop (Dockerfile.openbox)
+
+GoPOSIX also supports a minimal graphical Alpine userland running the Openbox window manager. This environment is defined in `docker/Dockerfile.openbox` and demonstrates GoPOSIX's compatibility as a utility provider for standard X11 session tooling and terminal emulators.
+
+### Design Differences
+Unlike the `alpine-mvp` image which overwrites `/bin/busybox` atomically, the Openbox desktop environment:
+1. **Compiles Statically**: Compiles the GoPOSIX binary using `CGO_ENABLED=0` inside `golang:1.26-alpine`.
+2. **Individual Symlinks**: Lists all GoPOSIX commands via `/goposix --list-commands` and creates individual command symlinks inside `/bin/` (e.g. `/bin/ls -> /bin/goposix`).
+3. **Non-Root Confinement**: Adds a `nonRootUser` and assigns the default shell to `/bin/shell` (the GoPOSIX-native shell).
+4. **Window Manager Autostart**: Auto-starts `xterm` inside an Openbox session so users have immediate access to the GoPOSIX terminal shell.
+
+### How to Run the Openbox Demo
+A dedicated nested X11 Xephyr target is provided in the Makefile. 
+
+1. **Verify Xephyr is installed on your host OS** (e.g. `xserver-xephyr` or `xorg-server-xephyr`).
+2. **Launch the Demo**:
+   ```bash
+   make openbox-demo
+   ```
+   This automatically starts Xephyr on display `:1` at a 1280x720 resolution, boots the container with dynamic X11 forwarding, and spawns the Openbox session displaying an `xterm` window backed by the GoPOSIX shell.
+
+---
+
 ## 🔧 Daemon Mode in Alpine
 
 The current `alpine-mvp` image runs GoPOSIX as a pure CLI drop-in — it replaces

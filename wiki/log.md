@@ -4,6 +4,43 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-30] feat | tar: all 7 BusyBox failures resolved — 31/31 (100%), coverage 80.4%, XZ (branch `feat/tar-fixes`)
+
+Resolved all 7 remaining tar BusyBox test failures across 4 areas:
+
+- **Symlink safety (3 tests):** Pre-scan archive for entry name conflicts.
+  `isSymlinkSafe()` checks if a symlink target escapes the extraction root;
+  `hasConflict()` determines if other archive entries depend on the symlink.
+  Dangerous symlinks are refused only when dependents exist (non-conflicting
+  absolute symlinks like CA cert bundles are allowed). Added `hasDangerousParent()`
+  to track child entries of refused symlinks.
+
+- **Hardlink dedup for symlinks (1 test):** `createArchiveStream` now checks
+  `seenInodes` for symlink entries, producing `TypeLink` hardlink entries for
+  duplicate inodes instead of new `TypeSymlink` entries. Tests: `tar symlinks mode`.
+
+- **ls output fixes (2 tests):** Reordered `ls.Run()` to process non-directory
+  args before directory args (GNU/POSIX convention). Fixed symlink mode character
+  from Go's uppercase `L` to lowercase `l`. Fixed error message format to strip
+  Go's `lstat` prefix and capitalize (matches BusyBox/GNU `ls`). Tests: `tar
+  hardlinks and repeated files`, `tar hardlinks mode`.
+
+- **XZ compression auto-detect (1 test):** Added XZ magic bytes detection
+  (`0xFD 7zXZ 0x00`) in both `doExtract` and `doList`. Uses `github.com/ulikunitz/xz`
+  v0.5.15 for LZMA2 decompression. Test: `tar extract txz`.
+
+**Coverage:** tar 72.4% → 80.4% (+11 new tests: XZ compress/extract/list,
+symlink edge cases, extract to stdout, overwrite, include list, gzip list,
+verbose create, stdin list, resolveTarPath, JSON list, error paths).
+Added `test/compliance/test_tar.sh` (5 JSON schema assertions).
+
+**BusyBox:** 873→877 pass, 21→17 fail (all awk, deferred), 97.7%→98.1%.
+Overall coverage: 83.4%→83.7%.
+
+Updated: `pkg/tar/tar.go`, `pkg/tar/tar_test.go`, `pkg/ls/ls.go`,
+`test/compliance/test_tar.sh`, `go.mod`, `go.sum`, `wiki/todos.md`,
+`wiki/test_coverage_matrix.md`, `README.md`, `wiki/log.md`.
+
 ## [2026-05-22] cleanup | Wiki dedup + README de-staling (branch `docs/wiki-cleanup-2`)
 
 **Duplicate elimination:** Deleted `.wiki-instructions/wiki-maintainer.instructions.md`

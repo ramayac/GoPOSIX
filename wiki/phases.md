@@ -89,6 +89,7 @@ goposix binary (single static ELF, <12MB)
 | 07a | `awk` — Platinum gate (integrated goawk v1.31.0) | ✅ |
 | 26 | Missing Tools Tier 1–4 — 26 utilities, 100% BusyBox compatibility | ✅ |
 | 27 | High-Complexity Tier 5 — 5 of 11 implemented (`ar`, `cpio`, `ash`, `mount`, `mdev`) | 🔨 |
+| 31 | Hardening V — Coverage & Tar Compliance Audit (tar unit & BusyBox tests passing, 25 low-coverage packages sorted) | ✅ |
 
 
 ---
@@ -99,6 +100,7 @@ goposix binary (single static ELF, <12MB)
 |---|------|-----|
 | 🔨 | Phase 27 — 5 remaining Tier 5 tools: `hexdump`, `xxd`, `
 | ✅ | Hardening IV Part 1 — 21 gaps resolved (injectable streams, date specifiers, grep binary detection, ls -d, PreProcess hook, +15 more) | [24_hardening_iv.md](24_hardening_iv.md) |
+| ✅ | Hardening V — Coverage & Tar Compliance Audit (tar unit & BusyBox tests passing, 25 low-coverage packages sorted) | [31_hardening_v.md](31_hardening_v.md) |
 | 🔧 | Observability exports (A–D done, E external) | [observability_exports.md](observability_exports.md) — branch `feat/observability` |
 | — | Multi-agent observability | [observability_exports.md#part-2](observability_exports.md) — deferred discussion |
 | — | Phase 26/27 JSON-RPC tests: 25 new daemon tests, 6 skipped (hard constraints) | [test_coverage_matrix.md](test_coverage_matrix.md) |

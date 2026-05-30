@@ -1,12 +1,14 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-30 | **Utilities:** 115 | **Coverage:** 83.5% | **BusyBox:** 873/21/25 (97.7%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-05-30 | **Utilities:** 115 | **Coverage:** 83.7% | **BusyBox:** 877/17/25 (98.1%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
 ---
 
 > 📊 **Current project state** (coverage, BusyBox stats, per-utility status) → **[wiki/test_coverage_matrix.md](test_coverage_matrix.md)**
+> 🛡️ **Hardening V: Coverage & Tar Compliance Audit** → **[wiki/31_hardening_v.md](31_hardening_v.md)**
+> ⚡ **Performance Improvements (30 Actionable Optimizations)** → **[wiki/30_performance_improvements.md](30_performance_improvements.md)**
 
 ---
 
@@ -19,15 +21,9 @@ This document serves as the live registry of remaining work, active plans, and k
 
 ### 🟡 Medium Priority — Well-Defined, Scoped
 
-#### `tar` — 4 failures + 4 skipped (27/31 pass, 87.1%) · coverage 75.4%
+#### `tar` — ✅ All 31 BusyBox tests pass (100% compliance) · coverage 80.4%
 
-| # | Type | Count | Difficulty | Description |
-|---|------|-------|------------|-------------|
-| 1 | Failures | 3 | 🟡 Medium | Hardlink/symlink mode ordering — permission bits applied in wrong order |
-| 2 | Failures | 1 | 🟡 Medium | XZ compression auto-detect (`.tar.xz`) not implemented |
-| 3 | Skipped | 2 | 🟡 Medium | Auto-detect `.tar.gz`/`.tar.xz` on extract |
-| 4 | Skipped | 2 | 🟡 Medium | Hardlink detection/dedup + mode preservation |
-| 5 | Skipped | 1 | 🟢 Easy | Graceful rejection of empty `.tar.gz` files |
+All tar BusyBox failures resolved. Symlink safety, hardlink dedup, XZ auto-detect all implemented. No remaining tar failures.
 
 ---
 
@@ -38,6 +34,10 @@ This document serves as the live registry of remaining work, active plans, and k
 **Status**: Deferred. Root cause is the `goawk` v1.31.0 engine — upstream doesn't support bitwise ops, hex/octal constants, function arg parsing (4 tests), nested loop scoping, empty-paren handling, negative field access, continue/break edge cases, and backslash-newline handling.
 - 8 additional tests skipped (large integer, NUL printf, invalid for/colon syntax, missing delete arg, gcc build bug).
 - *See*: [wiki/deferred.md](deferred.md).
+
+#### Go-Alpine Coexistence Daemon Target
+* **Reference**: [wiki/alpine_plan.md](alpine_plan.md)
+* **Status**: Deferred / Planning. Implement a Docker target where `goposix` runs as a daemon alongside Alpine's native BusyBox/shell tools, serving JSON-RPC on a socket, rather than completely replacing the base BusyBox userland. (Note: A graphical Alpine container target using symlink-based co-existence is already implemented at [docker/Dockerfile.openbox](file:///home/ramayac/git/GoPOSIX/docker/Dockerfile.openbox).)
 
 ---
 
