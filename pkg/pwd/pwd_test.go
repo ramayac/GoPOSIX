@@ -3,6 +3,7 @@ package pwd
 import (
 	"bytes"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -52,5 +53,38 @@ func TestCLI_BadFlag(t *testing.T) {
 	code := run([]string{"--nonexistent"}, nil, &out, &out, "")
 	if code != 2 {
 		t.Errorf("exit %d, want 2", code)
+	}
+}
+
+func TestPWDPhysicalFlag(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-P"}, nil, &buf, &buf, "")
+	if code != 0 {
+		t.Fatalf("pwd -P exit %d", code)
+	}
+	out := strings.TrimSpace(buf.String())
+	if out == "" {
+		t.Error("expected non-empty pwd -P output")
+	}
+}
+
+func TestPWDPhysicalSymlink(t *testing.T) {
+	dir := t.TempDir()
+	realDir := filepath.Join(dir, "real")
+	os.MkdirAll(realDir, 0755)
+	linkDir := filepath.Join(dir, "link")
+	os.Symlink(realDir, linkDir)
+	// Need to actually chdir to the symlink for os.Getwd to work
+	orig, _ := os.Getwd()
+	os.Chdir(linkDir)
+	defer os.Chdir(orig)
+	var buf bytes.Buffer
+	code := run([]string{"-P"}, nil, &buf, &buf, "")
+	if code != 0 {
+		t.Fatalf("pwd -P exit %d", code)
+	}
+	out := strings.TrimSpace(buf.String())
+	if !strings.Contains(out, "real") {
+		t.Errorf("pwd -P should resolve symlink, got: %s", out)
 	}
 }

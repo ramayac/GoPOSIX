@@ -2,6 +2,7 @@ package whoami
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 )
 
@@ -44,6 +45,24 @@ func TestRunCLIJSON(t *testing.T) {
 }
 
 func TestRunCLI_UnknownFlag(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &buf, &buf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2 for unknown flag, got %d", code)
+	}
+}
+
+func TestWhoamiJSON(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"--json"}, nil, &buf, &buf, "")
+	if code != 0 {
+		t.Fatalf("whoami --json exit %d", code)
+	}
+	if !strings.Contains(buf.String(), "\"user\"") {
+		t.Errorf("expected user field in JSON, got: %s", buf.String())
+	}
+}
+func TestWhoamiBadFlag(t *testing.T) {
 	var buf bytes.Buffer
 	code := run([]string{"--no-such-flag"}, nil, &buf, &buf, "")
 	if code != 2 {

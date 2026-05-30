@@ -188,3 +188,15 @@ func TestRunCheckNoFile(t *testing.T) {
 		t.Errorf("exit code %d, want 1 for missing checksum file", code)
 	}
 }
+
+func TestMD5SumCheckInvalidLine(t *testing.T) {
+	dir := t.TempDir()
+	cf := filepath.Join(dir, "bad.md5")
+	os.WriteFile(cf, []byte("not a valid checksum line\n"), 0644)
+	var buf bytes.Buffer
+	code := run([]string{"-c", cf}, nil, &buf, &buf, "")
+	// Should exit non-zero for invalid checksum file
+	if code == 0 {
+		t.Error("expected non-zero exit for invalid checksum line")
+	}
+}

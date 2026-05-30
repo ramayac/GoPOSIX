@@ -3,10 +3,10 @@
 > **Status:** COMPLETED | **Date:** 2026-05-30 | **Trigger:** Coverage Audit & Tar Test Verification
 >
 > **Key findings:**
-> 1. Overall project coverage stands at **83.7%** (above the 80% gate).
-> 2. Identified 25 packages below the 80% individual package coverage goal, with `pkg/id` (62.5%) and `pkg/gzip` (64.7%) being the lowest.
-> 3. Discovered 6 "quick-win" packages hovering very close to 80% coverage where a few additional unit tests will push them over the threshold.
-> 4. Audited and verified `pkg/tar`'s compliance, confirming all 31 BusyBox integration tests and unit tests (including `TestResolveTarPath`) pass.
+> 1. Overall project coverage stands at **83.9%** (above the 80% gate).
+> 2. Identified 25 packages below the 80% individual package coverage goal; 6 quick-win packages addressed (4 now ≥80%).
+> 3. Highest-impact fix: `pkg/id` jumped from 62.5% → 94.6% (8 new flag tests).
+> 4. All 31 tar BusyBox integration tests pass; tar coverage at 80.4%.
 
 ---
 

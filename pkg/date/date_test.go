@@ -558,3 +558,48 @@ func TestParseDateString_Invalid(t *testing.T) {
 		t.Error("expected error for invalid date")
 	}
 }
+
+func TestParseDateStringTimestampEdgeCases(t *testing.T) {
+	// Invalid non-numeric timestamp
+	_, err := parseDateString("@abc", time.UTC)
+	if err == nil {
+		t.Error("expected error for non-numeric timestamp")
+	}
+	// Empty date string
+	_, err = parseDateString("", time.UTC)
+	if err == nil {
+		t.Error("expected error for empty date string")
+	}
+	// Valid timestamp
+	ts, err := parseDateString("@1234567890", time.UTC)
+	if err != nil {
+		t.Fatalf("valid timestamp failed: %v", err)
+	}
+	if ts.Unix() != 1234567890 {
+		t.Errorf("timestamp = %d, want 1234567890", ts.Unix())
+	}
+}
+
+func TestParsePOSIXTZSimple(t *testing.T) {
+	// Standard POSIX TZ format: STDoffset[DST[offset],start[/time],end[/time]]
+	tests := []string{"UTC0", "EST5EDT", "PST8PDT", "CET-1CEST", "<+04>-4"}
+	for _, tz := range tests {
+		ptz, ok := parsePOSIXTZ(tz)
+		if !ok {
+			t.Errorf("parsePOSIXTZ(%q) failed", tz)
+		}
+		_ = ptz
+	}
+}
+func TestParsePOSIXTZEmpty(t *testing.T) {
+	_, ok := parsePOSIXTZ("")
+	if ok {
+		t.Error("expected false for empty TZ")
+	}
+}
+func TestParsePOSIXTZBadAngle(t *testing.T) {
+	_, ok := parsePOSIXTZ("<BROKEN")
+	if ok {
+		t.Error("expected false for unterminated angle bracket")
+	}
+}

@@ -27,3 +27,11 @@ func TestDfJSON(t *testing.T) {
 		t.Errorf("expected JSON, got %s", out.String())
 	}
 }
+
+func TestDFInvalidPath(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"/nonexistent/path/xyz"}, nil, &buf, &buf, "")
+	if code != 1 {
+		t.Errorf("exit %d, want 1 for invalid path", code)
+	}
+}
