@@ -38,18 +38,18 @@
 - [lessons_learned.md](lessons_learned.md) | Architectural lessons, gotchas, and validated patterns.
 - [post_mvp.md](post_mvp.md) | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage.
 - [post_mvp.md](post_mvp.md) | Post-MVP utilities: `dd`, `od`, text tools, stubs, quality fixes.
-- [19_performance_benchmarking.md](19_performance_benchmarking.md) | Benchmark results: GoPOSIX vs BusyBox (DONE).
+- [performance.md](performance.md) | Benchmark results: GoPOSIX vs BusyBox (DONE).
 - [hardening.md](hardening.md) | Hardening II: flag audit, code cleanup, coverage, input safety.
 - [hardening.md](hardening.md) | Hardening III: Daemon-First Pivot.
 - [23_flags_rewrite.md](23_flags_rewrite.md) | Flags Rewrite: zero-allocation POSIX scanner (COMPLETED).
 - [25_awesome_go_submission.md](25_awesome_go_submission.md) | Awesome-Go submission plan, checklists, and compliance validation.
-- [30_performance_improvements.md](30_performance_improvements.md) | Phase 30: Performance improvements (30 actionable optimizations).
+- [performance.md](performance.md) | Phase 30: Performance improvements (30 actionable optimizations).
 - [hardening.md](hardening.md) | Phase 31: Hardening V (coverage and tar compliance audit).
 
 ## Deferred / Future
 
 - [deferred.md](deferred.md) | Summary of all deferred and planned future work.
-- [07a_awk.md](07a_awk.md) | Awk implementation plan (canonical; Platinum gate).
+- [deferred.md](deferred.md) | Awk implementation plan (canonical; Platinum gate).
 - [observability_exports.md#part-2--multi-agent-observability-phase-24](observability_exports.md) | Multi-agent observability (DEFERRED DISCUSSION).
 
 ## Operations

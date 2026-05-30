@@ -8,7 +8,7 @@ This document serves as the live registry of remaining work, active plans, and k
 
 > 📊 **Per-utility status** → **[wiki/test_coverage_matrix.md](test_coverage_matrix.md)**
 > 🛡️ **Hardening V results** → **[wiki/hardening.md](hardening.md)**
-> ⚡ **Performance opportunities** → **[wiki/30_performance_improvements.md](30_performance_improvements.md)**
+> ⚡ **Performance opportunities** → **[wiki/performance.md](performance.md)**
 > ✅ **Completed changelog** → **[wiki/log.md](log.md)**
 > 🗺️ **Phase history** → **[wiki/phases.md](phases.md)**
 

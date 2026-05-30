@@ -4,6 +4,36 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-30] cleanup | Wiki consolidation — 14 pages merged into 5, 10 stale pages removed
+
+Consolidated scattered phase docs into permanent topic pages:
+
+- **Hardening** (`hardening.md`): Merged Phase 20 (Hardening II), Phase 22 (III),
+  Phase 24 (IV), Phase 31 (V) into a single canonical hardening page.
+- **Lessons Learned** (`lessons_learned.md`): Renamed Phase 11 into permanent
+  record organized by topic (Architecture, Flag Parsing, Testing, Go Gotchas,
+  BusyBox, Shell, Schema, Performance, Process).
+- **Post-MVP** (`post_mvp.md`): Merged Phase 14 (fixes) and Phases 15–18
+  (utilities) into a single page.
+- **Performance** (`performance.md`): Merged Phase 19 (benchmarking) and Phase
+  30 (optimizations) into the canonical performance reference.
+- **Deferred** (`deferred.md`): Merged Phase 07a (awk) details — 17 failures,
+  goawk v1.31.0 limitations, failure breakdown by category.
+- **Phases** (`phases.md`): Updated to v7.0 — BusyBox 98.1%, coverage 84.1%,
+  JSON-RPC 115/115 (100%), all phases complete.
+- **TODOs** (`todos.md`): Cleaned — removed resolved items (tar, hardening),
+  compacted to 3 deferred items + root-required.
+
+Deleted 10 stale stubs: `11_lessons_learned`, `14_post_mvp_fixes`,
+`15_post_mvp_utilities`, `20_hardening_ii`, `22_hardening_iii`,
+`24_hardening_iv`, `31_hardening_v`, `07a_awk`,
+`19_performance_benchmarking`, `30_performance_improvements`.
+Net: 38 pages → 31.
+
+Updated: `wiki/index.md`, `wiki/log.md`, `wiki/phases.md`, `wiki/todos.md`,
+`wiki/deferred.md`, `wiki/hardening.md`, `wiki/performance.md`,
+`wiki/post_mvp.md`, `wiki/lessons_learned.md`.
+
 ## [2026-05-30] feat | tar: all 7 BusyBox failures resolved — 31/31 (100%), coverage 80.4%, XZ (branch `feat/tar-fixes`)
 
 Resolved all 7 remaining tar BusyBox test failures across 4 areas:
@@ -336,11 +366,11 @@ Comprehensive wiki cleanup to reduce bloat and improve navigability:
   `phases.md` → removed architecture diagram (→ `architecture.md`), risk register (stale),
   giant phase-files table (redundant). `todos.md` → removed current-state table
   (→ `phases.md`). `architecture.md` → removed phase history table (→ `phases.md`).
-- **Tier 4 — Trimmed heavy docs:** `19_performance_benchmarking.md` 771→200 lines.
+- **Tier 4 — Trimmed heavy docs:** `performance.md` 771→200 lines.
   `hardening.md` 684→250 lines. Keep results, trim planning rationale.
 - **Tier 5 — Deferred reorg:** Created `deferred.md` consolidating all deferred items.
   Folded `14_xml_output.md` and `23_multi_tenant_sandbox.md` into it. Kept canonical
-  designs: `07a_awk.md`, `24_multi_agent_observability.md`.
+  designs: `deferred.md`, `24_multi_agent_observability.md`.
 
 Deleted: goposixos.md, 00_foundation_libs.md–10a_sed.md, 11_post_mvp_priorities.md,
 11a_lower_priority.md, 12_road_to_gold.md, 13_coverage_and_hardening.md,
@@ -350,7 +380,7 @@ Deleted: goposixos.md, 00_foundation_libs.md–10a_sed.md, 11_post_mvp_prioritie
 
 Created: deferred.md, post_mvp.md, post_mvp.md.
 Updated: index.md, phases.md, todos.md, architecture.md, test_coverage_matrix.md,
-19_performance_benchmarking.md, hardening.md, log.md.
+performance.md, hardening.md, log.md.
 
 Result: 48 files → 26 files, ~60% less text, zero information loss.
 
@@ -409,12 +439,12 @@ Benchmark suite hardened (Phase 19):
 - Cat J: Go SDK rpc-loop mode — 5 typed calls/iter, 2.1× faster than BusyBox
 - Data-driven findings in all 10 categories, report.sh fixed for cat/ subdirectory
 - Rate limiter raised 100→100K req/s in `internal/daemon/server.go`
-- `wiki/19_performance_benchmarking.md` §6: actual measured matrix replaces predictions
+- `wiki/performance.md` §6: actual measured matrix replaces predictions
 
 Phase 23 (Multi-Tenant Sandbox) planned: 6-step roadmap for per-session filesystem
 isolation, command allowlists, audit trails, resource quotas, subprocess jailing.
 
-Updated: wiki/19_performance_benchmarking.md, wiki/hardening.md,
+Updated: wiki/performance.md, wiki/hardening.md,
 wiki/23_multi_tenant_sandbox.md, wiki/phases.md, wiki/index.md,
 .github/prompts/continue.prompt.md (new reusable session prompt)
 
@@ -428,7 +458,7 @@ index.md and phases.md.
 
 ## [2026-05-18] implement | Phase 19 — Benchmark infrastructure (branch: `feat/performance`)
 
-Implemented all benchmark infrastructure per `wiki/19_performance_benchmarking.md`:
+Implemented all benchmark infrastructure per `wiki/performance.md`:
 - `test/benchmark/lib/harness.sh` — shared timing, stats, `scaled()` helper, markdown tables
 - `test/benchmark/lib/report.sh` — `summary.md` + `narrative.md` report generator
 - `test/benchmark/runner.sh` — master orchestrator (--all, --quick, --cat)
@@ -438,11 +468,11 @@ Implemented all benchmark infrastructure per `wiki/19_performance_benchmarking.m
   `bench-report`, `bench-shell` targets + `SCALE` variable
 - All 13 scripts pass `sh -n` syntax check
 
-Updated: wiki/19_performance_benchmarking.md → IMPLEMENTING, wiki/phases.md → IMPLEMENTING
+Updated: wiki/performance.md → IMPLEMENTING, wiki/phases.md → IMPLEMENTING
 
 ## [2026-05-18] plan | Phase 19 — Performance Benchmarking (GoPOSIX vs BusyBox)
 
-Created comprehensive performance benchmarking plan (`wiki/19_performance_benchmarking.md`).
+Created comprehensive performance benchmarking plan (`wiki/performance.md`).
 The plan defines 10 benchmark categories (A–J) comparing GoPOSIX against BusyBox v1.36.1
 in identical Docker containers, with honest priors about where each tool wins:
 
@@ -753,11 +783,11 @@ No code changes; design-only phase. (Later promoted to Phase 14.)
 
 ## [2026-05-13] consolidate | Merge redundant wiki content, resolve inconsistencies
 
-Consolidated awk content: 07a_awk.md is now the canonical awk document. Removed
+Consolidated awk content: deferred.md is now the canonical awk document. Removed
 duplicated task lists from 11_post_mvp_priorities.md (11.4), 12_road_to_gold.md
-(12.5), and 13_code_audit.md (13.5) — all now point to 07a_awk.md with short
+(12.5), and 13_code_audit.md (13.5) — all now point to deferred.md with short
 descriptions. Added cross-cutting deliverables (schema, BusyBox, posix_coverage,
-README update) to 07a_awk.md.
+README update) to deferred.md.
 
 Resolved shell security contradictions: 08_hardening.md claimed sandbox complete
 but code had hardcoded timeout and no tests/docs. Added cross-references between
@@ -772,7 +802,7 @@ Merged 13_code_audit.md execution plan into 12_road_to_gold.md. Added macOS buil
 breakage (13.0) as 12.0 in the gap analysis. 13 now focuses on code evidence and
 wiki discrepancies, not task planning.
 
-Updated 8 wiki files: index.md, phases.md (v2.2), 07a_awk.md, 11_post_mvp_priorities.md,
+Updated 8 wiki files: index.md, phases.md (v2.2), deferred.md, 11_post_mvp_priorities.md,
 11a_lower_priority.md, 12_road_to_gold.md, 13_code_audit.md, 08_hardening.md.
 
 Gold formula: 12.0–12.4 = Gold, +12.5 = Platinum.

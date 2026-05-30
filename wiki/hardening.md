@@ -76,6 +76,6 @@ Comprehensive compliance gap audit. All 27 findings resolved.
 |------|--------|-----------|
 | 13 coverage packages | Deferred (syscall mocking needed) | `wiki/todos.md` |
 | 17 awk BusyBox failures | Deferred (upstream goawk limits) | `wiki/deferred.md` |
-| 18 performance optimizations | 12/30 done | `wiki/30_performance_improvements.md` |
+| 18 performance optimizations | 12/30 done | `wiki/performance.md` |
 | Daemon pipeline composition | Planning | `wiki/deferred.md` |
 | Alpine daemon target | Planning | `wiki/alpine_plan.md` |

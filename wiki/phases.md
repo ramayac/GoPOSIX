@@ -105,5 +105,5 @@ goposix binary (single static ELF, <12MB)
 | — | Observability exports (A–D done, E external) | [observability_exports.md](observability_exports.md) |
 | — | Multi-agent observability (deferred) | [observability_exports.md](observability_exports.md) |
 | — | Daemon pipeline composition (planning) | [deferred.md](deferred.md) |
-| — | 18 performance optimizations remaining | [30_performance_improvements.md](30_performance_improvements.md) |
+| — | 18 performance optimizations remaining | [performance.md](performance.md) |
 | — | Ongoing maintenance | [todos.md](todos.md), [deferred.md](deferred.md) |
