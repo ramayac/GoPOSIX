@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-30 | **Utilities:** 115 | **Coverage:** 83.7% | **BusyBox:** 877/17/25 (98.1%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-05-30 | **Utilities:** 115 | **Coverage:** 84.1% | **BusyBox:** 877/17/25 (98.1%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -34,6 +34,16 @@ All tar BusyBox failures resolved. Symlink safety, hardlink dedup, XZ auto-detec
 **Status**: Deferred. Root cause is the `goawk` v1.31.0 engine — upstream doesn't support bitwise ops, hex/octal constants, function arg parsing (4 tests), nested loop scoping, empty-paren handling, negative field access, continue/break edge cases, and backslash-newline handling.
 - 8 additional tests skipped (large integer, NUL printf, invalid for/colon syntax, missing delete arg, gcc build bug).
 - *See*: [wiki/deferred.md](deferred.md).
+
+#### Coverage — 13 packages deferred (hard-to-mock error paths)
+
+| Tier | Packages | Blocker |
+|------|----------|---------|
+| Near 80% (78-79%) | `whoami`, `cp`, `tee`, `pwd`, `hostname` | Syscall error mocking (`user.Current()`, `os.Getwd()`) |
+| Mid-range (73-77%) | `client`, `daemon`, `nohup`, `diff` | Integration test infra (spawned daemon, file perms) |
+| Hard (64-71%) | `chgrp`, `logname`, `shell`, `gzip` | Deep I/O + OS-level error injection |
+
+**Status**: Deferred. All 12 reachable packages pushed above 80% this phase (25→13). Remaining 13 require interface-based mocking or integration test harnesses. *See*: [wiki/31_hardening_v.md](31_hardening_v.md).
 
 #### Go-Alpine Coexistence Daemon Target
 * **Reference**: [wiki/alpine_plan.md](alpine_plan.md)
