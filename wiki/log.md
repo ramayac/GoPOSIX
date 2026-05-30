@@ -102,7 +102,7 @@ Absorbed 31 new utilities (Phase 26 Tiers 1-4: 26 tools; Phase 27 Tier 5: 5 tool
 - `wiki/todos.md` — updated project state, added cpio/pidof limitations, 28 compliance tests missing
 - `wiki/phases.md` — added Phase 26 (✅) and Phase 27 (🔨), bumped version to 6.0
 - `wiki/index.md` — added link to `27_high_complexity_tools.md`
-- `wiki/11_lessons_learned.md` — added Phase 26/27 lessons
+- `wiki/lessons_learned.md` — added Phase 26/27 lessons
 
 **Code changes absorbed:**
 - `test/posix-json/tier8_phase26_27_test.go` — 30 new daemon tests (24 running, 6 skipped)
@@ -184,10 +184,10 @@ Resolved H6 (shell os.Chdir not thread-safe):
   detector. Documented in help output and Makefile comments (~10x slower, dev-only).
 - Documented future work in interpreter.go: eliminate `os.Chdir` entirely by
   threading a CWD parameter through `dispatch.Command.Run`.
-- Updated `wiki/24_hardening_iv.md`: H6 → RESOLVED. Score: 3 remaining / 24 resolved.
+- Updated `wiki/hardening.md`: H6 → RESOLVED. Score: 3 remaining / 24 resolved.
 
 Updated: `internal/shell/interpreter.go`, `internal/shell/interpreter_test.go`,
-`Makefile`, `wiki/24_hardening_iv.md`, `wiki/log.md`, `wiki/todos.md`.
+`Makefile`, `wiki/hardening.md`, `wiki/log.md`, `wiki/todos.md`.
 
 ## [2026-05-20] fix | H3 — Session data race (branch: `feat/hardeing-iv-partii`)
 
@@ -201,10 +201,10 @@ Resolved H3 (session data race on concurrent access):
   detected by `go test -race` before fix: string field write vs read, map
   write vs read (×2), and realistic SetCwd races. Zero races after fix.
   All daemon tests pass under `-race`.
-- Updated `wiki/24_hardening_iv.md`: H3 → RESOLVED. Score: 4 remaining / 23 resolved.
+- Updated `wiki/hardening.md`: H3 → RESOLVED. Score: 4 remaining / 23 resolved.
 
 Updated: `internal/daemon/session.go`, `internal/daemon/session_test.go`,
-`wiki/24_hardening_iv.md`, `wiki/log.md`.
+`wiki/hardening.md`, `wiki/log.md`.
 Created: `internal/daemon/session_test.go`.
 
 ## [2026-05-20] fix | H2 — SecurePath symlink resolution (branch: `feat/hardeing-iv-partii`)
@@ -221,10 +221,10 @@ Resolved H2 (SecurePath does not resolve symlinks):
   symlinks inside base, symlinks outside base, non-existent files through escape
   symlinks, deep non-existent paths, and resolved-path verification.
 - Updated `wiki/security.md`: symlinks limitation → symlinks resolved.
-- Updated `wiki/24_hardening_iv.md`: H2 → RESOLVED. Score: 5 remaining / 22 resolved.
+- Updated `wiki/hardening.md`: H2 → RESOLVED. Score: 5 remaining / 22 resolved.
 
 Updated: `pkg/common/security.go`, `pkg/common/security_test.go`,
-`wiki/security.md`, `wiki/24_hardening_iv.md`, `wiki/log.md`.
+`wiki/security.md`, `wiki/hardening.md`, `wiki/log.md`.
 
 ## [2026-05-20] ingest | Hardening IV Part 1 — injectable streams, compliance gap resolution (branch: `feat/hardening4-part1`)
 
@@ -249,10 +249,10 @@ Marked H7, M2, M8 as RESOLVED. Header updated from "9 remaining, 18 resolved"
 to "6 remaining, 21 resolved."
 
 **Wiki maintenance:** Fixed stale summary table and recommended fix order in
-`wiki/24_hardening_iv.md` (table showed 18/9, now shows 21/6). Updated
+`wiki/hardening.md` (table showed 18/9, now shows 21/6). Updated
 `wiki/phases.md` to add Hardening IV Part 1 to active work. Fixed log entry.
 
-Updated: `wiki/24_hardening_iv.md`, `wiki/phases.md`, `wiki/log.md`.
+Updated: `wiki/hardening.md`, `wiki/phases.md`, `wiki/log.md`.
 
 ## [2026-05-19] implement | Observability exports — Options A, B, C, D (branch: `feat/observability`)
 
@@ -319,7 +319,7 @@ Original files replaced with stubs. Cross-references updated in:
 - `wiki/performance.md` (fixed broken `../docs/ARCHITECTURE.md` → `architecture.md`)
 - `wiki/index.md` (SDK & API section, added `sdk.md` and `shell_integration.md`)
 
-Historical references in `wiki/22_hardening_iii.md` left as-is (they document
+Historical references in `wiki/hardening.md` left as-is (they document
 Phase 22 milestones when the docs/ path was accurate).
 
 ## [2026-05-19] cleanup | Wiki consolidation — 48 files → 26 files (branch: `feat/clean-up-wiki`)
@@ -337,7 +337,7 @@ Comprehensive wiki cleanup to reduce bloat and improve navigability:
   giant phase-files table (redundant). `todos.md` → removed current-state table
   (→ `phases.md`). `architecture.md` → removed phase history table (→ `phases.md`).
 - **Tier 4 — Trimmed heavy docs:** `19_performance_benchmarking.md` 771→200 lines.
-  `20_hardening_ii.md` 684→250 lines. Keep results, trim planning rationale.
+  `hardening.md` 684→250 lines. Keep results, trim planning rationale.
 - **Tier 5 — Deferred reorg:** Created `deferred.md` consolidating all deferred items.
   Folded `14_xml_output.md` and `23_multi_tenant_sandbox.md` into it. Kept canonical
   designs: `07a_awk.md`, `24_multi_agent_observability.md`.
@@ -350,7 +350,7 @@ Deleted: goposixos.md, 00_foundation_libs.md–10a_sed.md, 11_post_mvp_prioritie
 
 Created: deferred.md, 14_post_mvp_fixes.md, 15_post_mvp_utilities.md.
 Updated: index.md, phases.md, todos.md, architecture.md, test_coverage_matrix.md,
-19_performance_benchmarking.md, 20_hardening_ii.md, log.md.
+19_performance_benchmarking.md, hardening.md, log.md.
 
 Result: 48 files → 26 files, ~60% less text, zero information loss.
 
@@ -414,7 +414,7 @@ Benchmark suite hardened (Phase 19):
 Phase 23 (Multi-Tenant Sandbox) planned: 6-step roadmap for per-session filesystem
 isolation, command allowlists, audit trails, resource quotas, subprocess jailing.
 
-Updated: wiki/19_performance_benchmarking.md, wiki/22_hardening_iii.md,
+Updated: wiki/19_performance_benchmarking.md, wiki/hardening.md,
 wiki/23_multi_tenant_sandbox.md, wiki/phases.md, wiki/index.md,
 .github/prompts/continue.prompt.md (new reusable session prompt)
 

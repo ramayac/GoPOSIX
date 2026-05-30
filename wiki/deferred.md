@@ -25,7 +25,7 @@ This document serves as the single canonical registry for all active planning ph
 
 ### CWD Signature Refactoring (Global State Elimination)
 * **Status:** DEFERRED (Workaround active)
-* **Reference Issue:** [wiki/24_hardening_iv.md](24_hardening_iv.md) §H6
+* **Reference Issue:** [wiki/hardening.md](hardening.md) §H6
 * **Details:**
   The shell sandbox currently uses `os.Chdir(hc.Dir)` to mutate the process working directory before execution. Since CWD is a global process state, concurrent execution could lead to directory clobbering.
   * **Current Workaround:** Thread-safety is achieved using a global `execMu sync.Mutex` in `internal/shell/interpreter.go` that serializes all executions and performs CWD save/restore.
@@ -56,7 +56,7 @@ This document serves as the single canonical registry for all active planning ph
 
 ### Smart CLI Forwarding (Milestone M5)
 * **Status:** DEFERRED
-* **Reference Document:** [wiki/22_hardening_iii.md](22_hardening_iii.md)
+* **Reference Document:** [wiki/hardening.md](hardening.md)
 * **Details:**
   Adds dynamic entry point routing to the multicall binary via `forwarder.go`. When executing a command, the CLI binary checks for an active daemon socket (e.g., `/var/run/goposix.sock`). If the socket is active, the CLI bypasses Go runtime cold-start/dispatch latency by automatically and transparently forwarding the command, environment, and standard I/O streams directly to the running daemon.
   * **Current Status:** The core detection and JSON-RPC forwarding logic is fully implemented in `forwarder.go` at the repository root. However, wiring this routing mechanism into the main entry point `cmd/goposix/main.go` remains deferred to avoid routing complications in custom environments and wait-loop synchronization issues during initial startup.

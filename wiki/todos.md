@@ -7,7 +7,7 @@ This document serves as the live registry of remaining work, active plans, and k
 ---
 
 > 📊 **Per-utility status** → **[wiki/test_coverage_matrix.md](test_coverage_matrix.md)**
-> 🛡️ **Hardening V results** → **[wiki/31_hardening_v.md](31_hardening_v.md)**
+> 🛡️ **Hardening V results** → **[wiki/hardening.md](hardening.md)**
 > ⚡ **Performance opportunities** → **[wiki/30_performance_improvements.md](30_performance_improvements.md)**
 > ✅ **Completed changelog** → **[wiki/log.md](log.md)**
 > 🗺️ **Phase history** → **[wiki/phases.md](phases.md)**
@@ -28,7 +28,7 @@ Blocked by upstream `goawk` v1.31.0 engine limitations: no bitwise ops, hex/octa
 | Mid-range (73-77%) | `client`, `internal/daemon`, `nohup`, `diff` | Integration test infra (spawned daemon, file perms) |
 | Hard (64-71%) | `chgrp`, `logname`, `shell`, `gzip` | Deep I/O + OS-level error injection |
 
-12 packages pushed above 80% in Hardening V (25 → 13). Remaining 13 require interface-based mocking or integration harnesses. *See:* [wiki/31_hardening_v.md](31_hardening_v.md).
+12 packages pushed above 80% in Hardening V (25 → 13). Remaining 13 require interface-based mocking or integration harnesses. *See:* [wiki/hardening.md](hardening.md).
 
 ### Go-Alpine Coexistence Daemon Target
 

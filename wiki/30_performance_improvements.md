@@ -515,4 +515,4 @@ make bench-all SCALE=1.0
 - [Performance Benchmarking Plan](19_performance_benchmarking.md) — existing benchmark infrastructure
 - [Performance Quick Reference](performance.md) — how to run benchmarks
 - [Architecture](architecture.md) — component layout
-- [Lessons Learned](11_lessons_learned.md) — past optimization insights
+- [Lessons Learned](lessons_learned.md) — past optimization insights

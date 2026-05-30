@@ -35,16 +35,16 @@
 
 ## Completed Phase Summaries
 
-- [11_lessons_learned.md](11_lessons_learned.md) | Architectural lessons, gotchas, and validated patterns.
+- [lessons_learned.md](lessons_learned.md) | Architectural lessons, gotchas, and validated patterns.
 - [14_post_mvp_fixes.md](14_post_mvp_fixes.md) | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage.
 - [15_post_mvp_utilities.md](15_post_mvp_utilities.md) | Post-MVP utilities: `dd`, `od`, text tools, stubs, quality fixes.
 - [19_performance_benchmarking.md](19_performance_benchmarking.md) | Benchmark results: GoPOSIX vs BusyBox (DONE).
-- [20_hardening_ii.md](20_hardening_ii.md) | Hardening II: flag audit, code cleanup, coverage, input safety.
-- [22_hardening_iii.md](22_hardening_iii.md) | Hardening III: Daemon-First Pivot.
+- [hardening.md](hardening.md) | Hardening II: flag audit, code cleanup, coverage, input safety.
+- [hardening.md](hardening.md) | Hardening III: Daemon-First Pivot.
 - [23_flags_rewrite.md](23_flags_rewrite.md) | Flags Rewrite: zero-allocation POSIX scanner (COMPLETED).
 - [25_awesome_go_submission.md](25_awesome_go_submission.md) | Awesome-Go submission plan, checklists, and compliance validation.
 - [30_performance_improvements.md](30_performance_improvements.md) | Phase 30: Performance improvements (30 actionable optimizations).
-- [31_hardening_v.md](31_hardening_v.md) | Phase 31: Hardening V (coverage and tar compliance audit).
+- [hardening.md](hardening.md) | Phase 31: Hardening V (coverage and tar compliance audit).
 
 ## Deferred / Future
 
