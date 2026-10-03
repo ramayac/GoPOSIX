@@ -579,3 +579,50 @@ func TestDcRunExtendedMode(t *testing.T) {
 		t.Errorf("expected 42, got %q", got)
 	}
 }
+
+func TestDcMaxInt(t *testing.T) {
+	if maxInt(1, 2) != 2 {
+		t.Error("maxInt(1, 2) != 2")
+	}
+	if maxInt(3, 2) != 3 {
+		t.Error("maxInt(3, 2) != 3")
+	}
+	if maxInt(1, 1) != 1 {
+		t.Error("maxInt(1, 1) != 1")
+	}
+}
+
+func TestDcIsNegVal(t *testing.T) {
+	cases := []struct {
+		name string
+		v    dcValue
+		want bool
+	}{
+		{"string value", dcValue{isStr: true, str: "x"}, false},
+		{"positive", dcValue{rat: big.NewRat(1, 2)}, false},
+		{"negative", dcValue{rat: big.NewRat(-1, 2)}, true},
+		{"zero", dcValue{rat: new(big.Rat)}, false},
+		{"negative zero", dcValue{rat: new(big.Rat), negZero: true}, true},
+	}
+	for _, c := range cases {
+		if got := isNegVal(c.v); got != c.want {
+			t.Errorf("%s: isNegVal = %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+func TestDcMoreOps(t *testing.T) {
+	testDC(t, "modulo", "7 3 % p", "1\n")
+	testDC(t, "power", "2 3 ^ p", "8\n")
+	testDC(t, "power zero exp", "5 0 ^ p", "1\n")
+	testDC(t, "power negative exp", "2 k 2 _1 ^ p", ".50\n")
+	testDC(t, "sqrt", "9 v p", "3\n")
+	testDC(t, "length number", "1234 Z p", "4\n")
+	testDC(t, "length string", "[hello] Z p", "5\n")
+	testDC(t, "clear stack", "1 2 c 3 p", "3\n")
+	testDC(t, "stack depth", "1 2 3 z p", "3\n")
+	testDC(t, "divmod quotient", "7 3 ~ R p", "2\n")
+	testDC(t, "modular exponentiation", "4 3 5 | p", "4\n")
+	testDCFail(t, "modulo by zero", "7 0 %", "remainder by zero")
+	testDCFail(t, "sqrt negative", "_9 v", "square root of negative")
+}

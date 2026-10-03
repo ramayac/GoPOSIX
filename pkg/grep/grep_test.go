@@ -791,3 +791,49 @@ func TestFgrepRun(t *testing.T) {
 		t.Errorf("got %q, want %q", outBuf.String(), "he.lo world\n")
 	}
 }
+
+func TestCLI_ContextFlags(t *testing.T) {
+	input := "one\ntwo\nthree\nfour\nfive\n"
+
+	code, out, errStr := simpleGrep([]string{"-A", "1", "three"}, input)
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if out != ":three\n-four\n" {
+		t.Errorf("-A 1: got %q, want %q", out, ":three\n-four\n")
+	}
+
+	code, out, _ = simpleGrep([]string{"-B", "1", "three"}, input)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out != "-two\n:three\n" {
+		t.Errorf("-B 1: got %q, want %q", out, "-two\n:three\n")
+	}
+
+	code, out, _ = simpleGrep([]string{"-C", "1", "three"}, input)
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out != "-two\n:three\n-four\n" {
+		t.Errorf("-C 1: got %q, want %q", out, "-two\n:three\n-four\n")
+	}
+}
+
+func TestCLI_FilenameFlags(t *testing.T) {
+	code, out, errStr := simpleGrep([]string{"-H", "Alice", "../../testdata/grep/alice.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d: %s", code, errStr)
+	}
+	if !strings.Contains(out, "alice.txt:") {
+		t.Errorf("-H: expected filename prefix in output, got %q", out)
+	}
+
+	code, out, _ = simpleGrep([]string{"-h", "Alice", "../../testdata/grep/alice.txt"}, "")
+	if code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if strings.Contains(out, "alice.txt:") {
+		t.Errorf("-h: expected no filename prefix in output, got %q", out)
+	}
+}

@@ -2,6 +2,8 @@ package du
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -77,6 +79,42 @@ func TestBusyBox_Du_LFlag(t *testing.T) {
 	rc := run([]string{"-l", "."}, nil, &out, &out, "")
 	if rc != 0 {
 		t.Errorf("expected 0, got %d", rc)
+	}
+	if out.Len() == 0 {
+		t.Error("expected output")
+	}
+}
+
+func TestDuSummarize(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("abc"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if code := run([]string{"-s", dir}, nil, &out, &out, ""); code != 0 {
+		t.Errorf("expected 0, got %d", code)
+	}
+	if !strings.Contains(out.String(), dir) {
+		t.Errorf("expected %q in output, got %q", dir, out.String())
+	}
+}
+
+func TestDuMissingDir(t *testing.T) {
+	var out bytes.Buffer
+	if code := run([]string{"/nonexistent-xyz-dir"}, nil, &out, &out, ""); code != 1 {
+		t.Errorf("expected 1, got %d", code)
+	}
+}
+
+func TestDuMultipleRoots(t *testing.T) {
+	dir := t.TempDir()
+	sub := filepath.Join(dir, "sub")
+	if err := os.Mkdir(sub, 0755); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if code := run([]string{dir, sub}, nil, &out, &out, ""); code != 0 {
+		t.Errorf("expected 0, got %d", code)
 	}
 	if out.Len() == 0 {
 		t.Error("expected output")

@@ -603,3 +603,33 @@ func TestParsePOSIXTZBadAngle(t *testing.T) {
 		t.Error("expected false for unterminated angle bracket")
 	}
 }
+
+func TestFormatDate_MoreSpecifiers(t *testing.T) {
+	now := time.Date(2024, 3, 15, 14, 30, 45, 0, time.UTC)
+	tests := []struct {
+		fmt, want string
+	}{
+		{"%a", "Fri"},
+		{"%A", "Friday"},
+		{"%b", "Mar"},
+		{"%B", "March"},
+		{"%c", "Fri Mar 15 14:30:45 2024"},
+		{"%d", "15"},
+		{"%H", "14"},
+		{"%Y", "2024"},
+		{"%Z", "UTC"},
+		{"%s", "1710513045"},
+		{"%j", "075"},
+		{"%p", "PM"},
+		{"%r", "02:30:45 PM"},
+		{"%u", "5"},
+		{"%V", "11"},
+		{"%W", "11"},
+	}
+	for _, tt := range tests {
+		got := formatDate(now, tt.fmt)
+		if got != tt.want {
+			t.Errorf("formatDate(%q) = %q, want %q", tt.fmt, got, tt.want)
+		}
+	}
+}

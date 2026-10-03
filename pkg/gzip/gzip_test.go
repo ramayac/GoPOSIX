@@ -413,3 +413,45 @@ func TestGzipJSONMode(t *testing.T) {
 		t.Errorf("expected JSON output, got: %s", stdout.String())
 	}
 }
+
+func TestGzipJSONStdinCompress(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := gzipRun([]string{"--json"}, &out, &errBuf, strings.NewReader("hello world"), "")
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if !bytes.HasPrefix(out.Bytes(), []byte{0x1f, 0x8b}) {
+		t.Error("expected gzip magic bytes on stdout")
+	}
+}
+
+func TestGzipJSONStdinRoundTrip(t *testing.T) {
+	var compressed bytes.Buffer
+	if code := gzipRun([]string{"--json"}, &compressed, io.Discard, strings.NewReader("hello"), ""); code != 0 {
+		t.Fatalf("compress: exit %d", code)
+	}
+	var out, errBuf bytes.Buffer
+	if code := gunzipRun([]string{"--json"}, &out, &errBuf, bytes.NewReader(compressed.Bytes()), ""); code != 0 {
+		t.Fatalf("decompress: exit %d", code)
+	}
+	if out.String() != "hello" {
+		t.Errorf("decompressed = %q, want hello", out.String())
+	}
+}
+
+func TestGzipJSONStdinBadData(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	if code := gunzipRun([]string{"--json"}, &out, &errBuf, strings.NewReader("not gzip data"), ""); code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if errBuf.Len() != 0 {
+		t.Errorf("JSON mode should suppress stderr, got %q", errBuf.String())
+	}
+}
+
+func TestGzipJSONMissingFile(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	if code := gzipRun([]string{"--json", "/nonexistent-xyz"}, &out, &errBuf, nil, ""); code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+}

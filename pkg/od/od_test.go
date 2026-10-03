@@ -388,3 +388,44 @@ func TestOd_Ints(t *testing.T) {
 		t.Errorf("expected %q under -t i4 format, got: %q", expected, out.String())
 	}
 }
+
+func TestOd_CountAndAddressBase(t *testing.T) {
+	in := strings.NewReader("abcdefghijklmnop")
+
+	code := func(args ...string) (int, string) {
+		var out bytes.Buffer
+		c := odRun(args, in, &out, "")
+		return c, out.String()
+	}
+
+	if c, out := code("-N", "4", "-x"); c != 0 {
+		t.Fatalf("-N: exit %d", c)
+	} else if !strings.Contains(out, "61") {
+		t.Errorf("-N 4: got %q", out)
+	}
+
+	for _, base := range []string{"x", "d", "n"} {
+		if c, out := code("-A", base, "-x", "-N", "4"); c != 0 {
+			t.Errorf("-A %s: exit %d", base, c)
+		} else if out == "" {
+			t.Errorf("-A %s: empty output", base)
+		}
+	}
+
+	if c, out := code("--traditional", "-N", "4"); c != 0 {
+		t.Errorf("--traditional: exit %d", c)
+	} else if out == "" {
+		t.Error("--traditional: empty output")
+	}
+}
+
+func TestOd_TFlagDecimal(t *testing.T) {
+	var out bytes.Buffer
+	in := strings.NewReader("abcdefghijklmnop")
+	if code := odRun([]string{"-t", "d2", "-N", "8"}, in, &out, ""); code != 0 {
+		t.Fatalf("exit code %d", code)
+	}
+	if out.Len() == 0 {
+		t.Error("expected output for -t d2")
+	}
+}

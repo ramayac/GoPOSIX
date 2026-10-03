@@ -475,3 +475,42 @@ func TestArJSONOnly(t *testing.T) {
 		t.Error("expected non-zero rc with only --json and no operation")
 	}
 }
+
+func TestArErrorPaths(t *testing.T) {
+	dir := t.TempDir()
+	archivePath := createTestArchive(t, map[string]string{
+		"file1.txt": "hello world\n",
+	})
+
+	// Print a member that does not exist (lenient: exits zero, prints nothing).
+	var out, errOut bytes.Buffer
+	if rc := arRun([]string{"p", archivePath, "missing.txt"}, nil, &out, &errOut, dir); rc != 0 {
+		t.Errorf("ar p with missing member: exit %d", rc)
+	}
+	if out.Len() != 0 {
+		t.Errorf("ar p with missing member: expected empty output, got %q", out.String())
+	}
+
+	// Extract a member that does not exist (not an error in this
+	// implementation — it just reports nothing and exits zero).
+	var out2, errOut2 bytes.Buffer
+	if rc := arRun([]string{"x", archivePath, "missing.txt"}, nil, &out2, &errOut2, dir); rc != 0 {
+		t.Errorf("ar x with missing member: exit %d", rc)
+	}
+
+	// Replace with a missing file.
+	var out3, errOut3 bytes.Buffer
+	if rc := arRun([]string{"r", archivePath, filepath.Join(dir, "not-here.txt")}, nil, &out3, &errOut3, dir); rc == 0 {
+		t.Error("ar r with missing file: expected non-zero exit")
+	}
+
+	// List a garbage archive.
+	garbage := filepath.Join(dir, "garbage.a")
+	if err := os.WriteFile(garbage, []byte("not an ar archive"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	var out4, errOut4 bytes.Buffer
+	if rc := arRun([]string{"t", garbage}, nil, &out4, &errOut4, dir); rc == 0 {
+		t.Error("ar t on garbage archive: expected non-zero exit")
+	}
+}

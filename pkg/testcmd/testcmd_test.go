@@ -3,8 +3,10 @@ package testcmd
 import (
 	"bytes"
 	"encoding/json"
+	"net"
 	"os"
 	"path/filepath"
+	"syscall"
 	"testing"
 )
 
@@ -510,5 +512,91 @@ func TestBusyBox_Test_BangParenEquals(t *testing.T) {
 	}
 	if result {
 		t.Error("test '!' '(' = '(' should be false")
+	}
+}
+
+func TestEvaluateFileTypes(t *testing.T) {
+	tmpDir := t.TempDir()
+	reg := filepath.Join(tmpDir, "regular")
+	if err := os.WriteFile(reg, []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(tmpDir, "link")
+	if err := os.Symlink(reg, link); err != nil {
+		t.Fatal(err)
+	}
+	fifo := filepath.Join(tmpDir, "fifo")
+	if err := syscall.Mkfifo(fifo, 0644); err != nil {
+		t.Fatal(err)
+	}
+	sock := filepath.Join(tmpDir, "sock")
+	l, err := net.Listen("unix", sock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+
+	cases := []struct {
+		op   string
+		arg  string
+		want bool
+	}{
+		{"-b", reg, false},
+		{"-c", reg, false},
+		{"-p", fifo, true},
+		{"-S", sock, true},
+		{"-L", link, true},
+		{"-h", link, true},
+		{"-g", reg, false},
+		{"-u", reg, false},
+		{"-k", reg, false},
+		{"-w", reg, true},
+	}
+	for _, c := range cases {
+		got, err := Evaluate([]string{c.op, c.arg})
+		if err != nil {
+			t.Fatalf("Evaluate(%s %s): %v", c.op, c.arg, err)
+		}
+		if got != c.want {
+			t.Errorf("Evaluate(%s %s) = %v, want %v", c.op, c.arg, got, c.want)
+		}
+	}
+}
+
+func TestEvaluateFileTypesOnRegularFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	reg := filepath.Join(tmpDir, "regular")
+	if err := os.WriteFile(reg, []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	ro := filepath.Join(tmpDir, "readonly")
+	if err := os.WriteFile(ro, []byte("x"), 0444); err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		op   string
+		arg  string
+		want bool
+	}{
+		{"-p", reg, false},
+		{"-S", reg, false},
+		{"-L", reg, false},
+		{"-h", reg, false},
+		{"-w", ro, false},
+	}
+	for _, c := range cases {
+		got, err := Evaluate([]string{c.op, c.arg})
+		if err != nil {
+			t.Fatalf("Evaluate(%s %s): %v", c.op, c.arg, err)
+		}
+		if got != c.want {
+			t.Errorf("Evaluate(%s %s) = %v, want %v", c.op, c.arg, got, c.want)
+		}
+	}
+}
+
+func TestEvaluateUnknownUnaryOperator(t *testing.T) {
+	if _, err := Evaluate([]string{"-zzz", "/tmp"}); err == nil {
+		t.Error("expected error for unknown unary operator")
 	}
 }

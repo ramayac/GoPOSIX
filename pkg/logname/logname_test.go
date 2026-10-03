@@ -48,3 +48,10 @@ func TestLognameJson(t *testing.T) {
 		t.Error("JSON output missing logname field")
 	}
 }
+
+func TestLognameBadFlag(t *testing.T) {
+	var buf bytes.Buffer
+	if code := run([]string{"--badflag"}, nil, &buf, &buf, ""); code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+}

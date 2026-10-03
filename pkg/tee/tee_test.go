@@ -158,3 +158,28 @@ func TestTeeJSONOutput(t *testing.T) {
 	code := run([]string{"--json", "/dev/null"}, strings.NewReader("x"), &buf, &buf, "")
 	_ = code
 }
+
+func TestTeeBadFlag(t *testing.T) {
+	var out, errOut bytes.Buffer
+	if code := teeRun([]string{"--badflag"}, &out, &errOut, strings.NewReader("x"), ""); code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+}
+
+func TestTeeOpenErrorText(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := teeRun([]string{"/nonexistent-dir-xyz/f"}, &out, &errOut, strings.NewReader("data"), "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errOut.String(), "tee:") {
+		t.Errorf("expected error message, got %q", errOut.String())
+	}
+}
+
+func TestTeeOpenErrorJSON(t *testing.T) {
+	var out, errOut bytes.Buffer
+	if code := teeRun([]string{"--json", "/nonexistent-dir-xyz/f"}, &out, &errOut, strings.NewReader("data"), ""); code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+}

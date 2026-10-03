@@ -99,3 +99,13 @@ func TestNohupJSONMode(t *testing.T) {
 	code := run([]string{"--json", "echo", "hi"}, strings.NewReader(""), &buf, &buf, "")
 	_ = code
 }
+
+func TestNohupCommandNotFound(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	// The error message goes to the process stderr (os.Stderr), not the
+	// provided writer, so only the exit code is asserted here.
+	code := run([]string{"nonexistent-command-xyz"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+}

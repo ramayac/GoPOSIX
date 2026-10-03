@@ -188,3 +188,49 @@ func TestHexdumpRunCLI(t *testing.T) {
 		}
 	})
 }
+
+func TestHexdumpLengthSkipVerbose(t *testing.T) {
+	in := bytes.NewReader([]byte("abcdefgh"))
+	var out, errOut bytes.Buffer
+	code := hexdumpRun([]string{"-C", "-n", "4", "-s", "2"}, &out, &errOut, in, "")
+	if code != 0 {
+		t.Fatalf("exit code %d, stderr %q", code, errOut.String())
+	}
+	if !bytes.Contains(out.Bytes(), []byte("63")) {
+		t.Errorf("expected byte 0x63 in output, got: %q", out.String())
+	}
+	if bytes.Contains(out.Bytes(), []byte("61")) {
+		t.Errorf("skip should exclude byte 0x61: %q", out.String())
+	}
+
+	var out2, errOut2 bytes.Buffer
+	code = hexdumpRun([]string{"-C", "-v", "-n", "2"}, &out2, &errOut2, bytes.NewReader([]byte("aa")), "")
+	if code != 0 {
+		t.Fatalf("verbose: exit %d, stderr %q", code, errOut2.String())
+	}
+	if out2.Len() == 0 {
+		t.Error("verbose: empty output")
+	}
+}
+
+func TestHexdumpCustomFormat(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := hexdumpRun([]string{`-e`, `1/1 "%02x "`}, &out, &errOut, bytes.NewReader([]byte("ab")), "")
+	if code != 0 {
+		t.Fatalf("exit code %d, stderr %q", code, errOut.String())
+	}
+	if !bytes.Contains(out.Bytes(), []byte("61")) || !bytes.Contains(out.Bytes(), []byte("62")) {
+		t.Errorf("expected hex bytes in output, got: %q", out.String())
+	}
+}
+
+func TestHexdumpJSON(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := hexdumpRun([]string{"--json", "-n", "2"}, &out, &errOut, bytes.NewReader([]byte("ab")), "")
+	if code != 0 {
+		t.Fatalf("exit code %d, stderr %q", code, errOut.String())
+	}
+	if !bytes.Contains(out.Bytes(), []byte("command")) {
+		t.Errorf("expected JSON envelope, got: %q", out.String())
+	}
+}

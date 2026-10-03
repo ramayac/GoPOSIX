@@ -1483,3 +1483,39 @@ func TestTarExcludeFromFile(t *testing.T) {
 		t.Error("skip_me.txt should have been excluded")
 	}
 }
+
+func TestTarErrorPaths(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Nonexistent archive for extract and list.
+	for _, mode := range []string{"-x", "-t"} {
+		var out, errOut bytes.Buffer
+		code := run([]string{mode, "-f", filepath.Join(tmpDir, "nonexistent.tar")}, nil, &out, &errOut, tmpDir)
+		if code == 0 {
+			t.Errorf("tar %s on nonexistent archive: expected non-zero exit", mode)
+		}
+	}
+
+	// Corrupt archive.
+	junk := filepath.Join(tmpDir, "junk.tar")
+	if err := os.WriteFile(junk, []byte("this is not a tar archive"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	if code := run([]string{"-x", "-f", junk}, nil, &out, &errOut, tmpDir); code == 0 {
+		t.Error("tar -x on corrupt archive: expected non-zero exit")
+	}
+
+	// Create with a nonexistent source.
+	var out2, errOut2 bytes.Buffer
+	code := run([]string{"-c", "-f", filepath.Join(tmpDir, "out.tar"), "/nonexistent-src-dir"}, nil, &out2, &errOut2, tmpDir)
+	if code == 0 {
+		t.Error("tar -c with nonexistent source: expected non-zero exit")
+	}
+
+	// No operation mode given.
+	var out3, errOut3 bytes.Buffer
+	if code := run([]string{"-f", filepath.Join(tmpDir, "out2.tar"), "x"}, nil, &out3, &errOut3, tmpDir); code == 0 {
+		t.Error("tar without -c/-x/-t: expected non-zero exit")
+	}
+}

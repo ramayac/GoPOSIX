@@ -326,3 +326,60 @@ func TestCpUpdateFlag(t *testing.T) {
 	code := run([]string{"-u", src, dst}, nil, &buf, &buf, "")
 	_ = code
 }
+
+func TestRunCopyNestedDirs(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src")
+	if err := os.MkdirAll(filepath.Join(src, "a", "b"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(src, "a", "b", "c.txt"), []byte("deep"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	dst := filepath.Join(dir, "dst")
+
+	result, err := Run([]string{src}, dst, true, false, SymlinkPreserve)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result.Copied) == 0 {
+		t.Fatal("expected at least one copied record")
+	}
+	data, err := os.ReadFile(filepath.Join(dst, "a", "b", "c.txt"))
+	if err != nil {
+		t.Fatalf("read nested copy: %v", err)
+	}
+	if string(data) != "deep" {
+		t.Errorf("expected 'deep', got %q", string(data))
+	}
+}
+
+func TestRunCopyDirWithSymlink(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src")
+	if err := os.MkdirAll(src, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(src, "target.txt"), []byte("t"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("target.txt", filepath.Join(src, "link.txt")); err != nil {
+		t.Fatal(err)
+	}
+	dst := filepath.Join(dir, "dst")
+
+	if _, err := Run([]string{src}, dst, true, false, SymlinkPreserve); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	link := filepath.Join(dst, "link.txt")
+	fi, err := os.Lstat(link)
+	if err != nil {
+		t.Fatalf("lstat copied symlink: %v", err)
+	}
+	if fi.Mode()&os.ModeSymlink == 0 {
+		t.Errorf("expected symlink at %s", link)
+	}
+	if target, err := os.Readlink(link); err != nil || target != "target.txt" {
+		t.Errorf("readlink = %q, %v; want target.txt", target, err)
+	}
+}

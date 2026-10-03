@@ -228,3 +228,37 @@ func TestJoinCLI_Stdin(t *testing.T) {
 		t.Errorf("exit %d, want 0", code)
 	}
 }
+
+func TestJoinCLI_SeparateFieldSpecs(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	f2 := filepath.Join(dir, "f2")
+	// f1: key is field 1; f2: key is field 2.
+	os.WriteFile(f1, []byte("a 1\n"), 0644)
+	os.WriteFile(f2, []byte("x a\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-1", "1", "-2", "2", f1, f2}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	// POSIX join prints the join field once, then the remaining fields of
+	// file 1 followed by the remaining fields of file 2.
+	if out.String() != "a 1 x\n" {
+		t.Errorf("got %q", out.String())
+	}
+}
+
+func TestJoinCLI_NoMatches(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "f1")
+	f2 := filepath.Join(dir, "f2")
+	os.WriteFile(f1, []byte("a 1\n"), 0644)
+	os.WriteFile(f2, []byte("b 2\n"), 0644)
+	var out bytes.Buffer
+	if code := run([]string{f1, f2}, nil, &out, &out, ""); code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if out.Len() != 0 {
+		t.Errorf("expected empty output for no matches, got %q", out.String())
+	}
+}
