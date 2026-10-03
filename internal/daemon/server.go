@@ -777,6 +777,15 @@ func (s *Server) processRequest(req Request) *Response {
 	}
 }
 
+// procTitle builds the live process title from daemon state.
+func (s *Server) procTitle() string {
+	active := atomic.LoadInt32(&s.activeWorkers)
+	sessions := len(s.sm.List())
+	total := atomic.LoadInt64(&s.totalRequests)
+	return fmt.Sprintf("goposix daemon [W:%d/%d S:%d C:%d]",
+		active, s.workersMax, sessions, total)
+}
+
 // procTitleUpdater periodically updates the OS process title with live daemon
 // state so that ps aux shows e.g. "goposix daemon [W:3/4 S:12 C:500K]".
 func (s *Server) procTitleUpdater() {
@@ -786,12 +795,7 @@ func (s *Server) procTitleUpdater() {
 		if atomic.LoadInt32(&s.shuttingDown) == 1 {
 			return
 		}
-		active := atomic.LoadInt32(&s.activeWorkers)
-		sessions := len(s.sm.List())
-		total := atomic.LoadInt64(&s.totalRequests)
-		title := fmt.Sprintf("goposix daemon [W:%d/%d S:%d C:%d]",
-			active, s.workersMax, sessions, total)
-		setProcTitle(title)
+		setProcTitle(s.procTitle())
 	}
 }
 

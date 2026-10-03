@@ -2,9 +2,15 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"math"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -14,6 +20,7 @@ import (
 	// Register utilities needed by tests.
 	_ "github.com/ramayac/goposix/pkg/basename"
 	_ "github.com/ramayac/goposix/pkg/cat"
+	_ "github.com/ramayac/goposix/pkg/chgrp"
 	_ "github.com/ramayac/goposix/pkg/chmod"
 	_ "github.com/ramayac/goposix/pkg/chown"
 	_ "github.com/ramayac/goposix/pkg/cp"
@@ -914,22 +921,103 @@ func TestHelper_Chmod(t *testing.T) {
 }
 
 func TestHelper_Chown(t *testing.T) {
-	t.Skip("chown requires root privileges")
+	dir := t.TempDir()
+	f := filepath.Join(dir, "f")
+	if err := os.WriteFile(f, []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	// Changing ownership to the current owner is allowed without privileges.
+	res, err := c.Chown(context.Background(), strconv.Itoa(os.Getuid()), []string{f})
+	if err != nil {
+		t.Skipf("chown to current owner not permitted in this environment: %v", err)
+	}
+	if len(res.Changed) != 1 || res.Changed[0].Path != f {
+		t.Errorf("changed = %+v, want single entry for %s", res.Changed, f)
+	}
 }
 
 func TestHelper_Chgrp(t *testing.T) {
-	t.Skip("chgrp requires root privileges")
-}
-
-func TestHelper_Md5sum(t *testing.T) {
 	dir := t.TempDir()
 	f := filepath.Join(dir, "f")
-	os.WriteFile(f, []byte("test"), 0644)
+	if err := os.WriteFile(f, []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
 	c, cleanup := startDaemonForHelper(t)
 	defer cleanup()
-	_, err := c.Md5sum(context.Background(), []string{f}, false)
+	// Changing to the current group is allowed without privileges.
+	res, err := c.Chgrp(context.Background(), strconv.Itoa(os.Getgid()), []string{f})
+	if err != nil {
+		t.Skipf("chgrp to current group not permitted in this environment: %v", err)
+	}
+	if len(res.Changed) != 1 || res.Changed[0].Path != f {
+		t.Errorf("changed = %+v, want single entry for %s", res.Changed, f)
+	}
+}
+
+func TestHelper_Md5sumCheck(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "f")
+	if err := os.WriteFile(f, []byte("test"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+
+	raw, err := c.Md5sum(context.Background(), []string{f}, false)
 	if err != nil {
 		t.Fatalf("Md5sum: %v", err)
+	}
+	var entries []HashEntry
+	if err := json.Unmarshal(raw, &entries); err != nil {
+		t.Fatalf("unmarshal hash entries: %v", err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 hash entry, got %d", len(entries))
+	}
+
+	checkFile := filepath.Join(dir, "checksums.md5")
+	line := fmt.Sprintf("%s  %s\n", entries[0].Hash, f)
+	if err := os.WriteFile(checkFile, []byte(line), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	rawCheck, err := c.Md5sum(context.Background(), []string{checkFile}, true)
+	if err != nil {
+		t.Fatalf("Md5sum check: %v", err)
+	}
+	var checks []CheckEntry
+	if err := json.Unmarshal(rawCheck, &checks); err != nil {
+		t.Fatalf("unmarshal check entries: %v", err)
+	}
+	if len(checks) != 1 || checks[0].Status != "OK" {
+		t.Errorf("checks = %+v, want one OK entry", checks)
+	}
+}
+
+func TestHelper_SessionList(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	ctx := context.Background()
+	s, err := c.SessionCreate(ctx)
+	if err != nil {
+		t.Fatalf("SessionCreate: %v", err)
+	}
+	defer c.SessionDestroy(ctx, s.SessionID)
+	list, err := c.SessionList(ctx)
+	if err != nil {
+		t.Fatalf("SessionList: %v", err)
+	}
+	found := false
+	for _, si := range list {
+		if si.SessionID == s.SessionID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("created session not present in SessionList")
 	}
 }
 
@@ -946,11 +1034,53 @@ func TestHelper_Sha256sum(t *testing.T) {
 }
 
 func TestHelper_Gzip(t *testing.T) {
-	t.Skip("gzip helper needs specific stdin piping setup")
+	dir := t.TempDir()
+	f := filepath.Join(dir, "f")
+	if err := os.WriteFile(f, []byte(strings.Repeat("data", 200)), 0644); err != nil {
+		t.Fatal(err)
+	}
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	stats, err := c.Gzip(context.Background(), []string{"-k", f})
+	if err != nil {
+		t.Fatalf("Gzip: %v", err)
+	}
+	if len(stats) != 1 {
+		t.Fatalf("expected 1 stat, got %d", len(stats))
+	}
+	if stats[0].File != f || stats[0].NewSize == 0 {
+		t.Errorf("stat = %+v", stats[0])
+	}
+	if _, err := os.Stat(f + ".gz"); err != nil {
+		t.Errorf("expected %s.gz: %v", f, err)
+	}
 }
 
 func TestHelper_Tar(t *testing.T) {
-	t.Skip("tar helper needs absolute path resolution in daemon cwd")
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src")
+	if err := os.MkdirAll(src, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(src, "a.txt"), []byte("aaa"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	arch := filepath.Join(dir, "out.tar")
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	// Use -C so member paths resolve inside the temp dir (tar strips leading
+	// slashes from member names for safety, so absolute paths would resolve
+	// against the daemon's working directory).
+	stats, err := c.Tar(context.Background(), []string{"-c", "-f", arch, "-C", src, "."})
+	if err != nil {
+		t.Fatalf("Tar: %v", err)
+	}
+	if len(stats) == 0 {
+		t.Error("expected at least one entry in tar stats")
+	}
+	if _, err := os.Stat(arch); err != nil {
+		t.Errorf("expected archive: %v", err)
+	}
 }
 
 func TestHelper_Df(t *testing.T) {
@@ -992,7 +1122,33 @@ func TestHelper_Ps(t *testing.T) {
 }
 
 func TestHelper_Kill(t *testing.T) {
-	t.Skip("kill requires actual pid and signal handling")
+	cmd := exec.Command("sleep", "5")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start sleep: %v", err)
+	}
+	defer func() { _ = cmd.Wait() }()
+
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Kill(context.Background(), "", []int{cmd.Process.Pid})
+	if err != nil {
+		t.Fatalf("Kill: %v", err)
+	}
+	if len(res.Signaled) != 1 || !res.Signaled[0].Success {
+		t.Errorf("signaled = %+v, want one success", res.Signaled)
+	}
+}
+
+func TestHelper_KillNonexistentPID(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	res, err := c.Kill(context.Background(), "", []int{math.MaxInt32})
+	if err != nil {
+		t.Fatalf("Kill: %v", err)
+	}
+	if len(res.Signaled) != 1 || res.Signaled[0].Success {
+		t.Errorf("signaled = %+v, want failure for nonexistent pid", res.Signaled)
+	}
 }
 
 func TestHelper_Xargs(t *testing.T) {
@@ -1014,5 +1170,31 @@ func TestHelper_Expr(t *testing.T) {
 	}
 	if res.Result != "2" {
 		t.Errorf("got %q, want '2'", res.Result)
+	}
+}
+
+func TestHelper_ErrorPaths(t *testing.T) {
+	c, cleanup := startDaemonForHelper(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// Wc on a nonexistent path surfaces an RPC error.
+	if _, err := c.Wc(ctx, "/nonexistent-xyz"); err == nil {
+		t.Error("Wc on nonexistent path: expected error")
+	}
+
+	// Rm on a nonexistent path exits non-zero but surfaces no RPC error.
+	if res, err := c.Rm(ctx, []string{"/nonexistent-xyz"}, false, false); err != nil || res == nil {
+		t.Errorf("Rm on nonexistent path: res=%v err=%v", res, err)
+	}
+
+	// SessionSetCwd with an invalid session surfaces an RPC error.
+	if err := c.SessionSetCwd(ctx, "nonexistent-session", "/tmp"); err == nil {
+		t.Error("SessionSetCwd with invalid session: expected error")
+	}
+
+	// SessionDestroy with an invalid session surfaces an RPC error.
+	if err := c.SessionDestroy(ctx, "nonexistent-session"); err == nil {
+		t.Error("SessionDestroy with invalid session: expected error")
 	}
 }

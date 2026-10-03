@@ -181,3 +181,49 @@ func TestShell_CLIRun(t *testing.T) {
 		t.Errorf("expected 'test' in output, got %q", outBuf.String())
 	}
 }
+
+func TestInteractiveBasic(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := interactive(strings.NewReader("echo hello\nexit\n"), &stdout, &stderr)
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+	if !strings.Contains(stdout.String(), "hello") {
+		t.Errorf("expected 'hello' in stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "$ ") {
+		t.Errorf("expected prompt in stdout, got %q", stdout.String())
+	}
+}
+
+func TestInteractiveQuit(t *testing.T) {
+	var stdout bytes.Buffer
+	if code := interactive(strings.NewReader("quit\n"), &stdout, &stdout); code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestInteractiveEmptyLine(t *testing.T) {
+	var stdout bytes.Buffer
+	if code := interactive(strings.NewReader("\n\nexit\n"), &stdout, &stdout); code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestInteractiveEOF(t *testing.T) {
+	var stdout bytes.Buffer
+	if code := interactive(strings.NewReader(""), &stdout, &stdout); code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestInteractiveStderrPassthrough(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := interactive(strings.NewReader("echo error >&2\nexit\n"), &stdout, &stderr)
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "error") {
+		t.Errorf("expected 'error' in stderr, got %q", stderr.String())
+	}
+}

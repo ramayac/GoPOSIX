@@ -1,0 +1,10 @@
+# Codecov configuration for GoPOSIX.
+#
+# Entry-point files that cannot be exercised by in-process unit tests:
+#   - cmd/goposix/main.go: main() runs the dispatch loop; covered by
+#     subprocess integration tests whose coverage is not attributed.
+#   - test/benchmark/bench_client/main.go: benchmark client requires a
+#     live daemon and wall-clock timing; not part of the unit-test gate.
+ignore:
+  - "cmd/goposix/main.go"
+  - "test/benchmark/bench_client/main.go"

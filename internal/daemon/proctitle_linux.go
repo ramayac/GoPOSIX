@@ -29,23 +29,33 @@ func init() {
 	if len(os.Args) == 0 || isGoTest() {
 		return
 	}
+	argvArea = scanArgvArea(os.Args, os.Environ())
+}
 
-	// os.Args[0] points to the beginning of the argv area.
+// scanArgvArea computes the contiguous argv+environment memory region.
+// It returns nil when the strings are not contiguous (the runtime copied
+// argv out of the original C argv area).
+func scanArgvArea(args, environ []string) []byte {
+	if len(args) == 0 {
+		return nil
+	}
+
+	// args[0] points to the beginning of the argv area.
 	// After argv comes the environment block — the region is contiguous.
 	// Keep base as unsafe.Pointer (not uintptr) to satisfy go vet.
-	basePtr := unsafe.Pointer(unsafe.StringData(os.Args[0]))
+	basePtr := unsafe.Pointer(unsafe.StringData(args[0]))
 	base := uintptr(basePtr)
 	var endOffset uintptr
 
 	// Walk argv strings.
-	for _, a := range os.Args {
+	for _, a := range args {
 		ptr := uintptr(unsafe.Pointer(unsafe.StringData(a)))
 		if ptr < base {
-			return // pointer before base — not contiguous
+			return nil // pointer before base — not contiguous
 		}
 		offset := ptr - base
 		if offset > endOffset+4096 { // gap too large — runtime copied argv
-			return
+			return nil
 		}
 		next := offset + uintptr(len(a)) + 1 // +1 for null terminator
 		if next > endOffset {
@@ -54,7 +64,7 @@ func init() {
 	}
 
 	// Walk environment strings (immediately after argv).
-	for _, e := range os.Environ() {
+	for _, e := range environ {
 		ptr := uintptr(unsafe.Pointer(unsafe.StringData(e)))
 		if ptr < base {
 			break // pointer before base — not contiguous
@@ -70,8 +80,9 @@ func init() {
 	}
 
 	if endOffset > 0 {
-		argvArea = unsafe.Slice((*byte)(basePtr), int(endOffset))
+		return unsafe.Slice((*byte)(basePtr), int(endOffset))
 	}
+	return nil
 }
 
 // setProcTitle overwrites the process title visible in /proc/<pid>/cmdline

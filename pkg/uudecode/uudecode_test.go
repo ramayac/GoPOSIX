@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -196,5 +197,21 @@ func TestUudecodeFromFile(t *testing.T) {
 	code = run([]string{"--json", "nonexistent.uu"}, nil, &stdout, &stderr, tempDir)
 	if code == 0 {
 		t.Error("Expected non-zero exit code for nonexistent input file in JSON mode")
+	}
+}
+
+func TestUudecodeOpenErrorText(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"/nonexistent-xyz"}, nil, &stdout, &stderr, ""); code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+}
+
+func TestUudecodeBase64DecodeError(t *testing.T) {
+	// A single 'A' is invalid base64 even after relaxed filtering.
+	input := "begin-base64 644 out.txt\nA\n====\n"
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"-o", "-"}, strings.NewReader(input), &stdout, &stderr, ""); code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
 	}
 }

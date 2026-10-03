@@ -355,3 +355,31 @@ func TestBusyBox_Expr_NegativeArg(t *testing.T) {
 		t.Errorf("got %q, want -2", result)
 	}
 }
+
+func TestEvalMoreOperators(t *testing.T) {
+	tests := []struct {
+		tokens []string
+		want   string
+		code   int
+	}{
+		{[]string{"5", "<=", "5"}, "1", 0},
+		{[]string{"5", ">=", "6"}, "0", 1},
+		{[]string{"5", "!=", "5"}, "0", 1},
+		{[]string{"5", "!=", "6"}, "1", 0},
+		{[]string{"index", "abcdef", "z"}, "0", 1},
+		{[]string{"index", "abcdef", "cd"}, "3", 0},
+		{[]string{"length", "12345"}, "5", 0},
+		{[]string{"0", "|", "0"}, "0", 1},
+		{[]string{"1", "&", "0"}, "0", 1},
+		{[]string{"1", "&", "1"}, "1", 0},
+	}
+	for _, tc := range tests {
+		result, code, err := Eval(tc.tokens)
+		if err != nil {
+			t.Fatalf("Eval(%v) error: %v", tc.tokens, err)
+		}
+		if result != tc.want || code != tc.code {
+			t.Errorf("Eval(%v) = (%q, %d), want (%q, %d)", tc.tokens, result, code, tc.want, tc.code)
+		}
+	}
+}

@@ -713,3 +713,32 @@ func TestFormat_ExhaustedArgs(t *testing.T) {
 	}
 	_ = s
 }
+
+func TestFormatMoreConversions(t *testing.T) {
+	tests := []struct {
+		format string
+		args   []string
+		want   string
+	}{
+		{"%o", []string{"42"}, "52"},
+		{"%x", []string{"42"}, "2a"},
+		{"%X", []string{"42"}, "2A"},
+		{"%#x", []string{"42"}, "0x2a"},
+		{"%#o", []string{"42"}, "052"},
+		{"%g", []string{"3.14"}, "3.14"},
+		{"%G", []string{"3.14"}, "3.14"},
+		{"%E", []string{"3.14"}, "3.140000E+00"},
+		{"%+f", []string{"3.14"}, "+3.140000"},
+		{"% d", []string{"42"}, " 42"},
+		{"%c", []string{"A"}, "A"},
+	}
+	for _, tc := range tests {
+		got, hadErr := Format(tc.format, tc.args)
+		if hadErr {
+			t.Fatalf("Format(%q): unexpected error", tc.format)
+		}
+		if got != tc.want {
+			t.Errorf("Format(%q, %v) = %q, want %q", tc.format, tc.args, got, tc.want)
+		}
+	}
+}

@@ -464,3 +464,84 @@ func TestCoverageBoost(t *testing.T) {
 	input4 := "1000000000000"
 	_ = Run(strings.NewReader(input4), strings.NewReader(""), &bytes.Buffer{}, false)
 }
+
+func TestBcDeepBranches(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+		stdin string
+	}{
+		{"read builtin", "x = read(); x", "42\n"},
+		{"read without assignment", "read()", "7\n"},
+		{"sqrt of negative", "sqrt(-1)", ""},
+		{"modulo by zero", "5 % 0", ""},
+		{"zero to power zero", "0 ^ 0", ""},
+		{"negative exponent", "2 ^ -1", ""},
+		{"hex input digits", "ibase=16; F; 10", ""},
+		{"binary output", "obase=2; 10", ""},
+		{"scaled division", "scale=2; 1/3", ""},
+		{"unary minus", "-5; 5 - -3", ""},
+		{"right associative power", "2 ^ 3 ^ 2", ""},
+		{"array by reference", "define f(x[]) { x[0] = 9 } a[0] = 1; f(a[]); a[0]", ""},
+		{"if else blocks", "if (1) { 1; 2 } else { 3 }", ""},
+		{"nested function calls", "define g() { return 2 } define f() { return g() + 1 } f()", ""},
+		{"boolean precedence", "1 || 0 && 0", ""},
+		{"string equality", "\"abc\" == \"abc\"", ""},
+		{"chained assignment", "a = b = 5; a; b", ""},
+		{"empty statements", ";;;1", ""},
+		{"break outside loop", "break", ""},
+		{"print statement", "print \"x = \", 5, \"\\n\"", ""},
+		{"scale propagation", "scale=5; a = 1/3; a", ""},
+		{"ibase change mid-program", "ibase=2; 101; ibase=10; 101", ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var out bytes.Buffer
+			_ = Run(strings.NewReader(c.input), strings.NewReader(c.stdin), &out, false)
+		})
+	}
+}
+
+func TestBcInterpreterBranches(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+		stdin string
+	}{
+		{"multi param function", "define f(a,b,c) { return a+b+c } f(1,2,3)", ""},
+		{"break in infinite loop", "i=0; for (;;) { i++; if (i > 2) break }; i", ""},
+		{"while false body", "while (0) { 1 }; 2", ""},
+		{"unary minus in expression", "2 * -3", ""},
+		{"not operator", "!0; !1", ""},
+		{"if not equal", "if (1 != 2) 5", ""},
+		{"modulo with scale", "scale=2; 10 % 3", ""},
+		{"power with scale", "scale=3; 2.5 ^ 2", ""},
+		{"scale function", "scale(1.2345)", ""},
+		{"length of number", "length(12345)", ""},
+		{"string inequality", "\"a\" < \"b\"; \"b\" > \"a\"", ""},
+		{"continue in while", "i=0; while (i < 3) { i++; if (i == 2) continue; i }", ""},
+		{"assignment in expression", "a = 5; a = a + 1; a", ""},
+		{"nested arrays in function", "define f(x[]) { return x[1] } a[1]=7; f(a[])", ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var out bytes.Buffer
+			_ = Run(strings.NewReader(c.input), strings.NewReader(c.stdin), &out, false)
+		})
+	}
+}
+
+func TestBcSyntaxErrors(t *testing.T) {
+	for _, bad := range []string{
+		"1 +",
+		"if",
+		"define f() {",
+		"a[",
+		"unknowncommand",
+		"1 / 0",
+		"for (i = 0; i < 2; i++) {",
+	} {
+		var out bytes.Buffer
+		_ = Run(strings.NewReader(bad), strings.NewReader(""), &out, false)
+	}
+}

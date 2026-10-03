@@ -119,3 +119,58 @@ func TestSecurePathSymlinks(t *testing.T) {
 		}
 	})
 }
+
+func TestSecurePathEmptyBaseDir(t *testing.T) {
+	// An empty base directory means root: all paths are allowed.
+	got, err := SecurePath("/etc/shadow", "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "/etc/shadow" {
+		t.Errorf("resolved = %q, want /etc/shadow", got)
+	}
+}
+
+func TestSecurePathAbsoluteInsideBase(t *testing.T) {
+	base := filepath.Join(t.TempDir(), "sandbox")
+	if err := os.MkdirAll(filepath.Join(base, "sub"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Join(base, "sub", "x.txt")
+	got, err := SecurePath(want, base)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != want {
+		t.Errorf("resolved = %q, want %q", got, want)
+	}
+}
+
+func TestSecurePathTargetEqualsBase(t *testing.T) {
+	base := filepath.Join(t.TempDir(), "sandbox")
+	if err := os.MkdirAll(base, 0755); err != nil {
+		t.Fatal(err)
+	}
+	got, err := SecurePath(base, base)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != base {
+		t.Errorf("resolved = %q, want %q", got, base)
+	}
+}
+
+func TestSecurePathDeepMissingPath(t *testing.T) {
+	base := filepath.Join(t.TempDir(), "sandbox")
+	if err := os.MkdirAll(base, 0755); err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Join(base, "a", "b", "c", "d.txt")
+	got, err := SecurePath(filepath.Join("a", "b", "c", "d.txt"), base)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != want {
+		t.Errorf("resolved = %q, want %q", got, want)
+	}
+}
