@@ -4,6 +4,22 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-10-03] fix | pwd physical default + Codecov 100% patch coverage (PR #42)
+
+- `pkg/pwd` now defaults to the physical path (BusyBox/coreutils parity) with `-L` for logical — root cause of the 3 realpath suite failures through `/home/ramayac/git`.
+- kill.go and pwd.go at 100% patch coverage: nil text callbacks in JSON-mode `Render`, function seams for defensive error branches.
+- Coverage matrix updated: pwd 81.2%, kill 100.0%.
+
+## [2026-10-03] implement | kill POSIX signal support (PR #41 merged, closes #40)
+
+- `pkg/kill` supports `-s NAME|NUM`, dash forms (`-TERM`, `-15`), `-l [NUM]`, and signal-0 probes via new `pkg/common/signal.go`.
+- Fixed SDK `Client.Kill` (broken for any non-empty signal). Follow-up: consolidate `start-stop-daemon`'s partial `parseSignal` onto `common.ParseSignal` (tracked in todos.md).
+
+## [2026-10-03] docs | Awesome Go submission merged + Codecov gap closed (PR #39)
+
+- avelino/awesome-go#6345 merged 2026-10-03 — GoPOSIX listed in the Command Line section.
+- Reviewer noted Codecov 78.2% vs ~84% local: line-based vs statement-based counting plus two untestable entry points. PR #39 added codecov.yml ignores + ~1,400 lines of tests (80.07%), plus the Trivy x/crypto bump (CVE-2026-56854).
+
 ## [2026-05-30] wiki-consolidation | Deduplication pass — link-don't-duplicate, stale counts fixed
 
 Applied the "link, don't duplicate" principle across the wiki:

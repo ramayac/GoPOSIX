@@ -1,6 +1,6 @@
 # Phase 25 — Awesome-Go Submission Plan & Checklist
 
-> **Version:** 5.6 | **Date:** 2026-05-22 | **Tier:** GOLD | **Status:** READY FOR SUBMISSION
+> **Version:** 5.7 | **Date:** 2026-10-03 | **Tier:** GOLD | **Status:** MERGED
 
 This document outlines the preparation, checklist validation, and exact content needed to submit **GoPOSIX** to the curated [awesome-go](https://github.com/avelino/awesome-go) repository.
 
@@ -30,3 +30,8 @@ This document outlines the preparation, checklist validation, and exact content 
 ## 2. Awesome-Go Pull Request Content
 
 To submit GoPOSIX, create a pull request on the [avelino/awesome-go](https://github.com/avelino/awesome-go) repository.
+
+## 3. Submission outcome (2026-10-03)
+
+- PR [avelino/awesome-go#6345](https://github.com/avelino/awesome-go/pull/6345) merged 2026-10-03. Link text `[GoPOSIX]`, Command Line section, alphabetical spot.
+- Review asked about the Codecov gap (78.2% shown vs ~84% local `go test -cover`). Root cause: Codecov counts source **lines**, Go counts **statements**, plus two untestable entry points (`cmd/goposix/main.go`, `test/benchmark/bench_client/main.go`) counted at 0%. Resolved in [PR #39](https://github.com/ramayac/GoPOSIX/pull/39): `codecov.yml` ignores + ~1,400 lines of tests → 80.07%, plus Trivy x/crypto bump (CVE-2026-56854).

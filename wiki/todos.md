@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-30 | **Utilities:** 115 | **Coverage:** 84.1% | **BusyBox:** 877/17/25 (98.1%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-10-03 | **Utilities:** 115 | **Coverage:** 85.6% | **BusyBox:** 870/17/30 (98.1%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
@@ -20,15 +20,19 @@ This document serves as the live registry of remaining work, active plans, and k
 
 Blocked by upstream `goawk` v1.31.0 engine limitations: no bitwise ops, hex/octal constants, function arg parsing (4 tests), nested loop scoping, empty-paren handling, negative field access, continue/break edges, backslash-newline handling. *See:* [wiki/deferred.md](deferred.md).
 
-### Coverage — 13 packages blocked (hard-to-mock error paths)
+### Coverage — 12 packages blocked (hard-to-mock error paths)
 
 | Tier | Packages | Blocker |
 |------|----------|---------|
-| Near 80% (78-79%) | `whoami`, `cp`, `tee`, `pwd`, `hostname` | Syscall error mocking (`user.Current()`, `os.Getwd()`) |
+| Near 80% (78-79%) | `whoami`, `cp`, `tee`, `hostname` | Syscall error mocking (`user.Current()`) |
 | Mid-range (73-77%) | `client`, `internal/daemon`, `nohup`, `diff` | Integration test infra (spawned daemon, file perms) |
 | Hard (64-71%) | `chgrp`, `logname`, `shell`, `gzip` | Deep I/O + OS-level error injection |
 
-12 packages pushed above 80% in Hardening V (25 → 13). Remaining 13 require interface-based mocking or integration harnesses. *See:* [wiki/hardening.md](hardening.md).
+13 packages pushed above 80% in Hardening V (25 → 12). The `pwd` blocker (`os.Getwd()` mocking) was solved in PR #42 with package-level function seams (`var osGetwd = os.Getwd`) — see [wiki/lessons_learned.md](lessons_learned.md). *See:* [wiki/hardening.md](hardening.md).
+
+### `start-stop-daemon` signal parsing consolidation
+
+`pkg/start-stop-daemon` keeps its own partial `parseSignal` (7 names). `pkg/common/signal.go` (added for `kill`, PR #41) has the full Linux table. Consolidate when start-stop-daemon is next touched.
 
 ### Go-Alpine Coexistence Daemon Target
 
