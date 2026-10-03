@@ -330,3 +330,54 @@ func TestWhoRun_BadFlag(t *testing.T) {
 		t.Errorf("exit %d, want 2 for bad flag", code)
 	}
 }
+
+func TestWhoRun(t *testing.T) {
+	var out bytes.Buffer
+	if code := run([]string{}, nil, &out, &out, ""); code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+}
+
+func TestWhoRunQuick(t *testing.T) {
+	var out bytes.Buffer
+	if code := run([]string{"-q"}, nil, &out, &out, ""); code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), "# users=") {
+		t.Errorf("expected user count, got %q", out.String())
+	}
+}
+
+func TestWhoRunHeading(t *testing.T) {
+	var out bytes.Buffer
+	if code := run([]string{"-H"}, nil, &out, &out, ""); code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), "NAME") {
+		t.Errorf("expected heading, got %q", out.String())
+	}
+}
+
+func TestWhoRunJSON(t *testing.T) {
+	var out bytes.Buffer
+	if code := run([]string{"--json"}, nil, &out, &out, ""); code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), "command") {
+		t.Errorf("expected JSON envelope, got %q", out.String())
+	}
+}
+
+func TestWhoRunQuickJSON(t *testing.T) {
+	var out bytes.Buffer
+	if code := run([]string{"-q", "--json"}, nil, &out, &out, ""); code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+}
+
+func TestWhoRunBadFlag(t *testing.T) {
+	var out bytes.Buffer
+	if code := run([]string{"--badflag"}, nil, &out, &out, ""); code != 2 {
+		t.Errorf("exit %d, want 2", code)
+	}
+}
