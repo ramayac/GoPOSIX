@@ -2,6 +2,8 @@ package nl
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -127,5 +129,54 @@ func TestNl_CLIRun(t *testing.T) {
 	}
 	if !strings.Contains(outBuf.String(), "1") {
 		t.Errorf("expected numbered output, got %q", outBuf.String())
+	}
+}
+
+func TestNl_NoNumbering(t *testing.T) {
+	var out, errOut bytes.Buffer
+	if code := nlRun([]string{"-b", "n"}, &out, &errOut, strings.NewReader("a\nb\n"), ""); code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if strings.Contains(out.String(), "1") {
+		t.Errorf("expected no line numbers, got %q", out.String())
+	}
+}
+
+func TestNl_FileInput(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "f.txt")
+	if err := os.WriteFile(f, []byte("one\ntwo\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	if code := nlRun([]string{f}, &out, &errOut, nil, ""); code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), "1") {
+		t.Errorf("expected numbered lines, got %q", out.String())
+	}
+}
+
+func TestNl_FileNotFound(t *testing.T) {
+	var out, errOut bytes.Buffer
+	if code := nlRun([]string{"/nonexistent-xyz"}, &out, &errOut, nil, ""); code != 1 {
+		t.Errorf("exit %d, want 1", code)
+	}
+}
+
+func TestNl_BadFlag(t *testing.T) {
+	var out, errOut bytes.Buffer
+	if code := nlRun([]string{"--badflag"}, &out, &errOut, nil, ""); code != 2 {
+		t.Errorf("exit %d, want 2", code)
+	}
+}
+
+func TestNl_InvalidVAndW(t *testing.T) {
+	var out, errOut bytes.Buffer
+	// Invalid values fall back to defaults (start 1, width 6).
+	if code := nlRun([]string{"-v", "abc", "-w", "-1"}, &out, &errOut, strings.NewReader("x\n"), ""); code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), "1") {
+		t.Errorf("expected default numbering, got %q", out.String())
 	}
 }
