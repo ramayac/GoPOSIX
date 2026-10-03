@@ -2,6 +2,7 @@ package pwd
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +32,6 @@ func chdirThroughSymlink(t *testing.T) (realDir, linkDir string) {
 	t.Cleanup(func() { _ = os.Chdir(orig) })
 	return realDir, linkDir
 }
-
 
 func TestRunPhysicalDefault(t *testing.T) {
 	realDir, _ := chdirThroughSymlink(t)
@@ -170,5 +170,50 @@ func TestCLI_BadFlag(t *testing.T) {
 	code := run([]string{"--nonexistent"}, nil, &out, &out, "")
 	if code != 2 {
 		t.Errorf("exit %d, want 2", code)
+	}
+}
+
+func TestRunGetwdError(t *testing.T) {
+	orig := osGetwd
+	osGetwd = func() (string, error) { return "", errors.New("getwd boom") }
+	t.Cleanup(func() { osGetwd = orig })
+
+	if _, err := Run(false); err == nil {
+		t.Fatal("expected error from os.Getwd")
+	}
+
+	// The CLI layer renders the EPWD error envelope (JSON mode).
+	var out, errOut bytes.Buffer
+	if code := run([]string{"--json"}, nil, &out, &errOut, ""); code != 1 {
+		t.Errorf("run exit %d, want 1", code)
+	}
+	if !strings.Contains(out.String(), "EPWD") {
+		t.Errorf("expected EPWD error envelope, got %q", out.String())
+	}
+}
+
+func TestRunEvalSymlinksError(t *testing.T) {
+	orig := evalSymlinks
+	evalSymlinks = func(string) (string, error) { return "", errors.New("symlink boom") }
+	t.Cleanup(func() { evalSymlinks = orig })
+
+	if _, err := Run(false); err == nil {
+		t.Fatal("expected error from EvalSymlinks")
+	}
+}
+
+func TestSameDirCwdStatError(t *testing.T) {
+	orig := osStat
+	osStat = func(name string) (os.FileInfo, error) {
+		if name == "cwd-arg" {
+			return nil, errors.New("stat boom")
+		}
+		return orig(name)
+	}
+	t.Cleanup(func() { osStat = orig })
+
+	// First stat succeeds (real dir), second fails → sameDir returns false.
+	if sameDir(t.TempDir(), "cwd-arg") {
+		t.Error("expected false when cwd stat fails")
 	}
 }

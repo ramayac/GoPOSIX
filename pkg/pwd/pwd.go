@@ -24,6 +24,14 @@ var spec = common.FlagSpec{
 	},
 }
 
+// Function seams so error paths can be exercised in tests deterministically
+// (without race conditions or root-only filesystem states).
+var (
+	osGetwd      = os.Getwd
+	evalSymlinks = filepath.EvalSymlinks
+	osStat       = os.Stat
+)
+
 // Run returns the current working directory.
 //
 // Logical (-L): use $PWD when it names the current directory, per POSIX -L
@@ -34,7 +42,7 @@ var spec = common.FlagSpec{
 // itself honor a valid $PWD, so the physical path is derived by resolving
 // symlinks rather than trusting os.Getwd directly.
 func Run(logical bool) (PwdResult, error) {
-	dir, err := os.Getwd()
+	dir, err := osGetwd()
 	if err != nil {
 		return PwdResult{}, err
 	}
@@ -43,7 +51,7 @@ func Run(logical bool) (PwdResult, error) {
 			return PwdResult{Path: filepath.Clean(pwd)}, nil
 		}
 	}
-	phys, err := filepath.EvalSymlinks(dir)
+	phys, err := evalSymlinks(dir)
 	if err != nil {
 		return PwdResult{}, err
 	}
@@ -52,11 +60,11 @@ func Run(logical bool) (PwdResult, error) {
 
 // sameDir reports whether path names the same directory as cwd.
 func sameDir(path, cwd string) bool {
-	pInfo, err := os.Stat(path)
+	pInfo, err := osStat(path)
 	if err != nil {
 		return false
 	}
-	cInfo, err := os.Stat(cwd)
+	cInfo, err := osStat(cwd)
 	if err != nil {
 		return false
 	}
