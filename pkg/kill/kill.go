@@ -90,7 +90,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		if len(flags.Positional) == 0 {
 			signals := common.SignalNames()
 			if jsonMode {
-				common.Render("kill", KillListResp{Signals: signals}, true, stdout, func() {})
+				common.Render("kill", KillListResp{Signals: signals}, true, stdout, nil)
 			} else {
 				fmt.Fprintln(stdout, strings.Join(signals, " "))
 			}
@@ -108,7 +108,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			names = append(names, common.SignalName(sig))
 		}
 		if jsonMode {
-			common.Render("kill", KillListResp{Signals: names}, true, stdout, func() {})
+			common.Render("kill", KillListResp{Signals: names}, true, stdout, nil)
 		} else {
 			fmt.Fprintln(stdout, strings.Join(names, " "))
 		}
@@ -150,7 +150,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	if jsonMode {
-		common.Render("kill", KillResp{Signaled: res}, true, stdout, func() {})
+		common.Render("kill", KillResp{Signaled: res}, true, stdout, nil)
 	}
 
 	return exitCode
