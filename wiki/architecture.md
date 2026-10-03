@@ -118,7 +118,7 @@ to preserve directory ownership in `FROM scratch`. The daemon socket lives at
 | `internal/dispatch` | Registry where utilities self-register via `init()`. |
 | `internal/daemon` | JSON-RPC 2.0 server over Unix socket. Dispatches to registered commands. |
 | `internal/shell` | Sandbox for `shell.exec` RPC. Configurable timeout, output limits, path confinement. |
-| `pkg/common` | Shared: POSIX flag parser (`ParseFlags`), JSON envelope output (`Render`/`RenderError`), path security guards. |
+| `pkg/common` | Shared: POSIX flag parser (`ParseFlags`), JSON envelope output (`Render`/`RenderError`), path security guards, signal parsing (`ParseSignal`/`SignalName`/`SignalNames`). |
 | `pkg/client` | Go SDK for JSON-RPC clients. Connection pooling, batch requests, exponential backoff, typed wrappers for every utility. |
 | `pkg/<util>` | One package per POSIX utility. Library layer (testable `Run()`) + CLI layer (`run()`) wired via `init()` → dispatch. |
 

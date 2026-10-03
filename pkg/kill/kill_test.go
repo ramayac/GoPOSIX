@@ -125,6 +125,23 @@ func TestKillListSignals(t *testing.T) {
 	}
 }
 
+func TestKillListSignalsJSON(t *testing.T) {
+	code, out := runJSON(t, []string{"--json", "-l"})
+	if code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if !strings.Contains(out, `"signals"`) || !strings.Contains(out, "TERM") {
+		t.Errorf("expected signals list JSON, got %s", out)
+	}
+}
+
+func TestKillBadFlag(t *testing.T) {
+	code, _ := runJSON(t, []string{"--badflag"})
+	if code != 1 {
+		t.Errorf("expected 1, got %d", code)
+	}
+}
+
 func TestKillListNumber(t *testing.T) {
 	code, out := runJSON(t, []string{"-l", "9"})
 	if code != 0 {

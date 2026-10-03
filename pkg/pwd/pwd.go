@@ -19,24 +19,56 @@ type PwdResult struct {
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "P", Long: "physical", Type: common.FlagBool},
+		{Short: "L", Long: "logical", Type: common.FlagBool},
 		{Long: "json", Type: common.FlagBool},
 	},
 }
 
+// Function seams so error paths can be exercised in tests deterministically
+// (without race conditions or root-only filesystem states).
+var (
+	osGetwd      = os.Getwd
+	evalSymlinks = filepath.EvalSymlinks
+	osStat       = os.Stat
+)
+
 // Run returns the current working directory.
-// If physical is true, symlinks are resolved.
-func Run(physical bool) (PwdResult, error) {
-	dir, err := os.Getwd()
+//
+// Logical (-L): use $PWD when it names the current directory, per POSIX -L
+// semantics; otherwise fall back to the physical path.
+//
+// Physical (default, -P): resolve all symlinks. This matches BusyBox and
+// coreutils, where pwd defaults to the physical path. Note os.Getwd may
+// itself honor a valid $PWD, so the physical path is derived by resolving
+// symlinks rather than trusting os.Getwd directly.
+func Run(logical bool) (PwdResult, error) {
+	dir, err := osGetwd()
 	if err != nil {
 		return PwdResult{}, err
 	}
-	if physical {
-		dir, err = filepath.EvalSymlinks(dir)
-		if err != nil {
-			return PwdResult{}, err
+	if logical {
+		if pwd := os.Getenv("PWD"); filepath.IsAbs(pwd) && sameDir(pwd, dir) {
+			return PwdResult{Path: filepath.Clean(pwd)}, nil
 		}
 	}
-	return PwdResult{Path: dir}, nil
+	phys, err := evalSymlinks(dir)
+	if err != nil {
+		return PwdResult{}, err
+	}
+	return PwdResult{Path: phys}, nil
+}
+
+// sameDir reports whether path names the same directory as cwd.
+func sameDir(path, cwd string) bool {
+	pInfo, err := osStat(path)
+	if err != nil {
+		return false
+	}
+	cInfo, err := osStat(cwd)
+	if err != nil {
+		return false
+	}
+	return os.SameFile(pInfo, cInfo)
 }
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
@@ -46,9 +78,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		return 2
 	}
 	jsonMode := flags.Has("json")
-	physical := flags.Has("P")
+	logical := flags.Has("L") // -L wins; the default is physical
 
-	result, err := Run(physical)
+	result, err := Run(logical)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pwd: %v\n", err)
 		common.RenderError("pwd", 1, "EPWD", err.Error(), jsonMode, stdout)

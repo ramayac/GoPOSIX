@@ -1,7 +1,7 @@
 # Lessons Learned
 
 > **Permanent record** of insights, gotchas, and design decisions across all GoPOSIX development phases.
-> **Last updated:** 2026-05-30 | **Coverage:** 84.1% | **BusyBox:** 877/17/25 (98.1%)
+> **Last updated:** 2026-10-03 | **Coverage:** 85.6% | **BusyBox:** 870/17/30 (98.1%)
 
 ---
 
@@ -49,6 +49,10 @@ It collides with `tar -j` (bzip2 in POSIX), and any utility where `-j` could be 
 
 The daemon prepends `--json` to every utility's args. Utilities with custom flag parsing that treat unknown flags as termination break when `--json` appears first. Fix: either make the custom parser recognize `--json`, or use a daemon-specific dispatch path.
 
+### Dash-form signal flags need preprocessing before `ParseFlags`
+
+`kill -TERM`, `-15`, or `-9` look like bundled short flags to the unified parser (`-T -E -R -M`), producing "unknown flag" errors. POSIX signal syntax must be rewritten before parsing: scan args and convert dash-form signals (`-TERM`, `-15`) into `-s <signal>` pairs, passing known flags through unchanged. Same preprocessing pattern as `find -exec`: capture non-flag units before the parser sees them.
+
 ---
 
 ## Testing & CI
@@ -76,6 +80,18 @@ Each utility has edge cases in its `--json` output (stdout leakage, flag name in
 ### Never register `sh` in the multicall binary
 
 The BusyBox test harness auto-generates symlinks for every command returned by `--list-commands`. If `sh` is registered, a `sh -> goposix` symlink shadows the system `/bin/sh`, causing ALL tests to fail. Only register `shell`. The `--list-commands` output is consumed by tooling that creates real filesystem symlinks.
+
+### Vacuous tests pass for the wrong reason
+
+`TestKillInvalidSignal` asserted only a non-zero exit code; `-s BOGUS` failed flag parsing, so the test passed while the feature did not exist. When adding tests for new flags, assert the positive behavior (the feature working), not just error exits. Tests that "pass" via parse errors are the smell to look for.
+
+### Codecov line coverage: kill dead closures in JSON-mode `Render`
+
+`common.Render` never calls its text callback in JSON mode, so passing `func() {}` leaves a permanent "partial" line in Codecov. Pass `nil` instead — every such call site is guarded by `if jsonMode`. This is also why Codecov shows lower numbers than `go test -cover`: line-based vs statement-based counting, plus dead callbacks and unreachable defensive branches.
+
+### Function seams make defensive error branches testable
+
+`os.Getwd`/`os.Stat` error paths cannot be triggered without races or root-only filesystem states. Package-level function vars (`var osGetwd = os.Getwd`) with test overrides exercise each branch deterministically — the same injectable-entry-point pattern as `catRun`. Use for hard-to-mock syscall error paths instead of skipping coverage.
 
 ---
 
@@ -105,6 +121,10 @@ An untracked work-in-progress file that changes a shared function signature brea
 
 Grep the entire repo for callers before committing. Even test code in other packages can break.
 
+### `os.Getwd` honors a valid `$PWD` — never trust it for physical paths
+
+On Linux, Go's `os.Getwd` returns the `$PWD` environment value when it stats to the current directory (the logical path through symlinks), falling back to `getcwd` otherwise. Code that needs the physical path must resolve symlinks explicitly with `filepath.EvalSymlinks(dir)`. This bit `pwd` when the repo was reached through `/home/ramayac/git -> /mnt/plex_media/git`.
+
 ---
 
 ## BusyBox Compatibility Notes
@@ -120,6 +140,10 @@ Grep the entire repo for callers before committing. Even test code in other pack
 4. **Per-number scale vs global scale**: BusyBox `dc` stores each number with its own internal scale. The `K` command pushes a value with scale 0, while division results use the global `k` scale.
 
 5. **`0^0` and `0^(-n)` conventions**: BusyBox `dc` defines `0^0 = 1` and `0^(-n) = 0` for n > 0.
+
+### `pwd` defaults to the physical path; `-L` is logical
+
+BusyBox and coreutils print the resolved (physical) path by default; `-L` prints `$PWD` only when it is absolute and names the current directory (POSIX `-L` semantics). A `pwd` that defaults to logical output breaks `realpath.tests` when the repo is reached through a symlink: the harness's `which pwd` resolves to the goposix `pwd` symlink (LINKSDIR precedes system PATH), and the test assumes external `pwd` prints physical — expected becomes logical while `realpath` prints physical. Root cause of 3 suite failures through `/home/ramayac/git`.
 
 ---
 
