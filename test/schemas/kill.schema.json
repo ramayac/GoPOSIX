@@ -10,7 +10,37 @@
     "version": { "type": "string" },
     "schemaVersion": { "type": "string", "const": "1.0" },
     "exitCode": { "type": "integer" },
-    "data": {"type": "object", "required": ["signaled"], "properties": {"signaled": {"type": "array", "items": {"type": "object", "required": ["pid", "signal", "success"], "properties": {"pid": {"type": "integer"}, "signal": {"type": "string"}, "success": {"type": "boolean"}}}}}},
+    "data": {
+      "type": "object",
+      "oneOf": [
+        {
+          "required": ["signaled"],
+          "properties": {
+            "signaled": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["pid", "signal", "success"],
+                "properties": {
+                  "pid": { "type": "integer" },
+                  "signal": { "type": "string" },
+                  "success": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "required": ["signals"],
+          "properties": {
+            "signals": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      ]
+    },
     "error": {
       "oneOf": [
         { "type": "null" },

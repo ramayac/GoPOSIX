@@ -84,7 +84,7 @@ Schemas are provided for all 77 utilities that support `--json` output:
 | `hostname` | `{"hostname": "string"}` |
 | `id` | `{"uid": int, "user": "string", "gid": int, "group": "string", "groups": ["string"]}` |
 | `join` | `{"records": [{"key": "value"}]}` |
-| `kill` | `{"signaled": [{"pid": int, "signal": "string", "success": bool}]}` |
+| `kill` | `{"signaled": [{"pid": int, "signal": "string", "success": bool}]}`; `-l` mode: `{"signals": ["KILL", ...]}` |
 | `link` | `{"source": "string", "target": "string"}` |
 | `ln` | `{"links": [{"target": "string", "link": "string"}]}` |
 | `logger` | `{"priority": "string", "tag": "string", "message": "string"}` |
