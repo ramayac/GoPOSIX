@@ -1130,12 +1130,15 @@ func TestHelper_Kill(t *testing.T) {
 
 	c, cleanup := startDaemonForHelper(t)
 	defer cleanup()
-	res, err := c.Kill(context.Background(), "", []int{cmd.Process.Pid})
+	res, err := c.Kill(context.Background(), "TERM", []int{cmd.Process.Pid})
 	if err != nil {
 		t.Fatalf("Kill: %v", err)
 	}
 	if len(res.Signaled) != 1 || !res.Signaled[0].Success {
 		t.Errorf("signaled = %+v, want one success", res.Signaled)
+	}
+	if res.Signaled[0].Signal != "SIGTERM" {
+		t.Errorf("signal = %q, want SIGTERM", res.Signaled[0].Signal)
 	}
 }
 
