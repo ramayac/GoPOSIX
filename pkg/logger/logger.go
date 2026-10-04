@@ -138,7 +138,7 @@ func Run(message, tag, priorityStr string, alsoStderr bool, errOut io.Writer) (L
 					Message:  message,
 				}
 				if alsoStderr {
-					fmt.Fprintln(errOut, message)
+					_, _ = fmt.Fprintln(errOut, message)
 				}
 				return result, nil
 			}
@@ -151,7 +151,7 @@ func Run(message, tag, priorityStr string, alsoStderr bool, errOut io.Writer) (L
 	}
 
 	if alsoStderr {
-		fmt.Fprintln(errOut, message)
+		_, _ = fmt.Fprintln(errOut, message)
 	}
 
 	return LoggerResult{

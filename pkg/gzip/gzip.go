@@ -126,7 +126,7 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 				}
 				return 1
 			}
-			io.Copy(target, gr)
+			_, _ = io.Copy(target, gr)
 			gr.Close()
 		} else {
 			gw, err := newWriterLevel(target, level)
@@ -165,7 +165,7 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 					}
 					return 1
 				}
-				io.Copy(target, gr)
+				_, _ = io.Copy(target, gr)
 				gr.Close()
 			} else {
 				gw, err := newWriterLevel(target, level)

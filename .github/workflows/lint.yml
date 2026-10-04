@@ -27,5 +27,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.64
+          # Built with go1.27; the project targets Go 1.26, and older
+          # linter binaries (go1.24) refuse to load the config.
+          version: v2.14.0
           only-new-issues: true
