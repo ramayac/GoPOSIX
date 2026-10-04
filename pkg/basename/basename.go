@@ -36,8 +36,7 @@ func Run(path, suffix string) BasenameResult {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "basename: %v\n", err)
-		return 2
+		return common.RenderFlagError("basename", args, err, stderr, 2)
 	}
 	if len(flags.Positional) == 0 {
 		fmt.Fprintln(stderr, "basename: missing operand")

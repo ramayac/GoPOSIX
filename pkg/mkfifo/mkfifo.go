@@ -33,8 +33,7 @@ func Run(path string, mode os.FileMode) error {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "mkfifo: %v\n", err)
-		return 2
+		return common.RenderFlagError("mkfifo", args, err, stderr, 2)
 	}
 	jsonMode := flags.Has("json")
 

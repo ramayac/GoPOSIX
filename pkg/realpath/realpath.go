@@ -132,8 +132,7 @@ func resolvePathFlags(path string, cwd string, existing bool, missingOk bool, no
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "realpath: %v\n", err)
-		return 2
+		return common.RenderFlagError("realpath", args, err, stderr, 2)
 	}
 
 	existing := flags.Has("canonicalize-existing")

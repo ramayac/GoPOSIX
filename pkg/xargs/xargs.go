@@ -36,8 +36,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 func xargsRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "xargs: %v\n", err)
-		return 1
+		return common.RenderFlagError("xargs", args, err, errOut, 1)
 	}
 
 	baseCmd := "echo"

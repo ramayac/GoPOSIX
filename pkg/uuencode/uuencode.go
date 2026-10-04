@@ -47,12 +47,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		if jsonMode {
-			common.RenderError("uuencode", 1, "FLAG_ERROR", err.Error(), true, stderr)
-		} else {
-			fmt.Fprintf(stderr, "uuencode: %v\n", err)
-		}
-		return 1
+		return common.RenderFlagError("uuencode", args, err, stderr, 1)
 	}
 
 	if flags.Has("h") || flags.Has("help") {

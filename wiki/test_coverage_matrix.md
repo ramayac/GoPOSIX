@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-10-03 | **BusyBox:** 870 pass / 17 fail / 30 skip | **Branch:** `audit/posix-commands` | **Overall Coverage:** 87.5% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-10-03 | **BusyBox:** 871 pass / 16 fail / 30 skip | **Branch:** `audit/posix-commands` | **Overall Coverage:** 87.9% | **JSON-RPC:** 115/115 (100.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -23,7 +23,7 @@
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `echo` | 97.8% | 11 | ✅ 11/11 | ✅ |
+| `echo` | 100.0% | 11 | ✅ 11/11 | ✅ |
 | `true` / `false` | 100.0% | 4 | ✅ 4/4 | ✅ |
 | `yes` | 80.0% | — | — | ✅ |
 | `whoami` | 100.0% | — | — | ✅ |
@@ -39,7 +39,7 @@
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `ls` | 87.0% | 5 | ✅ 5/5 | ✅ |
+| `ls` | 88.1% | 5 | ✅ 5/5 | ✅ |
 | `cat` | 89.6% | 1 | ✅ 1/1 | ✅ |
 | `mkdir` | 85.3% | 2 | ✅ 2/2 | ✅ |
 | `rmdir` | 92.6% | 1 | ✅ 1/1 | ✅ |
@@ -68,7 +68,7 @@
 | `cut` | 90.8% | 25 | ✅ 25/25 | ✅ |
 | `tee` | 73.1% | 2 | ✅ 2/2 | ✅ |
 | `grep` | 84.8% | 53 | ✅ 53/53 | ✅ |
-| `sed` | 80.1% | 103 | ✅ 103/103 | ✅ |
+| `sed` | 80.0% | 103 | ✅ 103/103 | ✅ |
 | `rev` | 94.7% | 4 | ✅ 4/4 | ✅ |
 | `tsort` | 84.3% | 20 | ✅ 20/20 | ✅ |
 
@@ -79,14 +79,14 @@
 | `ps` | 84.6% | — | — | ✅ |
 | `kill` | 100.0% | — | — | ✅ |
 | `sleep` | 78.1% | — | — | ✅ |
-| `date` | 79.3% | 7 | ✅ 7/7 | ✅ |
+| `date` | 83.9% | 7 | ✅ 7/7 | ✅ |
 | `uptime` | 88.5% | 1 | ✅ 1/1 | ✅ |
 | `id` | 87.1% | 4 | ✅ 4/4 | ✅ |
 | `chmod` | 68.3% | — | — | ✅ |
-| `chown` | 71.8% | — | — | ✅ |
-| `chgrp` | 70.0% | — | — | ✅ |
+| `chown` | 100.0% | — | — | ✅ |
+| `chgrp` | 95.7% | — | — | ✅ |
 | `df` | 79.2% | — | — | ✅ |
-| `du` | 83.9% | 6 | ✅ 6/6 | ✅ |
+| `du` | 90.4% | 6 | ✅ 6/6 | ✅ |
 | `find` | 89.5% | 13 | ✅ 13/13 | ✅ |
 | `xargs` | 94.1% | 12 | ✅ 12/12 | ✅ |
 | `pidof` | 96.7% | 4 | ✅ 4/4 | ✅ |
@@ -102,10 +102,10 @@
 | `sha512sum` | 100.0% | — | — | ✅ |
 | `sha3sum` | 90.2% | 2 | ✅ 2/2 | ✅ |
 | `md5sum` | 100.0% | 2 | ✅ 2/2 | ✅ |
-| `diff` | 89.5% | 20 | ✅ 20/20 | ✅ |
-| `test` / `[` | 82.9% | — | — | ❌ |
-| `printf` | 83.7% | 26 | ✅ 26/26 | ✅ |
-| `expr` | 83.5% | 2 | ✅ 2/2 | ✅ |
+| `diff` | 90.3% | 20 | ✅ 20/20 | ✅ |
+| `test` / `[` | 92.7% | — | — | ✅ |
+| `printf` | 89.7% | 26 | ✅ 26/26 | ✅ |
+| `expr` | 86.8% | 2 | ✅ 2/2 | ✅ |
 | `awk` | 90.0% | 53 | ⚠️ 36/53 (17 fail, deferred) | ✅ |
 | `shell` | 66.7% | — | — | ✅ |
 | `wget` | 81.4% | 4 | ✅ 4/4 | ✅ |
@@ -169,7 +169,7 @@
 | `ash` | — | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mount` | 80.6% | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `mdev` | 87.4% | 0 | ⚠️ 0/12 (12 skip) | ⚠️ skip |
-| `dc` | 87.8% | 36 | ✅ 36/36 | ✅ |
+| `dc` | 89.3% | 36 | ✅ 36/36 | ✅ |
 | `rx` | 86.2% | 1 | ✅ 1/1 | ✅ |
 | `hexdump` | 83.6% | 3 | ✅ 3/3 | ✅ |
 | `xxd` | 86.4% | 7 | ✅ 7/7 | ✅ |
@@ -197,7 +197,7 @@
 | Unit tests passing | 115/115 | 100% |
 | BusyBox tests run | 919 | 919 total applicable tests |
 | BusyBox passed | 877 | 98.1% (877 of 919) |
-| BusyBox failed | 17 | 17 awk (deferred) |
+| BusyBox failed | 16 | 16 awk (deferred) |
 | BusyBox skipped | 25 | 13 mdev (root), 7 cpio, 2 mount/makedevs (root), 1 ash, 2 awk (deferred) |
 | Overall statement coverage | 84.1% | Checked via make cover-gate |
 | JSON-RPC daemon tests | 115/115 | 100.0% (all 115 utilities implemented and registered) |

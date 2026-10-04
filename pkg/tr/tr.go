@@ -188,8 +188,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 func trRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "tr: %v\n", err)
-		return 2
+		return common.RenderFlagError("tr", args, err, errOut, 2)
 	}
 	deleteFlag := flags.Has("d")
 	squeezeFlag := flags.Has("s")

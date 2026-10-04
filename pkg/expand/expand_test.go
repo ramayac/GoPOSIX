@@ -1,6 +1,9 @@
 package expand
 
 import (
+	"bytes"
+	"encoding/json"
+
 	"strings"
 	"testing"
 )
@@ -145,5 +148,22 @@ func TestExpand_CLIRun(t *testing.T) {
 	}
 	if out.String() != "hello   world\n" {
 		t.Errorf("got %q, want 'hello    world\\n'", out.String())
+	}
+}
+
+func TestCLIJsonBadFlag(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	args := []string{"--json", "--nope"}
+	code := expandRun(args, &stdout, &stderr, nil, "")
+	if code == 0 {
+		t.Fatal("expected non-zero exit for bad flag")
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope on stderr, got %q: %v", stderr.String(), err)
+	}
+	if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "FLAG_ERROR" {
+		t.Fatalf("expected FLAG_ERROR envelope, got %q", stderr.String())
 	}
 }

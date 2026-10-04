@@ -202,8 +202,7 @@ func Run(r1, r2 io.Reader, field1, field2 int, delim string, a1, a2 bool, v1, v2
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "join: %v\n", err)
-		return 2
+		return common.RenderFlagError("join", args, err, stderr, 2)
 	}
 	jsonMode := flags.Has("json")
 

@@ -74,8 +74,7 @@ func sameDir(path, cwd string) bool {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "pwd: %v\n", err)
-		return 2
+		return common.RenderFlagError("pwd", args, err, stderr, 2)
 	}
 	jsonMode := flags.Has("json")
 	logical := flags.Has("L") // -L wins; the default is physical

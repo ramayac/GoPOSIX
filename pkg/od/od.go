@@ -36,8 +36,7 @@ type OdResult struct {
 func Run(args []string, r io.Reader, w, errOut io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "od: %v\n", err)
-		return 1
+		return common.RenderFlagError("od", args, err, errOut, 1)
 	}
 
 	var in io.Reader = r

@@ -98,8 +98,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 func tarRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "tar: %v\n", err)
-		return 1
+		return common.RenderFlagError("tar", args, err, errOut, 1)
 	}
 
 	create := flags.Has("c")

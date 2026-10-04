@@ -103,8 +103,7 @@ func Run(r io.Reader, w io.Writer, numberAll, numberNonBlank, squeezeBlank bool)
 func catRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "cat: %v\n", err)
-		return 2
+		return common.RenderFlagError("cat", args, err, errOut, 2)
 	}
 	jsonMode := flags.Has("json")
 	numberAll := flags.Has("n")

@@ -234,8 +234,7 @@ func Run(w io.Writer, blocks, inodes, namelen int) (MkfsResult, error) {
 func mkfsMinixRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "mkfs.minix: %v\n", err)
-		return 2
+		return common.RenderFlagError("mkfs.minix", args, err, errOut, 2)
 	}
 
 	if len(flags.Positional) < 1 {

@@ -49,8 +49,7 @@ func Run(ignoreEnv bool, positional []string) EnvResult {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "env: %v\n", err)
-		return 2
+		return common.RenderFlagError("env", args, err, stderr, 2)
 	}
 	jsonMode := flags.Has("json")
 	ignoreEnv := flags.Has("i")

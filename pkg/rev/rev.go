@@ -38,8 +38,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "rev: %v\n", err)
-		return 1
+		return common.RenderFlagError("rev", args, err, stderr, 1)
 	}
 
 	jsonMode := flags.Has("json")

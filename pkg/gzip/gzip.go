@@ -83,8 +83,7 @@ func getCompressionLevel(flags *common.ParseResult) int {
 func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, forceDecompress bool, cmdName string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, cmdName+": %v\n", err)
-		return 1
+		return common.RenderFlagError(cmdName, args, err, errOut, 1)
 	}
 
 	isJSON := flags.Has("json")

@@ -3,7 +3,6 @@
 package truefalse
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -25,8 +24,7 @@ var spec = common.FlagSpec{
 func runTrue(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "true: %v\n", err)
-		return 2
+		return common.RenderFlagError("true", args, err, stderr, 2)
 	}
 	if flags.Has("json") {
 		common.Render("true", BoolResult{ExitCode: 0, Value: true}, true, stdout, func() {})
@@ -37,8 +35,7 @@ func runTrue(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd strin
 func runFalse(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "false: %v\n", err)
-		return 2
+		return common.RenderFlagError("false", args, err, stderr, 2)
 	}
 	if flags.Has("json") {
 		common.Render("false", BoolResult{ExitCode: 1, Value: false}, true, stdout, func() {})

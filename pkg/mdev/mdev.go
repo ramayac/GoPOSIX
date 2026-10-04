@@ -64,8 +64,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 func mdevRun(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, flagSpec)
 	if err != nil {
-		fmt.Fprintf(stderr, "mdev: %v\n", err)
-		return 1
+		return common.RenderFlagError("mdev", args, err, stderr, 1)
 	}
 
 	scanMode := flags.Has("s")

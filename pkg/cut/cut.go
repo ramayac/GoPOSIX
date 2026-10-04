@@ -192,8 +192,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 func cutRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "cut: %v\n", err)
-		return 2
+		return common.RenderFlagError("cut", args, err, errOut, 2)
 	}
 	jsonMode := flags.Has("json")
 	fields := flags.Get("f")
