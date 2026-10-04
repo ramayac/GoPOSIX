@@ -7,6 +7,7 @@ This document serves as the live registry of remaining work, active plans, and k
 ---
 
 > 📊 **Per-utility status** → **[wiki/test_coverage_matrix.md](test_coverage_matrix.md)**
+> 🔍 **Command audit plan (IN PROGRESS)** → **[wiki/posix_command_audit.md](posix_command_audit.md)**
 > 🛡️ **Hardening V results** → **[wiki/hardening.md](hardening.md)**
 > ⚡ **Performance opportunities** → **[wiki/performance.md](performance.md)**
 > ✅ **Completed changelog** → **[wiki/log.md](log.md)**

@@ -4,6 +4,13 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-10-03] plan | POSIX command audit plan (branch `audit/posix-commands`)
+
+- New page `posix_command_audit.md`: full audit plan and matrix for all 115 commands.
+- Matrix columns: tier, LOC, test LOC, unit coverage, BusyBox status, F1 hardcoded-IO flag, verdict.
+- Pre-audit repo-wide findings: F1 53 commands hardcode `os.Stderr`/`os.Stdout`, F2 digest family duplication (~1,400 LOC), F3 four packages below 80% coverage (diff, gzip, hostname, whoami), F4 BusyBox failures (awk 17, rx 1 flaky), F5 start-stop-daemon signal duplication, F6 bc init panic, F7 compression family overlap.
+- Registered in `index.md` under Test & Compliance.
+
 ## [2026-10-03] fix | pwd physical default + Codecov 100% patch coverage (PR #42)
 
 - `pkg/pwd` now defaults to the physical path (BusyBox/coreutils parity) with `-L` for logical — root cause of the 3 realpath suite failures through `/home/ramayac/git`.
