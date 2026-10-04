@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -315,5 +316,26 @@ func TestLoggerCLI_WriteFailure(t *testing.T) {
 	code := run([]string{"message"}, nil, &stdout, &stderr, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for write failure, got %d", code)
+	}
+}
+
+func TestRun_StderrFlagFallbackPath(t *testing.T) {
+	// All syslog dials fail: the fallback path must still honour the
+	// -s flag and write to the injected writer.
+	var errBuf bytes.Buffer
+	origDial := dialSyslogFn
+	dialSyslogFn = func(network, address string) (net.Conn, error) {
+		return nil, errors.New("no syslog")
+	}
+	defer func() { dialSyslogFn = origDial }()
+	result, err := Run("fallback msg", "mytag", "user.notice", true, &errBuf)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Tag != "mytag" {
+		t.Errorf("expected mytag, got %s", result.Tag)
+	}
+	if !strings.Contains(errBuf.String(), "fallback msg") {
+		t.Errorf("expected injected writer to receive the message, got %q", errBuf.String())
 	}
 }

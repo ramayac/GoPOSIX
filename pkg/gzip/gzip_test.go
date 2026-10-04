@@ -5,6 +5,7 @@ import (
 	gzip "compress/gzip"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -621,5 +622,67 @@ func TestGunzip_DashGarbage(t *testing.T) {
 	}
 	if !strings.Contains(errBuf.String(), "gunzip: stdin:") {
 		t.Errorf("expected stdin error on stderr, got %q", errBuf.String())
+	}
+}
+
+func TestGzipJSONDashFile(t *testing.T) {
+	// F16: the "-" file path in JSON mode captures the payload and
+	// reports it as a stat entry with base64 content.
+	var out, errBuf bytes.Buffer
+	code := gzipRun([]string{"--json", "-"}, &out, &errBuf, strings.NewReader("dash data"), "")
+	if code != 0 {
+		t.Fatalf("exit %d, want 0 (stderr: %q)", code, errBuf.String())
+	}
+	var env struct {
+		Data []struct {
+			File    string `json:"file"`
+			NewSize int64  `json:"newSize"`
+			Content string `json:"content"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope, got %q: %v", out.String(), err)
+	}
+	if len(env.Data) != 1 || env.Data[0].File != "-" {
+		t.Fatalf("expected one dash entry, got %q", out.String())
+	}
+	if env.Data[0].NewSize <= 0 || env.Data[0].Content == "" {
+		t.Errorf("expected non-empty captured payload, got %+v", env.Data[0])
+	}
+}
+
+func TestGzipWriterLevelError(t *testing.T) {
+	orig := newWriterLevel
+	newWriterLevel = func(w io.Writer, level int) (*gzip.Writer, error) {
+		return nil, errors.New("bad level")
+	}
+	defer func() { newWriterLevel = orig }()
+
+	// No files: stdin compress path.
+	var out, errBuf bytes.Buffer
+	if code := gzipRun(nil, &out, &errBuf, strings.NewReader("x"), ""); code != 1 {
+		t.Errorf("no-files path: exit %d, want 1", code)
+	}
+	if !strings.Contains(errBuf.String(), "gzip: bad level") {
+		t.Errorf("no-files path: expected stderr message, got %q", errBuf.String())
+	}
+
+	// Dash file path.
+	out.Reset()
+	errBuf.Reset()
+	if code := gzipRun([]string{"-"}, &out, &errBuf, strings.NewReader("x"), ""); code != 1 {
+		t.Errorf("dash path: exit %d, want 1", code)
+	}
+
+	// Regular file path.
+	dir := t.TempDir()
+	fpath := filepath.Join(dir, "lvl.txt")
+	if err := os.WriteFile(fpath, []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	errBuf.Reset()
+	if code := gzipRun([]string{fpath}, &out, &errBuf, strings.NewReader(""), ""); code != 1 {
+		t.Errorf("file path: exit %d, want 1", code)
 	}
 }

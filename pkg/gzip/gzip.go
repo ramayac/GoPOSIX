@@ -35,6 +35,11 @@ func jsonStreamSink(isJSON bool, stdout io.Writer, buf *bytes.Buffer) io.Writer 
 	return stdout
 }
 
+// newWriterLevel is a seam for tests. getCompressionLevel only produces
+// valid levels, so the real gzip.NewWriterLevel can never fail at the call
+// sites; the seam makes the defensive branch testable.
+var newWriterLevel = gzip.NewWriterLevel
+
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "d", Long: "decompress", Type: common.FlagBool},
@@ -124,7 +129,7 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 			io.Copy(target, gr)
 			gr.Close()
 		} else {
-			gw, err := gzip.NewWriterLevel(target, level)
+			gw, err := newWriterLevel(target, level)
 			if err != nil {
 				if !isJSON {
 					fmt.Fprintf(errOut, cmdName+": %v\n", err)
@@ -163,7 +168,7 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 				io.Copy(target, gr)
 				gr.Close()
 			} else {
-				gw, err := gzip.NewWriterLevel(target, level)
+				gw, err := newWriterLevel(target, level)
 				if err != nil {
 					if !isJSON {
 						fmt.Fprintf(errOut, cmdName+": %v\n", err)
@@ -277,7 +282,7 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 				gr.Close()
 			}
 		} else {
-			gw, err := gzip.NewWriterLevel(targetWriter, level)
+			gw, err := newWriterLevel(targetWriter, level)
 			if err != nil {
 				processErr = err
 			} else {
