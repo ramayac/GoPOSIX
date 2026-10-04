@@ -1,6 +1,6 @@
 # POSIX Command Audit — Plan & Matrix
 
-> **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** IN PROGRESS (F1/F2/F3 done)
+> **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — phases 0–3 done
 >
 > Companion to [wiki/test_coverage_matrix.md](test_coverage_matrix.md) (test status) and [wiki/todos.md](todos.md) (open work).
 > This page is the plan and tracking matrix for a one-shot audit of every POSIX command.
@@ -99,15 +99,19 @@ duplicated wrapper logic (header checks, multi-stream handling).
 
 ## 4. Phases & Priorities
 
-| Phase | Scope | Commands | Verify |
-|-------|-------|----------|--------|
-| 0 | This plan + matrix snapshot | — | ✅ committed on `audit/posix-commands` |
-| 1 | F1 mechanical fix: injected writers | 53 | ✅ 871/16/30 BusyBox, unit + vet clean |
-| 2 | F2 digest consolidation + F5 signal consolidation | 8 | ✅ digest core; F5 still open |
-| 3 | F3 coverage drive | 4 | ✅ whoami 100, hostname 98.2, diff 89.5, gzip 87.3 |
-| 4 | Deep audit of XL/L commands (one PR each) | 24 | per-command checklist + suites |
-| 5 | Sweep of M/S commands (batched) | 87 | per-command checklist + suites |
-| 6 | Decide F6/F7 and close all open verdicts | — | matrix 100% filled |
+> **Current step: Phase 4** — deep audit of the 24 XL/L commands, one PR each.
+> Phases 0, 1, 3 are complete. Phase 2 is complete except F5 (signal parsing
+> consolidation in `start-stop-daemon`), tracked in [todos.md](todos.md).
+
+| Phase | Scope | Commands | Verify | Status |
+|-------|-------|----------|--------|--------|
+| 0 | This plan + matrix snapshot | — | committed on `audit/posix-commands` | ✅ DONE |
+| 1 | F1 mechanical fix: injected writers | 53 | `make test` + `make testsuite` + `go vet` | ✅ DONE (871/16/30) |
+| 2 | F2 digest consolidation + F5 signal consolidation | 8 | BusyBox suite + output parity | ⚠️ F2 done, F5 open |
+| 3 | F3 coverage drive | 4 | `make cover-pkg` ≥ 80% | ✅ DONE (whoami 100, hostname 98.2, diff 89.5, gzip 87.3) |
+| 4 | Deep audit of XL/L commands (one PR each) | 24 | per-command checklist + suites | ▶️ NEXT |
+| 5 | Sweep of M/S commands (batched) | 87 | per-command checklist + suites | ⏳ pending |
+| 6 | Decide F6/F7 and close all open verdicts | — | matrix 100% filled | ⏳ pending |
 
 ## 5. Audit Matrix
 
