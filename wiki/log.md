@@ -951,3 +951,10 @@ wiki documentation.
 
 - The audit plan is Phase 28. The file name follows the wiki phase convention (23_, 25_, 26_, 27_).
 - Links updated in `index.md`, `todos.md`, and `phases.md` (Active Work). Historical log entries keep the old name.
+
+
+## [2026-10-03] pause | Phase 28 audit paused — repository phases done, per-tool work deferred
+
+- The audit stops here for now. Phases 0–3 and findings F1–F7 are complete (PR #43, 13 commits, 100% patch coverage, coverage 87.6%, BusyBox 871/16/30).
+- Next when work resumes: Phase 4 deep audits of 7 XL/L commands (bc, sed, printf, date, tar, dc, diff), then the Phase 5 sweep. See the updated [todos.md](todos.md).
+- The plan gained a preflight review: corrected XL/L scope (7, not 24), added a PreAudit score per command, and recorded open items F8 (parser helpers duplicated across bc/expr/sed/testcmd) and P1 (logger package-global writer), plus P2 (companion coverage matrix is stale) and P4 (concurrent make testsuite runs corrupt each other).

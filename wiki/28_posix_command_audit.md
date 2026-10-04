@@ -1,6 +1,7 @@
 # Phase 28 — POSIX Command Audit (Plan & Matrix)
 
 > **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — phases 0–3 done, 100% patch coverage
+> **Preflight:** 2026-10-03 — matrix refreshed from the tree, `PreAudit` score added (see §5a). Corrected XL/L scope: 7 commands, not 24.
 >
 > Companion to [wiki/test_coverage_matrix.md](test_coverage_matrix.md) (test status) and [wiki/todos.md](todos.md) (open work).
 > This page is the plan and tracking matrix for a one-shot audit of every POSIX command.
@@ -107,8 +108,10 @@ against the pre-refactor binary. All four packages now at 100% coverage.
 
 ## 4. Phases & Priorities
 
-> **Current step: Phase 4** — deep audit of the 24 XL/L commands, one PR each.
-> Phases 0–3 are complete.
+> **Current step: Phase 4** — deep audit of the XL/L commands, one PR each.
+> The preflight refresh (§5a) found 7 XL/L commands under the stated non-test LOC definition:
+> `bc`, `sed`, `printf`, `date`, `tar`, `dc`, `diff`. The previous count of 24 used total
+> lines (code + test). Order the work by `PreAudit` score in §5.
 
 | Phase | Scope | Commands | Verify | Status |
 |-------|-------|----------|--------|--------|
@@ -116,139 +119,246 @@ against the pre-refactor binary. All four packages now at 100% coverage.
 | 1 | F1 mechanical fix: injected writers | 53 | `make test` + `make testsuite` + `go vet` | ✅ DONE (870/17/30) |
 | 2 | F2 digest consolidation + F5 signal consolidation | 8 | BusyBox suite + output parity | ✅ DONE (F2 + F5) |
 | 3 | F3 coverage drive | 4 | `make cover-pkg` ≥ 80% | ✅ DONE (whoami 100, hostname 98.2, diff 89.5, gzip 87.3) |
-| 4 | Deep audit of XL/L commands (one PR each) | 24 | per-command checklist + suites | ▶️ NEXT (prep: Codecov patch coverage 100%) |
+| 4 | Deep audit of XL/L commands (one PR each) | 7 | per-command checklist + suites | ▶️ NEXT (prep: Codecov patch coverage 100%) |
 | 5 | Sweep of M/S commands (batched) | 87 | per-command checklist + suites | ⏳ pending |
 | 6 | Decide F6/F7 and close all open verdicts | — | matrix 100% filled | ⚠️ F6+F7 done; matrix still filling |
 
 ## 5. Audit Matrix
 
-**Tier by LOC:** XL ≥ 1500 · L 700–1499 · M 350–699 · S < 350
+**Tier by LOC:** XL ≥ 1500 · L 700–1499 · M 350–699 · S < 350 (non-test lines)
 
 **Columns:** LOC = non-test lines. T-LOC = test lines. Cov = unit coverage. BB = BusyBox status
-(from [wiki/test_coverage_matrix.md](test_coverage_matrix.md)). IO = F1 hardcoded I/O. Verdict filled during audit.
+(from [wiki/test_coverage_matrix.md](test_coverage_matrix.md)). IO = F1 hardcoded I/O.
+**PreAudit** = pre-audit priority score (§5a); higher means a stronger candidate.
 
-| Command | Tier | LOC | T-LOC | Cov | BB | IO | Verdict | Notes |
-|---------|:----:|----:|------:|----:|:--:|:--:|:-------:|-------|
-| `bc` | XL | 3128 | 547 | 83.6% | ✅ 81/81 | — | IMPROVE | F6: NewInterpreter returns error (no panic); mathLibSource seam |
-| `tar` | XL | 2635 | 1521 | 82.1% | ✅ 31/31 | — |  |  |
-| `sed` | XL | 2241 | 1060 | 80.1% | ✅ 103/103 | — |  |  |
-| `dc` | XL | 1777 | 628 | 89.0% | ✅ 36/36 | — |  |  |
-| `printf` | L | 1494 | 744 | 83.7% | ✅ 26/26 | — |  |  |
-| `grep` | L | 1487 | 839 | 84.8% | ✅ 53/53 | — |  |  |
-| `date` | L | 1381 | 635 | 82.6% | ✅ 7/7 | — |  |  |
-| `diff` | L | 1365 | 529 | 89.5% | ✅ 20/20 | — | IMPROVE | F1+F3: tests 89.5% |
-| `sort` | L | 1190 | 537 | 86.2% | ✅ 27/27 | — |  |  |
-| `testcmd` | L | 1012 | 602 | 88.4% | — | — |  |  |
-| `ar` | L | 1000 | 516 | 81.6% | ✅ 2/2 | — |  |  |
-| `patch` | L | 981 | 381 | 82.1% | ✅ 11/11 | — |  |  |
-| `od` | L | 953 | 431 | 84.5% | ✅ 4/4 | — |  |  |
-| `cpio` | L | 905 | 449 | 82.0% | ✅ 2/9 (7 skip) | — |  |  |
-| `unzip` | L | 861 | 403 | 80.5% | ✅ 4/4 | — |  |  |
-| `expr` | L | 832 | 385 | 83.9% | ✅ 2/2 | — |  |  |
-| `ls` | L | 820 | 377 | 88.6% | ✅ 5/5 | — |  |  |
-| `hexdump` | L | 798 | 236 | 84.7% | ✅ 3/3 | — |  |  |
-| `awk` | L | 766 | 558 | 90.0% | ⚠️ 36/53 (17 fail, deferred) | — |  |  |
-| `gzip` | L | 763 | 457 | 87.3% | ✅ 4/4 | — | IMPROVE | F3: tests 87.3% |
-| `head` | L | 738 | 528 | 94.3% | ✅ 4/4 | — |  |  |
-| `fold` | L | 719 | 469 | 91.8% | ✅ 4/4 | — |  |  |
-| `cp` | L | 714 | 385 | 82.6% | ✅ 14/14 | — |  |  |
-| `cat` | M | 684 | 464 | 89.6% | ✅ 1/1 | — |  |  |
-| `start-stop-daemon` | M | 634 | 240 | 80.7% | ✅ 4/4 | IMPROVE | F5: uses common.ParseSignal (was 7-name local parser) |  |
-| `split` | M | 621 | 351 | 86.3% | — | — |  |  |
-| `xxd` | M | 610 | 239 | 86.4% | ✅ 7/7 | — |  |  |
-| `comm` | M | 591 | 346 | 88.8% | ✅ 9/9 | — |  |  |
-| `cryptpw` | M | 576 | 335 | 82.4% | ✅ 7/7 | — |  |  |
-| `who` | M | 573 | 383 | 84.8% | — | — |  |  |
-| `wc` | M | 570 | 263 | 88.0% | ✅ 5/5 | — |  |  |
-| `join` | M | 568 | 264 | 80.6% | — | — |  |  |
-| `seq` | M | 547 | 263 | 89.7% | ✅ 21/21 | — |  |  |
-| `find` | M | 544 | 293 | 89.8% | ✅ 13/13 | — |  |  |
-| `unexpand` | M | 544 | 287 | 82.8% | ✅ 24/24 | — |  |  |
-| `dd` | M | 540 | 208 | 88.8% | ✅ 6/6 | — |  |  |
-| `uudecode` | M | 540 | 217 | 84.6% | — | — |  |  |
-| `logger` | M | 530 | 311 | 98.6% | — | — |  |  |
-| `tail` | M | 522 | 294 | 87.1% | ✅ 3/3 | — |  |  |
-| `factor` | M | 511 | 165 | 93.9% | ✅ 13/13 | — |  |  |
-| `sha3sum` | M | 114 | 252 | 90.2% | ✅ 2/2 | — | REFACTOR | F1+F2: shared digest core + -a autodetect |
-| `mount` | M | 495 | 178 | 80.6% | ⚠️ 0/1 (1 skip) | — |  |  |
-| `cal` | M | 492 | 144 | 85.8% | ✅ 1/1 | — |  |  |
-| `makedevs` | M | 491 | 156 | 87.3% | ⚠️ 0/1 (1 skip) | — |  |  |
-| `cut` | M | 485 | 219 | 90.8% | ✅ 25/25 | — |  |  |
-| `cmp` | M | 479 | 286 | 82.3% | ✅ 1/1 | — |  |  |
-| `taskset` | M | 476 | 191 | 86.4% | ✅ 3/3 | — |  |  |
-| `uncompress` | S | 60 | 179 | 100.0% | ✅ 1/1 | — | REFACTOR | F7: shared decompress core + recover/log suppress, 100% cov |
-| `paste` | M | 467 | 240 | 88.5% | ✅ 5/5 | — |  |  |
-| `rx` | M | 461 | 279 | 86.2% | ✅ 1/1 | — |  |  |
-| `tree` | M | 460 | 212 | 98.0% | ✅ 4/4 | — |  |  |
-| `readlink` | M | 459 | 251 | 81.2% | ✅ 6/6 | — |  |  |
-| `mdev` | M | 455 | 146 | 87.4% | ⚠️ 0/12 (12 skip) | — |  |  |
-| `unlzma` | S | 54 | 204 | 100.0% | ✅ 3/3 | — | REFACTOR | F7: shared decompress core, 100% cov |
-| `echo` | M | 452 | 258 | 97.8% | ✅ 11/11 | — |  |  |
-| `hostid` | M | 444 | 284 | 96.3% | ✅ 1/1 | — |  |  |
-| `bunzip2` | S | 57 | 194 | 100.0% | ✅ 11/11 | — | REFACTOR | F7: shared decompress core, 100% cov |
-| `mkfs_minix` | M | 433 | 121 | 86.4% | — | — |  |  |
-| `uniq` | M | 432 | 239 | 88.4% | ✅ 15/15 | — |  |  |
-| `shell` | M | 416 | 229 | 90.2% | — | — |  |  |
-| `tr` | M | 413 | 148 | 90.8% | ✅ 6/6 | — |  |  |
-| `sha256sum` | M | 58 | 208 | 100.0% | — | — | REFACTOR | F1+F2: shared digest core, 100% cov |
-| `touch` | M | 407 | 265 | 82.6% | ✅ 3/3 | — |  |  |
-| `md5sum` | M | 58 | 202 | 100.0% | ✅ 2/2 | — | REFACTOR | F1+F2: shared digest core, 100% cov |
-| `realpath` | M | 399 | 211 | 94.7% | ✅ 10/10 | — |  |  |
-| `xargs` | M | 390 | 177 | 94.1% | ✅ 12/12 | — |  |  |
-| `uuencode` | M | 385 | 134 | 88.3% | ✅ 19/19 | — |  |  |
-| `sha1sum` | M | 59 | 177 | 100.0% | ✅ 1/1 | — | REFACTOR | F1+F2: shared digest core, 100% cov |
-| `sha512sum` | M | 59 | 176 | 100.0% | — | — | REFACTOR | F1+F2: shared digest core, 100% cov |
-| `strings` | M | 375 | 223 | 91.5% | ✅ 1/1 | — |  |  |
-| `sum` | M | 370 | 238 | 100.0% | ✅ 4/4 | — |  |  |
-| `wget` | M | 363 | 172 | 81.4% | ✅ 4/4 | — |  |  |
-| `kill` | M | 359 | 198 | 100.0% | — | — |  |  |
-| `rm` | M | 350 | 198 | 87.3% | ✅ 1/1 | — |  |  |
-| `mv` | S | 335 | 223 | 84.0% | ✅ 14/14 | — |  |  |
-| `chmod` | S | 327 | 155 | 80.5% | — | — |  |  |
-| `nl` | S | 324 | 182 | 97.1% | ✅ 4/4 | — |  |  |
-| `pwd` | S | 321 | 219 | 100.0% | ✅ 1/1 | — |  |  |
-| `uptime` | S | 315 | 169 | 88.5% | ✅ 1/1 | — |  |  |
-| `tee` | S | 314 | 185 | 92.3% | ✅ 2/2 | — |  |  |
-| `tty` | S | 309 | 201 | 100.0% | — | — |  |  |
-| `hostname` | S | 305 | 166 | 98.2% | ✅ 4/4 | — | IMPROVE | F1+F3: function seams, 98.2% |
-| `bzcat` | S | 52 | 142 | 100.0% | ✅ 3/3 | — | REFACTOR | F7: shared decompress core (cat mode), 100% cov |
-| `cksum` | S | 290 | 135 | 85.5% | — | — |  |  |
-| `expand` | S | 271 | 149 | 81.4% | ✅ 3/3 | — |  |  |
-| `du` | S | 268 | 122 | 88.7% | ✅ 6/6 | — |  |  |
-| `pidof` | S | 262 | 114 | 96.7% | ✅ 4/4 | — |  |  |
-| `stat` | S | 257 | 115 | 100.0% | — | — |  |  |
-| `rev` | S | 254 | 128 | 94.7% | ✅ 4/4 | — |  |  |
-| `id` | S | 248 | 117 | 94.6% | ✅ 4/4 | — |  |  |
-| `nohup` | S | 225 | 111 | 80.9% | — | — |  |  |
-| `which` | S | 222 | 96 | 86.0% | ✅ 1/1 | — |  |  |
-| `tsort` | S | 218 | 73 | 84.3% | ✅ 20/20 | — |  |  |
-| `yes` | S | 208 | 124 | 80.0% | — | — |  |  |
-| `uname` | S | 201 | 51 | 86.0% | — | — |  |  |
-| `mkdir` | S | 192 | 113 | 85.3% | ✅ 2/2 | — |  |  |
-| `rmdir` | S | 191 | 122 | 92.6% | ✅ 1/1 | — |  |  |
-| `nice` | S | 180 | 73 | 85.7% | — | — |  |  |
-| `ln` | S | 176 | 98 | 82.8% | ✅ 6/6 | — |  |  |
-| `sleep` | S | 170 | 88 | 87.5% | — | — |  |  |
-| `mkfifo` | S | 168 | 87 | 92.9% | — | — |  |  |
-| `chown` | S | 164 | 55 | 92.3% | — | — |  |  |
-| `env` | S | 159 | 86 | 100.0% | — | — |  |  |
-| `printenv` | S | 157 | 78 | 100.0% | — | — |  |  |
-| `truefalse` | S | 148 | 87 | 100.0% | ✅ 4/4 | — |  |  |
-| `unlink` | S | 146 | 82 | 89.5% | — | — |  |  |
-| `link` | S | 143 | 79 | 90.0% | — | — |  |  |
-| `chgrp` | S | 141 | 55 | 83.3% | — | — |  |  |
-| `basename` | S | 136 | 74 | 85.7% | ✅ 2/2 | — |  |  |
-| `whoami` | S | 135 | 71 | 100.0% | — | — | IMPROVE | F1+F3: userCurrent seam, 100% |
-| `daemon` | S | 125 | 70 | 82.4% | — | — |  |  |
-| `logname` | S | 124 | 57 | 80.0% | — | — |  |  |
-| `df` | S | 112 | 37 | 87.5% | — | — |  |  |
-| `dirname` | S | 104 | 54 | 85.7% | ✅ 7/7 | — |  |  |
-| `ps` | S | 89 | 29 | 84.6% | — | — |  |  |
+**Verdict values:** `KEEP ✅` = validated, no change. `IMPROVE` = small changes still open.
+`REFACTOR` = structural change still open. Blank = not audited yet. The verdict states the
+**decision that is still open**. A completed finding therefore moves the verdict to `KEEP ✅`.
+The `Notes` column keeps the finding reference. For example, `md5sum` was refactored under F2
+(completed), so its verdict is `KEEP ✅`, not `REFACTOR`.
+
+> **Preflight refresh (2026-10-03):** every LOC, T-LOC, coverage, and tier value below is measured
+> from the current tree. The earlier snapshot was stale: 110 of 115 rows drifted by more than 25%,
+> and the old `LOC` column actually held total lines (code + test) although the header claimed
+> non-test lines. Tiers now follow the stated definition on non-test lines, so the XL/L set shrank
+> from 24 to 7 commands (`bc`, `sed`, `printf`, `date`, `tar`, `dc`, `diff`).
+
+| Command | Tier | LOC | T-LOC | Cov | BB | IO | PreAudit | Verdict | Notes |
+|---------|:----:|----:|------:|----:|:--:|:--:|:--------:|:-------:|-------|
+| `bc` | XL | 2587 | 590 | 83.7% | ✅ 81/81 | — | 5.50 | REFACTOR | F6 ✅ (error, not panic) · Preflight: `eval` 486 lines, `NextToken` 284 lines · F8 lexer helpers and F9 `big.Rat` helpers duplicated with `dc` · no JSON schema or daemon test · `--json` ignored on flag errors |
+| `sed` | L | 1181 | 1060 | 80.1% | ✅ 103/103 | — | 3.75 | IMPROVE | Preflight: `parseInstruction` 266 lines, `execFlat` 184 lines · F8 lexer cursor · coverage 80.1% is the lowest of the large tools · `--json` ignored on flag errors |
+| `printf` | L | 749 | 744 | 83.7% | ✅ 26/26 | — | 3.75 | IMPROVE | Preflight: `processEscapes` (88 lines) and `processEscapesForB` (77 lines) are near-duplicates (F11) · `--json` ignored on flag errors |
+| `date` | L | 746 | 661 | 83.8% | ✅ 7/7 | — | 3.75 | IMPROVE | Preflight: `parsePOSIXTZ` is a 263-line closure nest · lift the inner funcs for testability · `--json` ignored on flag errors |
+| `patch` | M | 600 | 381 | 82.1% | ✅ 11/11 | — | 3.75 | IMPROVE | Preflight: `Run` 120 lines · `--json` ignored on flag errors |
+| `mount` | S | 317 | 178 | 80.6% | ⚠️ 0/1 (1 skip) | — | 3.75 | KEEP | Preflight: small and clean, `mountRun` is injectable · all BusyBox cases need root · no JSON schema or daemon test |
+| `tar` | L | 1114 | 1537 | 82.3% | ✅ 31/31 | — | 3.50 | IMPROVE | Preflight: `extractArchiveStream` 196 lines, `createArchiveStream` 183 lines · `--json` ignored on flag errors · BusyBox 33/33 isolated |
+| `hexdump` | M | 562 | 236 | 84.7% | ✅ 3/3 | — | 3.50 | IMPROVE | Preflight: `Run` 202 lines · thin tests (T-LOC/LOC 0.42) · no JSON schema or daemon test · `--json` ignored on flag errors |
+| `dc` | L | 1149 | 628 | 89.0% | ✅ 36/36 | — | 3.25 | REFACTOR | Preflight: `evalDC` is a 569-line god function · F9 `big.Rat` helpers duplicated with `bc` · no JSON schema · `--json` ignored on flag errors · BusyBox 36/36 |
+| `start-stop-daemon` | M | 366 | 242 | 80.7% | ✅ 4/4 | — | 3.25 | IMPROVE | F5 ✅ · Preflight: `run` 237 lines · no JSON schema · BusyBox 4/4 |
+| `unzip` | M | 458 | 403 | 80.5% | ✅ 4/4 | — | 3.00 | IMPROVE | Preflight: `run` 341 lines (god function) · no JSON schema |
+| `cpio` | M | 456 | 449 | 82.0% | ✅ 2/9 (7 skip) | — | 3.00 | KEEP | Preflight: balanced helpers, no duplication found · 7 of 9 BusyBox cases are root skips · no JSON schema |
+| `uudecode` | S | 323 | 217 | 84.6% | — | — | 3.00 | IMPROVE | Preflight: `run` 282 lines (god function) · no BusyBox tests · no JSON schema |
+| `tsort` | S | 145 | 73 | 84.3% | ✅ 20/20 | — | 3.00 | IMPROVE | Preflight: thin tests · `--json` ignored on flag errors (confirmed) · no JSON schema |
+| `grep` | M | 648 | 839 | 84.8% | ✅ 53/53 | — | 2.75 |  |  |
+| `ar` | M | 484 | 516 | 81.6% | ✅ 2/2 | — | 2.75 |  |  |
+| `makedevs` | S | 335 | 156 | 87.3% | ⚠️ 0/1 (1 skip) | — | 2.75 |  | Preflight: BusyBox case needs root. |
+| `mdev` | S | 309 | 146 | 87.4% | ⚠️ 0/12 (12 skip) | — | 2.75 |  | Preflight: BusyBox cases need root. |
+| `nohup` | S | 121 | 110 | 80.9% | — | — | 2.75 |  |  |
+| `mkfs_minix` | S | 312 | 121 | 86.4% | — | — | 2.50 |  |  |
+| `logger` | S | 219 | 311 | 98.6% | — | ⚠ global | 2.50 |  | Preflight: package-global `stderrWriter` (daemon re-entrancy risk). |
+| `wget` | S | 191 | 172 | 81.4% | ✅ 4/4 | — | 2.50 |  |  |
+| `diff` | L | 836 | 824 | 90.3% | ✅ 20/20 | — | 2.25 | IMPROVE | F1+F3: tests 89.5% · Preflight: LOC corrected; now L tier, not XL. F1+F3 applied; deep audit open. |
+| `xxd` | M | 371 | 239 | 86.4% | ✅ 7/7 | — | 2.25 |  |  |
+| `unexpand` | S | 257 | 287 | 82.8% | ✅ 24/24 | — | 2.25 |  |  |
+| `cryptpw` | S | 241 | 335 | 82.4% | ✅ 7/7 | — | 2.25 |  |  |
+| `readlink` | S | 208 | 251 | 81.2% | ✅ 6/6 | — | 2.25 |  |  |
+| `cmp` | S | 193 | 286 | 82.3% | ✅ 1/1 | — | 2.25 |  |  |
+| `expand` | S | 122 | 149 | 81.4% | ✅ 3/3 | — | 2.25 |  |  |
+| `sort` | M | 653 | 537 | 86.2% | ✅ 27/27 | — | 2.00 |  |  |
+| `od` | M | 522 | 443 | 85.3% | ✅ 4/4 | — | 2.00 |  |  |
+| `expr` | M | 446 | 397 | 87.1% | ✅ 2/2 | — | 2.00 |  | Preflight: parser helpers duplicated with bc/testcmd (F8 candidate). |
+| `ls` | M | 443 | 377 | 88.6% | ✅ 5/5 | — | 2.00 |  |  |
+| `cal` | S | 348 | 144 | 85.8% | ✅ 1/1 | — | 2.00 |  |  |
+| `uuencode` | S | 251 | 134 | 88.3% | ✅ 19/19 | — | 2.00 |  |  |
+| `dd` | S | 332 | 208 | 88.8% | ✅ 6/6 | — | 1.75 |  |  |
+| `taskset` | S | 285 | 191 | 86.4% | ✅ 3/3 | — | 1.75 |  |  |
+| `uname` | S | 152 | 69 | 93.0% | — | — | 1.75 |  |  |
+| `which` | S | 126 | 96 | 86.0% | ✅ 1/1 | — | 1.75 |  |  |
+| `daemon` | S | 54 | 86 | 94.1% | — | — | 1.75 |  |  |
+| `testcmd` | M | 410 | 625 | 92.8% | — | — | 1.50 |  | Preflight: shares hand-rolled parser helpers with bc/expr (F8). |
+| `factor` | S | 346 | 165 | 93.9% | ✅ 13/13 | — | 1.50 |  |  |
+| `wc` | S | 311 | 274 | 88.6% | ✅ 5/5 | — | 1.50 |  |  |
+| `gzip` | S | 306 | 575 | 87.3% | ✅ 4/4 | — | 1.50 | KEEP ✅ | F3: tests 87.3% |
+| `join` | S | 304 | 314 | 89.7% | — | — | 1.50 |  |  |
+| `seq` | S | 284 | 263 | 89.7% | ✅ 21/21 | — | 1.50 |  |  |
+| `tr` | S | 265 | 148 | 90.8% | ✅ 6/6 | — | 1.50 |  |  |
+| `who` | S | 193 | 400 | 89.4% | — | — | 1.50 |  |  |
+| `chown` | S | 109 | 66 | 97.4% | — | — | 1.50 |  |  |
+| `nice` | S | 107 | 85 | 90.5% | — | — | 1.50 |  |  |
+| `df` | S | 74 | 48 | 95.8% | — | — | 1.50 |  |  |
+| `find` | S | 251 | 293 | 89.8% | ✅ 13/13 | — | 1.25 |  |  |
+| `comm` | S | 245 | 346 | 88.8% | ✅ 9/9 | — | 1.25 |  |  |
+| `tail` | S | 228 | 305 | 88.7% | ✅ 3/3 | — | 1.25 |  |  |
+| `paste` | S | 227 | 240 | 88.5% | ✅ 5/5 | — | 1.25 |  |  |
+| `cat` | S | 220 | 464 | 89.6% | ✅ 1/1 | — | 1.25 |  |  |
+| `awk` | S | 208 | 558 | 90.0% | ⚠️ 36/53 (17 fail, deferred) | — | 1.25 |  | Preflight: 17 fails are deferred goawk engine limits, not refactor work. |
+| `uniq` | S | 193 | 239 | 88.4% | ✅ 15/15 | — | 1.25 |  |  |
+| `rx` | S | 182 | 279 | 86.2% | ✅ 1/1 | — | 1.25 |  |  |
+| `rm` | S | 152 | 198 | 87.3% | ✅ 1/1 | — | 1.25 |  |  |
+| `pidof` | S | 148 | 114 | 96.7% | ✅ 4/4 | — | 1.25 |  |  |
+| `uptime` | S | 146 | 169 | 88.5% | ✅ 1/1 | — | 1.25 |  |  |
+| `chgrp` | S | 86 | 77 | 96.7% | — | — | 1.25 |  |  |
+| `split` | S | 273 | 375 | 92.6% | — | — | 1.00 |  |  |
+| `cut` | S | 266 | 219 | 90.8% | ✅ 25/25 | — | 1.00 |  |  |
+| `tree` | S | 248 | 212 | 98.0% | ✅ 4/4 | — | 1.00 |  |  |
+| `xargs` | S | 213 | 177 | 94.1% | ✅ 12/12 | — | 1.00 |  |  |
+| `shell` | S | 187 | 229 | 90.2% | — | — | 1.00 |  |  |
+| `chmod` | S | 172 | 193 | 92.7% | — | — | 1.00 |  |  |
+| `cksum` | S | 155 | 157 | 94.5% | — | — | 1.00 |  |  |
+| `du` | S | 145 | 133 | 91.9% | ✅ 6/6 | — | 1.00 |  |  |
+| `id` | S | 131 | 117 | 94.6% | ✅ 4/4 | — | 1.00 |  |  |
+| `yes` | S | 84 | 146 | 96.0% | — | — | 1.00 |  |  |
+| `sleep` | S | 81 | 100 | 93.8% | — | — | 1.00 |  |  |
+| `ps` | S | 60 | 40 | 100.0% | — | — | 1.00 |  |  |
+| `cp` | S | 329 | 460 | 90.7% | ✅ 14/14 | — | 0.75 |  |  |
+| `fold` | S | 250 | 469 | 91.8% | ✅ 4/4 | — | 0.75 |  |  |
+| `head` | S | 210 | 528 | 94.3% | ✅ 4/4 | — | 0.75 |  |  |
+| `echo` | S | 194 | 258 | 97.8% | ✅ 11/11 | — | 0.75 |  |  |
+| `realpath` | S | 188 | 211 | 94.7% | ✅ 10/10 | — | 0.75 |  |  |
+| `hostid` | S | 160 | 284 | 96.3% | ✅ 1/1 | — | 0.75 |  |  |
+| `strings` | S | 152 | 223 | 91.5% | ✅ 1/1 | — | 0.75 |  |  |
+| `hostname` | S | 146 | 310 | 98.2% | ✅ 4/4 | — | 0.75 | KEEP ✅ | F1+F3: function seams, 98.2% |
+| `nl` | S | 142 | 182 | 97.1% | ✅ 4/4 | — | 0.75 |  |  |
+| `touch` | S | 142 | 302 | 91.3% | ✅ 3/3 | — | 0.75 |  |  |
+| `stat` | S | 141 | 115 | 100.0% | — | — | 0.75 |  |  |
+| `tee` | S | 129 | 185 | 92.3% | ✅ 2/2 | — | 0.75 |  |  |
+| `rev` | S | 126 | 139 | 98.2% | ✅ 4/4 | — | 0.75 |  |  |
+| `mv` | S | 112 | 246 | 96.0% | ✅ 14/14 | — | 0.75 |  |  |
+| `printenv` | S | 79 | 78 | 100.0% | — | — | 0.75 |  |  |
+| `basename` | S | 61 | 97 | 95.2% | ✅ 2/2 | — | 0.75 |  |  |
+| `kill` | S | 160 | 198 | 100.0% | — | — | 0.50 |  |  |
+| `tty` | S | 108 | 201 | 100.0% | — | — | 0.50 |  |  |
+| `mkfifo` | S | 81 | 99 | 100.0% | — | — | 0.50 |  |  |
+| `env` | S | 73 | 86 | 100.0% | — | — | 0.50 |  |  |
+| `logname` | S | 70 | 77 | 100.0% | — | — | 0.50 |  |  |
+| `whoami` | S | 66 | 130 | 100.0% | — | — | 0.50 | KEEP ✅ | F1+F3: userCurrent seam, 100% |
+| `link` | S | 64 | 91 | 100.0% | — | — | 0.50 |  |  |
+| `unlink` | S | 63 | 94 | 100.0% | — | — | 0.50 |  |  |
+| `truefalse` | S | 60 | 87 | 100.0% | ✅ 4/4 | — | 0.50 |  |  |
+| `sha512sum` | S | 59 | 176 | 100.0% | — | — | 0.50 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
+| `sha256sum` | S | 58 | 208 | 100.0% | — | — | 0.50 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
+| `sum` | S | 132 | 238 | 100.0% | ✅ 4/4 | — | 0.00 |  |  |
+| `sha3sum` | S | 114 | 294 | 100.0% | ✅ 2/2 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core + -a autodetect |
+| `pwd` | S | 102 | 219 | 100.0% | ✅ 1/1 | — | 0.00 |  |  |
+| `mkdir` | S | 79 | 138 | 100.0% | ✅ 2/2 | — | 0.00 |  |  |
+| `ln` | S | 78 | 122 | 100.0% | ✅ 6/6 | — | 0.00 |  |  |
+| `rmdir` | S | 69 | 133 | 100.0% | ✅ 1/1 | — | 0.00 |  |  |
+| `sha1sum` | S | 59 | 177 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
+| `md5sum` | S | 58 | 202 | 100.0% | ✅ 2/2 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
+| `bunzip2` | S | 51 | 194 | 100.0% | ✅ 11/11 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov |
+| `uncompress` | S | 51 | 179 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP ✅ | F7: shared decompress core + recover/log suppress, 100% cov |
+| `dirname` | S | 49 | 66 | 100.0% | ✅ 7/7 | — | 0.00 |  |  |
+| `unlzma` | S | 47 | 204 | 100.0% | ✅ 3/3 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov |
+| `bzcat` | S | 39 | 142 | 100.0% | ✅ 3/3 | — | 0.00 | KEEP ✅ | F7: shared decompress core (cat mode), 100% cov |
+
+### 5a. Pre-Audit Score (preflight)
+
+The score ranks commands by how likely they are to need a refactor or an improvement.
+A high score is a **priority signal, not a verdict**. The range is 0–10.
+
+| Signal | Points | Source |
+|--------|-------:|--------|
+| Coverage < 80% | +3.0 | `go test -cover` |
+| Coverage 80–84.9% | +2.0 | `go test -cover` |
+| Coverage 85–89.9% | +1.0 | `go test -cover` |
+| Coverage 90–99.9% | +0.5 | `go test -cover` |
+| Size XL | +2.5 | LOC |
+| Size L | +1.5 | LOC |
+| Size M | +0.75 | LOC |
+| Size S | +0.25 | LOC |
+| T-LOC / LOC < 0.4 | +1.0 | LOC |
+| T-LOC / LOC < 0.6 | +0.75 | LOC |
+| T-LOC / LOC < 0.8 | +0.5 | LOC |
+| T-LOC / LOC < 1.0 | +0.25 | LOC |
+| Hardcoded `os.Stdout`/`os.Stderr` in the run path | +1.5 | repo scan |
+| JSON-RPC not covered (❌) | +0.75 | matrix |
+| JSON-RPC partial (⚠️) | +0.5 | matrix |
+| BusyBox failure | +1.5 | `make testsuite` |
+| BusyBox failure, explicitly deferred | +0.5 | [wiki/deferred.md](deferred.md) |
+| BusyBox root skip, or no BusyBox test | +0.25 | matrix |
+
+**Exemption rule:** a command with **100% coverage and a passing BusyBox suite scores 0**.
+Such a command is validated, so it is the weakest candidate for change. 13 commands qualify.
+
+**Preflight result:** 1 command ≥ 5.0 · 13 commands 3.0–3.9 · 21 commands 2.0–2.9 ·
+80 commands < 2.0 (13 of those are exempt).
+
+**Top candidates (PreAudit ≥ 3.0):** `bc`, `sed`, `printf`, `date`, `patch`, `mount`, `tar`,
+`hexdump`, `dc`, `start-stop-daemon`, `unzip`, `cpio`, `uudecode`, `tsort`. All 14 are inspected.
+Their verdicts and notes are in the matrix above. Two are `REFACTOR` (`bc`, `dc`), ten are
+`IMPROVE`, and two are `KEEP` (`mount`, `cpio` — their scores came from tests that need root,
+not from the code).
+
+### 5b. Preflight Findings
+
+#### F8 — Hand-rolled parser helpers duplicated across 4 packages ⏳ OPEN
+`bc`, `expr`, `sed`, and `testcmd` each define `peek`, `next`, `parseOr`, `parseAnd`, and
+`parsePrimary`. The lexer and operator-precedence logic is repeated in all four. This is the
+highest-value structural item the preflight found. Move the logic to a shared expression core in
+[pkg/common](../pkg/common).
+
+#### F9 — `big.Rat` helpers duplicated between `bc` and `dc` ⏳ OPEN
+`ratToInt64`, `truncateRat`, and `formatRat` exist in both [pkg/bc](../pkg/bc) and
+[pkg/dc](../pkg/dc), with the same truncate-toward-zero semantics. Move them to one core, for
+example `pkg/common/rat.go`. This finding sets the verdict for both commands.
+
+#### F10 — The JSON contract breaks on flag-parse errors in 83 of 93 commands ⏳ OPEN
+`--json` must return the JSON envelope. A bad flag is detected before `jsonMode` is known, so a
+command must pre-scan the arguments. Only 10 packages do. The other 83 print plain text.
+For example, `goposix unzip --json --nope` returns the JSON envelope, but
+`goposix tsort --json --nope` returns `tsort: unknown flag: --nope`. Add the pre-scan and the
+flag-error block to [pkg/common](../pkg/common) and use it in every command.
+
+#### F11 — Escape-sequence logic is duplicated three times ⏳ OPEN
+[pkg/printf/printf.go](../pkg/printf/printf.go) holds two near-identical processors
+(`processEscapes`, 88 lines, and `processEscapesForB`, 77 lines). [pkg/echo](../pkg/echo) holds a
+third copy. Merge them into one helper with a `\c` option.
+
+#### P1 — `logger` uses a package-global writer ⏳ OPEN
+[pkg/logger/logger.go](../pkg/logger/logger.go) keeps a package-level `stderrWriter` that defaults
+to `os.Stderr` and is swapped by `run()`. This is process-local mutable state and violates audit
+item 10 (daemon safety). Replace it with an injected writer.
+
+#### P2 — Matrix data was stale ✅ ACKNOWLEDGED (plan fixed; companion matrix still stale)
+Coverage, LOC, and tier values did not match the tree. The `start-stop-daemon` row was also
+misaligned (its `Verdict` text sat in the IO column). Both are corrected here.
+[wiki/test_coverage_matrix.md](test_coverage_matrix.md) is stale in the same way (for example
+`chmod` 68.3% vs 92.7% measured, `cp` 77.6% vs 90.7%). This preflight takes only the BusyBox
+column from it. Refreshing the companion matrix is open work.
+
+#### P3 — `awk` BusyBox failures are deferred ✅ ACKNOWLEDGED
+The 17 `awk` failures are upstream goawk engine limits, not refactor work. The score reflects this.
+
+#### P5 — [AGENTS.md](../AGENTS.md) BusyBox counts are stale ✅ ACKNOWLEDGED
+AGENTS.md §5 reports 7 failures in `dc` and 7 in `tar`. The canonical matrix
+([wiki/test_coverage_matrix.md](test_coverage_matrix.md)) and isolated re-runs both report 0
+(`dc` 36/36, `tar` 33/33). Update AGENTS.md from the matrix.
+
+#### P4 — Concurrent `make testsuite` runs corrupt each other ⏳ OPEN (workflow hazard)
+[runtest](../test/busybox_testsuite/runtest) deletes and re-creates the shared
+`runtest-tempdir-links` directory, makes a shared `busybox` symlink, and rebuilds `goposix`.
+Two runs at the same time therefore interfere. Observed during this preflight: a full run reported
+92 failures while another agent worked in the same checkout. A re-run of one applet in isolation
+passed 19/19. Treat a high failure count as suspicious when more than one agent is active, and
+re-run the applet alone before reporting a regression.
 
 ## 6. Definition of Done
 
-- Every row in the matrix has a verdict and notes.
-- Findings F1–F7 are resolved or explicitly deferred with reasons.
+- Every row has a verdict (blank = pending) and notes.
+- No row shows `REFACTOR` or `IMPROVE` for a finding that is already complete.
+- Findings F1–F11 and P1 are resolved or explicitly deferred with reasons.
+- Commands with `PreAudit = 0` (100% coverage and a passing BusyBox suite) need no change.
+- The `PreAudit` score and the matrix data match the current tree.
 - `make test`, `make testsuite`, `go vet`, `go fmt` all pass.
 - Overall coverage stays ≥ 80% (CI gate).
 - [wiki/test_coverage_matrix.md](test_coverage_matrix.md) and [wiki/todos.md](todos.md) updated.
