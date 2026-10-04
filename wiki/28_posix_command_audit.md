@@ -146,7 +146,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 
 | Command | Tier | LOC | T-LOC | Cov | BB | IO | PreAudit | Verdict | Notes |
 |---------|:----:|----:|------:|----:|:--:|:--:|:--------:|:-------:|-------|
-| `bc` | XL | 2587 | 590 | 83.7% | ✅ 81/81 | — | 5.50 | REFACTOR | F6 ✅ (error, not panic) · Preflight: `eval` 486 lines, `NextToken` 284 lines · F8 lexer helpers and F9 `big.Rat` helpers duplicated with `dc` · no JSON schema or daemon test · `--json` ignored on flag errors |
+| `bc` | XL | 2587 | 590 | 83.7% | ✅ 81/81 | — | 5.50 | REFACTOR | F6 ✅ NewInterpreter returns error (no panic); mathLibSource seam · Preflight: `eval` 486 lines, `NextToken` 284 lines · F8 lexer helpers and F9 `big.Rat` helpers duplicated with `dc` · no JSON schema or daemon test · `--json` ignored on flag errors |
 | `sed` | L | 1181 | 1060 | 80.1% | ✅ 103/103 | — | 3.75 | IMPROVE | Preflight: `parseInstruction` 266 lines, `execFlat` 184 lines · F8 lexer cursor · coverage 80.1% is the lowest of the large tools · `--json` ignored on flag errors |
 | `printf` | L | 749 | 744 | 83.7% | ✅ 26/26 | — | 3.75 | IMPROVE | Preflight: `processEscapes` (88 lines) and `processEscapesForB` (77 lines) are near-duplicates (F11) · `--json` ignored on flag errors |
 | `date` | L | 746 | 661 | 83.8% | ✅ 7/7 | — | 3.75 | IMPROVE | Preflight: `parsePOSIXTZ` is a 263-line closure nest · lift the inner funcs for testability · `--json` ignored on flag errors |
@@ -209,18 +209,18 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `pidof` | S | 148 | 114 | 96.7% | ✅ 4/4 | — | 1.25 | IMPROVE | Preflight: no JSON schema · `run` 112 lines |
 | `uptime` | S | 146 | 169 | 88.5% | ✅ 1/1 | — | 1.25 | IMPROVE | Preflight: no JSON schema · `run` 96 lines |
 | `chgrp` | S | 86 | 77 | 96.7% | — | — | 1.25 | IMPROVE | Preflight: `lookupGID` is byte-identical to `chown`'s (F13) · schema and daemon test present |
-| `split` | S | 273 | 375 | 92.6% | — | — | 1.00 |  |  |
-| `cut` | S | 266 | 219 | 90.8% | ✅ 25/25 | — | 1.00 |  |  |
-| `tree` | S | 248 | 212 | 98.0% | ✅ 4/4 | — | 1.00 |  |  |
-| `xargs` | S | 213 | 177 | 94.1% | ✅ 12/12 | — | 1.00 |  |  |
-| `shell` | S | 187 | 229 | 90.2% | — | — | 1.00 |  |  |
-| `chmod` | S | 172 | 193 | 92.7% | — | — | 1.00 |  |  |
-| `cksum` | S | 155 | 157 | 94.5% | — | — | 1.00 |  |  |
-| `du` | S | 145 | 133 | 91.9% | ✅ 6/6 | — | 1.00 |  |  |
-| `id` | S | 131 | 117 | 94.6% | ✅ 4/4 | — | 1.00 |  |  |
-| `yes` | S | 84 | 146 | 96.0% | — | — | 1.00 |  |  |
-| `sleep` | S | 81 | 100 | 93.8% | — | — | 1.00 |  |  |
-| `ps` | S | 60 | 40 | 100.0% | — | — | 1.00 |  |  |
+| `split` | S | 273 | 375 | 92.6% | — | — | 1.00 | KEEP | Preflight: clean layering (`Run` library plus `run` CLI) · schema and daemon test present |
+| `cut` | S | 266 | 219 | 90.8% | ✅ 25/25 | — | 1.00 | KEEP | Preflight: clean layering (`Run` library plus `cutRun` CLI) · schema and daemon test present |
+| `tree` | S | 248 | 212 | 98.0% | ✅ 4/4 | — | 1.00 | IMPROVE | Preflight: daemon test present but no JSON schema · `buildTree` 87 lines |
+| `xargs` | S | 213 | 177 | 94.1% | ✅ 12/12 | — | 1.00 | IMPROVE | Preflight: `xargsRun` is 159 lines with 29 branches · schema and daemon test present |
+| `shell` | S | 187 | 229 | 90.2% | — | — | 1.00 | IMPROVE | Preflight: no `--json` support (`--json` is read as a file name); the daemon test asserts nothing; no schema (F15) |
+| `chmod` | S | 172 | 193 | 92.7% | — | — | 1.00 | KEEP | Preflight: clean; `applySymbolicMode` 63 lines · schema and daemon test present |
+| `cksum` | S | 155 | 157 | 94.5% | — | — | 1.00 | KEEP | Preflight: clean; `Run` library layer plus a `posixCRC` helper · schema and daemon test present |
+| `du` | S | 145 | 133 | 91.9% | ✅ 6/6 | — | 1.00 | IMPROVE | Preflight: `humanSize` duplicates `ls`'s with a different format (F14) · schema and daemon test present |
+| `id` | S | 131 | 117 | 94.6% | ✅ 4/4 | — | 1.00 | KEEP | Preflight: clean; single 97-line `run` · schema and daemon test present |
+| `yes` | S | 84 | 146 | 96.0% | — | — | 1.00 | KEEP | Preflight: clean, 47-line `run` · schema and daemon test present |
+| `sleep` | S | 81 | 100 | 93.8% | — | — | 1.00 | KEEP | Preflight: clean, 53-line `run` · schema and daemon test present |
+| `ps` | S | 60 | 40 | 100.0% | — | — | 1.00 | KEEP | Preflight: clean, 30-line `run`, 100% coverage · schema and daemon test present |
 | `cp` | S | 329 | 460 | 90.7% | ✅ 14/14 | — | 0.75 |  |  |
 | `fold` | S | 250 | 469 | 91.8% | ✅ 4/4 | — | 0.75 |  |  |
 | `head` | S | 210 | 528 | 94.3% | ✅ 4/4 | — | 0.75 |  |  |
@@ -248,17 +248,17 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `truefalse` | S | 60 | 87 | 100.0% | ✅ 4/4 | — | 0.50 |  |  |
 | `sha512sum` | S | 59 | 176 | 100.0% | — | — | 0.50 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
 | `sha256sum` | S | 58 | 208 | 100.0% | — | — | 0.50 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
-| `sum` | S | 132 | 238 | 100.0% | ✅ 4/4 | — | 0.00 |  |  |
+| `sum` | S | 132 | 238 | 100.0% | ✅ 4/4 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
 | `sha3sum` | S | 114 | 294 | 100.0% | ✅ 2/2 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core + -a autodetect |
-| `pwd` | S | 102 | 219 | 100.0% | ✅ 1/1 | — | 0.00 |  |  |
-| `mkdir` | S | 79 | 138 | 100.0% | ✅ 2/2 | — | 0.00 |  |  |
-| `ln` | S | 78 | 122 | 100.0% | ✅ 6/6 | — | 0.00 |  |  |
-| `rmdir` | S | 69 | 133 | 100.0% | ✅ 1/1 | — | 0.00 |  |  |
+| `pwd` | S | 102 | 219 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
+| `mkdir` | S | 79 | 138 | 100.0% | ✅ 2/2 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
+| `ln` | S | 78 | 122 | 100.0% | ✅ 6/6 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
+| `rmdir` | S | 69 | 133 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
 | `sha1sum` | S | 59 | 177 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
 | `md5sum` | S | 58 | 202 | 100.0% | ✅ 2/2 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
 | `bunzip2` | S | 51 | 194 | 100.0% | ✅ 11/11 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov |
 | `uncompress` | S | 51 | 179 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP ✅ | F7: shared decompress core + recover/log suppress, 100% cov |
-| `dirname` | S | 49 | 66 | 100.0% | ✅ 7/7 | — | 0.00 |  |  |
+| `dirname` | S | 49 | 66 | 100.0% | ✅ 7/7 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
 | `unlzma` | S | 47 | 204 | 100.0% | ✅ 3/3 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov |
 | `bzcat` | S | 39 | 142 | 100.0% | ✅ 3/3 | — | 0.00 | KEEP ✅ | F7: shared decompress core (cat mode), 100% cov |
 
@@ -337,6 +337,18 @@ Add the schema and a fixture for each command. `make validate-schemas` covers th
 [pkg/common](../pkg/common) as `LookupUID` and `LookupGID`. This finding sets the verdict for both
 commands.
 
+#### F14 — Human-readable size formatting duplicated between `ls` and `du` ⏳ OPEN
+[pkg/ls](../pkg/ls) and [pkg/du](../pkg/du) each define `humanSize`, with different output
+(`1.0K` versus `1K`). Move one helper to [pkg/common](../pkg/common) with a format option. This
+finding sets the verdict for both commands.
+
+#### F15 — Two commands break the "`--json` for all" contract ⏳ OPEN
+[wiki/json_schema.md](json_schema.md) states that all utilities support `--json`. `dd` is the
+documented exception. `shell` is an undocumented one: `goposix shell --json -c 'echo hi'` treats
+`--json` as a file name and fails. The shell daemon test only logs its result and asserts nothing,
+so the gap stays hidden. Either add `--json` to `shell` and assert it in the test, or document the
+exemption in [wiki/json_schema.md](json_schema.md).
+
 #### P1 — `logger` uses a package-global writer ⏳ OPEN
 [pkg/logger/logger.go](../pkg/logger/logger.go) keeps a package-level `stderrWriter` that defaults
 to `os.Stderr` and is swapped by `run()`. This is process-local mutable state and violates audit
@@ -373,7 +385,7 @@ one place only. The same rule applies to the coverage gate: quote the gate, not 
 
 - Every row has a verdict (blank = pending) and notes.
 - No row shows `REFACTOR` or `IMPROVE` for a finding that is already complete.
-- Findings F1–F13 and P1 are resolved or explicitly deferred with reasons.
+- Findings F1–F15 and P1 are resolved or explicitly deferred with reasons.
 - Commands with `PreAudit = 0` (100% coverage and a passing BusyBox suite) need no change.
 - The `PreAudit` score and the matrix data match the current tree.
 - `make test`, `make testsuite`, `go vet`, `go fmt` all pass.
