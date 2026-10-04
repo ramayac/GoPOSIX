@@ -2,6 +2,7 @@ package date
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -657,5 +658,21 @@ func TestRunInvalidDateString(t *testing.T) {
 	}
 	if !strings.Contains(errBuf.String(), "invalid date") {
 		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIJsonBadFlag(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := run([]string{"--json", "--nope"}, nil, &stdout, &stderr, "")
+	if code == 0 {
+		t.Fatal("expected non-zero exit for bad flag")
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope on stderr, got %q: %v", stderr.String(), err)
+	}
+	if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "FLAG_ERROR" {
+		t.Fatalf("expected FLAG_ERROR envelope, got %q", stderr.String())
 	}
 }

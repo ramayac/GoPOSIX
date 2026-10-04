@@ -607,3 +607,15 @@ func TestCLIJsonBadFlag(t *testing.T) {
 		t.Fatalf("expected FLAG_ERROR envelope, got %q", stderr.String())
 	}
 }
+
+func TestCLIPlainBadFlag(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := bcRun([]string{"--nope"}, &stdout, &stderr, nil, "")
+	if code != 2 {
+		t.Fatalf("exit code = %d, want 2", code)
+	}
+	if got := stderr.String(); got != "bc: unknown flag: --nope\n" {
+		t.Fatalf("stderr = %q", got)
+	}
+}
