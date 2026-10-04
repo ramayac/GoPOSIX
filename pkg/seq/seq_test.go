@@ -2,6 +2,7 @@ package seq
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -118,6 +119,37 @@ func TestSeqErrorsAndBounds(t *testing.T) {
 	code = run([]string{"1", "2", "abc"}, nil, &stdout, &stderr, "")
 	if code != 1 {
 		t.Errorf("expected exit 1, got %d", code)
+	}
+}
+
+func TestSeqJSONErrors(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+
+	// Invalid number of arguments in JSON mode
+	code := run([]string{"--json"}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope on stderr, got %q: %v", stderr.String(), err)
+	}
+	if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "INVALID_ARGUMENT" {
+		t.Fatalf("expected INVALID_ARGUMENT envelope, got %q", stderr.String())
+	}
+
+	// Non-numeric argument in JSON mode
+	stdout.Reset()
+	stderr.Reset()
+	code = run([]string{"--json", "abc"}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope on stderr, got %q: %v", stderr.String(), err)
+	}
+	if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "INVALID_ARGUMENT" {
+		t.Fatalf("expected INVALID_ARGUMENT envelope, got %q", stderr.String())
 	}
 }
 

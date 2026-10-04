@@ -2,6 +2,7 @@ package pidof
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -102,6 +103,21 @@ func TestPidofEdgeCases(t *testing.T) {
 	gotExit = run([]string{}, nil, &stdout, &stderr, "")
 	if gotExit != 1 {
 		t.Errorf("expected exit 1 for missing operand, got %d", gotExit)
+	}
+
+	// 2b. Missing Operand in JSON mode returns the envelope
+	stdout.Reset()
+	stderr.Reset()
+	gotExit = run([]string{"--json"}, nil, &stdout, &stderr, "")
+	if gotExit != 1 {
+		t.Errorf("expected exit 1 for missing operand, got %d", gotExit)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope on stderr, got %q: %v", stderr.String(), err)
+	}
+	if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "MISSING_ARGUMENT" {
+		t.Fatalf("expected MISSING_ARGUMENT envelope, got %q", stderr.String())
 	}
 
 	// 3. Very unlikely binary name

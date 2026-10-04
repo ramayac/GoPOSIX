@@ -42,7 +42,11 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	posArgs := flags.Positional
 	if len(posArgs) != 1 {
-		fmt.Fprintln(stderr, "wget: missing URL")
+		if jsonMode {
+			common.RenderError("wget", 1, "MISSING_ARGUMENT", "missing URL", true, stderr)
+		} else {
+			fmt.Fprintln(stderr, "wget: missing URL")
+		}
 		return 1
 	}
 

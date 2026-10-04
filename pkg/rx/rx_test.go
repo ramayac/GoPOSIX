@@ -115,6 +115,22 @@ func TestRxJSONMode(t *testing.T) {
 	}
 }
 
+func TestRxJSONModeError(t *testing.T) {
+	// No sender: the handshake bytes must not pollute stdout, and the
+	// error must arrive as a JSON envelope on stderr.
+	var stdout, stderr strings.Builder
+	rc := run([]string{"--json", "/tmp/rx.out"}, strings.NewReader(""), &stdout, &stderr, "")
+	if rc != 1 {
+		t.Fatalf("JSON error mode returned %d, want 1", rc)
+	}
+	if stdout.Len() != 0 {
+		t.Errorf("expected empty stdout in JSON error mode, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), `"error":{`) || !strings.Contains(stderr.String(), "RECEIVE_ERROR") {
+		t.Errorf("expected JSON error envelope on stderr, got %q", stderr.String())
+	}
+}
+
 func TestRxMissingFile(t *testing.T) {
 	var stdout, stderr strings.Builder
 	rc := run(nil, strings.NewReader(""), &stdout, &stderr, "")

@@ -160,8 +160,12 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		return 1
 	}
 
-	bytesWritten, err := receiveFile(stdin, stdout, posArgs[0])
+	bytesWritten, err := receiveFile(stdin, protocolOut(stdout, jsonMode), posArgs[0])
 	if err != nil {
+		if jsonMode {
+			common.RenderError("rx", 1, "RECEIVE_ERROR", err.Error(), true, stderr)
+			return 1
+		}
 		fmt.Fprintf(stderr, "rx: %v\n", err)
 		return 1
 	}
@@ -169,6 +173,15 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	result := RxResult{FileName: posArgs[0], BytesWritten: bytesWritten}
 	common.Render("rx", result, jsonMode, stdout, func() {})
 	return 0
+}
+
+func protocolOut(stdout io.Writer, jsonMode bool) io.Writer {
+	// In JSON mode stdout must carry only the envelope. The XMODEM
+	// handshake bytes go to stdout in text mode (serial-line use).
+	if jsonMode {
+		return io.Discard
+	}
+	return stdout
 }
 
 func init() {

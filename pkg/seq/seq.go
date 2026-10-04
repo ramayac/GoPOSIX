@@ -157,7 +157,11 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	posArgs := flags.Positional
 	if len(posArgs) < 1 || len(posArgs) > 3 {
-		fmt.Fprintf(stderr, "seq: invalid number of arguments\n")
+		if jsonMode {
+			common.RenderError("seq", 1, "INVALID_ARGUMENT", "invalid number of arguments", true, stderr)
+		} else {
+			fmt.Fprintf(stderr, "seq: invalid number of arguments\n")
+		}
 		return 1
 	}
 
@@ -178,17 +182,29 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	first, firstPrec, firstWidth, err := parseNum(firstStr)
 	if err != nil {
-		fmt.Fprintf(stderr, "seq: invalid argument %s\n", firstStr)
+		if jsonMode {
+			common.RenderError("seq", 1, "INVALID_ARGUMENT", fmt.Sprintf("invalid argument %s", firstStr), true, stderr)
+		} else {
+			fmt.Fprintf(stderr, "seq: invalid argument %s\n", firstStr)
+		}
 		return 1
 	}
 	step, stepPrec, _, err := parseNum(stepStr)
 	if err != nil {
-		fmt.Fprintf(stderr, "seq: invalid argument %s\n", stepStr)
+		if jsonMode {
+			common.RenderError("seq", 1, "INVALID_ARGUMENT", fmt.Sprintf("invalid argument %s", stepStr), true, stderr)
+		} else {
+			fmt.Fprintf(stderr, "seq: invalid argument %s\n", stepStr)
+		}
 		return 1
 	}
 	last, _, lastWidth, err := parseNum(lastStr)
 	if err != nil {
-		fmt.Fprintf(stderr, "seq: invalid argument %s\n", lastStr)
+		if jsonMode {
+			common.RenderError("seq", 1, "INVALID_ARGUMENT", fmt.Sprintf("invalid argument %s", lastStr), true, stderr)
+		} else {
+			fmt.Fprintf(stderr, "seq: invalid argument %s\n", lastStr)
+		}
 		return 1
 	}
 

@@ -24,6 +24,7 @@ import (
 
 	"github.com/ramayac/goposix/internal/dispatch"
 	"github.com/ramayac/goposix/internal/shell"
+	"github.com/ramayac/goposix/pkg/common"
 )
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
@@ -41,18 +42,47 @@ func shellRun(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd stri
 	}
 
 	var inlineScript string
+	jsonMode := false
 	positional := []string{}
+
+	// finish writes the script result. In JSON mode the script output is
+	// captured inside the envelope data instead of going to stdout directly.
+	finish := func(result shell.ExecResult) int {
+		exit := int(result.ExitCode)
+		if jsonMode {
+			common.Render("shell", struct {
+				ExitCode int    `json:"exitCode"`
+				Stdout   string `json:"stdout"`
+				Stderr   string `json:"stderr"`
+			}{ExitCode: exit, Stdout: result.Stdout, Stderr: result.Stderr}, true, stdout, nil)
+			return exit
+		}
+		fmt.Fprint(stdout, result.Stdout)
+		if result.Stderr != "" {
+			fmt.Fprint(stderr, result.Stderr)
+		}
+		return exit
+	}
 
 	i := 0
 	for i < len(args) {
 		a := args[i]
+		if a == "--json" {
+			jsonMode = true
+			i++
+			continue
+		}
 		if a == "-c" {
 			if i+1 < len(args) {
 				inlineScript = args[i+1]
 				i += 2
 				continue
 			}
-			fmt.Fprintln(stderr, "shell: -c requires an argument")
+			if jsonMode {
+				common.RenderError("shell", 2, "MISSING_ARGUMENT", "-c requires an argument", true, stderr)
+			} else {
+				fmt.Fprintln(stderr, "shell: -c requires an argument")
+			}
 			return 2
 		}
 		if a == "--help" || a == "-h" {
@@ -81,27 +111,21 @@ Options:
 	switch {
 	case inlineScript != "":
 		script = inlineScript
-		result := shell.Exec(script, "", nil)
-		fmt.Fprint(stdout, result.Stdout)
-		if result.Stderr != "" {
-			fmt.Fprint(stderr, result.Stderr)
-		}
-		return int(result.ExitCode)
+		return finish(shell.Exec(script, "", nil))
 
 	case len(positional) > 0:
 		// Script file mode
 		data, err := os.ReadFile(positional[0])
 		if err != nil {
-			fmt.Fprintf(stderr, "shell: %v\n", err)
+			if jsonMode {
+				common.RenderError("shell", 1, "SHELL_ERROR", err.Error(), true, stderr)
+			} else {
+				fmt.Fprintf(stderr, "shell: %v\n", err)
+			}
 			return 1
 		}
 		script = string(data)
-		result := shell.Exec(script, "", nil)
-		fmt.Fprint(stdout, result.Stdout)
-		if result.Stderr != "" {
-			fmt.Fprint(stderr, result.Stderr)
-		}
-		return int(result.ExitCode)
+		return finish(shell.Exec(script, "", nil))
 
 	default:
 		// Check if stdin is a terminal (only possible when stdin is an *os.File).
@@ -112,16 +136,15 @@ Options:
 			// Pipe mode: read all stdin
 			data, err := io.ReadAll(stdin)
 			if err != nil {
-				fmt.Fprintf(stderr, "shell: %v\n", err)
+				if jsonMode {
+					common.RenderError("shell", 1, "SHELL_ERROR", err.Error(), true, stderr)
+				} else {
+					fmt.Fprintf(stderr, "shell: %v\n", err)
+				}
 				return 1
 			}
 			script = string(data)
-			result := shell.Exec(script, "", nil)
-			fmt.Fprint(stdout, result.Stdout)
-			if result.Stderr != "" {
-				fmt.Fprint(stderr, result.Stderr)
-			}
-			return int(result.ExitCode)
+			return finish(shell.Exec(script, "", nil))
 		}
 	}
 	_ = script // used above in switch cases

@@ -132,8 +132,9 @@ func Run() (WhoResult, error) {
 		}
 	}
 
-	// If no utmp file found, return empty result
-	return WhoResult{Users: nil, Count: 0}, nil
+	// If no utmp file found, return an empty result. The slice must stay
+	// non-nil so --json emits "users":[] and matches the schema.
+	return WhoResult{Users: []WhoUser{}, Count: 0}, nil
 }
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
