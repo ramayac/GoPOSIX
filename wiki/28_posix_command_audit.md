@@ -90,15 +90,20 @@ SIG-prefix tolerance, case-insensitivity, whitespace trimming, numeric parsing. 
 format unchanged. Tests extended with signals the old parser rejected (CONT, STOP, PWR, SYS,
 WINCH, SIGPIPE, lowercase, padded numbers).
 
-### F6 — `panic` in bc startup
+### F6 — `panic` in bc startup ✅ DONE
 
-[pkg/bc/bc.go](../pkg/bc/bc.go) calls `panic` if the embedded math library fails to load at init.
-Fail-fast is acceptable for an embedded asset, but a returned error is cleaner. Decide during audit.
+`NewInterpreter` now returns `(*Interpreter, error)` instead of calling `panic` twice.
+`Run` propagates the error. `bcRun` already renders it (`RenderError` in JSON mode).
+A `mathLibSource` seam lets tests break the embedded library. Coverage 83.6%.
 
-### F7 — Compression family overlap
+### F7 — Compression family overlap ✅ DONE
 
-`gzip`, `uncompress`, `unlzma`, `bunzip2`, `bzcat` all wrap stdlib `compress/*` readers. Check for
-duplicated wrapper logic (header checks, multi-stream handling).
+New [pkg/common/decompress.go](../pkg/common/decompress.go) provides `DecompressMode`.
+`unlzma`, `bunzip2`, `uncompress`, `bzcat` are thin wrappers: 950 → ~230 LOC (−76%).
+Per-tool behaviors preserved: suffix tables, `-c/-f/-k/-q` flags, quiet mode, corrupt-data
+messages, `dcompress` panic recovery, log suppression, cat mode. CLI output parity verified
+against the pre-refactor binary. All four packages now at 100% coverage.
+`gzip` stays separate: dual compress/decompress mode, different logic.
 
 ## 4. Phases & Priorities
 
@@ -113,7 +118,7 @@ duplicated wrapper logic (header checks, multi-stream handling).
 | 3 | F3 coverage drive | 4 | `make cover-pkg` ≥ 80% | ✅ DONE (whoami 100, hostname 98.2, diff 89.5, gzip 87.3) |
 | 4 | Deep audit of XL/L commands (one PR each) | 24 | per-command checklist + suites | ▶️ NEXT |
 | 5 | Sweep of M/S commands (batched) | 87 | per-command checklist + suites | ⏳ pending |
-| 6 | Decide F6/F7 and close all open verdicts | — | matrix 100% filled | ⏳ pending |
+| 6 | Decide F6/F7 and close all open verdicts | — | matrix 100% filled | ⚠️ F6+F7 done; matrix still filling |
 
 ## 5. Audit Matrix
 
@@ -124,7 +129,7 @@ duplicated wrapper logic (header checks, multi-stream handling).
 
 | Command | Tier | LOC | T-LOC | Cov | BB | IO | Verdict | Notes |
 |---------|:----:|----:|------:|----:|:--:|:--:|:-------:|-------|
-| `bc` | XL | 3128 | 547 | 83.4% | ✅ 81/81 | — |  |  |
+| `bc` | XL | 3128 | 547 | 83.6% | ✅ 81/81 | — | IMPROVE | F6: NewInterpreter returns error (no panic); mathLibSource seam |
 | `tar` | XL | 2635 | 1521 | 82.1% | ✅ 31/31 | — |  |  |
 | `sed` | XL | 2241 | 1060 | 80.1% | ✅ 103/103 | — |  |  |
 | `dc` | XL | 1777 | 628 | 89.0% | ✅ 36/36 | — |  |  |
@@ -171,16 +176,16 @@ duplicated wrapper logic (header checks, multi-stream handling).
 | `cut` | M | 485 | 219 | 90.8% | ✅ 25/25 | — |  |  |
 | `cmp` | M | 479 | 286 | 82.3% | ✅ 1/1 | — |  |  |
 | `taskset` | M | 476 | 191 | 86.4% | ✅ 3/3 | — |  |  |
-| `uncompress` | M | 469 | 179 | 84.1% | ✅ 1/1 | — |  |  |
+| `uncompress` | S | 60 | 179 | 100.0% | ✅ 1/1 | — | REFACTOR | F7: shared decompress core + recover/log suppress, 100% cov |
 | `paste` | M | 467 | 240 | 88.5% | ✅ 5/5 | — |  |  |
 | `rx` | M | 461 | 279 | 86.2% | ✅ 1/1 | — |  |  |
 | `tree` | M | 460 | 212 | 98.0% | ✅ 4/4 | — |  |  |
 | `readlink` | M | 459 | 251 | 81.2% | ✅ 6/6 | — |  |  |
 | `mdev` | M | 455 | 146 | 87.4% | ⚠️ 0/12 (12 skip) | — |  |  |
-| `unlzma` | M | 454 | 204 | 83.3% | ✅ 3/3 | — |  |  |
+| `unlzma` | S | 54 | 204 | 100.0% | ✅ 3/3 | — | REFACTOR | F7: shared decompress core, 100% cov |
 | `echo` | M | 452 | 258 | 97.8% | ✅ 11/11 | — |  |  |
 | `hostid` | M | 444 | 284 | 96.3% | ✅ 1/1 | — |  |  |
-| `bunzip2` | M | 442 | 194 | 82.7% | ✅ 11/11 | — |  |  |
+| `bunzip2` | S | 57 | 194 | 100.0% | ✅ 11/11 | — | REFACTOR | F7: shared decompress core, 100% cov |
 | `mkfs_minix` | M | 433 | 121 | 86.4% | — | — |  |  |
 | `uniq` | M | 432 | 239 | 88.4% | ✅ 15/15 | — |  |  |
 | `shell` | M | 416 | 229 | 90.2% | — | — |  |  |
@@ -206,7 +211,7 @@ duplicated wrapper logic (header checks, multi-stream handling).
 | `tee` | S | 314 | 185 | 92.3% | ✅ 2/2 | — |  |  |
 | `tty` | S | 309 | 201 | 100.0% | — | — |  |  |
 | `hostname` | S | 305 | 166 | 98.2% | ✅ 4/4 | — | IMPROVE | F1+F3: function seams, 98.2% |
-| `bzcat` | S | 304 | 142 | 90.6% | ✅ 3/3 | — |  |  |
+| `bzcat` | S | 52 | 142 | 100.0% | ✅ 3/3 | — | REFACTOR | F7: shared decompress core (cat mode), 100% cov |
 | `cksum` | S | 290 | 135 | 85.5% | — | — |  |  |
 | `expand` | S | 271 | 149 | 81.4% | ✅ 3/3 | — |  |  |
 | `du` | S | 268 | 122 | 88.7% | ✅ 6/6 | — |  |  |

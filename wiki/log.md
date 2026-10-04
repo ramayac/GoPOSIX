@@ -4,6 +4,13 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-10-03] refactor | F6 + F7 resolved: bc panic removal, shared decompression core
+
+- **F6:** `pkg/bc` `NewInterpreter` now returns `(*Interpreter, error)` — the two `panic` calls in the math-library load path are gone. `Run` propagates the error; `bcRun` renders it. New `mathLibSource` data seam lets tests break the embedded library. Coverage 83.6%.
+- **F7:** New `pkg/common/decompress.go` (`DecompressMode`). `unlzma`, `bunzip2`, `uncompress`, `bzcat` are thin wrappers: 950 → ~230 LOC (−76%). Per-tool behaviors preserved (suffix tables, -c/-f/-k/-q, quiet, corrupt-data messages, dcompress panic recovery, log suppression, cat mode). All four packages at 100% coverage. `gzip` stays separate (dual-mode logic).
+- Verification: unit green, vet/fmt clean, overall coverage 86.3%, BusyBox 870/17/30 (17 awk only), compliance scripts pass (bunzip2 3/3, unlzma 2/2, bzcat 2/2; uncompress skipped — host lacks compress). CLI parity verified against the pre-refactor binary.
+- `pkg/common` recovered to 91.0% with direct `DecompressMode` tests.
+
 ## [2026-10-03] refactor | F5: start-stop-daemon uses common.ParseSignal (audit phase 2 complete)
 
 - Deleted the local 7-name `parseSignal` in `pkg/start-stop-daemon`; call site now uses `common.ParseSignal` (full 31-signal table, SIG-prefix tolerance, case-insensitive, whitespace trim). Error message format unchanged.

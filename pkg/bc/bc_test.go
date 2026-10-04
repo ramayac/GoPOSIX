@@ -2,6 +2,7 @@ package bc
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -543,5 +544,37 @@ func TestBcSyntaxErrors(t *testing.T) {
 	} {
 		var out bytes.Buffer
 		_ = Run(strings.NewReader(bad), strings.NewReader(""), &out, false)
+	}
+}
+
+func TestNewInterpreterMathLibOK(t *testing.T) {
+	ip, err := NewInterpreter(io.Discard, nil, true)
+	if err != nil {
+		t.Fatalf("math lib must load without error: %v", err)
+	}
+	if ip == nil {
+		t.Fatal("expected interpreter")
+	}
+}
+
+func TestNewInterpreterMathLibParseError(t *testing.T) {
+	orig := mathLibSource
+	defer func() { mathLibSource = orig }()
+	mathLibSource = "define e( {" // broken source
+
+	if _, err := NewInterpreter(io.Discard, nil, true); err == nil {
+		t.Fatal("expected parse error for broken math lib")
+	}
+}
+
+func TestRunMathLibErrorPropagates(t *testing.T) {
+	orig := mathLibSource
+	defer func() { mathLibSource = orig }()
+	mathLibSource = "define e( {"
+
+	var out bytes.Buffer
+	err := Run(strings.NewReader("1"), strings.NewReader(""), &out, true)
+	if err == nil {
+		t.Fatal("expected error from Run when math lib is broken")
 	}
 }

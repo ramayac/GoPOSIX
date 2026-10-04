@@ -1263,7 +1263,7 @@ type Interpreter struct {
 	Last        Val // 'last' / '.' special variable
 }
 
-func NewInterpreter(stdout io.Writer, stdin io.Reader, mathLib bool) *Interpreter {
+func NewInterpreter(stdout io.Writer, stdin io.Reader, mathLib bool) (*Interpreter, error) {
 	g := NewScope(nil)
 	scale := 0
 	if mathLib {
@@ -1286,18 +1286,18 @@ func NewInterpreter(stdout io.Writer, stdin io.Reader, mathLib bool) *Interprete
 		Last:        newValNum(big.NewRat(0, 1), 0),
 	}
 	if mathLib {
-		lex := NewLexer(MathLibSource)
+		lex := NewLexer(mathLibSource)
 		parser := NewParser(lex)
 		stmts, err := parser.Parse()
 		if err != nil {
-			panic("failed to parse math lib: " + err.Error())
+			return nil, fmt.Errorf("failed to parse math lib: %w", err)
 		}
 		err = ip.Execute(stmts)
 		if err != nil {
-			panic("failed to execute math lib: " + err.Error())
+			return nil, fmt.Errorf("failed to execute math lib: %w", err)
 		}
 	}
-	return ip
+	return ip, nil
 }
 
 func (ip *Interpreter) Execute(stmts []Stmt) error {
@@ -2355,7 +2355,10 @@ func Run(program io.Reader, stdin io.Reader, w io.Writer, mathLib bool) error {
 		return err
 	}
 
-	interpreter := NewInterpreter(w, stdin, mathLib)
+	interpreter, err := NewInterpreter(w, stdin, mathLib)
+	if err != nil {
+		return err
+	}
 	return interpreter.Execute(stmts)
 }
 
@@ -2412,6 +2415,9 @@ func init() {
 		},
 	})
 }
+
+// mathLibSource is a seam for NewInterpreter error-path tests.
+var mathLibSource = MathLibSource
 
 const MathLibSource = `define e(x){
 	auto b,s,n,r,d,i,p,f,v
