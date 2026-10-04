@@ -349,3 +349,27 @@ func TestSplitCLI_InvalidFlag(t *testing.T) {
 		t.Errorf("expected exit 2 for invalid flag, got %d", code)
 	}
 }
+
+func TestCLIOpenError(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"/nonexistent-split-file"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "split:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLISuffixOverflow(t *testing.T) {
+	dir := t.TempDir()
+	prefix := filepath.Join(dir, "chunk-")
+	var out, errBuf bytes.Buffer
+	code := run([]string{"-d", "-l", "1", "-a", "1", "-", prefix}, strings.NewReader(strings.Repeat("x\n", 12)), &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "suffix overflow") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

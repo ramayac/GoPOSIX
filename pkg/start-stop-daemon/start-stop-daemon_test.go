@@ -188,8 +188,10 @@ func TestStartStopDaemonSignals(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
-	// Check valid signal mappings
-	for _, sigStr := range []string{"1", "HUP", "2", "INT", "3", "QUIT", "9", "KILL", "15", "TERM", "USR1", "USR2"} {
+	// Check valid signal mappings — the full common table now applies.
+	sigList := []string{"1", "HUP", "2", "INT", "3", "QUIT", "9", "KILL", "15", "TERM", "USR1", "USR2",
+		"CONT", "STOP", "PWR", "SYS", "WINCH", "SIGPIPE", "sigkill", "sigterm", "term", " 15 "}
+	for _, sigStr := range sigList {
 		stdout.Reset()
 		stderr.Reset()
 		code := run([]string{"-K", "-t", "-s", sigStr, "-p", "dummy.pid"}, nil, &stdout, &stderr, "")

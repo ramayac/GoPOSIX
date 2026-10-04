@@ -4,7 +4,6 @@ package stat
 import (
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -37,19 +36,19 @@ var spec = common.FlagSpec{
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "stat: %v\n", err)
+		fmt.Fprintf(stderr, "stat: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
 	if len(flags.Positional) == 0 {
-		fmt.Fprintln(os.Stderr, "stat: missing file operand")
+		fmt.Fprintln(stderr, "stat: missing file operand")
 		return 1
 	}
 	exitCode := 0
 	for _, p := range flags.Positional {
 		result, err := Run(p)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "stat: %v\n", err)
+			fmt.Fprintf(stderr, "stat: %v\n", err)
 			common.RenderError("stat", 1, "ESTAT", err.Error(), jsonMode, stdout)
 			exitCode = 1
 			continue

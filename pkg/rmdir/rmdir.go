@@ -46,17 +46,17 @@ func Run(dirs []string, parents bool) (RmdirResult, error) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "rmdir: %v\n", err)
+		fmt.Fprintf(stderr, "rmdir: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
 	if len(flags.Positional) == 0 {
-		fmt.Fprintln(os.Stderr, "rmdir: missing operand")
+		fmt.Fprintln(stderr, "rmdir: missing operand")
 		return 1
 	}
 	result, err := Run(flags.Positional, flags.Has("p"))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "rmdir: %v\n", err)
+		fmt.Fprintf(stderr, "rmdir: %v\n", err)
 		common.RenderError("rmdir", 1, "ERMDIR", err.Error(), jsonMode, stdout)
 		return 1
 	}

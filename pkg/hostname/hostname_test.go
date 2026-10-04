@@ -2,6 +2,7 @@ package hostname
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -162,5 +163,148 @@ func TestHostnameFileFlagMissing(t *testing.T) {
 	// -F with missing file should fail
 	if code == 0 {
 		t.Error("hostname -F missing: expected non-zero exit")
+	}
+}
+
+func TestResolveFQDNHostnameError(t *testing.T) {
+	orig := osHostname
+	defer func() { osHostname = orig }()
+	osHostname = func() (string, error) { return "", fmt.Errorf("no hostname") }
+	name, dom := resolveFQDN()
+	if name != "" || dom != "" {
+		t.Errorf("expected empty on hostname error, got %q %q", name, dom)
+	}
+}
+
+func TestResolveFQDNLookupHostError(t *testing.T) {
+	orig := osHostname
+	defer func() { osHostname = orig }()
+	osHostname = func() (string, error) { return "box", nil }
+	origL := netLookupHost
+	defer func() { netLookupHost = origL }()
+	netLookupHost = func(string) ([]string, error) { return nil, fmt.Errorf("nxdomain") }
+	name, dom := resolveFQDN()
+	if name != "box" || dom != "" {
+		t.Errorf("expected (box, \"\"), got %q %q", name, dom)
+	}
+}
+
+func TestResolveFQDNWithPTR(t *testing.T) {
+	orig := osHostname
+	defer func() { osHostname = orig }()
+	osHostname = func() (string, error) { return "box", nil }
+	origL := netLookupHost
+	defer func() { netLookupHost = origL }()
+	netLookupHost = func(string) ([]string, error) { return []string{"10.0.0.1"}, nil }
+	origA := netLookupAddr
+	defer func() { netLookupAddr = origA }()
+	netLookupAddr = func(string) ([]string, error) { return []string{"box.example.com."}, nil }
+
+	name, dom := resolveFQDN()
+	if name != "box.example.com" || dom != "example.com" {
+		t.Errorf("expected (box.example.com, example.com), got %q %q", name, dom)
+	}
+}
+
+func TestResolveFQDNPTRErrorThenPlain(t *testing.T) {
+	orig := osHostname
+	defer func() { osHostname = orig }()
+	osHostname = func() (string, error) { return "box", nil }
+	origL := netLookupHost
+	defer func() { netLookupHost = origL }()
+	netLookupHost = func(string) ([]string, error) { return []string{"10.0.0.1"}, nil }
+	origA := netLookupAddr
+	defer func() { netLookupAddr = origA }()
+	netLookupAddr = func(string) ([]string, error) { return nil, fmt.Errorf("no ptr") }
+
+	name, dom := resolveFQDN()
+	if name != "box" || dom != "" {
+		t.Errorf("expected fallback (box, \"\"), got %q %q", name, dom)
+	}
+}
+
+func TestResolveFQDNPTRNoDot(t *testing.T) {
+	orig := osHostname
+	defer func() { osHostname = orig }()
+	osHostname = func() (string, error) { return "box", nil }
+	origL := netLookupHost
+	defer func() { netLookupHost = origL }()
+	netLookupHost = func(string) ([]string, error) { return []string{"10.0.0.1"}, nil }
+	origA := netLookupAddr
+	defer func() { netLookupAddr = origA }()
+	netLookupAddr = func(string) ([]string, error) { return []string{"localhost"}, nil }
+
+	// PTR without a dot is skipped; falls back to hostname only.
+	name, dom := resolveFQDN()
+	if name != "box" || dom != "" {
+		t.Errorf("expected (box, \"\"), got %q %q", name, dom)
+	}
+}
+
+func TestRunDomainFromDottedHostname(t *testing.T) {
+	orig := osHostname
+	defer func() { osHostname = orig }()
+	osHostname = func() (string, error) { return "box.example.org", nil }
+	origL := netLookupHost
+	defer func() { netLookupHost = origL }()
+	netLookupHost = func(string) ([]string, error) { return nil, fmt.Errorf("nxdomain") }
+
+	res, err := Run(false, true, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Domain != "example.org" {
+		t.Errorf("expected domain extracted from dotted hostname, got %q", res.Domain)
+	}
+}
+
+func TestRunHostnameError(t *testing.T) {
+	orig := osHostname
+	defer func() { osHostname = orig }()
+	osHostname = func() (string, error) { return "", fmt.Errorf("no hostname") }
+
+	if _, err := Run(false, false, false); err == nil {
+		t.Error("expected error from Run")
+	}
+}
+
+func TestRunCLIErrorText(t *testing.T) {
+	orig := osHostname
+	defer func() { osHostname = orig }()
+	osHostname = func() (string, error) { return "", fmt.Errorf("no hostname") }
+
+	var out, errBuf bytes.Buffer
+	code := run([]string{}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "hostname: no hostname") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestRunCLIErrorJSON(t *testing.T) {
+	orig := osHostname
+	defer func() { osHostname = orig }()
+	osHostname = func() (string, error) { return "", fmt.Errorf("no hostname") }
+
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--json"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), "EHOSTNAME") {
+		t.Errorf("expected JSON error envelope on stdout, got %q", out.String())
+	}
+}
+
+func TestRunCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2 for bad flag, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "hostname:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

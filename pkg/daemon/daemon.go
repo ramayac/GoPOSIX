@@ -3,7 +3,6 @@ package daemon
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 
 	"io"
@@ -24,7 +23,7 @@ var spec = common.FlagSpec{
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "daemon: %v\n", err)
+		fmt.Fprintf(stderr, "daemon: %v\n", err)
 		return 2
 	}
 
@@ -43,7 +42,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	httpAddr := flags.Get("l")
 
 	if err := daemon.RunDaemon(socket, workers, httpAddr); err != nil {
-		fmt.Fprintf(os.Stderr, "daemon: %v\n", err)
+		fmt.Fprintf(stderr, "daemon: %v\n", err)
 		return 1
 	}
 

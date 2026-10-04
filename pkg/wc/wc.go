@@ -266,9 +266,13 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	if jsonMode {
-		// Output json results
-		// If single file, unwrap
-		if len(paths) == 1 {
+		if exitCode != 0 {
+			// A file failed: emit the error envelope so JSON-RPC clients
+			// (daemon) can surface it. Partial results are still on stderr.
+			common.RenderError("wc", exitCode, "IO", "one or more files could not be read", true, stdout)
+		} else if len(paths) == 1 {
+			// Output json results
+			// If single file, unwrap
 			common.Render("wc", jsonResults[paths[0]], true, stdout, func() {})
 		} else {
 			common.Render("wc", jsonResults, true, stdout, func() {})

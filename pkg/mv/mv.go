@@ -77,7 +77,7 @@ func Run(srcs []string, dst string) (MvResult, error) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "mv: %v\n", err)
+		fmt.Fprintf(stderr, "mv: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -91,7 +91,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		dst = targetDir
 	} else {
 		if len(flags.Positional) < 2 {
-			fmt.Fprintln(os.Stderr, "mv: missing file operand")
+			fmt.Fprintln(stderr, "mv: missing file operand")
 			return 1
 		}
 		srcs = flags.Positional[:len(flags.Positional)-1]
@@ -99,7 +99,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 	result, err := Run(srcs, dst)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "mv: %v\n", err)
+		fmt.Fprintf(stderr, "mv: %v\n", err)
 		common.RenderError("mv", 1, "EMV", err.Error(), jsonMode, stdout)
 		return 1
 	}

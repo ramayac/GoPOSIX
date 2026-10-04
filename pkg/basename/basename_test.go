@@ -2,6 +2,7 @@ package basename
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 )
 
@@ -70,5 +71,27 @@ func TestBusyBox_Basename_SuffixShorterThanBase(t *testing.T) {
 	result := Run("file.txt", ".txt")
 	if result.Result != "file" {
 		t.Errorf("basename(file.txt, .txt) = %q, want %q", result.Result, "file")
+	}
+}
+
+func TestCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "basename:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIMissingOperand(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "missing operand") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

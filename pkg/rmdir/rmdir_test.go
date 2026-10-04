@@ -120,3 +120,14 @@ func TestCLI_BadFlag(t *testing.T) {
 		t.Errorf("exit %d, want 2", code)
 	}
 }
+
+func TestCLIMissingOperand(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "missing operand") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

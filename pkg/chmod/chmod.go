@@ -102,12 +102,12 @@ func isSymbolicMode(modeStr string) bool {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "chmod: %v\n", err)
+		fmt.Fprintf(stderr, "chmod: %v\n", err)
 		return 1
 	}
 
 	if len(flags.Positional) < 2 {
-		fmt.Fprintln(os.Stderr, "chmod: missing operand")
+		fmt.Fprintln(stderr, "chmod: missing operand")
 		return 1
 	}
 
@@ -120,18 +120,18 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		for _, path := range paths {
 			info, err := os.Stat(path)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "chmod: %v\n", err)
+				fmt.Fprintf(stderr, "chmod: %v\n", err)
 				exitCode = 1
 				continue
 			}
 			newMode, err := applySymbolicMode(modeStr, info.Mode())
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "chmod: %v\n", err)
+				fmt.Fprintf(stderr, "chmod: %v\n", err)
 				exitCode = 1
 				continue
 			}
 			if err := os.Chmod(path, newMode); err != nil {
-				fmt.Fprintf(os.Stderr, "chmod: %v\n", err)
+				fmt.Fprintf(stderr, "chmod: %v\n", err)
 				exitCode = 1
 			} else {
 				res = append(res, ChmodResult{Path: path, Mode: fmt.Sprintf("%04o", newMode.Perm())})
@@ -146,7 +146,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	// Numeric octal mode.
 	modeNum, err := strconv.ParseUint(modeStr, 8, 32)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "chmod: invalid mode: %s\n", modeStr)
+		fmt.Fprintf(stderr, "chmod: invalid mode: %s\n", modeStr)
 		return 1
 	}
 	mode := os.FileMode(modeNum)
@@ -155,7 +155,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	var res []ChmodResult
 	for _, path := range paths {
 		if err := os.Chmod(path, mode); err != nil {
-			fmt.Fprintf(os.Stderr, "chmod: %v\n", err)
+			fmt.Fprintf(stderr, "chmod: %v\n", err)
 			exitCode = 1
 		} else {
 			res = append(res, ChmodResult{Path: path, Mode: fmt.Sprintf("%04o", mode)})

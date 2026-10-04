@@ -111,3 +111,28 @@ func TestCLI_MissingOperand(t *testing.T) {
 		t.Errorf("exit %d, want 1", code)
 	}
 }
+
+func TestCLIInvalidMode(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"-m", "999", "somedir"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "invalid mode") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIRunError(t *testing.T) {
+	dir := t.TempDir()
+	blocker := filepath.Join(dir, "exists-as-file")
+	os.WriteFile(blocker, []byte("x"), 0644)
+	var out, errBuf bytes.Buffer
+	code := run([]string{blocker}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "mkdir:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

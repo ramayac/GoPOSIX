@@ -2,6 +2,7 @@ package dirname
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 )
 
@@ -50,5 +51,16 @@ func TestRunCLINoArgs(t *testing.T) {
 	code := run([]string{}, nil, &buf, &buf, "")
 	if code != 1 {
 		t.Errorf("expected exit 1, got %d", code)
+	}
+}
+
+func TestCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "dirname:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

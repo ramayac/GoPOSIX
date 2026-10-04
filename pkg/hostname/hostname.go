@@ -28,16 +28,23 @@ var spec = common.FlagSpec{
 	},
 }
 
+// Function seams so error paths can be tested without real DNS/syscalls.
+var (
+	osHostname    = os.Hostname
+	netLookupHost = net.LookupHost
+	netLookupAddr = net.LookupAddr
+)
+
 // resolveFQDN attempts to resolve the FQDN of the local machine.
 func resolveFQDN() (string, string) {
 	// First try: get hostname and do a lookup
-	name, err := os.Hostname()
+	name, err := osHostname()
 	if err != nil {
 		return "", ""
 	}
 
 	// Try to resolve addresses for the hostname
-	addrs, err := net.LookupHost(name)
+	addrs, err := netLookupHost(name)
 	if err != nil {
 		// Can't resolve, return just the hostname
 		return name, ""
@@ -45,7 +52,7 @@ func resolveFQDN() (string, string) {
 
 	// For each address, try reverse lookup to get FQDN
 	for _, addr := range addrs {
-		names, err := net.LookupAddr(addr)
+		names, err := netLookupAddr(addr)
 		if err != nil {
 			continue
 		}
@@ -66,7 +73,7 @@ func resolveFQDN() (string, string) {
 
 // Run returns the system hostname.
 func Run(short, domain, fqdn bool) (HostnameResult, error) {
-	name, err := os.Hostname()
+	name, err := osHostname()
 	if err != nil {
 		return HostnameResult{}, err
 	}
@@ -102,7 +109,7 @@ func Run(short, domain, fqdn bool) (HostnameResult, error) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "hostname: %v\n", err)
+		fmt.Fprintf(stderr, "hostname: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -112,7 +119,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	result, err := Run(shortMode, domainMode, fqdnMode)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "hostname: %v\n", err)
+		fmt.Fprintf(stderr, "hostname: %v\n", err)
 		common.RenderError("hostname", 1, "EHOSTNAME", err.Error(), jsonMode, stdout)
 		return 1
 	}

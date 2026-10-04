@@ -126,3 +126,14 @@ func TestRunRevInvalidFlag(t *testing.T) {
 		t.Errorf("exit code %d, want 1", code)
 	}
 }
+
+func TestCLIReadError(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"/tmp"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "rev:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

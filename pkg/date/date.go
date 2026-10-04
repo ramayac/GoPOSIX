@@ -187,8 +187,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	flags, err := common.ParseFlags(rawArgs, spec)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "BusyBox v1.36.1-goposix multi-call binary")
-		fmt.Fprintf(os.Stderr, "date: %v\n", err)
+		fmt.Fprintln(stderr, "BusyBox v1.36.1-goposix multi-call binary")
+		fmt.Fprintf(stderr, "date: %v\n", err)
 		return 1
 	}
 
@@ -198,8 +198,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	// POSIX: reject unexpected positional arguments
 	for _, p := range flags.Positional {
-		fmt.Fprintln(os.Stderr, "BusyBox v1.36.1-goposix multi-call binary")
-		fmt.Fprintf(os.Stderr, "date: invalid date '%s'\n", p)
+		fmt.Fprintln(stderr, "BusyBox v1.36.1-goposix multi-call binary")
+		fmt.Fprintf(stderr, "date: invalid date '%s'\n", p)
 		return 1
 	}
 
@@ -230,7 +230,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	if dateStr != "" {
 		t, err := parseDateString(dateStr, loc)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "date: invalid date '%s'\n", dateStr)
+			fmt.Fprintf(stderr, "date: invalid date '%s'\n", dateStr)
 			return 1
 		}
 		now = t

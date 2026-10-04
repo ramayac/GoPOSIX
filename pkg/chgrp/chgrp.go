@@ -29,19 +29,19 @@ type ChgrpResp struct {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "chgrp: %v\n", err)
+		fmt.Fprintf(stderr, "chgrp: %v\n", err)
 		return 1
 	}
 
 	if len(flags.Positional) < 2 {
-		fmt.Fprintln(os.Stderr, "chgrp: missing operand")
+		fmt.Fprintln(stderr, "chgrp: missing operand")
 		return 1
 	}
 
 	groupStr := flags.Positional[0]
 	gid := lookupGID(groupStr)
 	if gid < 0 {
-		fmt.Fprintf(os.Stderr, "chgrp: invalid group: %s\n", groupStr)
+		fmt.Fprintf(stderr, "chgrp: invalid group: %s\n", groupStr)
 		return 1
 	}
 
@@ -51,7 +51,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	for _, path := range flags.Positional[1:] {
 		err := os.Chown(path, -1, gid)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "chgrp: %v\n", err)
+			fmt.Fprintf(stderr, "chgrp: %v\n", err)
 			exitCode = 1
 		} else {
 			res = append(res, ChgrpResult{Path: path})

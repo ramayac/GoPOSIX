@@ -2,7 +2,9 @@ package sha3sum
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -248,5 +250,45 @@ func TestSha3sumRun(t *testing.T) {
 	gotExit = run([]string{"-c", "/nonexistent_check_sha3file"}, nil, &stdout, &stderr, "")
 	if gotExit != 1 {
 		t.Errorf("expected exit 1 for nonexistent check file, got %d", gotExit)
+	}
+}
+
+func TestCheckModeDigestLengths(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "t.txt")
+	os.WriteFile(target, []byte("data"), 0644)
+
+	cases := []struct {
+		name string
+		size int // sha3 size
+	}{
+		{"sha3-224", 224},
+		{"sha3-256", 256},
+		{"sha3-384", 384},
+		{"sha3-512", 512},
+		{"unknown-length", 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var digest string
+			if tc.size == 0 {
+				digest = strings.Repeat("a", 40) // no known length -> default
+			} else {
+				h, _, _ := getHasher(fmt.Sprintf("%d", tc.size))
+				h.Write([]byte("data"))
+				digest = hex.EncodeToString(h.Sum(nil))
+			}
+			cf := filepath.Join(dir, "checks.txt")
+			os.WriteFile(cf, []byte(digest+"  "+target+"\n"), 0644)
+			var out, errBuf bytes.Buffer
+			wantExit := 0
+			if tc.size == 0 {
+				wantExit = 1 // bogus digest never matches
+			}
+			code := run([]string{"-c", cf}, nil, &out, &errBuf, "")
+			if code != wantExit {
+				t.Errorf("expected exit %d, got %d", wantExit, code)
+			}
+		})
 	}
 }

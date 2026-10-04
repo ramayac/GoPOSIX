@@ -1,6 +1,6 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX userland with 115 tools. Runs as a persistent JSON-RPC daemon or multicall CLI, a typed Go SDK and ~98.2% BusyBox test compatibility (878 of 919 tests pass).
+A Go-native, single-binary POSIX userland with 115 tools. Runs as a persistent JSON-RPC daemon or multicall CLI, a typed Go SDK and ~98.2% BusyBox test compatibility (871 of 917 tests pass).
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ramayac/goposix.svg)](https://pkg.go.dev/github.com/ramayac/goposix)
@@ -101,6 +101,8 @@ c.Grep(ctx, []string{"foo"}, client.WithStdin("line1\nline2\nfoo\n"))
 c.Wc(ctx, []string{"-l"}, client.WithStdin("line1\nline2\nline3\n"))
 ```
 
+Every command response also includes a `stderr` field with human-readable error text. `rawOutput` mode returns `stdout` and `stderr` as raw text.
+
 ## Performance
 
 | Metric | GoPOSIX | BusyBox |
@@ -120,7 +122,7 @@ c.Wc(ctx, []string{"-l"}, client.WithStdin("line1\nline2\nline3\n"))
 - [Architecture](wiki/architecture.md)
 - [Security Model](wiki/security.md)
 - [JSON Schema](wiki/json_schema.md) — `--json` output schemas for every utility
-- [Test Coverage & Compliance Matrix](wiki/test_coverage_matrix.md) — 878/919 (98.2%) BusyBox pass rate
+- [Test Coverage & Compliance Matrix](wiki/test_coverage_matrix.md) — 871/917 (98.2%) BusyBox pass rate
 - [POSIX FAQ](wiki/posix_faq.md)
 - [Performance Quick Reference](wiki/performance.md)
 

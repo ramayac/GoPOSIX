@@ -78,7 +78,7 @@ func (e *engineState) printLineRaw(s string) {
 }
 
 func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bool, globalOut io.Writer) int {
-	return runEngineInternal(insts, readers, suppress, inPlace, globalOut, os.Stderr, os.Stdin)
+	return runEngineInternal(insts, readers, suppress, inPlace, globalOut, io.Discard, os.Stdin)
 }
 
 func runEngineInternal(insts []*Instruction, readers []string, suppress bool, inPlace bool, globalOut io.Writer, errOut io.Writer, stdin io.Reader) int {

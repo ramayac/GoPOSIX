@@ -3,7 +3,6 @@ package df
 import (
 	"fmt"
 	"io"
-	"os"
 	"syscall"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -28,7 +27,7 @@ type FSInfo struct {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "df: %v\n", err)
+		fmt.Fprintf(stderr, "df: %v\n", err)
 		return 1
 	}
 
@@ -39,7 +38,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	var stat syscall.Statfs_t
 	if err := syscall.Statfs(path, &stat); err != nil {
-		fmt.Fprintf(os.Stderr, "df: %s: %v\n", path, err)
+		fmt.Fprintf(stderr, "df: %s: %v\n", path, err)
 		return 1
 	}
 

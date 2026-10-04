@@ -4,7 +4,6 @@ package kill
 import (
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"strings"
 	"syscall"
@@ -80,7 +79,7 @@ func sigLabel(sig syscall.Signal) string {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(preprocessArgs(args), spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "kill: %v\n", err)
+		fmt.Fprintf(stderr, "kill: %v\n", err)
 		return 1
 	}
 	jsonMode := flags.Has("json")
@@ -101,7 +100,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		for _, p := range flags.Positional {
 			sig, err := common.ParseSignal(p)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "kill: invalid signal: %s\n", p)
+				fmt.Fprintf(stderr, "kill: invalid signal: %s\n", p)
 				exitCode = 1
 				continue
 			}
@@ -119,7 +118,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	if v := flags.Get("s"); v != "" {
 		s, err := common.ParseSignal(v)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "kill: invalid signal: %s\n", v)
+			fmt.Fprintf(stderr, "kill: invalid signal: %s\n", v)
 			return 1
 		}
 		sig = s
@@ -131,7 +130,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	for _, p := range flags.Positional {
 		pid, err := strconv.Atoi(p)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "kill: %s: arguments must be process or job IDs\n", p)
+			fmt.Fprintf(stderr, "kill: %s: arguments must be process or job IDs\n", p)
 			exitCode = 1
 			continue
 		}
@@ -144,7 +143,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		})
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "kill: (%d) - %v\n", pid, err)
+			fmt.Fprintf(stderr, "kill: (%d) - %v\n", pid, err)
 			exitCode = 1
 		}
 	}

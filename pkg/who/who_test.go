@@ -3,6 +3,7 @@ package who
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -379,5 +380,21 @@ func TestWhoRunBadFlag(t *testing.T) {
 	var out bytes.Buffer
 	if code := run([]string{"--badflag"}, nil, &out, &out, ""); code != 2 {
 		t.Errorf("exit %d, want 2", code)
+	}
+}
+
+func TestCLIRunError(t *testing.T) {
+	orig := whoRun
+	defer func() { whoRun = orig }()
+	whoRun = func() (WhoResult, error) {
+		return WhoResult{}, fmt.Errorf("who failed")
+	}
+	var out, errBuf bytes.Buffer
+	code := run([]string{}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "who:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

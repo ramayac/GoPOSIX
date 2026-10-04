@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -1517,5 +1518,20 @@ func TestTarErrorPaths(t *testing.T) {
 	var out3, errOut3 bytes.Buffer
 	if code := run([]string{"-f", filepath.Join(tmpDir, "out2.tar"), "x"}, nil, &out3, &errOut3, tmpDir); code == 0 {
 		t.Error("tar without -c/-x/-t: expected non-zero exit")
+	}
+}
+
+func TestCreateArchiveStreamStrippedPrefix(t *testing.T) {
+	dir := t.TempDir()
+	os.MkdirAll(filepath.Join(dir, "up"), 0755)
+	os.WriteFile(filepath.Join(dir, "up", "member.txt"), []byte("x"), 0644)
+	t.Chdir(dir)
+	var out, errBuf bytes.Buffer
+	_, err := createArchiveStream(&out, []string{"up/../up/member.txt"}, filepath.Join(dir, "a.tar"), false, io.Discard, &errBuf)
+	if err != nil {
+		t.Fatalf("createArchiveStream: %v", err)
+	}
+	if !strings.Contains(errBuf.String(), "tar: removing leading 'up/../' from member names") {
+		t.Errorf("expected stripped-prefix message, got %q", errBuf.String())
 	}
 }

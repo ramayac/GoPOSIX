@@ -96,7 +96,7 @@ func removeAllVerbose(path string, removed *[]string, verbose bool) error {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "rm: %v\n", err)
+		fmt.Fprintf(stderr, "rm: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -107,7 +107,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	if len(flags.Positional) == 0 {
 		if !force {
-			fmt.Fprintln(os.Stderr, "rm: missing operand")
+			fmt.Fprintln(stderr, "rm: missing operand")
 			return 1
 		}
 		return 0
@@ -118,7 +118,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	for _, p := range flags.Positional {
 		if !isSafeToRemove(p, noPreserveRoot) {
 			msg := fmt.Sprintf("refusing to remove %q: use --no-preserve-root to override", p)
-			fmt.Fprintf(os.Stderr, "rm: %s\n", msg)
+			fmt.Fprintf(stderr, "rm: %s\n", msg)
 			result.Errors = append(result.Errors, msg)
 			exitCode = 1
 			continue
@@ -137,7 +137,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		}
 		if rmErr != nil {
 			if !force {
-				fmt.Fprintf(os.Stderr, "rm: %v\n", rmErr)
+				fmt.Fprintf(stderr, "rm: %v\n", rmErr)
 				result.Errors = append(result.Errors, rmErr.Error())
 				exitCode = 1
 			}

@@ -3,6 +3,7 @@ package expr
 import (
 	"bytes"
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -381,5 +382,16 @@ func TestEvalMoreOperators(t *testing.T) {
 		if result != tc.want || code != tc.code {
 			t.Errorf("Eval(%v) = (%q, %d), want (%q, %d)", tc.tokens, result, code, tc.want, tc.code)
 		}
+	}
+}
+
+func TestCLISyntaxError(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"1", "+"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "expr:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

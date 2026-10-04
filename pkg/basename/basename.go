@@ -4,7 +4,6 @@ package basename
 import (
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -37,11 +36,11 @@ func Run(path, suffix string) BasenameResult {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "basename: %v\n", err)
+		fmt.Fprintf(stderr, "basename: %v\n", err)
 		return 2
 	}
 	if len(flags.Positional) == 0 {
-		fmt.Fprintln(os.Stderr, "basename: missing operand")
+		fmt.Fprintln(stderr, "basename: missing operand")
 		return 1
 	}
 	jsonMode := flags.Has("json")

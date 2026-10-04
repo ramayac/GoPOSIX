@@ -33,13 +33,13 @@ func Run(path string, mode os.FileMode) error {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "mkfifo: %v\n", err)
+		fmt.Fprintf(stderr, "mkfifo: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
 
 	if len(flags.Positional) == 0 {
-		fmt.Fprintln(os.Stderr, "mkfifo: missing operand")
+		fmt.Fprintln(stderr, "mkfifo: missing operand")
 		common.RenderError("mkfifo", 1, "EARGS", "missing operand", jsonMode, stdout)
 		return 1
 	}
@@ -51,7 +51,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		modeStr := flags.Get("m")
 		parsed, err := strconv.ParseUint(modeStr, 8, 32)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "mkfifo: invalid mode: %s\n", modeStr)
+			fmt.Fprintf(stderr, "mkfifo: invalid mode: %s\n", modeStr)
 			common.RenderError("mkfifo", 1, "EMODE", "invalid mode", jsonMode, stdout)
 			return 1
 		}
@@ -59,7 +59,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	if err := Run(path, mode); err != nil {
-		fmt.Fprintf(os.Stderr, "mkfifo: %v\n", err)
+		fmt.Fprintf(stderr, "mkfifo: %v\n", err)
 		common.RenderError("mkfifo", 1, "EMKFIFO", err.Error(), jsonMode, stdout)
 		return 1
 	}

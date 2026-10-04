@@ -28,7 +28,7 @@ type ProcessInfo struct {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ps: %v\n", err)
+		fmt.Fprintf(stderr, "ps: %v\n", err)
 		return 1
 	}
 

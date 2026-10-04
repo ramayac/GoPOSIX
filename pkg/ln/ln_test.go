@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -94,5 +95,28 @@ func TestLnTargetIsDir(t *testing.T) {
 	linked := filepath.Join(sub, "file.txt")
 	if _, err := os.Stat(linked); err != nil {
 		t.Error("link should be created inside directory")
+	}
+}
+
+func TestCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "ln:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLILinkError(t *testing.T) {
+	dir := t.TempDir()
+	var out, errBuf bytes.Buffer
+	code := run([]string{filepath.Join(dir, "missing-src"), filepath.Join(dir, "dst")}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "ln:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

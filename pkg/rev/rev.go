@@ -38,7 +38,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "rev: %v\n", err)
+		fmt.Fprintf(stderr, "rev: %v\n", err)
 		return 1
 	}
 
@@ -58,7 +58,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		} else {
 			f, err := os.Open(file)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "rev: %s: %v\n", file, err)
+				fmt.Fprintf(stderr, "rev: %s: %v\n", file, err)
 				exitCode = 1
 				continue
 			}
@@ -96,7 +96,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			}
 			if err != nil {
 				if err != io.EOF {
-					fmt.Fprintf(os.Stderr, "rev: %v\n", err)
+					fmt.Fprintf(stderr, "rev: %v\n", err)
 					exitCode = 1
 				}
 				break

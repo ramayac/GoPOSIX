@@ -2,6 +2,16 @@
 
 **Hello AI Assistant!** you are working on **GoPOSIX**. This document provides the critical context, architectural invariants, and workflow rules required to contribute successfully to this project. 
 
+## 0. Language Policy — ASD-STE100
+
+- Use ASD-STE100 Simplified Technical English for ALL project writing. This rule is mandatory.
+- The rule applies to: code comments, wiki pages, commit messages, pull request titles and descriptions, issue text, and agent communication about this project.
+- Write one instruction per sentence. Write short sentences (maximum 20 words for procedures, 25 for descriptions).
+- Use active voice. Use the imperative form for commands. Use "you", not "the user".
+- Use only approved ASD-STE100 words. Project-specific names (Go, POSIX, BusyBox, JSON-RPC) are approved nouns.
+- If you cannot say something in Simplified Technical English, say it differently. Do not break the rule.
+- This rule is part of the definition of done for every change.
+
 ## 1. Project Identity & Goal
 
 GoPOSIX is a 100% Go-native, POSIX-compliant userland designed for **programmatic consumption** in containerized environments. It runs as a persistent JSON-RPC 2.0 daemon with a typed Go SDK (60µs per RPC call, 11× faster than BusyBox fork+exec). A multicall CLI binary (like BusyBox) is also available as a secondary interface.
@@ -75,7 +85,7 @@ When implementing a new utility or feature, follow this checklist:
 
 ## 4a. Coverage Policy
 
-- **Gate:** `make ci` enforces a hard coverage gate at **≥80%** overall (see `COVERAGE_THRESHOLD` in Makefile). PRs that drop coverage below this threshold fail CI. Current overall coverage: **80.1%**. See [wiki/13_coverage_and_hardening.md](wiki/13_coverage_and_hardening.md) for full policy.
+- **Gate:** `make ci` enforces a hard coverage gate at **≥80%** overall (see `COVERAGE_THRESHOLD` in Makefile). PRs that drop coverage below this threshold fail CI. See [wiki/test_coverage_matrix.md](wiki/test_coverage_matrix.md) for the current per-utility coverage, and [wiki/13_coverage_and_hardening.md](wiki/13_coverage_and_hardening.md) for the full policy.
 - **CLI Layer Testing:** The `run()` function (CLI glue) must be tested, not just the library-layer `Run()`. Extract an injectable entry point (e.g., `grepRun()`, `catRun()`) that accepts `io.Reader`/`io.Writer` instead of hardcoding `os.Stdin`/`os.Stdout`. See `pkg/cat/cat.go` for the canonical `catRun()` pattern.
 - **Per-package:** Use `make cover-pkg` to audit per-package coverage. No package should be below 5%.
 - **Before committing:** Always run `make testsuite` (BusyBox integration tests) in addition to `make test` (unit tests). The BusyBox suite catches cascading integration failures that unit tests miss.
@@ -84,7 +94,7 @@ When implementing a new utility or feature, follow this checklist:
 
 - **Daemon-First:** The default Docker image (`goposix:latest`) starts the persistent JSON-RPC daemon. CLI access is available as a secondary interface (`goposix:cli`). The Go SDK (`pkg/client/`) is the primary programmatic interface at 60µs/call.
 - **Root Protection:** Utilities that perform destructive operations (like `rm`) must include guards against destroying the root filesystem (e.g., `rm -rf /` must be refused without `--no-preserve-root`).
-- **BusyBox Test Suite:** 831 passed, 54 failed, 34 skipped (90.4% pass rate, 919 total tested). Failures: 16 in `awk` (goawk engine limitations), 22 in `bc` (precision/scale differences), 7 in `tar` (3 hardlink/symlink mode ordering, 3 symlink safety, 1 XZ), 7 in `dc` (scale propagation, string/macro, extended mode). `rx` has 1 flaky test. Run `make testsuite` before every commit to prevent regressions.
+- **BusyBox Test Suite:** Run `make testsuite` before every commit to prevent regressions. The canonical per-utility pass/fail counts live in [wiki/test_coverage_matrix.md](wiki/test_coverage_matrix.md). Do not copy the numbers into this file; they drift quickly.
 
 ## 6. Current State & Progression
 

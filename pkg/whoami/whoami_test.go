@@ -2,6 +2,8 @@ package whoami
 
 import (
 	"bytes"
+	"fmt"
+	"os/user"
 	"strings"
 	"testing"
 )
@@ -67,5 +69,62 @@ func TestWhoamiBadFlag(t *testing.T) {
 	code := run([]string{"--no-such-flag"}, nil, &buf, &buf, "")
 	if code != 2 {
 		t.Errorf("expected exit 2 for unknown flag, got %d", code)
+	}
+}
+
+func TestRunError(t *testing.T) {
+	orig := userCurrent
+	defer func() { userCurrent = orig }()
+	userCurrent = func() (*user.User, error) {
+		return nil, fmt.Errorf("no user")
+	}
+
+	if _, err := Run(); err == nil {
+		t.Error("expected error from Run")
+	}
+}
+
+func TestRunCLIErrorText(t *testing.T) {
+	orig := userCurrent
+	defer func() { userCurrent = orig }()
+	userCurrent = func() (*user.User, error) {
+		return nil, fmt.Errorf("no user")
+	}
+
+	var out, errBuf bytes.Buffer
+	code := run([]string{}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "whoami: no user") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestRunCLIErrorJSON(t *testing.T) {
+	orig := userCurrent
+	defer func() { userCurrent = orig }()
+	userCurrent = func() (*user.User, error) {
+		return nil, fmt.Errorf("no user")
+	}
+
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--json"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), "EUSER") {
+		t.Errorf("expected JSON error envelope on stdout, got %q", out.String())
+	}
+}
+
+func TestRunBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2 for bad flag, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "whoami:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

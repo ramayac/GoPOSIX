@@ -193,7 +193,7 @@ func Run(r io.Reader, prefix string, linesPerFile int64, bytesPerFile int64, suf
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "split: %v\n", err)
+		fmt.Fprintf(stderr, "split: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -236,13 +236,16 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		prefix = flags.Positional[1]
 	}
 
-	var input io.Reader = os.Stdin
+	var input io.Reader = stdin
+	if input == nil {
+		input = os.Stdin
+	}
 	fileArg := ""
 	if len(flags.Positional) > 0 && flags.Positional[0] != "-" {
 		fileArg = flags.Positional[0]
 		f, err := os.Open(fileArg)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "split: %v\n", err)
+			fmt.Fprintf(stderr, "split: %v\n", err)
 			common.RenderError("split", 1, "EOPEN", err.Error(), jsonMode, stdout)
 			return 1
 		}
@@ -252,7 +255,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	result, err := Run(input, prefix, linesPerFile, bytesPerFile, suffixLen, numeric, filter)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "split: %v\n", err)
+		fmt.Fprintf(stderr, "split: %v\n", err)
 		common.RenderError("split", 1, "ESPLIT", err.Error(), jsonMode, stdout)
 		return 1
 	}

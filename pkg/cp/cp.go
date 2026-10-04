@@ -198,7 +198,7 @@ func Run(srcs []string, dst string, recursive bool, preserve bool, mode SymlinkM
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "cp: %v\n", err)
+		fmt.Fprintf(stderr, "cp: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -213,7 +213,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	if len(flags.Positional) < 2 {
-		fmt.Fprintln(os.Stderr, "cp: missing file operand")
+		fmt.Fprintln(stderr, "cp: missing file operand")
 		return 1
 	}
 
@@ -251,11 +251,11 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			// --parents: recreate directory structure under dst
 			dstInfo, dstErr := os.Stat(dst)
 			if dstErr != nil {
-				fmt.Fprintf(os.Stderr, "cp: %v\n", dstErr)
+				fmt.Fprintf(stderr, "cp: %v\n", dstErr)
 				return 1
 			}
 			if !dstInfo.IsDir() {
-				fmt.Fprintf(os.Stderr, "cp: target '%s' is not a directory\n", dst)
+				fmt.Fprintf(stderr, "cp: target '%s' is not a directory\n", dst)
 				return 1
 			}
 			// Strip leading "./" and trailing slashes
@@ -269,13 +269,13 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			// Create parent directories
 			parent := filepath.Dir(dstTarget)
 			if err := os.MkdirAll(parent, 0755); err != nil {
-				fmt.Fprintf(os.Stderr, "cp: %v\n", err)
+				fmt.Fprintf(stderr, "cp: %v\n", err)
 				exitCode = 1
 				continue
 			}
 			var result CpResult
 			if err := copySingle(src, dstTarget, mode, true, flags.Has("p"), recursive, &result); err != nil {
-				fmt.Fprintf(os.Stderr, "cp: %v\n", err)
+				fmt.Fprintf(stderr, "cp: %v\n", err)
 				exitCode = 1
 			}
 			allCopied.Copied = append(allCopied.Copied, result.Copied...)
@@ -308,7 +308,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		isArg := true
 		var result CpResult
 		if err := copySingle(src, dstTarget, mode, isArg, flags.Has("p"), recursive, &result); err != nil {
-			fmt.Fprintf(os.Stderr, "cp: %v\n", err)
+			fmt.Fprintf(stderr, "cp: %v\n", err)
 			exitCode = 1
 		}
 		allCopied.Copied = append(allCopied.Copied, result.Copied...)

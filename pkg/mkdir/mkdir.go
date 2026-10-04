@@ -46,7 +46,7 @@ func Run(dirs []string, parents bool, mode fs.FileMode) (MkdirResult, error) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "mkdir: %v\n", err)
+		fmt.Fprintf(stderr, "mkdir: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -55,18 +55,18 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	if mStr := flags.Get("m"); mStr != "" {
 		m, err := strconv.ParseUint(mStr, 8, 32)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "mkdir: invalid mode %q\n", mStr)
+			fmt.Fprintf(stderr, "mkdir: invalid mode %q\n", mStr)
 			return 2
 		}
 		mode = fs.FileMode(m)
 	}
 	if len(flags.Positional) == 0 {
-		fmt.Fprintln(os.Stderr, "mkdir: missing operand")
+		fmt.Fprintln(stderr, "mkdir: missing operand")
 		return 1
 	}
 	result, err := Run(flags.Positional, parents, mode)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "mkdir: %v\n", err)
+		fmt.Fprintf(stderr, "mkdir: %v\n", err)
 		common.RenderError("mkdir", 1, "EMKDIR", err.Error(), jsonMode, stdout)
 		return 1
 	}

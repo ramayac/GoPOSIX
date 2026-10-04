@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 )
@@ -598,5 +599,27 @@ func TestEvaluateFileTypesOnRegularFile(t *testing.T) {
 func TestEvaluateUnknownUnaryOperator(t *testing.T) {
 	if _, err := Evaluate([]string{"-zzz", "/tmp"}); err == nil {
 		t.Error("expected error for unknown unary operator")
+	}
+}
+
+func TestRunTestSyntaxError(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := runTest([]string{"hello", "world"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "test:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestRunBracketSyntaxError(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := runBracket([]string{"hello", "world", "]"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "[:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

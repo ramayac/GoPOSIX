@@ -4,6 +4,44 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-10-03] test | 100% patch coverage — resolve Codecov comment on PR #43
+
+- Codecov reported 74.33% patch coverage with 86 missing lines. Local analysis found 115 missing executable lines across 46 files (all F1/F2/F6/F7 error branches).
+- Added ~70 tests: bad-flag/missing-operand triggers for the F1 packages, cp --parents error paths, daemon RunDaemon failure, date invalid -d, diff second-file read error, join open/Run errors, chmod symbolic-mode errors, rev/tail directory reads, split suffix overflow (numeric -a 1), sha3sum check-mode digest lengths, tar stripped-prefix message, testcmd syntax errors, wc JSON error envelope, yes --count without value.
+- New function seams: `userCurrent` (logname), `unameRun` (uname), `whoRun` (who). bc gains `mathLibSource` execute-error test. Daemon tests add a fake raw-output command (non-JSON fallback) and a testcmd error-envelope stderr check.
+- `pkg/common` gained tests for the digest and decompress cores (SilenceLog, panic recovery, cat-mode raw errors, dest open failure, copy-error cleanup, hash write errors, checksum single-space lines).
+- Fixed a real bug: `pkg/split` ignored the injected stdin for `-` and read `os.Stdin` (same class as F1).
+- Verification: unit green, vet/fmt clean, overall coverage 87.5% (was 86.3%), BusyBox 871/16/30 (16 pre-existing awk, no regressions). Patch coverage now 100% (0 missing lines).
+
+## [2026-10-03] refactor | F6 + F7 resolved: bc panic removal, shared decompression core
+
+- **F6:** `pkg/bc` `NewInterpreter` now returns `(*Interpreter, error)` — the two `panic` calls in the math-library load path are gone. `Run` propagates the error; `bcRun` renders it. New `mathLibSource` data seam lets tests break the embedded library. Coverage 83.6%.
+- **F7:** New `pkg/common/decompress.go` (`DecompressMode`). `unlzma`, `bunzip2`, `uncompress`, `bzcat` are thin wrappers: 950 → ~230 LOC (−76%). Per-tool behaviors preserved (suffix tables, -c/-f/-k/-q, quiet, corrupt-data messages, dcompress panic recovery, log suppression, cat mode). All four packages at 100% coverage. `gzip` stays separate (dual-mode logic).
+- Verification: unit green, vet/fmt clean, overall coverage 86.3%, BusyBox 870/17/30 (17 awk only), compliance scripts pass (bunzip2 3/3, unlzma 2/2, bzcat 2/2; uncompress skipped — host lacks compress). CLI parity verified against the pre-refactor binary.
+- `pkg/common` recovered to 91.0% with direct `DecompressMode` tests.
+
+## [2026-10-03] refactor | F5: start-stop-daemon uses common.ParseSignal (audit phase 2 complete)
+
+- Deleted the local 7-name `parseSignal` in `pkg/start-stop-daemon`; call site now uses `common.ParseSignal` (full 31-signal table, SIG-prefix tolerance, case-insensitive, whitespace trim). Error message format unchanged.
+- Tests extended with signals the old parser rejected (CONT, STOP, PWR, SYS, WINCH, SIGPIPE, lowercase, padded numerics). Coverage 80.7%.
+- Verified: unit all green, compliance test_start-stop-daemon.sh 3/3, BusyBox 870/17/30 (17 awk only, matches baseline).
+- Audit phase 2 is now fully done (F2 + F5); `28_posix_command_audit.md` phase table updated.
+
+## [2026-10-03] implement | Audit phases 1–3: writer injection (F1), digest consolidation (F2), coverage (F3)
+
+- **F1 (53 commands):** all error messages now use the injected `stderr` writer instead of `os.Stderr`. Special cases: `nice`/`nohup` thread writers into `Run()` (subprocess stdio, `*os.File` terminal check), `od` gained `errOut`, `tar` gained `errOut` on `createArchiveStream`. The daemon now passes separate stdout/stderr buffers and returns a `stderr` field in JSON-RPC responses — this fixed a class of accidental client errors (shared-buffer JSON corruption) and exposed the wc JSON-mode error envelope bug (fixed: `RenderError` on failure).
+- **F2:** new `pkg/common/digest.go` (`DigestHashMode`, `DigestCheckMode`, `DigestReader`). md5sum/sha1sum/sha256sum/sha512sum/sha3sum are thin wrappers: 1,485 → 348 LOC. Per-package behaviors preserved; sha3sum keeps `-a` + per-line autodetection. `cksum`/`sum` left as-is (different formats). Full output parity verified against baseline binary.
+- **F3:** whoami 78.9→100.0%, hostname 78.2→98.2%, diff 73.9→89.5%, gzip 72.7→87.3%, pkg/common 68.9→93.7% (direct digest-core tests). Function-seam pattern extended from PR #42.
+- Verification: unit all green, `go vet`/`gofmt` clean, overall coverage 86.3% (was 85.6%), BusyBox 871/16/30 (was 870/17/30 — no regressions, all 16 failures pre-existing awk).
+- Wiki updates: `posix_command_audit.md` (F1/F2/F3 marked done, matrix verdicts), `test_coverage_matrix.md`, `todos.md` (coverage-blocked section resolved).
+
+## [2026-10-03] plan | POSIX command audit plan (branch `audit/posix-commands`)
+
+- New page `posix_command_audit.md`: full audit plan and matrix for all 115 commands.
+- Matrix columns: tier, LOC, test LOC, unit coverage, BusyBox status, F1 hardcoded-IO flag, verdict.
+- Pre-audit repo-wide findings: F1 53 commands hardcode `os.Stderr`/`os.Stdout`, F2 digest family duplication (~1,400 LOC), F3 four packages below 80% coverage (diff, gzip, hostname, whoami), F4 BusyBox failures (awk 17, rx 1 flaky), F5 start-stop-daemon signal duplication, F6 bc init panic, F7 compression family overlap.
+- Registered in `index.md` under Test & Compliance.
+
 ## [2026-10-03] fix | pwd physical default + Codecov 100% patch coverage (PR #42)
 
 - `pkg/pwd` now defaults to the physical path (BusyBox/coreutils parity) with `-L` for logical — root cause of the 3 realpath suite failures through `/home/ramayac/git`.
@@ -907,3 +945,16 @@ and 05. All 55 utility packages now have clickable source links from their
 wiki documentation.
 
 
+
+
+## [2026-10-03] rename | posix_command_audit.md → 28_posix_command_audit.md
+
+- The audit plan is Phase 28. The file name follows the wiki phase convention (23_, 25_, 26_, 27_).
+- Links updated in `index.md`, `todos.md`, and `phases.md` (Active Work). Historical log entries keep the old name.
+
+
+## [2026-10-03] pause | Phase 28 audit paused — repository phases done, per-tool work deferred
+
+- The audit stops here for now. Phases 0–3 and findings F1–F7 are complete (PR #43, 13 commits, 100% patch coverage, coverage 87.6%, BusyBox 871/16/30).
+- Next when work resumes: Phase 4 deep audits of 7 XL/L commands (bc, sed, printf, date, tar, dc, diff), then the Phase 5 sweep. See the updated [todos.md](todos.md).
+- The plan gained a preflight review: corrected XL/L scope (7, not 24), added a PreAudit score per command, and recorded open items F8 (parser helpers duplicated across bc/expr/sed/testcmd) and P1 (logger package-global writer), plus P2 (companion coverage matrix is stale) and P4 (concurrent make testsuite runs corrupt each other).

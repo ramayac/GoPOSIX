@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -83,5 +84,16 @@ func TestMkfifoJson(t *testing.T) {
 	}
 	if !bytes.Contains(buf.Bytes(), []byte(`"path"`)) {
 		t.Error("JSON output missing path field")
+	}
+}
+
+func TestCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "mkfifo:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

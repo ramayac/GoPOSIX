@@ -2,8 +2,11 @@ package logname
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
+	"os/user"
+	"strings"
 	"testing"
 )
 
@@ -53,5 +56,22 @@ func TestLognameBadFlag(t *testing.T) {
 	var buf bytes.Buffer
 	if code := run([]string{"--badflag"}, nil, &buf, &buf, ""); code != 2 {
 		t.Errorf("expected exit 2, got %d", code)
+	}
+}
+
+func TestCLIRunError(t *testing.T) {
+	t.Setenv("LOGNAME", "")
+	orig := userCurrent
+	defer func() { userCurrent = orig }()
+	userCurrent = func() (*user.User, error) {
+		return nil, fmt.Errorf("no user")
+	}
+	var out, errBuf bytes.Buffer
+	code := run([]string{}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "logname:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

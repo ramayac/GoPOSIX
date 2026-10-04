@@ -103,7 +103,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tail: %v\n", err)
+		fmt.Fprintf(stderr, "tail: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -127,7 +127,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		}
 		n, err := strconv.Atoi(cStr)
 		if err != nil || n < 0 {
-			fmt.Fprintf(os.Stderr, "tail: illegal byte count -- %s\n", cStr)
+			fmt.Fprintf(stderr, "tail: illegal byte count -- %s\n", cStr)
 			return 2
 		}
 		bytesCount = n
@@ -138,7 +138,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		}
 		n, err := strconv.Atoi(nStr)
 		if err != nil || n < 0 {
-			fmt.Fprintf(os.Stderr, "tail: illegal line count -- %s\n", nStr)
+			fmt.Fprintf(stderr, "tail: illegal line count -- %s\n", nStr)
 			return 2
 		}
 		linesCount = n
@@ -174,7 +174,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		} else {
 			file, err := os.Open(path)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "tail: %s: %v\n", path, err)
+				fmt.Fprintf(stderr, "tail: %s: %v\n", path, err)
 				exitCode = 1
 				continue
 			}
@@ -193,7 +193,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 		lines, err := Run(f, w, linesCount, bytesCount, fromStart)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "tail: %v\n", err)
+			fmt.Fprintf(stderr, "tail: %v\n", err)
 			exitCode = 1
 		}
 		if jsonMode {

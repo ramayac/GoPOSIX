@@ -179,19 +179,19 @@ func evalSymlinksUnder(base, relPath string) (string, bool) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "readlink: %v\n", err)
+		fmt.Fprintf(stderr, "readlink: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
 	if len(flags.Positional) == 0 {
-		fmt.Fprintln(os.Stderr, "readlink: missing operand")
+		fmt.Fprintln(stderr, "readlink: missing operand")
 		return 1
 	}
 	exitCode := 0
 	for _, p := range flags.Positional {
 		result, err := Run(p, flags.Has("f"))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "readlink: %v\n", err)
+			fmt.Fprintf(stderr, "readlink: %v\n", err)
 			common.RenderError("readlink", 1, "EREADLINK", err.Error(), jsonMode, stdout)
 			exitCode = 1
 			continue

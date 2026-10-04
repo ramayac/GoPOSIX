@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/fs"
 	"math"
-	"os"
 	"path/filepath"
 	"syscall"
 
@@ -33,7 +32,7 @@ type DirInfo struct {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "du: %v\n", err)
+		fmt.Fprintf(stderr, "du: %v\n", err)
 		return 1
 	}
 
@@ -65,7 +64,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 		err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "du: cannot read directory %q: %v\n", p, err)
+				fmt.Fprintf(stderr, "du: cannot read directory %q: %v\n", p, err)
 				exitCode = 1
 				return nil
 			}
