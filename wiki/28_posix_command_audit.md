@@ -1,6 +1,6 @@
 # Phase 28 — POSIX Command Audit (Plan & Matrix)
 
-> **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — phases 0–3 done, 100% patch coverage
+> **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — F8–F14 shipped in PR #44
 > **Preflight:** 2026-10-03 — matrix refreshed from the tree, `PreAudit` score added (see §5a). Corrected XL/L scope: 7 commands, not 24.
 >
 > Companion to [wiki/test_coverage_matrix.md](test_coverage_matrix.md) (test status) and [wiki/todos.md](todos.md) (open work).
@@ -80,7 +80,7 @@ input. `pkg/common` also lifted 68.9% → 93.7% with direct digest-core tests.
 
 ### F4 — BusyBox failures ✅ ACKNOWLEDGED (awk deferred)
 
-`awk` has 17 failing tests (upstream goawk engine limits, deferred — see [wiki/deferred.md](deferred.md)).
+`awk` has 16 failing tests (upstream goawk engine limits, deferred — see [wiki/deferred.md](deferred.md)).
 `rx` has 1 flaky test (handshake race). All other ⚠️ entries are root-required skips.
 
 ### F5 — Signal parsing duplication ✅ DONE
@@ -119,7 +119,7 @@ against the pre-refactor binary. All four packages now at 100% coverage.
 | 1 | F1 mechanical fix: injected writers | 53 | `make test` + `make testsuite` + `go vet` | ✅ DONE (870/17/30) |
 | 2 | F2 digest consolidation + F5 signal consolidation | 8 | BusyBox suite + output parity | ✅ DONE (F2 + F5) |
 | 3 | F3 coverage drive | 4 | `make cover-pkg` ≥ 80% | ✅ DONE (whoami 100, hostname 98.2, diff 89.5, gzip 87.3) |
-| 4 | Deep audit of XL/L commands (one PR each) | 7 | per-command checklist + suites | ▶️ IN PROGRESS — F8–F11, F13, F14 done on `audit/f8-f11-json-parser-core`; per-command deep audit (god functions, JSON schemas) still open |
+| 4 | Deep audit of XL/L commands (one PR each) | 7 | per-command checklist + suites | ▶️ IN PROGRESS — F8–F11, F13, F14 done in PR #44 (`audit/f8-f11-json-parser-core`); per-command deep audit (god functions, JSON schemas) still open |
 | 5 | Sweep of M/S commands (batched) | 87 | per-command checklist + suites | ⏳ pending |
 | 6 | Decide F6/F7 and close all open verdicts | — | matrix 100% filled | ⚠️ F6+F7 done; matrix still filling |
 
@@ -435,6 +435,33 @@ one place only. The same rule applies to the coverage gate: quote the gate, not 
    `goposix.test` and checks the bool result, so the mark is stale.
 
 **Effect:** `truefalse` 0.50 → 0.00 (exempt), `gzip` 1.50 → 1.25, `mkfs_minix` 2.50 → 2.25.
+
+## 5c. PR #44 Change Log (F8–F14)
+
+Branch `audit/f8-f11-json-parser-core`, merged into `audit/posix-commands` via PR #44.
+
+| Finding | Tool(s) touched | What changed |
+|---------|-----------------|--------------|
+| F8 | `expr`, `testcmd`, `pkg/common` | new `common.TokenCursor`; `expr`/`testcmd` embed it. `bc`/`sed` keep local cursors (different token types and grammars). |
+| F9 | `bc`, `dc`, `pkg/common` | new `common.RatToInt64`/`common.RatTruncate`; `bc`/`dc` call them. |
+| F10 | all 93 `ParseFlags` call sites | new `common.HasJSONFlag`/`common.RenderFlagError`; flag errors return the JSON envelope. `factor` needs no flag-error path (its `PreProcess` turns unknown flags into positionals). |
+| F11 | `printf`, `echo`, `pkg/common` | new `common.ExpandEscapes` with `EscapeFormat`/`EscapeArg` modes. |
+| F13 | `chgrp`, `chown`, `pkg/common` | new `common.LookupUID`/`common.LookupGID`. |
+| F14 | `ls`, `du`, `pkg/common` | new `common.HumanSize` with a `round` option (`ls` truncates, `du` rounds). |
+
+Test notes: shared helpers in `pkg/common` are unit-tested to 100% statement coverage. Every
+command that routes flag errors through `common.RenderFlagError` has a JSON bad-flag test.
+
+## 5d. JSON Changes
+
+All JSON-related findings from the audit, with their current status.
+
+| ID | Issue | Scope | Status | Notes |
+|----|-------|-------|--------|-------|
+| F10 | Flag errors ignore `--json` and print plain text | 93 `ParseFlags` call sites | ✅ DONE (PR #44) | `common.HasJSONFlag` + `common.RenderFlagError`; every call site now returns the JSON envelope. `factor` is exempt (its `PreProcess` turns unknown flags into positionals). |
+| F12 | No published JSON schema | 39 commands: `bc`, `mount`, `hexdump`, `dc`, `start-stop-daemon`, `unzip`, `cpio`, `uudecode`, `tsort`, `ar`, `makedevs`, `mdev`, `mkfs_minix`, `wget`, `xxd`, `cryptpw`, `cal`, `uuencode`, `dd`, `taskset`, `which`, `daemon`, `factor`, `seq`, `rx`, `pidof`, `uptime`, `tree`, `shell`, `realpath`, `hostid`, `rev`, `sha512sum`, `sha3sum`, `sha1sum`, `bunzip2`, `uncompress`, `unlzma`, `bzcat` | ⏳ OPEN | Add a schema in `test/schemas/` and a fixture per command. Match on alias (`test` → `test.schema.json`, `truefalse` → `true.schema.json`/`false.schema.json`). |
+| F15 | Breaks the "`--json` for all" contract | `dd`, `shell` | ⏳ OPEN | `dd` is the documented exception. `shell` treats `--json` as a file name; add `--json` and assert it in the daemon test, or document the exemption in `wiki/json_schema.md`. |
+| — | Missing JSON-RPC daemon test | commands marked ❌ in the matrix | ⏳ OPEN | Fold into F12: a schema fixture plus a daemon assertion per command. |
 
 ## 6. Definition of Done
 
