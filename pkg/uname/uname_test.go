@@ -67,3 +67,14 @@ func TestCLIRunError(t *testing.T) {
 		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }
+
+func TestCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "uname:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

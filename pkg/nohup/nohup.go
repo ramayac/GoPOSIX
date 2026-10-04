@@ -35,6 +35,12 @@ func isTerminal(fd uintptr) bool {
 	return err == nil
 }
 
+// terminalCheck is a seam for tests. It reports whether w is a real terminal.
+var terminalCheck = func(w io.Writer) bool {
+	f, ok := w.(*os.File)
+	return ok && isTerminal(f.Fd())
+}
+
 // Run executes a command immune to SIGHUP, redirecting output if stdout is a terminal.
 // stdin/stdout/stderr are the standard streams for the child process.
 func Run(command []string, stdin io.Reader, stdout, stderr io.Writer) (NohupResult, error) {
@@ -52,10 +58,7 @@ func Run(command []string, stdin io.Reader, stdout, stderr io.Writer) (NohupResu
 	result := NohupResult{Command: command}
 
 	// stdoutIsTerminal reports whether w is a real terminal stream.
-	stdoutIsTerminal := func(w io.Writer) bool {
-		f, ok := w.(*os.File)
-		return ok && isTerminal(f.Fd())
-	}
+	stdoutIsTerminal := terminalCheck
 
 	// If stdout is a terminal, redirect to nohup.stdout
 	if stdoutIsTerminal(stdout) {
