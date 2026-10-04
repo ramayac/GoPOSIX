@@ -339,11 +339,6 @@ column from it. Refreshing the companion matrix is open work.
 #### P3 — `awk` BusyBox failures are deferred ✅ ACKNOWLEDGED
 The 17 `awk` failures are upstream goawk engine limits, not refactor work. The score reflects this.
 
-#### P5 — [AGENTS.md](../AGENTS.md) BusyBox counts are stale ✅ ACKNOWLEDGED
-AGENTS.md §5 reports 7 failures in `dc` and 7 in `tar`. The canonical matrix
-([wiki/test_coverage_matrix.md](test_coverage_matrix.md)) and isolated re-runs both report 0
-(`dc` 36/36, `tar` 33/33). Update AGENTS.md from the matrix.
-
 #### P4 — Concurrent `make testsuite` runs corrupt each other ⏳ OPEN (workflow hazard)
 [runtest](../test/busybox_testsuite/runtest) deletes and re-creates the shared
 `runtest-tempdir-links` directory, makes a shared `busybox` symlink, and rebuilds `goposix`.
@@ -351,6 +346,11 @@ Two runs at the same time therefore interfere. Observed during this preflight: a
 92 failures while another agent worked in the same checkout. A re-run of one applet in isolation
 passed 19/19. Treat a high failure count as suspicious when more than one agent is active, and
 re-run the applet alone before reporting a regression.
+
+#### P5 — [AGENTS.md](../AGENTS.md) BusyBox counts are stale ✅ ACKNOWLEDGED
+AGENTS.md §5 reports 7 failures in `dc` and 7 in `tar`. The canonical matrix
+([wiki/test_coverage_matrix.md](test_coverage_matrix.md)) and isolated re-runs both report 0
+(`dc` 36/36, `tar` 33/33). Update AGENTS.md from the matrix.
 
 ## 6. Definition of Done
 
