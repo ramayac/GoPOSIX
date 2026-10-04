@@ -2,6 +2,16 @@
 
 **Hello AI Assistant!** you are working on **GoPOSIX**. This document provides the critical context, architectural invariants, and workflow rules required to contribute successfully to this project. 
 
+## 0. Language Policy — ASD-STE100
+
+- Use ASD-STE100 Simplified Technical English for ALL project writing. This rule is mandatory.
+- The rule applies to: code comments, wiki pages, commit messages, pull request titles and descriptions, issue text, and agent communication about this project.
+- Write one instruction per sentence. Write short sentences (maximum 20 words for procedures, 25 for descriptions).
+- Use active voice. Use the imperative form for commands. Use "you", not "the user".
+- Use only approved ASD-STE100 words. Project-specific names (Go, POSIX, BusyBox, JSON-RPC) are approved nouns.
+- If you cannot say something in Simplified Technical English, say it differently. Do not break the rule.
+- This rule is part of the definition of done for every change.
+
 ## 1. Project Identity & Goal
 
 GoPOSIX is a 100% Go-native, POSIX-compliant userland designed for **programmatic consumption** in containerized environments. It runs as a persistent JSON-RPC 2.0 daemon with a typed Go SDK (60µs per RPC call, 11× faster than BusyBox fork+exec). A multicall CLI binary (like BusyBox) is also available as a secondary interface.
