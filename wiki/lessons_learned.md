@@ -1,7 +1,7 @@
 # Lessons Learned
 
 > **Permanent record** of insights, gotchas, and design decisions across all GoPOSIX development phases.
-> **Last updated:** 2026-10-03 | **Coverage:** 85.6% | **BusyBox:** 870/17/30 (98.1%)
+> **Last updated:** 2026-10-04 | **Coverage:** 85.6% | **BusyBox:** 870/17/30 (98.1%)
 
 ---
 
@@ -32,6 +32,14 @@ Each schema file includes both the envelope structure AND the utility-specific `
 ### `schemaVersion` field is forward-looking
 
 The `"schemaVersion": "1.0"` field in every JSON envelope allows consumers to detect and adapt to future schema changes. Major changes increment the integer; minor additions increment the decimal.
+
+### In JSON mode, stdout must carry only the envelope
+
+Cat-style and stream tools (`bzcat`, `gzip -c`, `bunzip2/unlzma/uncompress -c`, `cpio -o`) write the raw payload to stdout **before** the envelope when `--json` is set. The daemon cannot parse the mixed output, and the golden fixture must be trimmed to the trailing JSON line. This is audit finding F16 — the fix belongs to the decompress/archive cores, not the CLI glue.
+
+### Shell scripts need a JSON wrapper, not per-command JSON
+
+`shell` runs arbitrary programs, so per-command JSON shapes are impossible. The F15 fix wraps the whole script result: `data = {exitCode, stdout, stderr}`. The script's own exit code travels in `data.exitCode` **and** as the process exit code (the daemon returns the process code with the parsed envelope data). Same pattern as `expr`, `nice`, and `nohup` embedding child exit codes.
 
 ---
 
@@ -92,6 +100,14 @@ The BusyBox test harness auto-generates symlinks for every command returned by `
 ### Function seams make defensive error branches testable
 
 `os.Getwd`/`os.Stat` error paths cannot be triggered without races or root-only filesystem states. Package-level function vars (`var osGetwd = os.Getwd`) with test overrides exercise each branch deterministically — the same injectable-entry-point pattern as `catRun`. Use for hard-to-mock syscall error paths instead of skipping coverage.
+
+### Codecov patch coverage: test both branches of every new error path
+
+The 5d JSON work added `if jsonMode { RenderError } else { plain text }` blocks. The first test pass covered only the JSON branches and Codecov reported 76% patch coverage with 18 missing lines. Adding plain-text counterparts (`run([]string{}, ...)` alongside `run([]string{"--json"}, ...)`) and erroring-reader seams (`type errorReader struct{}`) closed all of them. When a new branch has two modes, write both tests immediately.
+
+### A package-var seam is enough for hardcoded system paths
+
+`pkg/who` hardcoded `/var/run/utmp` and `/run/utmp`, so the no-utmp return path was unreachable in tests. Moving the path list to a package var (`var utmpPaths = ...`) let a test swap in a nonexistent path and cover the `users: []` fix. Cheaper than full dependency injection and consistent with the function-seam pattern.
 
 ---
 
@@ -172,6 +188,30 @@ Draft-07 has the broadest tooling support: `ajv`, Python `jsonschema`, every maj
 ### Moving schemas to `test/schemas/` was the right call
 
 Schemas are test artifacts — they validate golden fixtures in CI — not documentation. Clear separation of concerns.
+
+### Schema file names must match dispatch names, not source dirs
+
+`mkfs_minix` registers as `mkfs.minix`, so its schema is `mkfs.minix.schema.json`. The audit plan called this the "name trap" (`testcmd` → `test.schema.json`, `truefalse` → `true`/`false`). `validate_schemas.sh` derives the utility name from the file name, so a mismatch silently skips validation.
+
+### JSON emitters must never output `null` for an empty collection
+
+`pkg/who` returned `Users: nil` when no utmp file existed, so `--json` emitted `"users": null`. The schema required an array, so the fixture could not validate. Rule: empty collections serialize as `[]` (non-nil slice), never `null`.
+
+### Error envelopes go to stderr; the daemon parses stdout only
+
+`common.RenderError` writes the envelope to the passed writer, and flag/usage errors use `stderr`. Over JSON-RPC the daemon parses the stdout buffer only, so a stderr error envelope becomes `{exitCode, data: null, stderr: "<envelope json>"}` — a successful JSON-RPC result, not a JSON-RPC error. Success envelopes always go to stdout. In JSON mode stdout must carry **only** the envelope.
+
+### The envelope `exitCode` can differ from the process exit code
+
+`common.Render` hardcodes the envelope `exitCode: 0`; some commands (e.g. `uncompress`, `makedevs`) render a success envelope but still return exit 1 when a per-file operation failed. The daemon returns the **process** exit code plus the parsed envelope `data`. Consumers must not assume the two agree.
+
+### Golden fixtures close the schema-gap silently
+
+`validate_schemas.sh` reports `SKIP` for schemas without fixtures. The pre-audit wiki claimed 77 schemas, but 31 of them skipped validation because no fixture existed. After regenerating fixtures, `make validate-schemas` reports 114 passed, 0 failed, 0 skipped — the skip count is part of the definition of done.
+
+### `gen_golden.sh` — bash `local a="$1" b="$a"` expands before assignment
+
+In a single `local` declaration, the second assignment sees the **old** value of the first variable. With `set -u` this aborts the script on the first call. Declare locals first, then assign on separate lines. The pre-existing script had never run cleanly because of this.
 
 ---
 

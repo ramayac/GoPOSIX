@@ -54,11 +54,13 @@ Work one PR per command, ordered by the `PreAudit` score in
 
 | Item | What |
 |------|------|
-| F8 | Hand-rolled parser helpers duplicated across `bc`, `expr`, `sed`, `testcmd`. Move to a shared expression core in `pkg/common`. |
+| Phase 4 | Deep audit of 6 commands: `bc`, `sed`, `date`, `tar`, `dc`, `diff` (`printf` is `KEEP ✅`). See plan §6. |
+| Phase 5 | 14 open verdicts: `grep` (REFACTOR), `patch`, `hexdump`, `start-stop-daemon`, `unzip`, `uudecode`, `logger`, `wget`, `xxd`, `sort`, `uuencode`, `taskset`, `rx`, `xargs`. See plan §6. |
+| F16 | Raw payload mixes with the envelope on stdout: `bzcat`, `bunzip2/unlzma/uncompress -c`, `gzip -c`, `cpio -o` (found in PR #46). |
 | P1 | `logger` keeps a package-global `stderrWriter`. Replace with an injected writer (daemon safety, audit item 10). |
-| P2 | [wiki/test_coverage_matrix.md](test_coverage_matrix.md) is stale (e.g. `chmod` 68.3% vs 92.7% measured). Refresh from the tree. |
+| P2 | [wiki/test_coverage_matrix.md](test_coverage_matrix.md) coverage numbers are stale (only the JSON-RPC column was refreshed). |
 | P4 | Two `make testsuite` runs in the same checkout corrupt each other (shared `runtest-tempdir-links`). Re-run an applet alone before reporting a regression. |
-| README | Add the Phase 28 link after PR #43 merges. |
+| README | ✅ Add the Phase 28 link (done on `audit/whatsleft`). |
 
 ---
 

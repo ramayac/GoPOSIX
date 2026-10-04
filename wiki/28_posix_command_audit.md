@@ -1,6 +1,6 @@
 # Phase 28 — POSIX Command Audit (Plan & Matrix)
 
-> **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — F8–F14 shipped in PR #44, 5d JSON work shipped in PR #46 (`audit/5d-json`)
+> **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — F8–F14 shipped in PR #44, 5d JSON work shipped in PR #46 (`audit/5d-json`) · remaining work: §6 |
 > **Preflight:** 2026-10-03 — matrix refreshed from the tree, `PreAudit` score added (see §5a). Corrected XL/L scope: 7 commands, not 24.
 >
 > Companion to [wiki/test_coverage_matrix.md](test_coverage_matrix.md) (test status) and [wiki/todos.md](todos.md) (open work).
@@ -149,10 +149,10 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `bc` | XL | 2587 | 590 | 83.7% | ✅ 81/81 | — | 5.50 | IMPROVE | F6 ✅ NewInterpreter returns error (no panic); mathLibSource seam · F8 ✅ `peek`/`next` cursor shared with `testcmd` (token cursor); F9 ✅ `RatToInt64`/`RatTruncate` moved to `pkg/common/rat.go` · F10 ✅ flag errors honour `--json` · F12 ✅ schema + fixture + daemon test (tier9) · Preflight open: `eval` 486 lines, `NextToken` 284 lines |
 | `sed` | L | 1181 | 1060 | 80.1% | ✅ 103/103 | — | 3.75 | IMPROVE | Preflight: `parseInstruction` 266 lines, `execFlat` 184 lines · F10 ✅ flag errors honour `--json` · coverage 80.1% is the lowest of the large tools |
 | `printf` | L | 749 | 744 | 83.7% | ✅ 26/26 | — | 3.75 | KEEP ✅ | F11 ✅ `processEscapes`/`processEscapesForB` now wrap `common.ExpandEscapes` · F10 ✅ flag errors honour `--json` · Preflight: no other open items |
-| `date` | L | 746 | 661 | 83.8% | ✅ 7/7 | — | 3.75 | IMPROVE | Preflight: `parsePOSIXTZ` is a 263-line closure nest · lift the inner funcs for testability · `--json` ignored on flag errors |
-| `patch` | M | 600 | 381 | 82.1% | ✅ 11/11 | — | 3.75 | IMPROVE | Preflight: `Run` 120 lines · `--json` ignored on flag errors |
+| `date` | L | 746 | 661 | 83.8% | ✅ 7/7 | — | 3.75 | IMPROVE | Preflight: `parsePOSIXTZ` is a 263-line closure nest · lift the inner funcs for testability · F10 ✅ flag errors honour `--json` |
+| `patch` | M | 600 | 381 | 82.1% | ✅ 11/11 | — | 3.75 | IMPROVE | Preflight: `Run` 120 lines · F10 ✅ flag errors honour `--json` |
 | `mount` | S | 317 | 178 | 80.6% | ⚠️ 0/1 (1 skip) | — | 3.75 | KEEP ✅ | Preflight: small and clean, `mountRun` is injectable · all BusyBox cases need root · F12 ✅ schema + fixture + daemon test (tier9) |
-| `tar` | L | 1114 | 1537 | 82.3% | ✅ 31/31 | — | 3.50 | IMPROVE | Preflight: `extractArchiveStream` 196 lines, `createArchiveStream` 183 lines · `--json` ignored on flag errors · BusyBox 33/33 isolated |
+| `tar` | L | 1114 | 1537 | 82.3% | ✅ 31/31 | — | 3.50 | IMPROVE | Preflight: `extractArchiveStream` 196 lines, `createArchiveStream` 183 lines · F10 ✅ flag errors honour `--json` · BusyBox 33/33 isolated |
 | `hexdump` | M | 562 | 236 | 84.7% | ✅ 3/3 | — | 3.50 | IMPROVE | Preflight: `Run` 202 lines · thin tests (T-LOC/LOC 0.42) · F10 ✅ flag errors honour `--json` · F12 ✅ schema + fixture + daemon test (tier9) |
 | `dc` | L | 1149 | 628 | 89.0% | ✅ 36/36 | — | 3.25 | IMPROVE | Preflight: `evalDC` is a 569-line god function · F9 ✅ `RatToInt64`/`RatTruncate` moved to `pkg/common/rat.go` · F10 ✅ flag errors honour `--json` · F12 ✅ schema + fixture (daemon test present) · BusyBox 36/36 |
 | `start-stop-daemon` | M | 366 | 242 | 80.7% | ✅ 4/4 | — | 3.25 | IMPROVE | F5 ✅ · F12 ✅ schema + fixture (daemon test present) · Preflight: `run` 237 lines · BusyBox 4/4 |
@@ -160,7 +160,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `cpio` | M | 456 | 449 | 82.0% | ✅ 2/9 (7 skip) | — | 3.00 | KEEP ✅ | Preflight: balanced helpers, no duplication found · 7 of 9 BusyBox cases are root skips · F12 ✅ schema + fixture + daemon test · F16 ⏳ `-o --json` mixes the archive stream with the envelope on stdout |
 | `uudecode` | S | 323 | 217 | 84.6% | — | — | 3.00 | IMPROVE | Preflight: `run` 282 lines (god function) · no BusyBox tests · F12 ✅ schema + fixture (daemon test present) |
 | `tsort` | S | 145 | 73 | 84.3% | ✅ 20/20 | — | 3.00 | KEEP ✅ | Preflight: thin tests · F10 ✅ flag errors honour `--json` · F12 ✅ schema + fixture + daemon test |
-| `grep` | M | 648 | 839 | 84.8% | ✅ 53/53 | — | 2.75 | REFACTOR | Preflight: `grepRun` is a 432-line god function (flags + pattern compile + traversal + output) · `--json` ignored on flag errors |
+| `grep` | M | 648 | 839 | 84.8% | ✅ 53/53 | — | 2.75 | REFACTOR | Preflight: `grepRun` is a 432-line god function (flags + pattern compile + traversal + output) · F10 ✅ flag errors honour `--json` |
 | `ar` | M | 484 | 516 | 81.6% | ✅ 2/2 | — | 2.75 | KEEP ✅ | Preflight: `arRun` 88 lines, balanced · F10 ✅ flag errors honour `--json` · F12 ✅ schema + fixture (daemon test present) |
 | `makedevs` | S | 335 | 156 | 87.3% | ⚠️ 0/1 (1 skip) | — | 2.75 | KEEP ✅ | F12 ✅ schema + fixture + daemon test (tier9) · BusyBox case needs root |
 | `mdev` | S | 309 | 146 | 87.4% | ⚠️ 0/12 (12 skip) | — | 2.75 | KEEP ✅ | F12 ✅ schema + fixture + daemon test (tier9) · 5d.1 ✅ usage error honours `--json` · BusyBox cases need root |
@@ -497,7 +497,59 @@ call `common.RenderError` when `--json` is present:
 | F16 | Raw payload mixes with the envelope on stdout | `bzcat --json`, `bunzip2/unlzma/uncompress -c --json`, `gzip -c --json`, and `cpio -o --json` write the raw data stream to stdout before the JSON envelope. Over JSON-RPC the daemon cannot parse the mixed output. Fixing this changes F7-core behavior, so it is recorded here for the Phase 4/5 deep audit of those tools. The `bzcat` golden fixture keeps only the trailing JSON line for this reason. |
 | P7 | 31 pre-existing schemas had no golden fixture | Regenerating fixtures with `gen_golden.sh` (after fixing its `set -u` bug and the `%b` escape handling) closed 30 of 31 gaps. `who` was the last: it emitted `"users": null` with no utmp file, which its schema rejects. `pkg/who` now emits `[]`; the schema and fixture validate. No open item remains. |
 
-## 6. Definition of Done
+## 6. What's Left (after PR #46)
+
+Snapshot taken on `audit/whatsleft` after PR #46 (`audit/5d-json`) merged into `main`.
+All JSON-related audit work (F10, F12, F15, daemon tests) is done. The remaining work:
+
+### Phase 4 — deep audit of XL/L commands (6 of 7 open)
+
+`printf` is done (`KEEP ✅`). One PR per command, ordered by `PreAudit` score:
+
+| Command | Score | Open work |
+|---------|:-----:|-----------|
+| `bc` | 5.50 | `eval` 486 lines, `NextToken` 284 lines |
+| `sed` | 3.75 | `parseInstruction` 266 lines, `execFlat` 184 lines, coverage 80.1% (lowest of the large tools) |
+| `date` | 3.75 | `parsePOSIXTZ` 263-line closure nest — lift the inner funcs for testability |
+| `tar` | 3.50 | `extractArchiveStream` 196 lines, `createArchiveStream` 183 lines |
+| `dc` | 3.25 | `evalDC` 569-line god function |
+| `diff` | 2.25 | deep audit open (F1+F3 already applied) |
+
+### Phase 5 — sweep of M/S commands (14 verdicts open here; 20 total with Phase 4)
+
+| Command | Score | Open work |
+|---------|:-----:|-----------|
+| `grep` | 2.75 | **REFACTOR** — `grepRun` 432-line god function |
+| `patch` | 3.75 | `Run` 120 lines |
+| `hexdump` | 3.50 | `Run` 202 lines, thin tests |
+| `start-stop-daemon` | 3.25 | `run` 237 lines |
+| `unzip` | 3.00 | `run` 341 lines (god function) |
+| `uudecode` | 3.00 | `run` 282 lines (god function), no BusyBox tests |
+| `logger` | 2.50 | P1 — package-global `stderrWriter` |
+| `wget` | 2.50 | `http.Client{}` has no timeout (daemon blocking risk) |
+| `xxd` | 2.25 | `reverseStandard`/`reversePlain` repeat the hex-scan loop |
+| `sort` | 2.00 | exported `Run` takes unexported types |
+| `uuencode` | 2.00 | `run` 167 lines |
+| `taskset` | 1.75 | `run` 162 lines |
+| `rx` | 1.25 | 1 flaky BusyBox test (handshake race, deferred) |
+| `xargs` | 1.00 | `xargsRun` 159 lines, 29 branches |
+
+### Open findings
+
+| ID | Status | What |
+|----|--------|------|
+| F16 | ⏳ NEW (PR #46) | Raw payload mixes with the envelope on stdout: `bzcat --json`, `bunzip2/unlzma/uncompress -c --json`, `gzip -c --json`, `cpio -o --json`. Over JSON-RPC the daemon cannot parse the mixed output. |
+| P1 | ⏳ OPEN | `logger` package-global `stderrWriter` (daemon re-entrancy). |
+| P2 | ⏳ OPEN | [wiki/test_coverage_matrix.md](test_coverage_matrix.md) coverage numbers are stale (only the JSON-RPC column was refreshed during 5d). |
+| P4 | ⏳ OPEN | Concurrent `make testsuite` runs corrupt each other (shared `runtest-tempdir-links`). |
+
+### Housekeeping
+
+- ✅ README now links the Phase 28 plan (added on `audit/whatsleft`).
+- Phase 6: close all open verdicts once Phases 4 and 5 are done.
+- Matrix rows marked `KEEP ✅` with "(observation for Phase 5)" notes (`mkfs_minix`, `cal`, `seq`, `pidof`, `uptime`, `tree`, `realpath`, `rev`, `dd` size notes) do not block the plan; they only point the Phase 5 sweep at the largest `run` functions.
+
+## 7. Definition of Done
 
 - Every row has a verdict and notes. ✅ (115/115)
 - No row shows `REFACTOR` or `IMPROVE` for a finding that is already complete.

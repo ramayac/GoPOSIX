@@ -123,6 +123,7 @@ Every command response also includes a `stderr` field with human-readable error 
 - [Security Model](wiki/security.md)
 - [JSON Schema](wiki/json_schema.md) — `--json` output schemas for every utility
 - [Test Coverage & Compliance Matrix](wiki/test_coverage_matrix.md) — 871/917 (98.2%) BusyBox pass rate
+- [POSIX Command Audit Plan](wiki/28_posix_command_audit.md) — Phase 28 audit plan, matrix, and remaining work
 - [POSIX FAQ](wiki/posix_faq.md)
 - [Performance Quick Reference](wiki/performance.md)
 
