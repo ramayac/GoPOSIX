@@ -1,6 +1,6 @@
 # Phase 28 — POSIX Command Audit (Plan & Matrix)
 
-> **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — F8–F14 shipped in PR #44, 5d JSON work shipped in PR #46 (`audit/5d-json`) · remaining work: §6 |
+> **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — F8–F14 shipped in PR #44, 5d JSON work shipped in PR #46 (`audit/5d-json`), F16/P1/P2/P4 closed on `audit/whatsleft` (PR #47) · remaining work: §6 |
 > **Preflight:** 2026-10-03 — matrix refreshed from the tree, `PreAudit` score added (see §5a). Corrected XL/L scope: 7 commands, not 24.
 >
 > Companion to [wiki/test_coverage_matrix.md](test_coverage_matrix.md) (test status) and [wiki/todos.md](todos.md) (open work).
@@ -120,8 +120,8 @@ against the pre-refactor binary. All four packages now at 100% coverage.
 | 2 | F2 digest consolidation + F5 signal consolidation | 8 | BusyBox suite + output parity | ✅ DONE (F2 + F5) |
 | 3 | F3 coverage drive | 4 | `make cover-pkg` ≥ 80% | ✅ DONE (whoami 100, hostname 98.2, diff 89.5, gzip 87.3) |
 | 4 | Deep audit of XL/L commands (one PR each) | 7 | per-command checklist + suites | ▶️ IN PROGRESS — F8–F11, F13, F14 done in PR #44 (`audit/f8-f11-json-parser-core`); F12, F15, and the JSON-RPC daemon-test gap done in PR #46 (`audit/5d-json`); per-command deep audit (god functions) still open |
-| 5 | Sweep of M/S commands (batched) | 87 | per-command checklist + suites | ⏳ pending |
-| 6 | Decide F6/F7 and close all open verdicts | — | matrix 100% filled | ⚠️ F6+F7 done; matrix still filling |
+| 5 | Sweep of M/S commands (batched) | 13 open verdicts | per-command checklist + suites | ⏳ pending — list in §6 |
+| 6 | Decide F6/F7 and close all open verdicts | — | matrix 100% filled | ▶️ F6+F7 done; all findings F1–F16 and P1–P7 resolved; matrix rows updated; only the 19 per-command verdicts in §6 remain |
 
 ## 5. Audit Matrix
 
@@ -566,7 +566,7 @@ are now resolved). The remaining work:
 
 - Every row has a verdict and notes. ✅ (115/115)
 - No row shows `REFACTOR` or `IMPROVE` for a finding that is already complete.
-- Findings F1–F15 and P1 are resolved or explicitly deferred with reasons.
+- Findings F1–F16 and P1–P7 are resolved or explicitly deferred with reasons.
 - Commands with `PreAudit = 0` (100% coverage and a passing BusyBox suite) need no change.
 - The `PreAudit` score and the matrix data match the current tree.
 - `make test`, `make testsuite`, `go vet`, `go fmt` all pass.

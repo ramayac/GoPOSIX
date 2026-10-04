@@ -37,7 +37,7 @@ via the SDK, and `FROM scratch` containers needing a minimal POSIX userland.
 |------|-------------|
 | `goposix` (binary) | `make build` → `CGO_ENABLED=0 go build -o goposix ./cmd/goposix/` |
 | `go.sum` | `go mod tidy` / `go mod download` |
-| `runtest-tempdir-links/` | BusyBox test suite harness (temporary symlinks) |
+| BusyBox link dir | Test suite harness — per-run `mktemp -d` (e.g. `/tmp/runtest-links.XXXXXX`), removed on exit (P4 fix) |
 | Docker images | `make image` (daemon), `make image-cli` (CLI), `make bench-image` (benchmark) |
 | Benchmark results | `make bench-all` → Docker volume `goposix-bench-data` |
 

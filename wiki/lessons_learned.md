@@ -119,6 +119,10 @@ The 5d JSON work added `if jsonMode { RenderError } else { plain text }` blocks.
 
 `pkg/who` hardcoded `/var/run/utmp` and `/run/utmp`, so the no-utmp return path was unreachable in tests. Moving the path list to a package var (`var utmpPaths = ...`) let a test swap in a nonexistent path and cover the `users: []` fix. Cheaper than full dependency injection and consistent with the function-seam pattern.
 
+### Refresh doc matrices with a script, never by hand
+
+P2: 115 coverage cells in `test_coverage_matrix.md` were stale by months. The refresh was one `go test -cover $(PKG_DIRS)` run plus a small Python pass that regexes the table rows and replaces only the percentage column — 84 of 115 rows changed with zero transcription errors. Any doc that repeats measured numbers (coverage, test counts, LOC) needs a generator or a scripted refresh; the AGENTS.md P5 rule (numbers live in one place) exists because hand-copied numbers drift.
+
 ---
 
 ## Go-Specific Gotchas
