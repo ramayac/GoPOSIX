@@ -32,7 +32,7 @@
 - [26_missing_tools.md](26_missing_tools.md) | Analysis of missing BusyBox tools based on test suite coverage (COMPLETED).
 - [27_high_complexity_tools.md](27_high_complexity_tools.md) | High-complexity & privileged Tier 5 utilities (COMPLETED).
 - [posix_faq.md](posix_faq.md) | POSIX compliance FAQ.
-- [posix_command_audit.md](posix_command_audit.md) | Per-command audit plan & matrix: LOC, coverage, BusyBox status, refactor verdicts (IN PROGRESS).
+- [28_posix_command_audit.md](28_posix_command_audit.md) | Per-command audit plan & matrix: LOC, coverage, BusyBox status, refactor verdicts (IN PROGRESS).
 
 ## Completed Phase Summaries
 

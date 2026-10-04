@@ -9,7 +9,7 @@ Append-only timeline of wiki maintenance activity.
 - Deleted the local 7-name `parseSignal` in `pkg/start-stop-daemon`; call site now uses `common.ParseSignal` (full 31-signal table, SIG-prefix tolerance, case-insensitive, whitespace trim). Error message format unchanged.
 - Tests extended with signals the old parser rejected (CONT, STOP, PWR, SYS, WINCH, SIGPIPE, lowercase, padded numerics). Coverage 80.7%.
 - Verified: unit all green, compliance test_start-stop-daemon.sh 3/3, BusyBox 870/17/30 (17 awk only, matches baseline).
-- Audit phase 2 is now fully done (F2 + F5); `posix_command_audit.md` phase table updated.
+- Audit phase 2 is now fully done (F2 + F5); `28_posix_command_audit.md` phase table updated.
 
 ## [2026-10-03] implement | Audit phases 1–3: writer injection (F1), digest consolidation (F2), coverage (F3)
 
@@ -929,3 +929,9 @@ and 05. All 55 utility packages now have clickable source links from their
 wiki documentation.
 
 
+
+
+## [2026-10-03] rename | posix_command_audit.md → 28_posix_command_audit.md
+
+- The audit plan is Phase 28. The file name follows the wiki phase convention (23_, 25_, 26_, 27_).
+- Links updated in `index.md`, `todos.md`, and `phases.md` (Active Work). Historical log entries keep the old name.

@@ -7,7 +7,7 @@ This document serves as the live registry of remaining work, active plans, and k
 ---
 
 > 📊 **Per-utility status** → **[wiki/test_coverage_matrix.md](test_coverage_matrix.md)**
-> 🔍 **Command audit plan (IN PROGRESS)** → **[wiki/posix_command_audit.md](posix_command_audit.md)**
+> 🔍 **Command audit plan (IN PROGRESS)** → **[wiki/28_posix_command_audit.md](28_posix_command_audit.md)**
 > 🛡️ **Hardening V results** → **[wiki/hardening.md](hardening.md)**
 > ⚡ **Performance opportunities** → **[wiki/performance.md](performance.md)**
 > ✅ **Completed changelog** → **[wiki/log.md](log.md)**
@@ -28,7 +28,7 @@ All 12 packages are now ≥ 80% (project audit branch `audit/posix-commands`):
 `client` 83.7%, `internal/daemon` 82.4%, `chgrp` 83.3%, `logname` 80.0%, `shell` 90.2%,
 `cp` 82.6%, `tee` 92.3%. The function-seam pattern (`var userCurrent = user.Current`,
 `var osHostname = os.Hostname`) from PR #42 solved the syscall-mocking blockers.
-See [wiki/posix_command_audit.md](posix_command_audit.md).
+See [wiki/28_posix_command_audit.md](28_posix_command_audit.md).
 
 ### `start-stop-daemon` signal parsing consolidation ✅ RESOLVED
 

@@ -1,4 +1,4 @@
-# POSIX Command Audit — Plan & Matrix
+# Phase 28 — POSIX Command Audit (Plan & Matrix)
 
 > **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — phases 0–3 done
 >

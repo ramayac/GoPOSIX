@@ -100,4 +100,5 @@ goposix binary (single static ELF, <12MB)
 
 ## Active Work
 
-See [todos.md](todos.md) for the canonical registry of remaining work, and [deferred.md](deferred.md) for planning-phase architectural work.
+- **Phase 28** — POSIX command audit (in progress): [wiki/28_posix_command_audit.md](28_posix_command_audit.md). Phases 1–3 done (writer injection, digest core, coverage). Next: deep audit of XL/L commands.
+- See [todos.md](todos.md) for the canonical registry of remaining work, and [deferred.md](deferred.md) for planning-phase architectural work.
