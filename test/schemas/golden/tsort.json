@@ -1,1 +1,1 @@
-{"command":"tsort","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"nodes":["a","b","c"]},"error":null}
+{"command":"tsort","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":{"nodes":["a","b","c"]},"error":null}

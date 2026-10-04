@@ -37,9 +37,19 @@ The `"schemaVersion": "1.0"` field in every JSON envelope allows consumers to de
 
 Cat-style and stream tools (`bzcat`, `gzip -c`, `bunzip2/unlzma/uncompress -c`, `cpio -o`) write the raw payload to stdout **before** the envelope when `--json` is set. The daemon cannot parse the mixed output, and the golden fixture must be trimmed to the trailing JSON line. This is audit finding F16 — the fix belongs to the decompress/archive cores, not the CLI glue.
 
+**F16 resolution (audit/whatsleft):** in JSON stdout mode, capture the payload in a bounded buffer (50 MB, the daemon response cap) and embed it as base64 `content` inside the envelope (`DecompFileInfo.Content`, `GzipStat.Content`, `CpioResult.Content`). Text mode stays byte-for-byte unchanged. The optional schema field keeps the shape backwards-compatible. Tradeoff accepted: base64 inflates the payload ~33% and the cap bounds it — machine consumers decode the field, humans pipe without `--json`.
+
 ### Shell scripts need a JSON wrapper, not per-command JSON
 
 `shell` runs arbitrary programs, so per-command JSON shapes are impossible. The F15 fix wraps the whole script result: `data = {exitCode, stdout, stderr}`. The script's own exit code travels in `data.exitCode` **and** as the process exit code (the daemon returns the process code with the parsed envelope data). Same pattern as `expr`, `nice`, and `nohup` embedding child exit codes.
+
+### Package-global writers break the daemon contract
+
+`logger` swapped a package-global `stderrWriter` per call — process-local mutable state that races under concurrent JSON-RPC calls (P1). The fix follows the `catRun()` pattern: thread the writer through the library function (`Run(..., errOut io.Writer)`) and delete the global. Any utility that needs output outside the envelope must take it as a parameter.
+
+### Test-harness temp dirs must be unique per run
+
+Two `make testsuite` runs shared `runtest-tempdir-links/` and `.tmpdir.$applet`; each run `rm -rf`'d what the other was using, producing spurious 92-failure runs (P4). Fix: `mktemp -d` per run with an EXIT trap, and PID-suffixed per-testcase dirs. Delete tracked harness-symlink trees from the repo so the harness never mutates tracked files.
 
 ---
 

@@ -1,1 +1,1 @@
-{"command":"sleep","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"duration":0.00107581,"requested":0.001,"interrupted":false},"error":null}
+{"command":"sleep","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":{"duration":0.001132691,"requested":0.001,"interrupted":false},"error":null}

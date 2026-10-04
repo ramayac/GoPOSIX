@@ -1,7 +1,8 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-10-03 | **BusyBox:** 871 pass / 16 fail / 30 skip | **Branch:** `audit/posix-commands` | **Overall Coverage:** 87.9% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-10-04 | **BusyBox:** 870 pass / 17 fail / 30 skip | **Branch:** `audit/whatsleft` | **Overall Coverage:** 88.1% | **JSON-RPC:** 115/115 (100.0%)
 >
+> Coverage values refreshed from the tree on 2026-10-04 (P2).
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
 > `posix_coverage.md` — this is now the single source of truth.
@@ -25,129 +26,129 @@
 |---------|:------------:|:-------------:|:--------------:|:--------:|
 | `echo` | 100.0% | 11 | ✅ 11/11 | ✅ |
 | `true` / `false` | 100.0% | 4 | ✅ 4/4 | ✅ |
-| `yes` | 80.0% | — | — | ✅ |
+| `yes` | 95.8% | — | — | ✅ |
 | `whoami` | 100.0% | — | — | ✅ |
-| `hostname` | 98.2% | 4 | ✅ 4/4 | ✅ |
-| `hostid` | 96.3% | 1 | ✅ 1/1 | ✅ |
-| `uname` | 76.7% | — | — | ✅ |
-| `pwd` | 81.2% | 1 | ✅ 1/1 | ✅ |
+| `hostname` | 98.1% | 4 | ✅ 4/4 | ✅ |
+| `hostid` | 98.0% | 1 | ✅ 1/1 | ✅ |
+| `uname` | 97.6% | — | — | ✅ |
+| `pwd` | 100.0% | 1 | ✅ 1/1 | ✅ |
 | `printenv` | 100.0% | — | — | ✅ |
 | `env` | 100.0% | — | — | ✅ |
-| `which` | 86.0% | 1 | ✅ 1/1 | ✅ |
+| `which` | 94.1% | 1 | ✅ 1/1 | ✅ |
 
 ## Tier 2 — Filesystem
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
 | `ls` | 88.1% | 5 | ✅ 5/5 | ✅ |
-| `cat` | 89.6% | 1 | ✅ 1/1 | ✅ |
-| `mkdir` | 85.3% | 2 | ✅ 2/2 | ✅ |
-| `rmdir` | 92.6% | 1 | ✅ 1/1 | ✅ |
-| `rm` | 87.3% | 1 | ✅ 1/1 | ✅ |
-| `cp` | 77.6% | 14 | ✅ 14/14 | ✅ |
-| `mv` | 84.0% | 14 | ✅ 14/14 | ✅ |
-| `touch` | 82.6% | 3 | ✅ 3/3 | ✅ |
-| `ln` | 79.3% | 6 | ✅ 6/6 | ✅ |
+| `cat` | 89.5% | 1 | ✅ 1/1 | ✅ |
+| `mkdir` | 100.0% | 2 | ✅ 2/2 | ✅ |
+| `rmdir` | 100.0% | 1 | ✅ 1/1 | ✅ |
+| `rm` | 87.1% | 1 | ✅ 1/1 | ✅ |
+| `cp` | 90.6% | 14 | ✅ 14/14 | ✅ |
+| `mv` | 95.9% | 14 | ✅ 14/14 | ✅ |
+| `touch` | 91.2% | 3 | ✅ 3/3 | ✅ |
+| `ln` | 100.0% | 6 | ✅ 6/6 | ✅ |
 | `stat` | 100.0% | — | — | ✅ |
-| `readlink` | 76.8% | 6 | ✅ 6/6 | ✅ |
-| `realpath` | 94.7% | 10 | ✅ 10/10 | ✅ |
-| `basename` | 85.7% | 2 | ✅ 2/2 | ✅ |
-| `dirname` | 85.7% | 7 | ✅ 7/7 | ✅ |
-| `tree` | 98.0% | 4 | ✅ 4/4 | ✅ |
+| `readlink` | 81.1% | 6 | ✅ 6/6 | ✅ |
+| `realpath` | 96.8% | 10 | ✅ 10/10 | ✅ |
+| `basename` | 95.0% | 2 | ✅ 2/2 | ✅ |
+| `dirname` | 100.0% | 7 | ✅ 7/7 | ✅ |
+| `tree` | 97.9% | 4 | ✅ 4/4 | ✅ |
 
 ## Tier 3 — Text Processing
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `head` | 94.3% | 4 | ✅ 4/4 | ✅ |
-| `tail` | 87.1% | 3 | ✅ 3/3 | ✅ |
-| `wc` | 93.2% | 5 | ✅ 5/5 | ✅ |
-| `sort` | 85.2% | 27 | ✅ 27/27 | ✅ |
-| `uniq` | 88.4% | 15 | ✅ 15/15 | ✅ |
-| `tr` | 90.4% | 6 | ✅ 6/6 | ✅ |
+| `head` | 94.2% | 4 | ✅ 4/4 | ✅ |
+| `tail` | 88.6% | 3 | ✅ 3/3 | ✅ |
+| `wc` | 88.6% | 5 | ✅ 5/5 | ✅ |
+| `sort` | 86.1% | 27 | ✅ 27/27 | ✅ |
+| `uniq` | 88.3% | 15 | ✅ 15/15 | ✅ |
+| `tr` | 90.8% | 6 | ✅ 6/6 | ✅ |
 | `cut` | 90.8% | 25 | ✅ 25/25 | ✅ |
-| `tee` | 73.1% | 2 | ✅ 2/2 | ✅ |
+| `tee` | 92.2% | 2 | ✅ 2/2 | ✅ |
 | `grep` | 84.8% | 53 | ✅ 53/53 | ✅ |
 | `sed` | 80.0% | 103 | ✅ 103/103 | ✅ |
-| `rev` | 94.7% | 4 | ✅ 4/4 | ✅ |
-| `tsort` | 84.3% | 20 | ✅ 20/20 | ✅ |
+| `rev` | 98.2% | 4 | ✅ 4/4 | ✅ |
+| `tsort` | 87.0% | 20 | ✅ 20/20 | ✅ |
 
 ## Tier 4 — System & Process
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `ps` | 84.6% | — | — | ✅ |
+| `ps` | 100.0% | — | — | ✅ |
 | `kill` | 100.0% | — | — | ✅ |
-| `sleep` | 78.1% | — | — | ✅ |
+| `sleep` | 93.5% | — | — | ✅ |
 | `date` | 83.9% | 7 | ✅ 7/7 | ✅ |
-| `uptime` | 88.5% | 1 | ✅ 1/1 | ✅ |
-| `id` | 87.1% | 4 | ✅ 4/4 | ✅ |
-| `chmod` | 68.3% | — | — | ✅ |
+| `uptime` | 92.2% | 1 | ✅ 1/1 | ✅ |
+| `id` | 94.5% | 4 | ✅ 4/4 | ✅ |
+| `chmod` | 92.6% | — | — | ✅ |
 | `chown` | 100.0% | — | — | ✅ |
 | `chgrp` | 95.7% | — | — | ✅ |
-| `df` | 79.2% | — | — | ✅ |
+| `df` | 95.7% | — | — | ✅ |
 | `du` | 90.4% | 6 | ✅ 6/6 | ✅ |
-| `find` | 89.5% | 13 | ✅ 13/13 | ✅ |
+| `find` | 89.7% | 13 | ✅ 13/13 | ✅ |
 | `xargs` | 94.1% | 12 | ✅ 12/12 | ✅ |
-| `pidof` | 96.7% | 4 | ✅ 4/4 | ✅ |
+| `pidof` | 96.8% | 4 | ✅ 4/4 | ✅ |
 
 ## Tier 5 — Advanced / Agent Features
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `tar` | 80.4% | 31 | ✅ 31/31 | ✅ |
+| `tar` | 82.6% | 31 | ✅ 31/31 | ✅ |
 | `gzip` / `gunzip` | 87.3% | 4 | ✅ 4/4 | ✅ |
 | `sha256sum` | 100.0% | — | — | ✅ |
 | `sha1sum` | 100.0% | 1 | ✅ 1/1 | ✅ |
 | `sha512sum` | 100.0% | — | — | ✅ |
-| `sha3sum` | 90.2% | 2 | ✅ 2/2 | ✅ |
+| `sha3sum` | 100.0% | 2 | ✅ 2/2 | ✅ |
 | `md5sum` | 100.0% | 2 | ✅ 2/2 | ✅ |
 | `diff` | 90.3% | 20 | ✅ 20/20 | ✅ |
 | `test` / `[` | 92.7% | — | — | ✅ |
 | `printf` | 89.7% | 26 | ✅ 26/26 | ✅ |
 | `expr` | 86.8% | 2 | ✅ 2/2 | ✅ |
 | `awk` | 90.0% | 53 | ⚠️ 36/53 (17 fail, deferred) | ✅ |
-| `shell` | 66.7% | — | — | ✅ |
-| `wget` | 81.4% | 4 | ✅ 4/4 | ✅ |
+| `shell` | 95.6% | — | — | ✅ |
+| `wget` | 86.2% | 4 | ✅ 4/4 | ✅ |
 
 ## Tier 6 — Post-MVP (Phase 15–16, 18.3)
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
 | `dd` | 88.8% | 6 | ✅ 6/6 | ✅ |
-| `od` | 81.7% | 4 | ✅ 4/4 | ✅ |
-| `patch` | 82.1% | 11 | ✅ 11/11 | ⚠️ |
-| `unexpand` | 82.8% | 24 | ✅ 24/24 | ✅ |
-| `comm` | 88.8% | 9 | ✅ 9/9 | ✅ |
-| `paste` | 88.5% | 5 | ✅ 5/5 | ✅ |
-| `fold` | 91.8% | 4 | ✅ 4/4 | ✅ |
+| `od` | 85.2% | 4 | ✅ 4/4 | ✅ |
+| `patch` | 82.7% | 11 | ✅ 11/11 | ⚠️ |
+| `unexpand` | 84.3% | 24 | ✅ 24/24 | ✅ |
+| `comm` | 88.7% | 9 | ✅ 9/9 | ✅ |
+| `paste` | 88.3% | 5 | ✅ 5/5 | ✅ |
+| `fold` | 91.7% | 4 | ✅ 4/4 | ✅ |
 | `sum` | 100.0% | 4 | ✅ 4/4 | ✅ |
-| `nl` | 80.9% | 4 | ✅ 4/4 | ✅ |
-| `expand` | 81.4% | 3 | ✅ 3/3 | ✅ |
-| `cmp` | 76.0% | 1 | ✅ 1/1 | ✅ |
-| `strings` | 91.5% | 1 | ✅ 1/1 | ✅ |
-| `seq` | 87.1% | 21 | ✅ 21/21 | ✅ |
-| `cal` | 85.8% | 1 | ✅ 1/1 | ✅ |
-| `factor` | 93.9% | 13 | ✅ 13/13 | ✅ |
+| `nl` | 97.0% | 4 | ✅ 4/4 | ✅ |
+| `expand` | 84.5% | 3 | ✅ 3/3 | ✅ |
+| `cmp` | 82.1% | 1 | ✅ 1/1 | ✅ |
+| `strings` | 94.3% | 1 | ✅ 1/1 | ✅ |
+| `seq` | 92.6% | 21 | ✅ 21/21 | ✅ |
+| `cal` | 86.9% | 1 | ✅ 1/1 | ✅ |
+| `factor` | 96.2% | 13 | ✅ 13/13 | ✅ |
 
 
 ## Tier 7 — Stubs (Phase 17, in-progress)
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `cksum` | 76.4% | — | — | ✅ |
-| `join` | 80.6% | — | — | ✅ |
-| `link` | 90.0% | — | — | ✅ |
-| `unlink` | 89.5% | — | — | ✅ |
-| `logger` | 67.7% | — | — | ✅ |
-| `logname` | 70.0% | — | — | ✅ |
-| `mkfifo` | 92.9% | — | — | ✅ |
-| `nice` | 85.7% | — | — | ✅ |
-| `nohup` | 75.0% | — | — | ✅ |
-| `split` | 86.3% | — | — | ✅ |
-| `tty` | 60.0% | — | — | ✅ |
-| `who` | 84.8% | — | — | ✅ |
-| `daemon` | 82.4% | — | — | —¹ |
+| `cksum` | 94.4% | — | — | ✅ |
+| `join` | 89.6% | — | — | ✅ |
+| `link` | 100.0% | — | — | ✅ |
+| `unlink` | 100.0% | — | — | ✅ |
+| `logger` | 98.5% | — | — | ✅ |
+| `logname` | 100.0% | — | — | ✅ |
+| `mkfifo` | 100.0% | — | — | ✅ |
+| `nice` | 90.2% | — | — | ✅ |
+| `nohup` | 93.5% | — | — | ✅ |
+| `split` | 92.5% | — | — | ✅ |
+| `tty` | 100.0% | — | — | ✅ |
+| `who` | 89.1% | — | — | ✅ |
+| `daemon` | 93.8% | — | — | —¹ |
 
 ¹ The `daemon` command manages the daemon process itself. `--json` and JSON-RPC do not apply to it (documented exemption, Phase 28 F15).
 
@@ -159,35 +160,35 @@
 | `bzcat` | 100.0% | 3 | ✅ 3/3 | ✅ |
 | `unlzma` | 100.0% | 3 | ✅ 3/3 | ✅ |
 | `uncompress` | 100.0% | 1 | ✅ 1/1 | ✅ |
-| `unzip` | 80.5% | 4 | ✅ 4/4 | ✅ |
-| `uuencode` | 88.3% | 19 | ✅ 19/19 | ✅ |
-| `uudecode` | 80.5% | — | — | ✅ |
-| `taskset` | 86.4% | 3 | ✅ 3/3 | ✅ |
-| `start-stop-daemon` | 80.7% | 4 | ✅ 4/4 | ✅ |
-| `cryptpw` | 82.4% | 7 | ✅ 7/7 | ✅ |
-| `makedevs` | 87.3% | 1 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
-| `ar` | 80.0% | 2 | ✅ 2/2 | ✅ |
-| `cpio` | 82.0% | 2 | ✅ 2/9 (7 skip) | ✅ |
+| `unzip` | 82.1% | 4 | ✅ 4/4 | ✅ |
+| `uuencode` | 88.8% | 19 | ✅ 19/19 | ✅ |
+| `uudecode` | 84.3% | — | — | ✅ |
+| `taskset` | 86.9% | 3 | ✅ 3/3 | ✅ |
+| `start-stop-daemon` | 81.0% | 4 | ✅ 4/4 | ✅ |
+| `cryptpw` | 82.9% | 7 | ✅ 7/7 | ✅ |
+| `makedevs` | 87.8% | 1 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
+| `ar` | 81.6% | 2 | ✅ 2/2 | ✅ |
+| `cpio` | 83.4% | 2 | ✅ 2/9 (7 skip) | ✅ |
 | `ash` | — | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
-| `mount` | 80.6% | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
-| `mdev` | 87.4% | 0 | ⚠️ 0/12 (12 skip) | ⚠️ skip |
+| `mount` | 80.4% | 0 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
+| `mdev` | 87.5% | 0 | ⚠️ 0/12 (12 skip) | ⚠️ skip |
 | `dc` | 89.3% | 36 | ✅ 36/36 | ✅ |
-| `rx` | 86.2% | 1 | ✅ 1/1 | ✅ |
-| `hexdump` | 83.6% | 3 | ✅ 3/3 | ✅ |
-| `xxd` | 86.4% | 7 | ✅ 7/7 | ✅ |
-| `bc` | 83.6% | 81 | ✅ 81/81 | ✅ |
-| `mkfs.minix` | 86.4% | 1 | ✅ 1/1 | ✅ |
+| `rx` | 89.1% | 1 | ✅ 1/1 | ✅ |
+| `hexdump` | 84.6% | 3 | ✅ 3/3 | ✅ |
+| `xxd` | 86.3% | 7 | ✅ 7/7 | ✅ |
+| `bc` | 84.8% | 81 | ✅ 81/81 | ✅ |
+| `mkfs.minix` | 87.8% | 1 | ✅ 1/1 | ✅ |
 ## SDK / Client Library
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `client` | 76.6% | — | — | — |
+| `client` | 83.7% | — | — | — |
 
 ## Infrastructure
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `daemon` | 82.4% | — | — | —¹ |
+| `daemon` | 93.8% | — | — | —¹ |
 
 ¹ The `daemon` command manages the daemon process itself. `--json` and JSON-RPC do not apply to it (documented exemption, Phase 28 F15).
 

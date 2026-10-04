@@ -1,6 +1,7 @@
 package cpio
 
 import (
+	"encoding/base64"
 	"encoding/json"
 
 	"bytes"
@@ -109,7 +110,7 @@ func TestCpioCreate(t *testing.T) {
 
 	var archiveOut, stderr bytes.Buffer
 	// We call cpioCreate directly to test it
-	rc := cpioCreate(&archiveOut, stdinR, false, false, &bytes.Buffer{}, &stderr, dir)
+	rc := cpioCreate(&archiveOut, stdinR, false, false, &bytes.Buffer{}, &stderr, dir, false)
 	if rc != 0 {
 		t.Fatalf("expected rc=0, got %d: %s", rc, stderr.String())
 	}
@@ -247,6 +248,49 @@ func TestCpioCreateJSON(t *testing.T) {
 		t.Errorf("expected JSON output, got: %s", out)
 	}
 	_ = archiveOut
+}
+
+func TestCpioCreateJSONCapturesArchive(t *testing.T) {
+	// F16: with -o --json and no -F, stdout carries only the envelope.
+	// The archive travels as base64 content inside it.
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "jc.txt"), []byte("jcontent\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	stdinR := strings.NewReader("jc.txt\n")
+	var jsonOut, stderr bytes.Buffer
+	rc := cpioRun([]string{"-o", "--json"}, stdinR, &jsonOut, &stderr, dir)
+	if rc != 0 {
+		t.Fatalf("expected rc=0, got %d: %s", rc, stderr.String())
+	}
+
+	var env struct {
+		Command string `json:"command"`
+		Data    struct {
+			Members []CpioMember `json:"members"`
+			Content string       `json:"content"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(jsonOut.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope, got %q: %v", jsonOut.String(), err)
+	}
+	if env.Command != "cpio" || len(env.Data.Members) != 1 {
+		t.Fatalf("unexpected envelope: %q", jsonOut.String())
+	}
+	if env.Data.Members[0].Name != "jc.txt" {
+		t.Errorf("expected member jc.txt, got %q", env.Data.Members[0].Name)
+	}
+	if env.Data.Content == "" {
+		t.Error("expected base64 archive content in envelope")
+	}
+	raw, err := base64.StdEncoding.DecodeString(env.Data.Content)
+	if err != nil {
+		t.Fatalf("bad base64 content: %v", err)
+	}
+	if !strings.Contains(string(raw), "jc.txt") {
+		t.Errorf("expected archive to contain the member name, got %q", raw)
+	}
 }
 
 func TestCpioExtractFilter(t *testing.T) {

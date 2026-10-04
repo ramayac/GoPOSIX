@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"os"
 	"strings"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -106,11 +105,12 @@ var (
 	dialSyslogFn = func(network, address string) (net.Conn, error) {
 		return net.Dial(network, address)
 	}
-	stderrWriter io.Writer = os.Stderr
 )
 
-// Run submits a message to syslog.
-func Run(message, tag, priorityStr string, alsoStderr bool) (LoggerResult, error) {
+// Run submits a message to syslog. errOut receives the message when
+// alsoStderr is set (the -s flag). It is injected so the daemon can run
+// many logger calls concurrently without process-local mutable state.
+func Run(message, tag, priorityStr string, alsoStderr bool, errOut io.Writer) (LoggerResult, error) {
 	pri, err := parsePriority(priorityStr)
 	if err != nil {
 		return LoggerResult{}, err
@@ -138,7 +138,7 @@ func Run(message, tag, priorityStr string, alsoStderr bool) (LoggerResult, error
 					Message:  message,
 				}
 				if alsoStderr {
-					fmt.Fprintln(stderrWriter, message)
+					fmt.Fprintln(errOut, message)
 				}
 				return result, nil
 			}
@@ -151,7 +151,7 @@ func Run(message, tag, priorityStr string, alsoStderr bool) (LoggerResult, error
 	}
 
 	if alsoStderr {
-		fmt.Fprintln(stderrWriter, message)
+		fmt.Fprintln(errOut, message)
 	}
 
 	return LoggerResult{
@@ -194,11 +194,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	// Capture custom stderr mapping during run execution
-	oldStderrWriter := stderrWriter
-	stderrWriter = stderr
-	defer func() { stderrWriter = oldStderrWriter }()
-
-	result, err := Run(message, tag, priorityStr, alsoStderr)
+	result, err := Run(message, tag, priorityStr, alsoStderr, stderr)
 	if err != nil {
 		fmt.Fprintf(stderr, "logger: %v\n", err)
 		common.RenderError("logger", 1, "ELOGGER", err.Error(), jsonMode, stdout)

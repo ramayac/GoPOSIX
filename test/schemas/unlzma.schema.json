@@ -53,6 +53,10 @@
               },
               "error": {
                 "type": "string"
+              },
+              "content": {
+                "type": "string",
+                "description": "base64 payload in JSON stdout mode (F16)"
               }
             }
           }

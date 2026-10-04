@@ -8,6 +8,8 @@
 package common
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"log"
@@ -48,8 +50,16 @@ type DecompFileInfo struct {
 	Source      string `json:"source"`
 	Destination string `json:"destination,omitempty"`
 	BytesResult int64  `json:"bytesResult"`
-	Error       string `json:"error,omitempty"`
+	// Content is the base64-encoded decompressed payload. It is set only
+	// in JSON stdout mode (-c/cat/stdin): the payload cannot share stdout
+	// with the envelope, so it travels inside the envelope instead (F16).
+	Content string `json:"content,omitempty"`
+	Error   string `json:"error,omitempty"`
 }
+
+// jsonPayloadLimit caps the captured payload in JSON stdout mode. It
+// matches the daemon response limit so the envelope stays transportable.
+const jsonPayloadLimit = 50 * 1024 * 1024
 
 // DecompressMode runs the shared decompression logic. Returns the exit code.
 func DecompressMode(spec DecompressSpec, args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
@@ -92,8 +102,16 @@ func DecompressMode(spec DecompressSpec, args []string, stdin io.Reader, stdout,
 	if len(files) == 0 || (len(files) == 1 && files[0] == "-") {
 		reader, err := newReaderRecovering(spec, stdin)
 		var written int64
+		// In JSON mode the payload must not share stdout with the
+		// envelope (F16): capture it and embed it as base64 content.
+		var payloadBuf bytes.Buffer
 		if err == nil {
-			written, err = copyRecovering(stdout, reader, spec.RecoverPanics)
+			if jsonMode {
+				lw := &LimitWriter{W: &payloadBuf, Limit: jsonPayloadLimit}
+				written, err = copyRecovering(lw, reader, spec.RecoverPanics)
+			} else {
+				written, err = copyRecovering(stdout, reader, spec.RecoverPanics)
+			}
 		}
 		if err != nil {
 			if !quietMode {
@@ -109,6 +127,7 @@ func DecompressMode(spec DecompressSpec, args []string, stdin io.Reader, stdout,
 			if !spec.CatMode {
 				entry.Destination = "-"
 			}
+			entry.Content = base64.StdEncoding.EncodeToString(payloadBuf.Bytes())
 			Render(spec.ProgName, struct {
 				Files []DecompFileInfo `json:"files"`
 			}{Files: []DecompFileInfo{entry}}, true, stdout, nil)
@@ -187,19 +206,42 @@ func DecompressMode(spec DecompressSpec, args []string, stdin io.Reader, stdout,
 			}
 
 			if stdoutMode {
-				written, err := io.Copy(stdout, reader)
-				if err != nil {
-					if spec.CatMode {
-						return err
+				var written int64
+				var err error
+				// In JSON mode the payload must not share stdout with the
+				// envelope (F16): capture it and embed it as base64 content.
+				if jsonMode {
+					var payloadBuf bytes.Buffer
+					lw := &LimitWriter{W: &payloadBuf, Limit: jsonPayloadLimit}
+					written, err = copyRecovering(lw, reader, spec.RecoverPanics)
+					if err == nil {
+						entry := DecompFileInfo{Source: file, BytesResult: written}
+						if !spec.CatMode {
+							entry.Destination = "-"
+						}
+						entry.Content = base64.StdEncoding.EncodeToString(payloadBuf.Bytes())
+						results = append(results, entry)
+						return nil
 					}
-					return fmt.Errorf("%s", spec.CorruptMsg)
+				} else {
+					written, err = io.Copy(stdout, reader)
+					if err != nil {
+						if spec.CatMode {
+							return err
+						}
+						return fmt.Errorf("%s", spec.CorruptMsg)
+					}
+					entry := DecompFileInfo{Source: file, BytesResult: written}
+					if !spec.CatMode {
+						entry.Destination = "-"
+					}
+					results = append(results, entry)
+					return nil
 				}
-				entry := DecompFileInfo{Source: file, BytesResult: written}
-				if !spec.CatMode {
-					entry.Destination = "-"
+				if spec.CatMode {
+					return err
 				}
-				results = append(results, entry)
-				return nil
+				return fmt.Errorf("%s", spec.CorruptMsg)
 			}
 
 			absDestPath := destName

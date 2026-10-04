@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://goposix.dev/schemas/gzip.schema.json",
-  "title": "GoPOSIX gzip --json output",
-  "description": "Validates the complete JSON output of goposix gzip --json.",
+  "$id": "https://goposix.dev/schemas/gunzip.schema.json",
+  "title": "GoPOSIX gunzip --json output",
+  "description": "Validates the complete JSON output of goposix gunzip --json.",
   "type": "object",
   "required": [
     "command",
@@ -15,7 +15,7 @@
   "properties": {
     "command": {
       "type": "string",
-      "const": "gzip"
+      "const": "gunzip"
     },
     "version": {
       "type": "string"

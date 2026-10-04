@@ -49,7 +49,7 @@ func TestParsePriorityInvalidFacility(t *testing.T) {
 func TestRunBasic(t *testing.T) {
 	// This will likely fail to connect to syslog in test environment,
 	// but should not crash
-	result, err := Run("test message", "testtag", "user.notice", false)
+	result, err := Run("test message", "testtag", "user.notice", false, io.Discard)
 	if err != nil {
 		t.Logf("syslog unavailable (expected in CI): %v", err)
 		return
@@ -62,7 +62,7 @@ func TestRunBasic(t *testing.T) {
 func TestRunFromStdin(t *testing.T) {
 	// Test the CLI run function with stdin
 	// We can't easily simulate stdin, so test the library
-	result, err := Run("piped message", "mytag", "user.info", false)
+	result, err := Run("piped message", "mytag", "user.info", false, io.Discard)
 	if err != nil {
 		t.Logf("syslog unavailable: %v", err)
 		return
@@ -148,7 +148,7 @@ func TestParsePriority_LocalFacility(t *testing.T) {
 
 func TestRun_DifferentFacilities(t *testing.T) {
 	// Test with daemon facility — likely fails in test env but shouldn't crash
-	result, err := Run("test", "daemon", "daemon.info", false)
+	result, err := Run("test", "daemon", "daemon.info", false, io.Discard)
 	if err != nil {
 		t.Logf("syslog unavailable: %v", err)
 		return
@@ -159,14 +159,22 @@ func TestRun_DifferentFacilities(t *testing.T) {
 }
 
 func TestRun_StderrFlag(t *testing.T) {
-	// Test with stderr flag
-	result, err := Run("stderr test", "mytag", "user.notice", true)
+	// Test with stderr flag: the injected writer receives the message.
+	var errBuf bytes.Buffer
+	origDial := dialSyslogFn
+	dialSyslogFn = func(network, address string) (net.Conn, error) {
+		return &mockConn{}, nil
+	}
+	defer func() { dialSyslogFn = origDial }()
+	result, err := Run("stderr test", "mytag", "user.notice", true, &errBuf)
 	if err != nil {
-		t.Logf("syslog unavailable: %v", err)
-		return
+		t.Fatalf("unexpected error: %v", err)
 	}
 	if result.Tag != "mytag" {
 		t.Errorf("expected mytag, got %s", result.Tag)
+	}
+	if !strings.Contains(errBuf.String(), "stderr test") {
+		t.Errorf("expected injected writer to receive the message, got %q", errBuf.String())
 	}
 }
 
@@ -202,7 +210,7 @@ func TestLoggerMockedDial(t *testing.T) {
 		return nil, io.EOF
 	}
 
-	res, err := Run("hello mock", "mocktag", "local0.info", false)
+	res, err := Run("hello mock", "mocktag", "local0.info", false, io.Discard)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -221,7 +229,7 @@ func TestLoggerMockedDial(t *testing.T) {
 	dialSyslogFn = func(network, address string) (net.Conn, error) {
 		return connWriteFail, nil
 	}
-	_, err = Run("fail write", "mocktag", "local0.info", false)
+	_, err = Run("fail write", "mocktag", "local0.info", false, io.Discard)
 	if err == nil {
 		t.Error("expected error when connection write fails")
 	}
@@ -230,7 +238,7 @@ func TestLoggerMockedDial(t *testing.T) {
 	dialSyslogFn = func(network, address string) (net.Conn, error) {
 		return nil, io.EOF
 	}
-	_, err = Run("fallback msg", "mocktag", "local0.info", false)
+	_, err = Run("fallback msg", "mocktag", "local0.info", false, io.Discard)
 	if err != nil {
 		t.Errorf("unexpected error on silent fallback: %v", err)
 	}
@@ -269,7 +277,7 @@ func TestLoggerCLI_InjectableStreams(t *testing.T) {
 }
 
 func TestRun_EmptyTag(t *testing.T) {
-	result, err := Run("empty tag msg", "", "user.notice", false)
+	result, err := Run("empty tag msg", "", "user.notice", false, io.Discard)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

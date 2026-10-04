@@ -3,6 +3,7 @@ package gzip
 import (
 	"bytes"
 	gzip "compress/gzip"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"os"
@@ -420,8 +421,27 @@ func TestGzipJSONStdinCompress(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit %d", code)
 	}
-	if !bytes.HasPrefix(out.Bytes(), []byte{0x1f, 0x8b}) {
-		t.Error("expected gzip magic bytes on stdout")
+	// F16: stdout carries only the envelope; the compressed payload
+	// travels as base64 content inside the envelope.
+	var env struct {
+		Command string `json:"command"`
+		Data    []struct {
+			File    string `json:"file"`
+			Content string `json:"content"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope, got %q: %v", out.String(), err)
+	}
+	if env.Command != "gzip" || len(env.Data) != 1 || env.Data[0].File != "-" {
+		t.Fatalf("unexpected envelope: %q", out.String())
+	}
+	raw, err := base64.StdEncoding.DecodeString(env.Data[0].Content)
+	if err != nil {
+		t.Fatalf("bad base64 content: %v", err)
+	}
+	if !bytes.HasPrefix(raw, []byte{0x1f, 0x8b}) {
+		t.Error("expected gzip magic bytes in decoded content")
 	}
 }
 
@@ -430,12 +450,42 @@ func TestGzipJSONStdinRoundTrip(t *testing.T) {
 	if code := gzipRun([]string{"--json"}, &compressed, io.Discard, strings.NewReader("hello"), ""); code != 0 {
 		t.Fatalf("compress: exit %d", code)
 	}
+	var env struct {
+		Data []struct {
+			Content string `json:"content"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(compressed.Bytes(), &env); err != nil {
+		t.Fatalf("expected envelope from gzip, got %q: %v", compressed.String(), err)
+	}
+	if len(env.Data) != 1 {
+		t.Fatalf("expected one data entry, got %q", compressed.String())
+	}
+	raw, err := base64.StdEncoding.DecodeString(env.Data[0].Content)
+	if err != nil {
+		t.Fatalf("bad base64 content: %v", err)
+	}
 	var out, errBuf bytes.Buffer
-	if code := gunzipRun([]string{"--json"}, &out, &errBuf, bytes.NewReader(compressed.Bytes()), ""); code != 0 {
+	if code := gunzipRun([]string{"--json"}, &out, &errBuf, bytes.NewReader(raw), ""); code != 0 {
 		t.Fatalf("decompress: exit %d", code)
 	}
-	if out.String() != "hello" {
-		t.Errorf("decompressed = %q, want hello", out.String())
+	var env2 struct {
+		Data []struct {
+			Content string `json:"content"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &env2); err != nil {
+		t.Fatalf("expected envelope from gunzip, got %q: %v", out.String(), err)
+	}
+	if len(env2.Data) != 1 {
+		t.Fatalf("expected one data entry, got %q", out.String())
+	}
+	plain, err := base64.StdEncoding.DecodeString(env2.Data[0].Content)
+	if err != nil {
+		t.Fatalf("bad base64 content: %v", err)
+	}
+	if string(plain) != "hello" {
+		t.Errorf("decompressed = %q, want hello", plain)
 	}
 }
 

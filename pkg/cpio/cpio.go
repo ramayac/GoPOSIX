@@ -13,6 +13,8 @@ package cpio
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -38,6 +40,10 @@ type CpioMember struct {
 // CpioResult is the JSON output envelope.
 type CpioResult struct {
 	Members []CpioMember `json:"members"`
+	// Content is the base64-encoded archive. It is set only in JSON create
+	// mode without -F: the archive cannot share stdout with the envelope,
+	// so it travels inside the envelope instead (F16).
+	Content string `json:"content,omitempty"`
 }
 
 var flagSpec = common.FlagSpec{
@@ -138,7 +144,7 @@ func cpioRun(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd strin
 
 	switch {
 	case createMode:
-		return cpioCreate(archiveOut, stdin, verbose, jsonMode, stdout, stderr, cwd)
+		return cpioCreate(archiveOut, stdin, verbose, jsonMode, stdout, stderr, cwd, jsonMode && archiveFile == "")
 	case passMode:
 		if len(pos) == 0 {
 			fmt.Fprintln(stderr, "cpio: destination directory required for -p")
@@ -155,8 +161,15 @@ func cpioRun(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd strin
 }
 
 // cpioCreate reads file names from stdin and writes a cpio archive.
-func cpioCreate(out io.Writer, nameReader io.Reader, verbose, jsonMode bool, stdout, stderr io.Writer, cwd string) int {
-	cw := &countingWriter{w: out}
+func cpioCreate(out io.Writer, nameReader io.Reader, verbose, jsonMode bool, stdout, stderr io.Writer, cwd string, captureJSON bool) int {
+	// In JSON create mode without -F, the archive cannot share stdout
+	// with the envelope (F16): capture it and embed it as base64 content.
+	var archiveBuf bytes.Buffer
+	archiveOut := out
+	if captureJSON {
+		archiveOut = &common.LimitWriter{W: &archiveBuf, Limit: 50 * 1024 * 1024}
+	}
+	cw := &countingWriter{w: archiveOut}
 	w := cpio.NewWriter(cw)
 	var members []CpioMember
 
@@ -227,7 +240,11 @@ func cpioCreate(out io.Writer, nameReader io.Reader, verbose, jsonMode bool, std
 	}
 
 	if jsonMode {
-		common.Render("cpio", CpioResult{Members: members}, true, stdout, nil)
+		result := CpioResult{Members: members}
+		if captureJSON {
+			result.Content = base64.StdEncoding.EncodeToString(archiveBuf.Bytes())
+		}
+		common.Render("cpio", result, true, stdout, nil)
 	}
 	return 0
 }

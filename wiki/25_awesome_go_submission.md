@@ -11,7 +11,7 @@ This document outlines the preparation, checklist validation, and exact content 
 ### Forge & Service Links
 - **Forge Link (GitHub)**: `https://github.com/ramayac/goposix`
 - **pkg.go.dev**: `https://pkg.go.dev/github.com/ramayac/goposix`
-- **goreportcard.com**: `https://goreportcard.com/report/github.com/ramayac/goposix`
+- **golangci-lint**: `https://golangci-lint.run/`
 - **Coverage Service (Codecov)**: `https://app.codecov.io/gh/ramayac/goposix`
 
 ### Repository Requirements
@@ -20,7 +20,7 @@ This document outlines the preparation, checklist validation, and exact content 
 | :--- | :---: | :--- |
 | **`go.mod` file & SemVer releases** | **PASS** | Validated `go.mod` exists; tags range from `v1.0.0` to `v1.0.14`. |
 | **Open source license** | **PASS** | Added standard `LICENSE` (MIT) to the root directory. |
-| **Documentation links** | **PASS** | Added `pkg.go.dev`, `goreportcard`, and `codecov` badges directly to `README.md`. |
+| **Documentation links** | **PASS** | Added `pkg.go.dev`, `golangci-lint`, and `codecov` badges directly to `README.md`. |
 | **Grade A- or better on Go Report Card** | **PASS** | Fixed all 25 `staticcheck` static analysis warnings across all packages. |
 | **Continuous Integration (CI)** | **PASS** | GitHub Actions pipeline configured (`ci.yml`) runs on every commit. |
 | **CI runs and gates tests** | **PASS** | CI gates `make vet`, `make test`, `make cover-gate` (coverage ≥70%), and BusyBox Parity tests. |

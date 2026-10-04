@@ -1,1 +1,1 @@
-{"command":"sed","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"lines":["goodbye world"],"lineCount":1,"changed":true,"scripts":["s/hello/goodbye/"]},"error":null}
+{"command":"sed","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":{"lines":["goodbye world"],"lineCount":1,"changed":true,"scripts":["s/hello/goodbye/"]},"error":null}

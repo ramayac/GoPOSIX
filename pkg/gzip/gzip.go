@@ -1,8 +1,10 @@
 package gzip
 
 import (
+	"bytes"
 	"compress/flate"
 	"compress/gzip"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -18,6 +20,19 @@ type GzipStat struct {
 	OriginalSize int64   `json:"originalSize"`
 	NewSize      int64   `json:"newSize"`
 	Ratio        float64 `json:"ratio"`
+	// Content is the base64-encoded processed payload. It is set only in
+	// JSON stdout mode (-c or stdin): the payload cannot share stdout with
+	// the envelope, so it travels inside the envelope instead (F16).
+	Content string `json:"content,omitempty"`
+}
+
+// jsonStreamSink returns the writer for the processed payload. In JSON mode
+// the payload is captured into buf so stdout carries only the envelope.
+func jsonStreamSink(isJSON bool, stdout io.Writer, buf *bytes.Buffer) io.Writer {
+	if isJSON {
+		return &common.LimitWriter{W: buf, Limit: 50 * 1024 * 1024}
+	}
+	return stdout
 }
 
 var spec = common.FlagSpec{
@@ -96,6 +111,8 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 	files := flags.Positional
 
 	if len(files) == 0 {
+		var payloadBuf bytes.Buffer
+		target := jsonStreamSink(isJSON, stdout, &payloadBuf)
 		if decompress {
 			gr, err := gzip.NewReader(stdin)
 			if err != nil {
@@ -104,10 +121,10 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 				}
 				return 1
 			}
-			io.Copy(stdout, gr)
+			io.Copy(target, gr)
 			gr.Close()
 		} else {
-			gw, err := gzip.NewWriterLevel(stdout, level)
+			gw, err := gzip.NewWriterLevel(target, level)
 			if err != nil {
 				if !isJSON {
 					fmt.Fprintf(errOut, cmdName+": %v\n", err)
@@ -116,6 +133,13 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 			}
 			io.Copy(gw, stdin)
 			gw.Close()
+		}
+		if isJSON {
+			common.Render(cmdName, []GzipStat{{
+				File:    "-",
+				NewSize: int64(payloadBuf.Len()),
+				Content: base64.StdEncoding.EncodeToString(payloadBuf.Bytes()),
+			}}, true, stdout, nil)
 		}
 		return 0
 	}
@@ -126,6 +150,8 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 	for _, file := range files {
 		// Handle stdin/stdout via "-".
 		if file == "-" {
+			var payloadBuf bytes.Buffer
+			target := jsonStreamSink(isJSON, stdout, &payloadBuf)
 			if decompress {
 				gr, err := gzip.NewReader(stdin)
 				if err != nil {
@@ -134,10 +160,10 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 					}
 					return 1
 				}
-				io.Copy(stdout, gr)
+				io.Copy(target, gr)
 				gr.Close()
 			} else {
-				gw, err := gzip.NewWriterLevel(stdout, level)
+				gw, err := gzip.NewWriterLevel(target, level)
 				if err != nil {
 					if !isJSON {
 						fmt.Fprintf(errOut, cmdName+": %v\n", err)
@@ -146,6 +172,13 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 				}
 				io.Copy(gw, stdin)
 				gw.Close()
+			}
+			if isJSON {
+				stats = append(stats, GzipStat{
+					File:    "-",
+					NewSize: int64(payloadBuf.Len()),
+					Content: base64.StdEncoding.EncodeToString(payloadBuf.Bytes()),
+				})
 			}
 			continue
 		}
@@ -190,9 +223,10 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 		var targetWriter io.Writer
 		var outFile *os.File
 		var outName string
+		var payloadBuf bytes.Buffer
 
 		if toStdout {
-			targetWriter = stdout
+			targetWriter = jsonStreamSink(isJSON, stdout, &payloadBuf)
 		} else {
 			if decompress {
 				outName = strings.TrimSuffix(file, ".gz")
@@ -270,7 +304,9 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 		}
 
 		var outSize int64
-		if !toStdout && outFile != nil {
+		if toStdout && isJSON {
+			outSize = int64(payloadBuf.Len())
+		} else if !toStdout && outFile != nil {
 			if outInfo, err := os.Stat(outName); err == nil {
 				outSize = outInfo.Size()
 			}
@@ -289,12 +325,16 @@ func execute(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 			}
 		}
 
-		stats = append(stats, GzipStat{
+		stat := GzipStat{
 			File:         file,
 			OriginalSize: inSize,
 			NewSize:      outSize,
 			Ratio:        ratio,
-		})
+		}
+		if toStdout && isJSON {
+			stat.Content = base64.StdEncoding.EncodeToString(payloadBuf.Bytes())
+		}
+		stats = append(stats, stat)
 	}
 
 	if isJSON {

@@ -1,1 +1,1 @@
-{"command":"seq","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"sequence":["1","2","3"]},"error":null}
+{"command":"seq","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":{"sequence":["1","2","3"]},"error":null}

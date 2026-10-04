@@ -43,6 +43,15 @@ Verification at stop: 100% patch coverage, overall coverage 87.6%, BusyBox 871/1
 | JSON error paths | `wget`, `which`, `seq`, `pidof`, `mdev`, `rx`, `shell` now honour `--json` on usage errors (see §5d.1 of the plan). |
 | P7 | `gen_golden.sh` fixed (`set -u` bug, `%b` escapes, absolute paths) and extended for all 38 new fixtures. `pkg/who` now emits `users: []` instead of `null`. |
 
+### ✅ Done — open findings F16, P1, P2, P4 (`audit/whatsleft`)
+
+| Finding | Result |
+|---------|--------|
+| F16 | JSON stdout modes embed the payload as base64 `content` inside the envelope (F7 decompress core, `pkg/gzip`, `cpio -o` without `-F`). Text mode unchanged. Schemas for the six tools plus the new `gunzip` schema gained the optional `content` field. |
+| P1 | `logger.Run` takes the injected `errOut io.Writer`; the package-global `stderrWriter` and the swap logic are deleted. Coverage 98.5%. |
+| P2 | All 115 coverage cells in [wiki/test_coverage_matrix.md](test_coverage_matrix.md) refreshed from a `go test -cover` run (84 rows changed). Overall coverage 88.1%. |
+| P4 | The harness builds the applet links in a per-run `mktemp -d` (removed on exit) and uses `.tmpdir.$applet.$$`. The tracked `runtest-tempdir-links/` tree is deleted from the repo. Verified with concurrent same-applet runs: zero failures. |
+
 ### ▶️ Next when work resumes — Phase 4: deep audit of 7 XL/L commands
 
 The plan preflight corrected the XL/L scope to 7 commands (non-test LOC ≥ 700):
@@ -55,11 +64,11 @@ Work one PR per command, ordered by the `PreAudit` score in
 | Item | What |
 |------|------|
 | Phase 4 | Deep audit of 6 commands: `bc`, `sed`, `date`, `tar`, `dc`, `diff` (`printf` is `KEEP ✅`). See plan §6. |
-| Phase 5 | 14 open verdicts: `grep` (REFACTOR), `patch`, `hexdump`, `start-stop-daemon`, `unzip`, `uudecode`, `logger`, `wget`, `xxd`, `sort`, `uuencode`, `taskset`, `rx`, `xargs`. See plan §6. |
-| F16 | Raw payload mixes with the envelope on stdout: `bzcat`, `bunzip2/unlzma/uncompress -c`, `gzip -c`, `cpio -o` (found in PR #46). |
-| P1 | `logger` keeps a package-global `stderrWriter`. Replace with an injected writer (daemon safety, audit item 10). |
-| P2 | [wiki/test_coverage_matrix.md](test_coverage_matrix.md) coverage numbers are stale (only the JSON-RPC column was refreshed). |
-| P4 | Two `make testsuite` runs in the same checkout corrupt each other (shared `runtest-tempdir-links`). Re-run an applet alone before reporting a regression. |
+| Phase 5 | 13 open verdicts: `grep` (REFACTOR), `patch`, `hexdump`, `start-stop-daemon`, `unzip`, `uudecode`, `wget`, `xxd`, `sort`, `uuencode`, `taskset`, `rx`, `xargs`. See plan §6. |
+| F16 | ✅ JSON stdout modes embed the payload as base64 `content` (decompress core, `gzip`, `cpio`). |
+| P1 | ✅ `logger.Run` takes the injected `errOut` writer; the package global is deleted. |
+| P2 | ✅ All 115 coverage cells refreshed from a `go test -cover` run (84 rows changed). |
+| P4 | ✅ Harness uses per-run `mktemp -d` link dirs and `.tmpdir.$applet.$$`; tracked `runtest-tempdir-links/` deleted from the repo. |
 | README | ✅ Add the Phase 28 link (done on `audit/whatsleft`). |
 
 ---

@@ -1,1 +1,1 @@
-{"command":"unzip","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"archive":"/tmp/goposix-golden.cVsPf3/t.zip","files":[{"name":"a.txt","size":12,"compressedSize":12,"isDir":false}]},"error":null}
+{"command":"unzip","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":{"archive":"/tmp/goposix-golden.iaOQAL/t.zip","files":[{"name":"a.txt","size":12,"compressedSize":12,"isDir":false}]},"error":null}

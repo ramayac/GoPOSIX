@@ -157,7 +157,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `dc` | L | 1149 | 628 | 89.0% | ✅ 36/36 | — | 3.25 | IMPROVE | Preflight: `evalDC` is a 569-line god function · F9 ✅ `RatToInt64`/`RatTruncate` moved to `pkg/common/rat.go` · F10 ✅ flag errors honour `--json` · F12 ✅ schema + fixture (daemon test present) · BusyBox 36/36 |
 | `start-stop-daemon` | M | 366 | 242 | 80.7% | ✅ 4/4 | — | 3.25 | IMPROVE | F5 ✅ · F12 ✅ schema + fixture (daemon test present) · Preflight: `run` 237 lines · BusyBox 4/4 |
 | `unzip` | M | 458 | 403 | 80.5% | ✅ 4/4 | — | 3.00 | IMPROVE | Preflight: `run` 341 lines (god function) · F12 ✅ schema + fixture (daemon test present) |
-| `cpio` | M | 456 | 449 | 82.0% | ✅ 2/9 (7 skip) | — | 3.00 | KEEP ✅ | Preflight: balanced helpers, no duplication found · 7 of 9 BusyBox cases are root skips · F12 ✅ schema + fixture + daemon test · F16 ⏳ `-o --json` mixes the archive stream with the envelope on stdout |
+| `cpio` | M | 456 | 449 | 82.0% | ✅ 2/9 (7 skip) | — | 3.00 | KEEP ✅ | Preflight: balanced helpers, no duplication found · 7 of 9 BusyBox cases are root skips · F12 ✅ schema + fixture + daemon test · F16 ✅ `-o --json` captures the archive as base64 content |
 | `uudecode` | S | 323 | 217 | 84.6% | — | — | 3.00 | IMPROVE | Preflight: `run` 282 lines (god function) · no BusyBox tests · F12 ✅ schema + fixture (daemon test present) |
 | `tsort` | S | 145 | 73 | 84.3% | ✅ 20/20 | — | 3.00 | KEEP ✅ | Preflight: thin tests · F10 ✅ flag errors honour `--json` · F12 ✅ schema + fixture + daemon test |
 | `grep` | M | 648 | 839 | 84.8% | ✅ 53/53 | — | 2.75 | REFACTOR | Preflight: `grepRun` is a 432-line god function (flags + pattern compile + traversal + output) · F10 ✅ flag errors honour `--json` |
@@ -165,7 +165,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `makedevs` | S | 335 | 156 | 87.3% | ⚠️ 0/1 (1 skip) | — | 2.75 | KEEP ✅ | F12 ✅ schema + fixture + daemon test (tier9) · BusyBox case needs root |
 | `mdev` | S | 309 | 146 | 87.4% | ⚠️ 0/12 (12 skip) | — | 2.75 | KEEP ✅ | F12 ✅ schema + fixture + daemon test (tier9) · 5d.1 ✅ usage error honours `--json` · BusyBox cases need root |
 | `nohup` | S | 121 | 110 | 80.9% | — | — | 2.75 | KEEP | Preflight: clean; `Run` library function and `terminalCheck` seam · schema and daemon test present |
-| `logger` | S | 219 | 311 | 98.6% | — | ⚠ global | 2.50 | IMPROVE | Preflight: package-global `stderrWriter` (daemon re-entrancy risk); replace it with an injected writer (P1) · schema and daemon test present |
+| `logger` | S | 219 | 311 | 98.5% | — | ✅ | 2.50 | KEEP ✅ | P1 ✅ `Run` takes the injected `errOut` writer; the package global and the swap logic are deleted · schema and daemon test present |
 | `wget` | S | 191 | 172 | 81.4% | ✅ 4/4 | — | 2.50 | IMPROVE | Preflight: `http.Client{}` has no timeout, so it can block the daemon · F12 ✅ schema + fixture + daemon test (tier9) · 5d.1 ✅ missing-URL error honours `--json` |
 | `diff` | L | 836 | 824 | 90.3% | ✅ 20/20 | — | 2.25 | IMPROVE | F1+F3: tests 89.5% · Preflight: LOC corrected; now L tier, not XL. F1+F3 applied; deep audit open. |
 | `xxd` | M | 371 | 239 | 86.4% | ✅ 7/7 | — | 2.25 | IMPROVE | Preflight: `reverseStandard` (99) and `reversePlain` (85) repeat the hex-scan loop · F12 ✅ schema + fixture + daemon test (tier9) |
@@ -196,7 +196,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `chown` | S | 109 | 66 | 97.4% | — | — | 1.50 | KEEP ✅ | F13 ✅ `common.LookupUID`/`common.LookupGID` · schema and daemon test present |
 | `nice` | S | 107 | 85 | 90.5% | — | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
 | `df` | S | 74 | 48 | 95.8% | — | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
-| `gzip` | S | 306 | 575 | 87.3% | ✅ 4/4 | — | 1.25 | KEEP ✅ | F3: tests 87.3% |
+| `gzip` | S | 306 | 575 | 88.0% | ✅ 4/4 | — | 1.25 | KEEP ✅ | F3: tests 87.3% · F16 ✅ `-c --json` and stdin mode embed the payload as base64 content |
 | `find` | S | 251 | 293 | 89.8% | ✅ 13/13 | — | 1.25 | KEEP | Preflight: clean; keeps the documented `-exec` argument pre-processing · schema and daemon test present |
 | `comm` | S | 245 | 346 | 88.8% | ✅ 9/9 | — | 1.25 | KEEP | Preflight: clean · schema and daemon test present |
 | `tail` | S | 228 | 305 | 88.7% | ✅ 3/3 | — | 1.25 | KEEP | Preflight: clean; keeps the `-N` to `-n N` argument pre-processing · schema and daemon test present |
@@ -256,11 +256,11 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `truefalse` | S | 60 | 87 | 100.0% | ✅ 4/4 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schemas `true` and `false` present |
 | `sha1sum` | S | 59 | 177 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core, 100% cov · F12 ✅ schema + fixture |
 | `md5sum` | S | 58 | 202 | 100.0% | ✅ 2/2 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
-| `bunzip2` | S | 51 | 194 | 100.0% | ✅ 11/11 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov · F12 ✅ schema + fixture · F16 ⏳ `-c --json` mixes the data stream with the envelope |
-| `uncompress` | S | 51 | 179 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP ✅ | F7: shared decompress core + recover/log suppress, 100% cov · F12 ✅ schema + fixture · F16 ⏳ `-c --json` mixes the data stream with the envelope |
+| `bunzip2` | S | 51 | 194 | 100.0% | ✅ 11/11 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov · F12 ✅ schema + fixture · F16 ✅ `-c --json` embeds the payload as base64 content |
+| `uncompress` | S | 51 | 179 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP ✅ | F7: shared decompress core + recover/log suppress, 100% cov · F12 ✅ schema + fixture · F16 ✅ `-c --json` embeds the payload as base64 content |
 | `dirname` | S | 49 | 66 | 100.0% | ✅ 7/7 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
-| `unlzma` | S | 47 | 204 | 100.0% | ✅ 3/3 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov · F12 ✅ schema + fixture · F16 ⏳ `-c --json` mixes the data stream with the envelope |
-| `bzcat` | S | 39 | 142 | 100.0% | ✅ 3/3 | — | 0.00 | KEEP ✅ | F7: shared decompress core (cat mode), 100% cov · F12 ✅ schema + fixture · F16 ⏳ cat mode always mixes the data stream with the envelope on stdout |
+| `unlzma` | S | 47 | 204 | 100.0% | ✅ 3/3 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov · F12 ✅ schema + fixture · F16 ✅ `-c --json` embeds the payload as base64 content |
+| `bzcat` | S | 39 | 142 | 100.0% | ✅ 3/3 | — | 0.00 | KEEP ✅ | F7: shared decompress core (cat mode), 100% cov · F12 ✅ schema + fixture · F16 ✅ cat mode embeds the payload as base64 content |
 
 ### 5a. Pre-Audit Score (preflight)
 
@@ -404,28 +404,44 @@ in `data.exitCode` and as the process exit code. The daemon test in
 [test/posix-json/tier9_json_contract_test.go](../test/posix-json/tier9_json_contract_test.go)
 asserts both a successful script and a failing one. `dd` remains the documented exception.
 
-#### P1 — `logger` uses a package-global writer ⏳ OPEN
+#### P1 — `logger` uses a package-global writer ✅ DONE
 [pkg/logger/logger.go](../pkg/logger/logger.go) keeps a package-level `stderrWriter` that defaults
 to `os.Stderr` and is swapped by `run()`. This is process-local mutable state and violates audit
 item 10 (daemon safety). Replace it with an injected writer.
 
-#### P2 — Matrix data was stale ✅ ACKNOWLEDGED (plan fixed; companion matrix still stale)
+**Resolution:** `Run` now takes the writer as its last parameter
+(`Run(message, tag, priorityStr, alsoStderr, errOut)`). The package global and the
+swap-in/swap-out logic are deleted. `run()` passes the injected `stderr` writer.
+The `-s` flag test asserts the injected writer receives the message. Coverage 98.5%.
+
+#### P2 — Matrix data was stale ✅ DONE (both matrices refreshed)
 Coverage, LOC, and tier values did not match the tree. The `start-stop-daemon` row was also
 misaligned (its `Verdict` text sat in the IO column). Both are corrected here.
 [wiki/test_coverage_matrix.md](test_coverage_matrix.md) is stale in the same way (for example
 `chmod` 68.3% vs 92.7% measured, `cp` 77.6% vs 90.7%). This preflight takes only the BusyBox
 column from it. Refreshing the companion matrix is open work.
 
+**Resolution:** all 115 coverage cells in
+[wiki/test_coverage_matrix.md](test_coverage_matrix.md) refreshed from a `go test -cover` run on
+2026-10-04 (84 rows changed). Header updated: BusyBox 870/17/30, overall coverage 88.1%.
+
 #### P3 — `awk` BusyBox failures are deferred ✅ ACKNOWLEDGED
 The 17 `awk` failures are upstream goawk engine limits, not refactor work. The score reflects this.
 
-#### P4 — Concurrent `make testsuite` runs corrupt each other ⏳ OPEN (workflow hazard)
+#### P4 — Concurrent `make testsuite` runs corrupt each other ✅ DONE
 [runtest](../test/busybox_testsuite/runtest) deletes and re-creates the shared
 `runtest-tempdir-links` directory, makes a shared `busybox` symlink, and rebuilds `goposix`.
 Two runs at the same time therefore interfere. Observed during this preflight: a full run reported
 92 failures while another agent worked in the same checkout. A re-run of one applet in isolation
 passed 19/19. Treat a high failure count as suspicious when more than one agent is active, and
 re-run the applet alone before reporting a regression.
+
+**Resolution:** the harness now builds the applet-link directory in a per-run `mktemp -d` and
+removes it on exit (the `EXIT` trap cleans both it and the busybox symlink dir). The per-testcase
+work dir is now `.tmpdir.$applet.$$` so two runs of the same applet cannot collide. The tracked
+`runtest-tempdir-links/` symlink tree is deleted from the repo (`git rm`) — the harness no longer
+touches tracked files, which also removes the commit-sweep hazard. Verified: two concurrent runs
+of `md5sum` and mixed `wc`+`seq` runs all pass with zero failures.
 
 #### P5 — [AGENTS.md](../AGENTS.md) duplicated test counts and they drifted ✅ FIXED
 AGENTS.md §5 reported 831 passed / 54 failed, with 7 failures in `dc` and 7 in `tar`. The
@@ -490,17 +506,18 @@ call `common.RenderError` when `--json` is present:
 | `rx` | no sender (handshake timeout), protocol bytes no longer pollute stdout in JSON mode | `RECEIVE_ERROR` |
 | `shell` | missing `-c` argument, unreadable script file | `MISSING_ARGUMENT`, `SHELL_ERROR` |
 
-### 5d.2 Open JSON follow-ups (new findings, not fixed here)
+### 5d.2 JSON follow-ups
 
 | ID | Issue | Notes |
 |----|-------|-------|
-| F16 | Raw payload mixes with the envelope on stdout | `bzcat --json`, `bunzip2/unlzma/uncompress -c --json`, `gzip -c --json`, and `cpio -o --json` write the raw data stream to stdout before the JSON envelope. Over JSON-RPC the daemon cannot parse the mixed output. Fixing this changes F7-core behavior, so it is recorded here for the Phase 4/5 deep audit of those tools. The `bzcat` golden fixture keeps only the trailing JSON line for this reason. |
-| P7 | 31 pre-existing schemas had no golden fixture | Regenerating fixtures with `gen_golden.sh` (after fixing its `set -u` bug and the `%b` escape handling) closed 30 of 31 gaps. `who` was the last: it emitted `"users": null` with no utmp file, which its schema rejects. `pkg/who` now emits `[]`; the schema and fixture validate. No open item remains. |
+| F16 | Raw payload mixes with the envelope on stdout | ✅ DONE. In JSON stdout mode the payload is captured (50 MB cap) and embedded as base64 `content` inside the envelope: `DecompFileInfo.Content` in the F7 core, `GzipStat.Content` in `pkg/gzip`, and `CpioResult.Content` for `cpio -o --json` without `-F`. Text mode is unchanged. Schemas for `bunzip2`, `bzcat`, `unlzma`, `uncompress`, `gzip`, `gunzip` (new), and `cpio` gained the optional `content` field. Fixtures now exercise it (`bzcat` no longer needs the trailing-JSON trim). |
+| P7 | 31 pre-existing schemas had no golden fixture | ✅ DONE. Regenerating fixtures with `gen_golden.sh` (after fixing its `set -u` bug and the `%b` escape handling) closed 30 of 31 gaps. `who` was the last: it emitted `"users": null` with no utmp file, which its schema rejects. `pkg/who` now emits `[]`; the schema and fixture validate. No open item remains. |
 
-## 6. What's Left (after PR #46)
+## 6. What's Left
 
-Snapshot taken on `audit/whatsleft` after PR #46 (`audit/5d-json`) merged into `main`.
-All JSON-related audit work (F10, F12, F15, daemon tests) is done. The remaining work:
+Snapshot taken on `audit/whatsleft`. PR #46 (`audit/5d-json`) merged into `main`,
+then F16, P1, P2, and P4 were closed on `audit/whatsleft` (all numbered findings
+are now resolved). The remaining work:
 
 ### Phase 4 — deep audit of XL/L commands (6 of 7 open)
 
@@ -515,7 +532,7 @@ All JSON-related audit work (F10, F12, F15, daemon tests) is done. The remaining
 | `dc` | 3.25 | `evalDC` 569-line god function |
 | `diff` | 2.25 | deep audit open (F1+F3 already applied) |
 
-### Phase 5 — sweep of M/S commands (14 verdicts open here; 20 total with Phase 4)
+### Phase 5 — sweep of M/S commands (13 verdicts open here; 19 total with Phase 4)
 
 | Command | Score | Open work |
 |---------|:-----:|-----------|
@@ -525,7 +542,6 @@ All JSON-related audit work (F10, F12, F15, daemon tests) is done. The remaining
 | `start-stop-daemon` | 3.25 | `run` 237 lines |
 | `unzip` | 3.00 | `run` 341 lines (god function) |
 | `uudecode` | 3.00 | `run` 282 lines (god function), no BusyBox tests |
-| `logger` | 2.50 | P1 — package-global `stderrWriter` |
 | `wget` | 2.50 | `http.Client{}` has no timeout (daemon blocking risk) |
 | `xxd` | 2.25 | `reverseStandard`/`reversePlain` repeat the hex-scan loop |
 | `sort` | 2.00 | exported `Run` takes unexported types |
@@ -538,10 +554,7 @@ All JSON-related audit work (F10, F12, F15, daemon tests) is done. The remaining
 
 | ID | Status | What |
 |----|--------|------|
-| F16 | ⏳ NEW (PR #46) | Raw payload mixes with the envelope on stdout: `bzcat --json`, `bunzip2/unlzma/uncompress -c --json`, `gzip -c --json`, `cpio -o --json`. Over JSON-RPC the daemon cannot parse the mixed output. |
-| P1 | ⏳ OPEN | `logger` package-global `stderrWriter` (daemon re-entrancy). |
-| P2 | ⏳ OPEN | [wiki/test_coverage_matrix.md](test_coverage_matrix.md) coverage numbers are stale (only the JSON-RPC column was refreshed during 5d). |
-| P4 | ⏳ OPEN | Concurrent `make testsuite` runs corrupt each other (shared `runtest-tempdir-links`). |
+| — | ✅ | All numbered findings are resolved. F16, P1, P2, and P4 were closed on `audit/whatsleft` (see §5b and §5d.2). The remaining open items are the per-command verdicts above plus the `wget` HTTP-timeout note and the `rx` flaky-test note, which travel with their Phase 5 rows. |
 
 ### Housekeeping
 

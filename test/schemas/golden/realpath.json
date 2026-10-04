@@ -1,1 +1,1 @@
-{"command":"realpath","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"resolved":{"/tmp/goposix-golden.cVsPf3/f12.txt":"/tmp/goposix-golden.cVsPf3/f12.txt"}},"error":null}
+{"command":"realpath","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":{"resolved":{"/tmp/goposix-golden.iaOQAL/f12.txt":"/tmp/goposix-golden.iaOQAL/f12.txt"}},"error":null}

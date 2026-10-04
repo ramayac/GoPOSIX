@@ -58,6 +58,10 @@
               }
             }
           }
+        },
+        "content": {
+          "type": "string",
+          "description": "base64 archive in JSON create mode without -F (F16)"
         }
       }
     },

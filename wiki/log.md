@@ -947,6 +947,14 @@ wiki documentation.
 
 
 
+## [2026-10-04] fix | Phase 28 open findings F16, P1, P2, P4 closed (`audit/whatsleft`)
+
+- F16: JSON stdout modes no longer mix the raw payload with the envelope. The payload is captured (50 MB cap) and embedded as base64 `content` in the envelope: `DecompFileInfo.Content` (F7 core), `GzipStat.Content` (`pkg/gzip`), `CpioResult.Content` (`cpio -o` without `-F`). Text mode is unchanged. Schemas updated for bunzip2, bzcat, unlzma, uncompress, gzip, cpio; new gunzip schema. `make validate-schemas`: 115 passed, 0 failed, 0 skipped.
+- P1: `logger.Run` takes the injected `errOut io.Writer`; the package-global `stderrWriter` and its swap logic are deleted. The `-s` test asserts the injected writer.
+- P2: all 115 coverage cells in [test_coverage_matrix.md](test_coverage_matrix.md) refreshed from a `go test -cover` run (84 rows changed). Overall coverage 88.1%.
+- P4: the BusyBox harness now builds applet links in a per-run `mktemp -d` (cleaned on exit) and uses `.tmpdir.$applet.$$`. The tracked `runtest-tempdir-links/` symlink tree is deleted from the repo. Concurrent same-applet runs verified: zero failures.
+- Plan §6 lists the remaining work: Phase 4 for bc/sed/date/tar/dc/diff, Phase 5 for 13 M/S verdicts.
+
 ## [2026-10-04] resume | Phase 28 5d JSON changes complete (PR #46, `audit/5d-json`)
 
 - F12: 37 new schemas plus golden fixtures. `make validate-schemas` reports 114 passed, 0 failed, 0 skipped (was 31 skipped). `dd` and `daemon` are documented exemptions in [json_schema.md](json_schema.md).
