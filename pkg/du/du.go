@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"math"
 	"path/filepath"
 	"syscall"
 
@@ -123,20 +122,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 // humanSize formats a byte count into a human-readable string (e.g., "1.0M").
 func humanSize(size int64) string {
-	units := []string{"B", "K", "M", "G", "T", "P"}
-	f := float64(size)
-	idx := 0
-	for f >= 1024 && idx < len(units)-1 {
-		f /= 1024
-		idx++
-	}
-	// Show one decimal place.
-	if idx == 0 {
-		return fmt.Sprintf("%.0f%s", f, units[idx])
-	}
-	// Round to 1 decimal
-	f = math.Round(f*10) / 10
-	return fmt.Sprintf("%.1f%s", f, units[idx])
+	return common.HumanSize(size, true)
 }
 
 func init() {

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/user"
-	"strconv"
 
 	"github.com/ramayac/goposix/internal/dispatch"
 	"github.com/ramayac/goposix/pkg/common"
@@ -38,7 +36,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	groupStr := flags.Positional[0]
-	gid := lookupGID(groupStr)
+	gid := common.LookupGID(groupStr)
 	if gid < 0 {
 		fmt.Fprintf(stderr, "chgrp: invalid group: %s\n", groupStr)
 		return 1
@@ -62,22 +60,6 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	return exitCode
-}
-
-// lookupGID resolves a group identifier (name or numeric) to a GID.
-// Returns -1 if the group cannot be found.
-func lookupGID(name string) int {
-	// Try numeric first
-	if val, err := strconv.Atoi(name); err == nil {
-		return val
-	}
-	// Try name lookup via /etc/group
-	if g, err := user.LookupGroup(name); err == nil {
-		if val, err := strconv.Atoi(g.Gid); err == nil {
-			return val
-		}
-	}
-	return -1
 }
 
 func init() {

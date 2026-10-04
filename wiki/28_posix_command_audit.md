@@ -119,7 +119,7 @@ against the pre-refactor binary. All four packages now at 100% coverage.
 | 1 | F1 mechanical fix: injected writers | 53 | `make test` + `make testsuite` + `go vet` | ✅ DONE (870/17/30) |
 | 2 | F2 digest consolidation + F5 signal consolidation | 8 | BusyBox suite + output parity | ✅ DONE (F2 + F5) |
 | 3 | F3 coverage drive | 4 | `make cover-pkg` ≥ 80% | ✅ DONE (whoami 100, hostname 98.2, diff 89.5, gzip 87.3) |
-| 4 | Deep audit of XL/L commands (one PR each) | 7 | per-command checklist + suites | ▶️ IN PROGRESS — F8/F9/F10/F11 done on `audit/f8-f11-json-parser-core`; per-command deep audit (god functions, JSON schemas) still open |
+| 4 | Deep audit of XL/L commands (one PR each) | 7 | per-command checklist + suites | ▶️ IN PROGRESS — F8–F11, F13, F14 done on `audit/f8-f11-json-parser-core`; per-command deep audit (god functions, JSON schemas) still open |
 | 5 | Sweep of M/S commands (batched) | 87 | per-command checklist + suites | ⏳ pending |
 | 6 | Decide F6/F7 and close all open verdicts | — | matrix 100% filled | ⚠️ F6+F7 done; matrix still filling |
 
@@ -178,7 +178,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `sort` | M | 653 | 537 | 86.2% | ✅ 27/27 | — | 2.00 | IMPROVE | Preflight: exported `Run` takes unexported types (`lineItem`, `keySpec`), so it is unusable as an API · schema and daemon test present |
 | `od` | M | 522 | 443 | 85.3% | ✅ 4/4 | — | 2.00 | KEEP | Preflight: balanced; `Run` 65 lines · schema and daemon test present |
 | `expr` | M | 446 | 397 | 87.1% | ✅ 2/2 | — | 2.00 | KEEP ✅ | F8 ✅ `peek`/`next`/`done` now use `common.TokenCursor` · F10 ✅ flag errors honour `--json` · schema and daemon test present |
-| `ls` | M | 443 | 377 | 88.6% | ✅ 5/5 | — | 2.00 | IMPROVE | Preflight: `humanSize` duplicates `du`'s with a different format · schema and daemon test present |
+| `ls` | M | 443 | 377 | 88.6% | ✅ 5/5 | — | 2.00 | KEEP ✅ | F14 ✅ `common.HumanSize` (truncated) · schema and daemon test present |
 | `cal` | S | 348 | 144 | 85.8% | ✅ 1/1 | — | 2.00 | IMPROVE | Preflight: daemon test present but no JSON schema · `RenderMonth` 118 lines |
 | `uuencode` | S | 251 | 134 | 88.3% | ✅ 19/19 | — | 2.00 | IMPROVE | Preflight: `run` 167 lines · daemon test present but no JSON schema · flag errors honour `--json` |
 | `dd` | S | 332 | 208 | 88.8% | ✅ 6/6 | — | 1.75 | IMPROVE | Preflight: the only command with no `--json` output · `Run` 212 lines · daemon test present |
@@ -193,7 +193,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `seq` | S | 284 | 263 | 89.7% | ✅ 21/21 | — | 1.50 | IMPROVE | Preflight: daemon test present but no JSON schema · `run` 133 lines |
 | `tr` | S | 265 | 148 | 90.8% | ✅ 6/6 | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
 | `who` | S | 193 | 400 | 89.4% | — | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
-| `chown` | S | 109 | 66 | 97.4% | — | — | 1.50 | IMPROVE | Preflight: `lookupUID`/`lookupGID` are byte-identical to `chgrp`'s (F13) · schema and daemon test present |
+| `chown` | S | 109 | 66 | 97.4% | — | — | 1.50 | KEEP ✅ | F13 ✅ `common.LookupUID`/`common.LookupGID` · schema and daemon test present |
 | `nice` | S | 107 | 85 | 90.5% | — | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
 | `df` | S | 74 | 48 | 95.8% | — | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
 | `gzip` | S | 306 | 575 | 87.3% | ✅ 4/4 | — | 1.25 | KEEP ✅ | F3: tests 87.3% |
@@ -208,7 +208,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `rm` | S | 152 | 198 | 87.3% | ✅ 1/1 | — | 1.25 | KEEP | Preflight: clean; root protection present · schema and daemon test present |
 | `pidof` | S | 148 | 114 | 96.7% | ✅ 4/4 | — | 1.25 | IMPROVE | Preflight: no JSON schema · `run` 112 lines |
 | `uptime` | S | 146 | 169 | 88.5% | ✅ 1/1 | — | 1.25 | IMPROVE | Preflight: no JSON schema · `run` 96 lines |
-| `chgrp` | S | 86 | 77 | 96.7% | — | — | 1.25 | IMPROVE | Preflight: `lookupGID` is byte-identical to `chown`'s (F13) · schema and daemon test present |
+| `chgrp` | S | 86 | 77 | 96.7% | — | — | 1.25 | KEEP ✅ | F13 ✅ `common.LookupGID` · schema and daemon test present |
 | `split` | S | 273 | 375 | 92.6% | — | — | 1.00 | KEEP | Preflight: clean layering (`Run` library plus `run` CLI) · schema and daemon test present |
 | `cut` | S | 266 | 219 | 90.8% | ✅ 25/25 | — | 1.00 | KEEP | Preflight: clean layering (`Run` library plus `cutRun` CLI) · schema and daemon test present |
 | `tree` | S | 248 | 212 | 98.0% | ✅ 4/4 | — | 1.00 | IMPROVE | Preflight: daemon test present but no JSON schema · `buildTree` 87 lines |
@@ -216,7 +216,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `shell` | S | 187 | 229 | 90.2% | — | — | 1.00 | IMPROVE | Preflight: no `--json` support (`--json` is read as a file name); the daemon test asserts nothing; no schema (F15) |
 | `chmod` | S | 172 | 193 | 92.7% | — | — | 1.00 | KEEP | Preflight: clean; `applySymbolicMode` 63 lines · schema and daemon test present |
 | `cksum` | S | 155 | 157 | 94.5% | — | — | 1.00 | KEEP | Preflight: clean; `Run` library layer plus a `posixCRC` helper · schema and daemon test present |
-| `du` | S | 145 | 133 | 91.9% | ✅ 6/6 | — | 1.00 | IMPROVE | Preflight: `humanSize` duplicates `ls`'s with a different format (F14) · schema and daemon test present |
+| `du` | S | 145 | 133 | 91.9% | ✅ 6/6 | — | 1.00 | KEEP ✅ | F14 ✅ `common.HumanSize` (rounded) · schema and daemon test present |
 | `id` | S | 131 | 117 | 94.6% | ✅ 4/4 | — | 1.00 | KEEP | Preflight: clean; single 97-line `run` · schema and daemon test present |
 | `yes` | S | 84 | 146 | 96.0% | — | — | 1.00 | KEEP | Preflight: clean, 47-line `run` · schema and daemon test present |
 | `sleep` | S | 81 | 100 | 93.8% | — | — | 1.00 | KEEP | Preflight: clean, 53-line `run` · schema and daemon test present |
@@ -363,16 +363,26 @@ Add the schema and a fixture for each command.
 `test.schema.json`, and `truefalse` uses `true.schema.json` and `false.schema.json`. Match on the
 alias before you report a schema as missing.
 
-#### F13 — UID/GID lookup helpers duplicated between `chgrp` and `chown` ⏳ OPEN
+#### F13 — UID/GID lookup helpers duplicated between `chgrp` and `chown` ✅ DONE
 `lookupGID` is byte-identical in [pkg/chgrp](../pkg/chgrp) and [pkg/chown](../pkg/chown), and
 `chown` also carries `lookupUID`. Both try a number first, then the name. Move them to
 [pkg/common](../pkg/common) as `LookupUID` and `LookupGID`. This finding sets the verdict for both
 commands.
 
-#### F14 — Human-readable size formatting duplicated between `ls` and `du` ⏳ OPEN
+**Resolution:** new [pkg/common/idlookup.go](../pkg/common/idlookup.go) provides `LookupUID` and
+`LookupGID`. `chgrp` and `chown` now call them; the local copies are deleted. The `chgrp` unit
+tests call `common.LookupGID` directly.
+
+#### F14 — Human-readable size formatting duplicated between `ls` and `du` ✅ DONE
 [pkg/ls](../pkg/ls) and [pkg/du](../pkg/du) each define `humanSize`, with different output
 (`1.0K` versus `1K`). Move one helper to [pkg/common](../pkg/common) with a format option. This
 finding sets the verdict for both commands.
+
+**Resolution:** new `common.HumanSize(n, round)` in
+[pkg/common/humansize.go](../pkg/common/humansize.go). `ls` passes `round=false` (truncated),
+`du` passes `round=true` (rounded). The actual output difference was truncation versus rounding,
+not the `1.0K`/`1K` pair in the original note. Both commands keep thin local wrappers so their
+unit tests still call `humanSize`.
 
 #### F15 — Two commands break the "`--json` for all" contract ⏳ OPEN
 [wiki/json_schema.md](json_schema.md) states that all utilities support `--json`. `dd` is the

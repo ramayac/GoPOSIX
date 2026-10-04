@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/user"
-	"strconv"
 	"strings"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -45,10 +43,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	gid := -1
 
 	if parts[0] != "" {
-		uid = lookupUID(parts[0])
+		uid = common.LookupUID(parts[0])
 	}
 	if len(parts) > 1 && parts[1] != "" {
-		gid = lookupGID(parts[1])
+		gid = common.LookupGID(parts[1])
 	}
 
 	var res []ChownResult
@@ -69,38 +67,6 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	return exitCode
-}
-
-// lookupUID resolves a user identifier (name or numeric) to a UID.
-// Returns -1 if the user cannot be found.
-func lookupUID(name string) int {
-	// Try numeric first
-	if val, err := strconv.Atoi(name); err == nil {
-		return val
-	}
-	// Try name lookup via /etc/passwd
-	if u, err := user.Lookup(name); err == nil {
-		if val, err := strconv.Atoi(u.Uid); err == nil {
-			return val
-		}
-	}
-	return -1
-}
-
-// lookupGID resolves a group identifier (name or numeric) to a GID.
-// Returns -1 if the group cannot be found.
-func lookupGID(name string) int {
-	// Try numeric first
-	if val, err := strconv.Atoi(name); err == nil {
-		return val
-	}
-	// Try name lookup via /etc/group
-	if g, err := user.LookupGroup(name); err == nil {
-		if val, err := strconv.Atoi(g.Gid); err == nil {
-			return val
-		}
-	}
-	return -1
 }
 
 func init() {

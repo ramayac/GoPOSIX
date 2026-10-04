@@ -158,16 +158,7 @@ func buildFileInfo(path string, info fs.FileInfo) FileInfo {
 
 // humanSize formats a byte count in human-readable form (e.g. 1.5K).
 func humanSize(n int64) string {
-	const unit = 1024
-	if n < unit {
-		return fmt.Sprintf("%dB", n)
-	}
-	div, exp := int64(unit), 0
-	for n := n / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f%c", float64(n)/float64(div), "KMGTPE"[exp])
+	return common.HumanSize(n, false)
 }
 
 // Run performs the ls operation and returns the result.
