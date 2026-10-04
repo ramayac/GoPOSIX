@@ -82,10 +82,13 @@ input. `pkg/common` also lifted 68.9% → 93.7% with direct digest-core tests.
 `awk` has 17 failing tests (upstream goawk engine limits, deferred — see [wiki/deferred.md](deferred.md)).
 `rx` has 1 flaky test (handshake race). All other ⚠️ entries are root-required skips.
 
-### F5 — Signal parsing duplication
+### F5 — Signal parsing duplication ✅ DONE
 
-`start-stop-daemon` keeps a partial `parseSignal` (7 names). [pkg/common/signal.go](../pkg/common/signal.go)
-has the full table (added for `kill` in PR #41). Consolidate.
+`start-stop-daemon` kept a partial `parseSignal` (7 names). Now deleted: the call site uses
+`common.ParseSignal` from [pkg/common/signal.go](../pkg/common/signal.go) — full 31-signal Linux table,
+SIG-prefix tolerance, case-insensitivity, whitespace trimming, numeric parsing. Error message
+format unchanged. Tests extended with signals the old parser rejected (CONT, STOP, PWR, SYS,
+WINCH, SIGPIPE, lowercase, padded numbers).
 
 ### F6 — `panic` in bc startup
 
@@ -100,14 +103,13 @@ duplicated wrapper logic (header checks, multi-stream handling).
 ## 4. Phases & Priorities
 
 > **Current step: Phase 4** — deep audit of the 24 XL/L commands, one PR each.
-> Phases 0, 1, 3 are complete. Phase 2 is complete except F5 (signal parsing
-> consolidation in `start-stop-daemon`), tracked in [todos.md](todos.md).
+> Phases 0–3 are complete.
 
 | Phase | Scope | Commands | Verify | Status |
 |-------|-------|----------|--------|--------|
 | 0 | This plan + matrix snapshot | — | committed on `audit/posix-commands` | ✅ DONE |
 | 1 | F1 mechanical fix: injected writers | 53 | `make test` + `make testsuite` + `go vet` | ✅ DONE (871/16/30) |
-| 2 | F2 digest consolidation + F5 signal consolidation | 8 | BusyBox suite + output parity | ⚠️ F2 done, F5 open |
+| 2 | F2 digest consolidation + F5 signal consolidation | 8 | BusyBox suite + output parity | ✅ DONE (F2 + F5) |
 | 3 | F3 coverage drive | 4 | `make cover-pkg` ≥ 80% | ✅ DONE (whoami 100, hostname 98.2, diff 89.5, gzip 87.3) |
 | 4 | Deep audit of XL/L commands (one PR each) | 24 | per-command checklist + suites | ▶️ NEXT |
 | 5 | Sweep of M/S commands (batched) | 87 | per-command checklist + suites | ⏳ pending |
@@ -146,7 +148,7 @@ duplicated wrapper logic (header checks, multi-stream handling).
 | `fold` | L | 719 | 469 | 91.8% | ✅ 4/4 | — |  |  |
 | `cp` | L | 714 | 385 | 82.6% | ✅ 14/14 | — |  |  |
 | `cat` | M | 684 | 464 | 89.6% | ✅ 1/1 | — |  |  |
-| `start-stop-daemon` | M | 634 | 240 | 82.1% | ✅ 4/4 | — |  |  |
+| `start-stop-daemon` | M | 634 | 240 | 82.1% | ✅ 4/4 | IMPROVE | F5: uses common.ParseSignal (was 7-name local parser) |  |
 | `split` | M | 621 | 351 | 86.3% | — | — |  |  |
 | `xxd` | M | 610 | 239 | 86.4% | ✅ 7/7 | — |  |  |
 | `comm` | M | 591 | 346 | 88.8% | ✅ 9/9 | — |  |  |

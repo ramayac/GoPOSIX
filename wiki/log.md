@@ -4,6 +4,13 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-10-03] refactor | F5: start-stop-daemon uses common.ParseSignal (audit phase 2 complete)
+
+- Deleted the local 7-name `parseSignal` in `pkg/start-stop-daemon`; call site now uses `common.ParseSignal` (full 31-signal table, SIG-prefix tolerance, case-insensitive, whitespace trim). Error message format unchanged.
+- Tests extended with signals the old parser rejected (CONT, STOP, PWR, SYS, WINCH, SIGPIPE, lowercase, padded numerics). Coverage 80.7%.
+- Verified: unit all green, compliance test_start-stop-daemon.sh 3/3, BusyBox 870/17/30 (17 awk only, matches baseline).
+- Audit phase 2 is now fully done (F2 + F5); `posix_command_audit.md` phase table updated.
+
 ## [2026-10-03] implement | Audit phases 1–3: writer injection (F1), digest consolidation (F2), coverage (F3)
 
 - **F1 (53 commands):** all error messages now use the injected `stderr` writer instead of `os.Stderr`. Special cases: `nice`/`nohup` thread writers into `Run()` (subprocess stdio, `*os.File` terminal check), `od` gained `errOut`, `tar` gained `errOut` on `createArchiveStream`. The daemon now passes separate stdout/stderr buffers and returns a `stderr` field in JSON-RPC responses — this fixed a class of accidental client errors (shared-buffer JSON corruption) and exposed the wc JSON-mode error envelope bug (fixed: `RenderError` on failure).

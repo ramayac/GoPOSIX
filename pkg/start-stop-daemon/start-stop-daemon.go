@@ -125,7 +125,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	// Resolve Signal
 	sig := syscall.SIGTERM
 	if signalStr != "" {
-		if s, err := parseSignal(signalStr); err == nil {
+		if s, err := common.ParseSignal(signalStr); err == nil {
 			sig = s
 		} else {
 			if jsonMode {
@@ -286,34 +286,6 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		common.Render("start-stop-daemon", DaemonResult{Action: "start", MatchedPids: []int{}, Status: "started foreground", CommandLine: cmdArgs}, true, stdout, nil)
 	}
 	return 0
-}
-
-func parseSignal(sigStr string) (syscall.Signal, error) {
-	sigStr = strings.ToUpper(sigStr)
-	sigStr = strings.TrimPrefix(sigStr, "SIG")
-
-	switch sigStr {
-	case "1", "HUP":
-		return syscall.SIGHUP, nil
-	case "2", "INT":
-		return syscall.SIGINT, nil
-	case "3", "QUIT":
-		return syscall.SIGQUIT, nil
-	case "9", "KILL":
-		return syscall.SIGKILL, nil
-	case "15", "TERM":
-		return syscall.SIGTERM, nil
-	case "USR1":
-		return syscall.SIGUSR1, nil
-	case "USR2":
-		return syscall.SIGUSR2, nil
-	default:
-		// Attempt numeric parse
-		if val, err := strconv.Atoi(sigStr); err == nil {
-			return syscall.Signal(val), nil
-		}
-		return 0, fmt.Errorf("unknown signal: %s", sigStr)
-	}
 }
 
 // findProcesses retrieves matching PIDs based on pidfile, executable path, process name, and user criteria.

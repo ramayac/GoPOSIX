@@ -30,9 +30,11 @@ All 12 packages are now ≥ 80% (project audit branch `audit/posix-commands`):
 `var osHostname = os.Hostname`) from PR #42 solved the syscall-mocking blockers.
 See [wiki/posix_command_audit.md](posix_command_audit.md).
 
-### `start-stop-daemon` signal parsing consolidation
+### `start-stop-daemon` signal parsing consolidation ✅ RESOLVED
 
-`pkg/start-stop-daemon` keeps its own partial `parseSignal` (7 names). `pkg/common/signal.go` (added for `kill`, PR #41) has the full Linux table. Consolidate when start-stop-daemon is next touched.
+`pkg/start-stop-daemon` now uses `common.ParseSignal` from [pkg/common/signal.go](../pkg/common/signal.go)
+(audit Phase 2 / F5, 2026-10-03). The local 7-name `parseSignal` was deleted — full 31-signal
+table with SIG-prefix tolerance, case-insensitivity, and numeric parsing.
 
 ### Go-Alpine Coexistence Daemon Target
 
