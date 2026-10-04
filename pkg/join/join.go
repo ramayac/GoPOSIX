@@ -202,7 +202,7 @@ func Run(r1, r2 io.Reader, field1, field2 int, delim string, a1, a2 bool, v1, v2
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "join: %v\n", err)
+		fmt.Fprintf(stderr, "join: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -245,7 +245,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	oSpec := flags.Get("o")
 
 	if len(flags.Positional) < 2 {
-		fmt.Fprintln(os.Stderr, "join: missing file operands")
+		fmt.Fprintln(stderr, "join: missing file operands")
 		common.RenderError("join", 1, "EARGS", "missing file operands", jsonMode, stdout)
 		return 1
 	}
@@ -259,7 +259,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	} else {
 		f, err := os.Open(file1)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "join: %v\n", err)
+			fmt.Fprintf(stderr, "join: %v\n", err)
 			common.RenderError("join", 1, "EOPEN", err.Error(), jsonMode, stdout)
 			return 1
 		}
@@ -272,7 +272,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	} else {
 		f, err := os.Open(file2)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "join: %v\n", err)
+			fmt.Fprintf(stderr, "join: %v\n", err)
 			common.RenderError("join", 1, "EOPEN", err.Error(), jsonMode, stdout)
 			return 1
 		}
@@ -282,7 +282,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	result, err := Run(r1, r2, field1, field2, delim, a1, a2, v1, v2, oSpec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "join: %v\n", err)
+		fmt.Fprintf(stderr, "join: %v\n", err)
 		common.RenderError("join", 1, "EJOIN", err.Error(), jsonMode, stdout)
 		return 1
 	}

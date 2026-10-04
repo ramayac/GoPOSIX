@@ -11,7 +11,6 @@ package printf
 import (
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"strings"
 
@@ -720,7 +719,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	if len(posArgs) == 0 {
 		common.RenderError("printf", 1, "MISSING_OPERAND", "missing operand", jsonMode, stdout)
 		if !jsonMode {
-			fmt.Fprintf(os.Stderr, "printf: missing operand\n")
+			fmt.Fprintf(stderr, "printf: missing operand\n")
 		}
 		return 1
 	}

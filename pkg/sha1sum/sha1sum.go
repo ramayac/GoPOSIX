@@ -2,30 +2,14 @@
 package sha1sum
 
 import (
-	"bufio"
 	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/ramayac/goposix/internal/dispatch"
 	"github.com/ramayac/goposix/pkg/common"
 )
-
-// HashResult holds a single file hash result.
-type HashResult struct {
-	File      string `json:"file"`
-	Hash      string `json:"hash"`
-	Algorithm string `json:"algorithm"`
-}
-
-// CheckResult holds the result of verifying one line from a checksum file.
-type CheckResult struct {
-	File   string `json:"file"`
-	Status string `json:"status"` // "OK" or "FAILED"
-}
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
@@ -34,13 +18,16 @@ var spec = common.FlagSpec{
 	},
 }
 
+var digestSpec = common.DigestSpec{
+	ProgName:          "sha1sum",
+	Algorithm:         "sha1",
+	New:               sha1.New,
+	CheckNoFilesStdin: true,
+}
+
 // HashFile computes the SHA-1 hash of an io.Reader.
 func HashFile(r io.Reader) (string, error) {
-	h := sha1.New()
-	if _, err := io.Copy(h, r); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(h.Sum(nil)), nil
+	return common.DigestReader(sha1.New(), r)
 }
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
@@ -49,7 +36,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "sha1sum: %v\n", err)
+		fmt.Fprintf(stderr, "sha1sum: %v\n", err)
 		return 1
 	}
 
@@ -57,141 +44,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	checkMode := flags.Has("check")
 
 	if checkMode {
-		return runCheck(flags.Positional, jsonMode, stdin, stdout)
+		return common.DigestCheckMode(digestSpec, flags.Positional, jsonMode, stdin, stdout, stderr)
 	}
 
-	return runHash(flags.Positional, flags.Stdin, jsonMode, stdin, stdout)
-}
-
-func runHash(files []string, readStdin bool, jsonMode bool, stdin io.Reader, stdout io.Writer) int {
-	var results []HashResult
-	exitCode := 0
-
-	if len(files) == 0 || readStdin {
-		if len(files) == 0 {
-			files = []string{"-"}
-		}
-	}
-
-	for _, file := range files {
-		var r io.Reader
-		var name string
-		if file == "-" {
-			r = stdin
-			name = "-"
-		} else {
-			f, err := os.Open(file)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "sha1sum: %s: %v\n", file, err)
-				exitCode = 1
-				continue
-			}
-			defer f.Close()
-			r = f
-			name = file
-		}
-
-		hash, err := HashFile(r)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "sha1sum: %s: %v\n", name, err)
-			exitCode = 1
-			continue
-		}
-		results = append(results, HashResult{File: name, Hash: hash, Algorithm: "sha1"})
-	}
-
-	common.Render("sha1sum", results, jsonMode, stdout, func() {
-		for _, r := range results {
-			fmt.Fprintf(stdout, "%s  %s\n", r.Hash, r.File)
-		}
-	})
-
-	return exitCode
-}
-
-func runCheck(files []string, jsonMode bool, stdin io.Reader, stdout io.Writer) int {
-	if len(files) == 0 {
-		files = []string{"-"}
-	}
-
-	exitCode := 0
-	var results []CheckResult
-
-	for _, checksumFile := range files {
-		var r io.Reader
-		if checksumFile == "-" {
-			r = stdin
-		} else {
-			f, err := os.Open(checksumFile)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "sha1sum: %s: %v\n", checksumFile, err)
-				exitCode = 1
-				continue
-			}
-			defer f.Close()
-			r = f
-		}
-
-		scanner := bufio.NewScanner(r)
-		hadLines := false
-		for scanner.Scan() {
-			line := scanner.Text()
-			if line == "" || strings.HasPrefix(line, "#") {
-				continue
-			}
-			hadLines = true
-
-			parts := strings.SplitN(line, "  ", 2)
-			if len(parts) != 2 {
-				parts = strings.SplitN(line, " ", 2)
-				if len(parts) != 2 {
-					fmt.Fprintf(os.Stderr, "sha1sum: %s: improperly formatted checksum line\n", checksumFile)
-					exitCode = 1
-					continue
-				}
-				parts[1] = strings.TrimLeft(parts[1], " ")
-			}
-
-			expectedHash := parts[0]
-			targetFile := parts[1]
-
-			tf, err := os.Open(targetFile)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s: FAILED open or read\n", targetFile)
-				results = append(results, CheckResult{File: targetFile, Status: "FAILED"})
-				exitCode = 1
-				continue
-			}
-
-			actualHash, err := HashFile(tf)
-			tf.Close()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s: FAILED open or read\n", targetFile)
-				results = append(results, CheckResult{File: targetFile, Status: "FAILED"})
-				exitCode = 1
-				continue
-			}
-
-			if actualHash == expectedHash {
-				results = append(results, CheckResult{File: targetFile, Status: "OK"})
-			} else {
-				results = append(results, CheckResult{File: targetFile, Status: "FAILED"})
-				exitCode = 1
-			}
-		}
-		if !hadLines {
-			fmt.Fprintf(os.Stderr, "sha1sum: %s: no properly formatted checksum lines found\n", checksumFile)
-			exitCode = 1
-		}
-	}
-
-	common.Render("sha1sum", results, jsonMode, stdout, func() {
-		for _, r := range results {
-			fmt.Fprintf(stdout, "%s: %s\n", r.File, r.Status)
-		}
-	})
-
-	return exitCode
+	return common.DigestHashMode(digestSpec, flags.Positional, flags.Stdin, jsonMode, stdin, stdout, stderr)
 }
 
 func init() {

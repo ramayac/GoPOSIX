@@ -4,7 +4,6 @@ package nice
 import (
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"strconv"
 
@@ -28,7 +27,8 @@ var spec = common.FlagSpec{
 }
 
 // Run adjusts the niceness and executes the given command.
-func Run(adjustment int, command []string) (int, error) {
+// stdin/stdout/stderr are the standard streams for the child process.
+func Run(adjustment int, command []string, stdin io.Reader, stdout, stderr io.Writer) (int, error) {
 	if len(command) == 0 {
 		return 0, fmt.Errorf("missing command")
 	}
@@ -40,9 +40,9 @@ func Run(adjustment int, command []string) (int, error) {
 
 	// Execute the command
 	cmd := exec.Command(command[0], command[1:]...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdin = stdin
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 
 	err := cmd.Run()
 	if err != nil {
@@ -57,7 +57,7 @@ func Run(adjustment int, command []string) (int, error) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "nice: %v\n", err)
+		fmt.Fprintf(stderr, "nice: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -67,7 +67,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		adjStr := flags.Get("n")
 		adj, err := strconv.Atoi(adjStr)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "nice: invalid adjustment: %s\n", adjStr)
+			fmt.Fprintf(stderr, "nice: invalid adjustment: %s\n", adjStr)
 			common.RenderError("nice", 1, "EARGS", "invalid adjustment", jsonMode, stdout)
 			return 1
 		}
@@ -75,14 +75,14 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	if len(flags.Positional) == 0 {
-		fmt.Fprintln(os.Stderr, "nice: missing command")
+		fmt.Fprintln(stderr, "nice: missing command")
 		common.RenderError("nice", 1, "EARGS", "missing command", jsonMode, stdout)
 		return 1
 	}
 
-	exitCode, err := Run(adjustment, flags.Positional)
+	exitCode, err := Run(adjustment, flags.Positional, stdin, stdout, stderr)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "nice: %v\n", err)
+		fmt.Fprintf(stderr, "nice: %v\n", err)
 		common.RenderError("nice", 1, "ENICE", err.Error(), jsonMode, stdout)
 		return 1
 	}

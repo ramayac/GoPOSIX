@@ -122,14 +122,14 @@ func Run(files []string) (CksumResult, error) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "cksum: %v\n", err)
+		fmt.Fprintf(stderr, "cksum: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
 
 	result, err := Run(flags.Positional)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "cksum: %v\n", err)
+		fmt.Fprintf(stderr, "cksum: %v\n", err)
 		common.RenderError("cksum", 1, "ECKSUM", err.Error(), jsonMode, stdout)
 		return 1
 	}

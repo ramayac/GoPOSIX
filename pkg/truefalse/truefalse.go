@@ -5,7 +5,6 @@ package truefalse
 import (
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/ramayac/goposix/internal/dispatch"
 	"github.com/ramayac/goposix/pkg/common"
@@ -26,7 +25,7 @@ var spec = common.FlagSpec{
 func runTrue(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "true: %v\n", err)
+		fmt.Fprintf(stderr, "true: %v\n", err)
 		return 2
 	}
 	if flags.Has("json") {
@@ -38,7 +37,7 @@ func runTrue(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd strin
 func runFalse(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "false: %v\n", err)
+		fmt.Fprintf(stderr, "false: %v\n", err)
 		return 2
 	}
 	if flags.Has("json") {

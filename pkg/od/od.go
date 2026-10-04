@@ -33,10 +33,10 @@ type OdResult struct {
 }
 
 // Run reads from r and produces an od dump. args contains flags + optional filename.
-func Run(args []string, r io.Reader, w io.Writer) int {
+func Run(args []string, r io.Reader, w, errOut io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "od: %v\n", err)
+		fmt.Fprintf(errOut, "od: %v\n", err)
 		return 1
 	}
 
@@ -44,7 +44,7 @@ func Run(args []string, r io.Reader, w io.Writer) int {
 	if len(flags.Positional) > 0 {
 		f, ferr := os.Open(flags.Positional[0])
 		if ferr != nil {
-			fmt.Fprintf(os.Stderr, "od: %s: %v\n", flags.Positional[0], ferr)
+			fmt.Fprintf(errOut, "od: %s: %v\n", flags.Positional[0], ferr)
 			return 1
 		}
 		defer f.Close()
@@ -505,12 +505,12 @@ func dumpInts(r io.Reader, w io.Writer, maxBytes int64, jsonMode bool) int {
 // ---------------------------------------------------------------------------
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
-	return odRun(args, stdin, stdout, cwd)
+	return odRun(args, stdin, stdout, stderr, cwd)
 }
 
 // odRun is the testable entry point for the od CLI.
-func odRun(args []string, stdin io.Reader, stdout io.Writer, cwd string) int {
-	return Run(args, stdin, stdout)
+func odRun(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+	return Run(args, stdin, stdout, stderr)
 }
 
 func init() {

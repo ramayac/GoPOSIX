@@ -444,7 +444,7 @@ func GenerateDiff(content1, content2 string, contextLines int, ignoreSpace, igno
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "diff: %v\n", err)
+		fmt.Fprintf(stderr, "diff: %v\n", err)
 		return 2
 	}
 
@@ -462,7 +462,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	if len(files) != 2 {
 		common.RenderError("diff", 2, "USAGE", "missing operand", jsonMode, stdout)
 		if !jsonMode {
-			fmt.Fprintf(os.Stderr, "diff: missing operand\n")
+			fmt.Fprintf(stderr, "diff: missing operand\n")
 		}
 		return 2
 	}
@@ -508,7 +508,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	if err != nil {
 		common.RenderError("diff", 2, "IO", err.Error(), jsonMode, stdout)
 		if !jsonMode {
-			fmt.Fprintf(os.Stderr, "diff: %v\n", err)
+			fmt.Fprintf(stderr, "diff: %v\n", err)
 		}
 		return 2
 	}
@@ -520,7 +520,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	if err != nil {
 		common.RenderError("diff", 2, "IO", err.Error(), jsonMode, stdout)
 		if !jsonMode {
-			fmt.Fprintf(os.Stderr, "diff: %v\n", err)
+			fmt.Fprintf(stderr, "diff: %v\n", err)
 		}
 		return 2
 	}

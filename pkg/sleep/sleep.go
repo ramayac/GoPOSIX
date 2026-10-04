@@ -3,7 +3,6 @@ package sleep
 import (
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"time"
 
@@ -27,7 +26,7 @@ var spec = common.FlagSpec{
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "sleep: %v\n", err)
+		fmt.Fprintf(stderr, "sleep: %v\n", err)
 		return 1
 	}
 	jsonMode := flags.Has("json")
@@ -36,7 +35,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		if jsonMode {
 			common.RenderError("sleep", 1, "MISSING", "missing operand", true, stdout)
 		}
-		fmt.Fprintln(os.Stderr, "sleep: missing operand")
+		fmt.Fprintln(stderr, "sleep: missing operand")
 		return 1
 	}
 
@@ -56,7 +55,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			if jsonMode {
 				common.RenderError("sleep", 1, "INVALID", fmt.Sprintf("invalid time interval %q", durStr), true, stdout)
 			}
-			fmt.Fprintf(os.Stderr, "sleep: invalid time interval %q\n", durStr)
+			fmt.Fprintf(stderr, "sleep: invalid time interval %q\n", durStr)
 			return 1
 		}
 		d = time.Duration(sec * float64(time.Second))

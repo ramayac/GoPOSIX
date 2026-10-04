@@ -4,7 +4,6 @@ package uname
 import (
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -47,14 +46,14 @@ func charsToString(chars [65]int8) string {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "uname: %v\n", err)
+		fmt.Fprintf(stderr, "uname: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
 
 	result, err := Run()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "uname: %v\n", err)
+		fmt.Fprintf(stderr, "uname: %v\n", err)
 		common.RenderError("uname", 1, "EUNAME", err.Error(), jsonMode, stdout)
 		return 1
 	}

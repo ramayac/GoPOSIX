@@ -252,7 +252,7 @@ func resolveTarPath(target string) (resolved string, strippedPrefix string) {
 
 // createArchiveStream writes a tar (optionally gzipped) to w from the given
 // filesystem targets. This is the testable core, separated from file I/O.
-func createArchiveStream(w io.Writer, targets []string, archiveAbsPath string, verbose bool, logOut io.Writer) ([]TarFileStat, error) {
+func createArchiveStream(w io.Writer, targets []string, archiveAbsPath string, verbose bool, logOut, errOut io.Writer) ([]TarFileStat, error) {
 	tw := tar.NewWriter(w)
 	defer tw.Close()
 
@@ -429,7 +429,7 @@ func createArchiveStream(w io.Writer, targets []string, archiveAbsPath string, v
 
 		// Emit message about stripped prefix (always to stderr, per POSIX).
 		if strippedPrefix != "" {
-			fmt.Fprintf(os.Stderr, "tar: removing leading '%s' from member names\n", strippedPrefix)
+			fmt.Fprintf(errOut, "tar: removing leading '%s' from member names\n", strippedPrefix)
 		}
 	}
 	return stats, nil
@@ -468,7 +468,7 @@ func doCreate(archive string, useGzip, useBzip2, verbose, isJSON bool, targets [
 		logOut = io.Discard
 	}
 
-	stats, err := createArchiveStream(w, targets, archiveAbsPath, verbose && !isJSON, logOut)
+	stats, err := createArchiveStream(w, targets, archiveAbsPath, verbose && !isJSON, logOut, errOut)
 	if err != nil {
 		common.RenderError("tar", 1, "IO", err.Error(), isJSON, stdout)
 		if !isJSON {

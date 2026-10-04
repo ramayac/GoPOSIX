@@ -74,7 +74,7 @@ func sameDir(path, cwd string) bool {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "pwd: %v\n", err)
+		fmt.Fprintf(stderr, "pwd: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -82,7 +82,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	result, err := Run(logical)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "pwd: %v\n", err)
+		fmt.Fprintf(stderr, "pwd: %v\n", err)
 		common.RenderError("pwd", 1, "EPWD", err.Error(), jsonMode, stdout)
 		return 1
 	}

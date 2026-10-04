@@ -64,7 +64,7 @@ func TestNohup_BadFlag(t *testing.T) {
 }
 
 func TestRun_EmptyCommand(t *testing.T) {
-	_, err := Run([]string{})
+	_, err := Run([]string{}, nil, io.Discard, io.Discard)
 	if err == nil {
 		t.Error("expected error for empty command")
 	}
@@ -102,8 +102,7 @@ func TestNohupJSONMode(t *testing.T) {
 
 func TestNohupCommandNotFound(t *testing.T) {
 	var out, errBuf bytes.Buffer
-	// The error message goes to the process stderr (os.Stderr), not the
-	// provided writer, so only the exit code is asserted here.
+	// The error message goes to the injected stderr writer.
 	code := run([]string{"nonexistent-command-xyz"}, nil, &out, &errBuf, "")
 	if code != 1 {
 		t.Errorf("expected exit 1, got %d", code)

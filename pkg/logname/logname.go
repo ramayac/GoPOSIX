@@ -40,14 +40,14 @@ func Run() (LognameResult, error) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "logname: %v\n", err)
+		fmt.Fprintf(stderr, "logname: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
 
 	result, err := Run()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "logname: %v\n", err)
+		fmt.Fprintf(stderr, "logname: %v\n", err)
 		common.RenderError("logname", 1, "ELOGNAME", err.Error(), jsonMode, stdout)
 		return 1
 	}

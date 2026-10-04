@@ -16,7 +16,6 @@ package expr
 import (
 	"fmt"
 	"io"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -427,7 +426,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	if err != nil {
 		common.RenderError("expr", 2, "SYNTAX", err.Error(), jsonMode, stdout)
 		if !jsonMode {
-			fmt.Fprintf(os.Stderr, "expr: %v\n", err)
+			fmt.Fprintf(stderr, "expr: %v\n", err)
 		}
 		return 2
 	}

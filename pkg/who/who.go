@@ -136,7 +136,7 @@ func Run() (WhoResult, error) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "who: %v\n", err)
+		fmt.Fprintf(stderr, "who: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -145,7 +145,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	result, err := Run()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "who: %v\n", err)
+		fmt.Fprintf(stderr, "who: %v\n", err)
 		common.RenderError("who", 1, "EWHO", err.Error(), jsonMode, stdout)
 		return 1
 	}

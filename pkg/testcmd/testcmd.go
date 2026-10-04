@@ -335,7 +335,7 @@ func runTest(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd strin
 	if err != nil {
 		common.RenderError("test", 2, "SYNTAX", err.Error(), jsonMode, stdout)
 		if !jsonMode {
-			fmt.Fprintf(os.Stderr, "test: %v\n", err)
+			fmt.Fprintf(stderr, "test: %v\n", err)
 		}
 		return 2
 	}
@@ -369,7 +369,7 @@ func runBracket(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd st
 		msg := "missing ']'"
 		common.RenderError("[", 2, "SYNTAX", msg, jsonMode, stdout)
 		if !jsonMode {
-			fmt.Fprintf(os.Stderr, "[: %s\n", msg)
+			fmt.Fprintf(stderr, "[: %s\n", msg)
 		}
 		return 2
 	}
@@ -380,7 +380,7 @@ func runBracket(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd st
 	if err != nil {
 		common.RenderError("[", 2, "SYNTAX", err.Error(), jsonMode, stdout)
 		if !jsonMode {
-			fmt.Fprintf(os.Stderr, "[: %v\n", err)
+			fmt.Fprintf(stderr, "[: %v\n", err)
 		}
 		return 2
 	}

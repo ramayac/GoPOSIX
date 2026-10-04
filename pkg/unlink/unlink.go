@@ -4,7 +4,6 @@ package unlink
 import (
 	"fmt"
 	"io"
-	"os"
 	"syscall"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -31,13 +30,13 @@ func Run(path string) error {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "unlink: %v\n", err)
+		fmt.Fprintf(stderr, "unlink: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
 
 	if len(flags.Positional) != 1 {
-		fmt.Fprintln(os.Stderr, "unlink: missing operand")
+		fmt.Fprintln(stderr, "unlink: missing operand")
 		common.RenderError("unlink", 1, "EARGS", "missing operand", jsonMode, stdout)
 		return 1
 	}
@@ -45,7 +44,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	path := flags.Positional[0]
 
 	if err := Run(path); err != nil {
-		fmt.Fprintf(os.Stderr, "unlink: %v\n", err)
+		fmt.Fprintf(stderr, "unlink: %v\n", err)
 		common.RenderError("unlink", 1, "EUNLINK", err.Error(), jsonMode, stdout)
 		return 1
 	}

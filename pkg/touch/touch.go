@@ -66,7 +66,7 @@ func Run(paths []string, ts time.Time, noCreate bool) (TouchResult, error) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "touch: %v\n", err)
+		fmt.Fprintf(stderr, "touch: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -75,7 +75,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	if ref := flags.Get("r"); ref != "" {
 		info, err := os.Stat(ref)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "touch: %v\n", err)
+			fmt.Fprintf(stderr, "touch: %v\n", err)
 			return 1
 		}
 		ts = info.ModTime()
@@ -102,7 +102,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			}
 		}
 		if !parsed {
-			fmt.Fprintf(os.Stderr, "touch: invalid date format: %q\n", dStr)
+			fmt.Fprintf(stderr, "touch: invalid date format: %q\n", dStr)
 			return 1
 		}
 	} else if tStr := flags.Get("t"); tStr != "" {
@@ -117,19 +117,19 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 			}
 		}
 		if !parsed {
-			fmt.Fprintf(os.Stderr, "touch: invalid date format: %q\n", tStr)
+			fmt.Fprintf(stderr, "touch: invalid date format: %q\n", tStr)
 			return 1
 		}
 	}
 
 	if len(flags.Positional) == 0 {
-		fmt.Fprintln(os.Stderr, "touch: missing file operand")
+		fmt.Fprintln(stderr, "touch: missing file operand")
 		return 1
 	}
 	noCreate := flags.Has("c")
 	result, err := Run(flags.Positional, ts, noCreate)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "touch: %v\n", err)
+		fmt.Fprintf(stderr, "touch: %v\n", err)
 		common.RenderError("touch", 1, "ETOUCH", err.Error(), jsonMode, stdout)
 		return 1
 	}

@@ -690,9 +690,13 @@ func (s *Server) processRequest(req Request) *Response {
 	buf := bufferPool.Get().(*bytes.Buffer)
 	buf.Reset()
 	defer bufferPool.Put(buf)
+	errBuf := bufferPool.Get().(*bytes.Buffer)
+	errBuf.Reset()
+	defer bufferPool.Put(errBuf)
 
 	// 50MB response limit to prevent OOM
 	lw := &common.LimitWriter{W: buf, Limit: 50 * 1024 * 1024}
+	lwErr := &common.LimitWriter{W: errBuf, Limit: 50 * 1024 * 1024}
 
 	// Execute the command
 	runStdin := stdinReader
@@ -703,7 +707,7 @@ func (s *Server) processRequest(req Request) *Response {
 	if session != nil && session.CWD != "" {
 		sessionCwd = session.CWD
 	}
-	exitCode := cmd.Run(args, runStdin, lw, lw, sessionCwd)
+	exitCode := cmd.Run(args, runStdin, lw, lwErr, sessionCwd)
 	rpcExitCode = exitCode
 
 	// rawOutput: return the raw stdout text directly (used by CLI forwarder).
@@ -717,6 +721,7 @@ func (s *Server) processRequest(req Request) *Response {
 			Result: map[string]interface{}{
 				"exitCode": exitCode,
 				"stdout":   buf.String(),
+				"stderr":   errBuf.String(),
 			},
 		}
 	}
@@ -740,6 +745,7 @@ func (s *Server) processRequest(req Request) *Response {
 				Result: map[string]interface{}{
 					"exitCode": exitCode,
 					"data":     resultData,
+					"stderr":   errBuf.String(),
 				},
 			}
 		}
@@ -762,6 +768,7 @@ func (s *Server) processRequest(req Request) *Response {
 				Data: map[string]interface{}{
 					"exitCode": exitCode,
 					"code":     env.Error.Code,
+					"stderr":   errBuf.String(),
 				},
 			},
 		}
@@ -773,6 +780,7 @@ func (s *Server) processRequest(req Request) *Response {
 		Result: map[string]interface{}{
 			"exitCode": exitCode,
 			"data":     env.Data,
+			"stderr":   errBuf.String(),
 		},
 	}
 }

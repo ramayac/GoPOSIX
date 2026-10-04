@@ -30,12 +30,12 @@ type ChownResp struct {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "chown: %v\n", err)
+		fmt.Fprintf(stderr, "chown: %v\n", err)
 		return 1
 	}
 
 	if len(flags.Positional) < 2 {
-		fmt.Fprintln(os.Stderr, "chown: missing operand")
+		fmt.Fprintln(stderr, "chown: missing operand")
 		return 1
 	}
 
@@ -58,7 +58,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	for _, path := range flags.Positional[1:] {
 		err := os.Chown(path, uid, gid)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "chown: %v\n", err)
+			fmt.Fprintf(stderr, "chown: %v\n", err)
 			exitCode = 1
 		} else {
 			res = append(res, ChownResult{Path: path})

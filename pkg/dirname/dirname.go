@@ -4,7 +4,6 @@ package dirname
 import (
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -30,11 +29,11 @@ func Run(path string) DirnameResult {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "dirname: %v\n", err)
+		fmt.Fprintf(stderr, "dirname: %v\n", err)
 		return 2
 	}
 	if len(flags.Positional) == 0 {
-		fmt.Fprintln(os.Stderr, "dirname: missing operand")
+		fmt.Fprintln(stderr, "dirname: missing operand")
 		return 1
 	}
 	jsonMode := flags.Has("json")

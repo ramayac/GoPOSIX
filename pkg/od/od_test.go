@@ -2,6 +2,7 @@ package od
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,7 +12,7 @@ import (
 func TestOd_Default(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("HELLO")
-	code := odRun(nil, in, &out, "")
+	code := odRun(nil, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -26,7 +27,7 @@ func TestOd_Default(t *testing.T) {
 func TestOd_OctalBytes(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("HELLO")
-	code := odRun([]string{"-b"}, in, &out, "")
+	code := odRun([]string{"-b"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -39,7 +40,7 @@ func TestOd_OctalBytes(t *testing.T) {
 func TestOd_Char(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("HELLO")
-	code := odRun([]string{"-c"}, in, &out, "")
+	code := odRun([]string{"-c"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -51,7 +52,7 @@ func TestOd_Char(t *testing.T) {
 func TestOd_CharEscapes(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("a\nb")
-	code := odRun([]string{"-c"}, in, &out, "")
+	code := odRun([]string{"-c"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -63,7 +64,7 @@ func TestOd_CharEscapes(t *testing.T) {
 func TestOd_Hex(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("HELLO")
-	code := odRun([]string{"-x"}, in, &out, "")
+	code := odRun([]string{"-x"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -76,7 +77,7 @@ func TestOd_Hex(t *testing.T) {
 func TestOd_Count(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("HELLO")
-	code := odRun([]string{"-N", "3"}, in, &out, "")
+	code := odRun([]string{"-N", "3"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -88,7 +89,7 @@ func TestOd_Count(t *testing.T) {
 func TestOd_FromStdin(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("test")
-	code := odRun(nil, in, &out, "")
+	code := odRun(nil, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -100,7 +101,7 @@ func TestOd_FromStdin(t *testing.T) {
 func TestOd_Json(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("AB")
-	code := odRun([]string{"--json"}, in, &out, "")
+	code := odRun([]string{"--json"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -203,7 +204,7 @@ func TestOd_Float(t *testing.T) {
 	var out bytes.Buffer
 	// 4 bytes: IEEE 754 for 1.0f (little-endian)
 	in := strings.NewReader("\x00\x00\x80\x3F")
-	code := odRun([]string{"-f"}, in, &out, "")
+	code := odRun([]string{"-f"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -219,7 +220,7 @@ func TestOd_Float(t *testing.T) {
 func TestOd_FloatViaTFlag(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("\x00\x00\x80\x3F")
-	code := odRun([]string{"-t", "f"}, in, &out, "")
+	code := odRun([]string{"-t", "f"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -233,7 +234,7 @@ func TestOd_FloatViaTFlag(t *testing.T) {
 func TestOd_HexBytes_X1(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("HELLO")
-	code := odRun([]string{"-t", "x1"}, in, &out, "")
+	code := odRun([]string{"-t", "x1"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -249,7 +250,7 @@ func TestOd_HexBytes_X1(t *testing.T) {
 func TestOd_TFlag_X2(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("HELLO")
-	code := odRun([]string{"-t", "x2"}, in, &out, "")
+	code := odRun([]string{"-t", "x2"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -262,7 +263,7 @@ func TestOd_TFlag_X2(t *testing.T) {
 func TestOd_TFlag_O1(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("HELLO")
-	code := odRun([]string{"-t", "o1"}, in, &out, "")
+	code := odRun([]string{"-t", "o1"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -276,7 +277,7 @@ func TestOd_TFlag_O1(t *testing.T) {
 func TestOd_TFlag_O2(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("HELLO")
-	code := odRun([]string{"-t", "o2"}, in, &out, "")
+	code := odRun([]string{"-t", "o2"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -289,7 +290,7 @@ func TestOd_TFlag_O2(t *testing.T) {
 func TestOd_TFlag_C(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("HELLO")
-	code := odRun([]string{"-t", "c"}, in, &out, "")
+	code := odRun([]string{"-t", "c"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -308,7 +309,7 @@ func TestOd_FromFile(t *testing.T) {
 	}
 
 	var out bytes.Buffer
-	code := Run([]string{fpath}, nil, &out)
+	code := Run([]string{fpath}, nil, &out, io.Discard)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -319,7 +320,7 @@ func TestOd_FromFile(t *testing.T) {
 
 func TestOd_FileNotFound(t *testing.T) {
 	var out bytes.Buffer
-	code := Run([]string{"/nonexistent/od_file"}, nil, &out)
+	code := Run([]string{"/nonexistent/od_file"}, nil, &out, io.Discard)
 	if code != 1 {
 		t.Errorf("exit code: got %d, want 1 for missing file", code)
 	}
@@ -341,7 +342,7 @@ func TestOd_Dispatch(t *testing.T) {
 func TestOd_Empty(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("")
-	code := odRun([]string{"-b"}, in, &out, "")
+	code := odRun([]string{"-b"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -356,7 +357,7 @@ func TestOd_Empty(t *testing.T) {
 func TestOd_Json_Hex(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("AB")
-	code := odRun([]string{"--json", "-x"}, in, &out, "")
+	code := odRun([]string{"--json", "-x"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -368,7 +369,7 @@ func TestOd_Json_Hex(t *testing.T) {
 func TestOd_Ints(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("abcdefghijklmnop")
-	code := odRun([]string{"-i"}, in, &out, "")
+	code := odRun([]string{"-i"}, in, &out, io.Discard, "")
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -380,7 +381,7 @@ func TestOd_Ints(t *testing.T) {
 	// Test -t i format mapping
 	out.Reset()
 	in2 := strings.NewReader("abcdefghijklmnop")
-	code2 := odRun([]string{"-t", "i4"}, in2, &out, "")
+	code2 := odRun([]string{"-t", "i4"}, in2, &out, io.Discard, "")
 	if code2 != 0 {
 		t.Fatalf("exit code %d, want 0", code2)
 	}
@@ -394,7 +395,7 @@ func TestOd_CountAndAddressBase(t *testing.T) {
 
 	code := func(args ...string) (int, string) {
 		var out bytes.Buffer
-		c := odRun(args, in, &out, "")
+		c := odRun(args, in, &out, io.Discard, "")
 		return c, out.String()
 	}
 
@@ -422,7 +423,7 @@ func TestOd_CountAndAddressBase(t *testing.T) {
 func TestOd_TFlagDecimal(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("abcdefghijklmnop")
-	if code := odRun([]string{"-t", "d2", "-N", "8"}, in, &out, ""); code != 0 {
+	if code := odRun([]string{"-t", "d2", "-N", "8"}, in, &out, io.Discard, ""); code != 0 {
 		t.Fatalf("exit code %d", code)
 	}
 	if out.Len() == 0 {

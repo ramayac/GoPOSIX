@@ -527,3 +527,284 @@ func TestDiffIdentical(t *testing.T) {
 		t.Errorf("diff identical: exit %d, want 0", code)
 	}
 }
+
+func TestDiffRun_MissingOperand(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"only-one"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "diff: missing operand") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestDiffRun_MissingOperandJSON(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"--json", "only-one"}, nil, &out, &out, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(out.String(), "USAGE") {
+		t.Errorf("expected JSON error envelope, got %q", out.String())
+	}
+}
+
+func TestDiffRun_DirVsFile(t *testing.T) {
+	dir := t.TempDir()
+	dirA := filepath.Join(dir, "A")
+	os.MkdirAll(dirA, 0755)
+	file := filepath.Join(dir, "f.txt")
+	os.WriteFile(file, []byte("hello\n"), 0644)
+	// diff -r dir file → compares dir/f.txt with f.txt
+	os.WriteFile(filepath.Join(dirA, "f.txt"), []byte("hello\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-r", dirA, file}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestDiffRun_FileVsDir(t *testing.T) {
+	dir := t.TempDir()
+	dirB := filepath.Join(dir, "B")
+	os.MkdirAll(dirB, 0755)
+	file := filepath.Join(dir, "f.txt")
+	os.WriteFile(file, []byte("hello\n"), 0644)
+	os.WriteFile(filepath.Join(dirB, "f.txt"), []byte("hello\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-r", file, dirB}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestDiffRun_SameFile(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{"x", "x"}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("expected exit 0 for identical paths, got %d", code)
+	}
+}
+
+func swapStdin(t *testing.T, content string) {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := os.Stdin
+	os.Stdin = r
+	t.Cleanup(func() {
+		os.Stdin = old
+		r.Close()
+		w.Close()
+	})
+	go func() {
+		w.WriteString(content)
+		w.Close()
+	}()
+}
+
+func TestDiffRun_StdinDash(t *testing.T) {
+	swapStdin(t, "same\n")
+	var out bytes.Buffer
+	code := run([]string{"-", "-"}, nil, &out, &out, "")
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestDiffRun_FileVsStdin(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "f.txt")
+	os.WriteFile(file, []byte("a\n"), 0644)
+	swapStdin(t, "b\n")
+	var out bytes.Buffer
+	code := run([]string{file, "-"}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("expected exit 1 (differ), got %d", code)
+	}
+}
+
+func TestDiffRun_ReadError(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"/nonexistent-xyz", "/nonexistent-uvw"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "diff:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestDiffRun_Brief(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	b := filepath.Join(dir, "b")
+	os.WriteFile(a, []byte("x\n"), 0644)
+	os.WriteFile(b, []byte("y\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-q", a, b}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), "differ") {
+		t.Errorf("expected differ message, got %q", out.String())
+	}
+}
+
+func TestDiffRun_UnifiedNoNewline(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	b := filepath.Join(dir, "b")
+	// no trailing newline on both, one line each
+	os.WriteFile(a, []byte("old"), 0644)
+	os.WriteFile(b, []byte("new"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-u", a, b}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), `\ No newline at end of file`) {
+		t.Errorf("expected no-newline markers, got %q", out.String())
+	}
+}
+
+func TestDiffRun_UnifiedSingleLineHunk(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	b := filepath.Join(dir, "b")
+	os.WriteFile(a, []byte("one\n"), 0644)
+	os.WriteFile(b, []byte("two\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-u", a, b}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	// single-line hunk: counts omitted
+	if !strings.Contains(out.String(), "@@ -1 +1 @@") {
+		t.Errorf("expected single-line hunk header, got %q", out.String())
+	}
+}
+
+func TestDiffDirs_NonRegularBothSides(t *testing.T) {
+	dir := t.TempDir()
+	dirA := filepath.Join(dir, "A")
+	dirB := filepath.Join(dir, "B")
+	os.MkdirAll(dirA, 0755)
+	os.MkdirAll(dirB, 0755)
+	os.Symlink("target", filepath.Join(dirA, "link"))
+	os.Symlink("target", filepath.Join(dirB, "link"))
+	var out bytes.Buffer
+	code := run([]string{"-r", dirA, dirB}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), "not a regular file") {
+		t.Errorf("expected skip message, got %q", out.String())
+	}
+}
+
+func TestDiffDirs_NonRegularOneSideTreatNew(t *testing.T) {
+	dir := t.TempDir()
+	dirA := filepath.Join(dir, "A")
+	dirB := filepath.Join(dir, "B")
+	os.MkdirAll(dirA, 0755)
+	os.MkdirAll(dirB, 0755)
+	os.Symlink("target", filepath.Join(dirA, "link"))
+	var out bytes.Buffer
+	code := run([]string{"-r", "-N", dirA, dirB}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), "not a regular file") {
+		t.Errorf("expected skip message, got %q", out.String())
+	}
+}
+
+func TestDiffDirs_InsertOnlyHunk(t *testing.T) {
+	dir := t.TempDir()
+	dirA := filepath.Join(dir, "A")
+	dirB := filepath.Join(dir, "B")
+	os.MkdirAll(dirA, 0755)
+	os.MkdirAll(dirB, 0755)
+	os.WriteFile(filepath.Join(dirA, "f.txt"), []byte(""), 0644)
+	os.WriteFile(filepath.Join(dirB, "f.txt"), []byte("y\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-r", dirA, dirB}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), "@@ -0,0 +1 @@") {
+		t.Errorf("expected 0-line hunk header, got %q", out.String())
+	}
+}
+
+func TestDiffDirs_NewFileInATreatNew(t *testing.T) {
+	dir := t.TempDir()
+	dirA := filepath.Join(dir, "A")
+	dirB := filepath.Join(dir, "B")
+	os.MkdirAll(dirA, 0755)
+	os.MkdirAll(dirB, 0755)
+	os.WriteFile(filepath.Join(dirA, "only-a.txt"), []byte("x\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-r", "-N", dirA, dirB}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), "only-a.txt") {
+		t.Errorf("expected diff for only-a.txt, got %q", out.String())
+	}
+}
+
+func TestDiffDirs_NewFileInBTreatNew(t *testing.T) {
+	dir := t.TempDir()
+	dirA := filepath.Join(dir, "A")
+	dirB := filepath.Join(dir, "B")
+	os.MkdirAll(dirA, 0755)
+	os.MkdirAll(dirB, 0755)
+	os.WriteFile(filepath.Join(dirB, "only-b.txt"), []byte("y\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-r", "-N", dirA, dirB}, nil, &out, &out, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), "only-b.txt") {
+		t.Errorf("expected diff for only-b.txt, got %q", out.String())
+	}
+}
+
+func TestGenerateDiff_LongEqualRunTrimming(t *testing.T) {
+	long := strings.Repeat("same\n", 20)
+	a := long + "old\n"
+	b := long + "new\n"
+	differ, hunks := GenerateDiff(a, b, 3, false, false, false)
+	if !differ {
+		t.Fatal("expected differ")
+	}
+	if len(hunks) != 1 {
+		t.Fatalf("expected 1 hunk, got %d", len(hunks))
+	}
+	// context 3: only 3 identical lines before the change, not all 20
+	if hunks[0].OldStart != 18 {
+		t.Errorf("expected hunk to start at line 18, got %d", hunks[0].OldStart)
+	}
+}
+
+func TestGenerateDiff_IgnoredWhitespaceOps(t *testing.T) {
+	a := "x y\na\n"
+	b := "x  y\nb\n"
+	differ, hunks := GenerateDiff(a, b, 3, true, false, false)
+	if !differ {
+		t.Fatal("expected differ on second line")
+	}
+	if len(hunks) != 1 {
+		t.Fatalf("expected 1 hunk, got %d", len(hunks))
+	}
+	// hunk contains the ignored whitespace line and the real change
+	joined := strings.Join(hunks[0].Lines, "|")
+	if !strings.Contains(joined, "-a") || !strings.Contains(joined, "+b") {
+		t.Errorf("expected real change lines in hunk, got %q", joined)
+	}
+}

@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-05-30 | **BusyBox:** 877 pass / 17 fail / 25 skip | **Branch:** `feat/hardening_v` | **Overall Coverage:** 84.1% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-10-03 | **BusyBox:** 871 pass / 16 fail / 30 skip | **Branch:** `audit/posix-commands` | **Overall Coverage:** 86.3% | **JSON-RPC:** 115/115 (100.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -26,8 +26,8 @@
 | `echo` | 97.8% | 11 | ✅ 11/11 | ✅ |
 | `true` / `false` | 100.0% | 4 | ✅ 4/4 | ✅ |
 | `yes` | 80.0% | — | — | ✅ |
-| `whoami` | 78.9% | — | — | ✅ |
-| `hostname` | 78.2% | 4 | ✅ 4/4 | ✅ |
+| `whoami` | 100.0% | — | — | ✅ |
+| `hostname` | 98.2% | 4 | ✅ 4/4 | ✅ |
 | `hostid` | 96.3% | 1 | ✅ 1/1 | ✅ |
 | `uname` | 76.7% | — | — | ✅ |
 | `pwd` | 81.2% | 1 | ✅ 1/1 | ✅ |
@@ -96,13 +96,13 @@
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
 | `tar` | 80.4% | 31 | ✅ 31/31 | ✅ |
-| `gzip` / `gunzip` | 64.7% | 4 | ✅ 4/4 | ✅ |
-| `sha256sum` | 81.6% | — | — | ✅ |
-| `sha1sum` | 89.1% | 1 | ✅ 1/1 | ✅ |
-| `sha512sum` | 89.1% | — | — | ✅ |
-| `sha3sum` | 89.4% | 2 | ✅ 2/2 | ✅ |
-| `md5sum` | 79.6% | 2 | ✅ 2/2 | ✅ |
-| `diff` | 73.9% | 20 | ✅ 20/20 | ✅ |
+| `gzip` / `gunzip` | 87.3% | 4 | ✅ 4/4 | ✅ |
+| `sha256sum` | 100.0% | — | — | ✅ |
+| `sha1sum` | 100.0% | 1 | ✅ 1/1 | ✅ |
+| `sha512sum` | 100.0% | — | — | ✅ |
+| `sha3sum` | 90.2% | 2 | ✅ 2/2 | ✅ |
+| `md5sum` | 100.0% | 2 | ✅ 2/2 | ✅ |
+| `diff` | 89.5% | 20 | ✅ 20/20 | ✅ |
 | `test` / `[` | 82.9% | — | — | ❌ |
 | `printf` | 83.7% | 26 | ✅ 26/26 | ✅ |
 | `expr` | 83.5% | 2 | ✅ 2/2 | ✅ |

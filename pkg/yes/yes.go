@@ -31,7 +31,7 @@ var spec = common.FlagSpec{
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "yes: %v\n", err)
+		fmt.Fprintf(stderr, "yes: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("json")
@@ -46,7 +46,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		count := 1
 		if cntStr := flags.Get("n"); cntStr != "" {
 			if cntStr == "count" {
-				fmt.Fprintf(os.Stderr, "yes: --count requires a value\n")
+				fmt.Fprintf(stderr, "yes: --count requires a value\n")
 				return 1
 			}
 			fmt.Sscanf(cntStr, "%d", &count)

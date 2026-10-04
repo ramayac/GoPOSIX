@@ -339,9 +339,13 @@ func TestPOSIXTZ_ParsingAndEvaluation(t *testing.T) {
 
 func TestDateRun_InvalidDate_MulticallHeader(t *testing.T) {
 	// Rejects invalid positional argument
-	rc := run([]string{"-d", "012311332000.30", "%+c"}, nil, nil, nil, "")
+	var out, errBuf bytes.Buffer
+	rc := run([]string{"-d", "012311332000.30", "%+c"}, nil, &out, &errBuf, "")
 	if rc != 1 {
 		t.Errorf("expected exit code 1, got %d", rc)
+	}
+	if !strings.Contains(errBuf.String(), "BusyBox v1.36.1-goposix multi-call binary") {
+		t.Errorf("expected multicall header on stderr, got %q", errBuf.String())
 	}
 }
 

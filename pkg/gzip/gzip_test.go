@@ -455,3 +455,121 @@ func TestGzipJSONMissingFile(t *testing.T) {
 		t.Fatalf("expected exit 1, got %d", code)
 	}
 }
+
+func TestGzip_StdinNoFiles_Compress(t *testing.T) {
+	var out bytes.Buffer
+	code := gzipRun(nil, &out, &out, strings.NewReader("hello stdin"), "")
+	if code != 0 {
+		t.Fatalf("exit %d, want 0", code)
+	}
+	gr, err := gzip.NewReader(bytes.NewReader(out.Bytes()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, _ := io.ReadAll(gr)
+	if string(data) != "hello stdin" {
+		t.Errorf("got %q, want 'hello stdin'", data)
+	}
+}
+
+func TestGunzip_StdinNoFiles_Decompress(t *testing.T) {
+	var gz bytes.Buffer
+	gw := gzip.NewWriter(&gz)
+	gw.Write([]byte("hello stdin"))
+	gw.Close()
+	var out bytes.Buffer
+	code := gunzipRun(nil, &out, &out, bytes.NewReader(gz.Bytes()), "")
+	if code != 0 {
+		t.Fatalf("exit %d, want 0", code)
+	}
+	if out.String() != "hello stdin" {
+		t.Errorf("got %q, want 'hello stdin'", out.String())
+	}
+}
+
+func TestGunzip_StdinGarbage(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := gunzipRun(nil, &out, &errBuf, strings.NewReader("not gzip data"), "")
+	if code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	if !strings.Contains(errBuf.String(), "gunzip: stdin:") {
+		t.Errorf("expected stdin error on stderr, got %q", errBuf.String())
+	}
+}
+
+func TestGzip_DashCompress(t *testing.T) {
+	var out bytes.Buffer
+	code := gzipRun([]string{"-"}, &out, &out, strings.NewReader("dash"), "")
+	if code != 0 {
+		t.Fatalf("exit %d, want 0", code)
+	}
+	gr, err := gzip.NewReader(bytes.NewReader(out.Bytes()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, _ := io.ReadAll(gr)
+	if string(data) != "dash" {
+		t.Errorf("got %q, want 'dash'", data)
+	}
+}
+
+func TestGunzip_DashDecompress(t *testing.T) {
+	var gz bytes.Buffer
+	gw := gzip.NewWriter(&gz)
+	gw.Write([]byte("dash back"))
+	gw.Close()
+	var out bytes.Buffer
+	code := gunzipRun([]string{"-"}, &out, &out, bytes.NewReader(gz.Bytes()), "")
+	if code != 0 {
+		t.Fatalf("exit %d, want 0", code)
+	}
+	if out.String() != "dash back" {
+		t.Errorf("got %q, want 'dash back'", out.String())
+	}
+}
+
+func TestGzip_CreateFail(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "a")
+	os.WriteFile(src, []byte("x"), 0644)
+	// outName "a.gz" exists as a directory → OpenFile fails
+	os.Mkdir(filepath.Join(dir, "a.gz"), 0755)
+	var out, errBuf bytes.Buffer
+	code := gzipRun([]string{src}, &out, &errBuf, strings.NewReader(""), "")
+	if code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	if !strings.Contains(errBuf.String(), "gzip:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestGunzip_ProcessFail(t *testing.T) {
+	dir := t.TempDir()
+	bad := filepath.Join(dir, "bad.gz")
+	os.WriteFile(bad, []byte("this is not gzip data"), 0644)
+	var out, errBuf bytes.Buffer
+	code := gunzipRun([]string{bad}, &out, &errBuf, strings.NewReader(""), "")
+	if code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	if !strings.Contains(errBuf.String(), "gunzip:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+	// incomplete output must be removed
+	if _, err := os.Stat(filepath.Join(dir, "bad")); !os.IsNotExist(err) {
+		t.Errorf("expected incomplete output removed, stat err: %v", err)
+	}
+}
+
+func TestGunzip_DashGarbage(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := gunzipRun([]string{"-"}, &out, &errBuf, strings.NewReader("garbage"), "")
+	if code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	if !strings.Contains(errBuf.String(), "gunzip: stdin:") {
+		t.Errorf("expected stdin error on stderr, got %q", errBuf.String())
+	}
+}

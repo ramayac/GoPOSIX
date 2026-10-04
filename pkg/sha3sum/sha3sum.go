@@ -2,31 +2,15 @@
 package sha3sum
 
 import (
-	"bufio"
-	"encoding/hex"
 	"fmt"
 	"hash"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/ramayac/goposix/internal/dispatch"
 	"github.com/ramayac/goposix/pkg/common"
 	"golang.org/x/crypto/sha3"
 )
-
-// HashResult holds a single file hash result.
-type HashResult struct {
-	File      string `json:"file"`
-	Hash      string `json:"hash"`
-	Algorithm string `json:"algorithm"`
-}
-
-// CheckResult holds the result of verifying one line from a checksum file.
-type CheckResult struct {
-	File   string `json:"file"`
-	Status string `json:"status"` // "OK" or "FAILED"
-}
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
@@ -36,7 +20,7 @@ var spec = common.FlagSpec{
 	},
 }
 
-// getHasher returns the appropriate SHA-3 hasher based on size string.
+// getHasher returns the SHA-3 hasher and algorithm name for a size string.
 func getHasher(alg string) (hash.Hash, string, error) {
 	switch alg {
 	case "", "224":
@@ -58,10 +42,36 @@ func HashFile(r io.Reader, alg string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if _, err := io.Copy(h, r); err != nil {
-		return "", err
+	return common.DigestReader(h, r)
+}
+
+// digestSpec builds the shared digest spec for a locked algorithm. When alg
+// is empty, check mode autodetects the size per checksum line.
+func digestSpec(alg string) common.DigestSpec {
+	_, name, _ := getHasher(alg)
+	spec := common.DigestSpec{
+		ProgName:          "sha3sum",
+		Algorithm:         name,
+		New:               func() hash.Hash { hh, _, _ := getHasher(alg); return hh },
+		CheckNoFilesStdin: true,
 	}
-	return hex.EncodeToString(h.Sum(nil)), nil
+	if alg == "" {
+		spec.CheckResolveAlg = func(expectedHash string) (hash.Hash, string, error) {
+			switch len(expectedHash) {
+			case 56:
+				return getHasher("224")
+			case 64:
+				return getHasher("256")
+			case 96:
+				return getHasher("384")
+			case 128:
+				return getHasher("512")
+			default:
+				return getHasher("")
+			}
+		}
+	}
+	return spec
 }
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
@@ -81,7 +91,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	// Validate algorithm early
 	if _, _, err := getHasher(alg); err != nil {
 		if jsonMode {
-			common.RenderError("sha3sum", 1, "ALGORITHM_ERROR", err.Error(), true, stderr)
+			common.RenderError("sha3sum", 1, "ALGORITHM_ERROR", err.Error(), true, stdout)
 		} else {
 			fmt.Fprintf(stderr, "sha3sum: %v\n", err)
 		}
@@ -89,158 +99,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 
 	if checkMode {
-		return runCheck(flags.Positional, alg, jsonMode, stdin, stdout, stderr)
+		return common.DigestCheckMode(digestSpec(alg), flags.Positional, jsonMode, stdin, stdout, stderr)
 	}
 
-	return runHash(flags.Positional, flags.Stdin, alg, jsonMode, stdin, stdout, stderr)
-}
-
-func runHash(files []string, readStdin bool, alg string, jsonMode bool, stdin io.Reader, stdout io.Writer, stderr io.Writer) int {
-	var results []HashResult
-	exitCode := 0
-
-	if len(files) == 0 || readStdin {
-		if len(files) == 0 {
-			files = []string{"-"}
-		}
-	}
-
-	_, algName, _ := getHasher(alg)
-
-	for _, file := range files {
-		var r io.Reader
-		var name string
-		if file == "-" {
-			r = stdin
-			name = "-"
-		} else {
-			f, err := os.Open(file)
-			if err != nil {
-				fmt.Fprintf(stderr, "sha3sum: %s: %v\n", file, err)
-				exitCode = 1
-				continue
-			}
-			defer f.Close()
-			r = f
-			name = file
-		}
-
-		hash, err := HashFile(r, alg)
-		if err != nil {
-			fmt.Fprintf(stderr, "sha3sum: %s: %v\n", name, err)
-			exitCode = 1
-			continue
-		}
-		results = append(results, HashResult{File: name, Hash: hash, Algorithm: algName})
-	}
-
-	common.Render("sha3sum", results, jsonMode, stdout, func() {
-		for _, r := range results {
-			fmt.Fprintf(stdout, "%s  %s\n", r.Hash, r.File)
-		}
-	})
-
-	return exitCode
-}
-
-func runCheck(files []string, alg string, jsonMode bool, stdin io.Reader, stdout io.Writer, stderr io.Writer) int {
-	if len(files) == 0 {
-		files = []string{"-"}
-	}
-
-	exitCode := 0
-	var results []CheckResult
-
-	for _, checksumFile := range files {
-		var r io.Reader
-		if checksumFile == "-" {
-			r = stdin
-		} else {
-			f, err := os.Open(checksumFile)
-			if err != nil {
-				fmt.Fprintf(stderr, "sha3sum: %s: %v\n", checksumFile, err)
-				exitCode = 1
-				continue
-			}
-			defer f.Close()
-			r = f
-		}
-
-		scanner := bufio.NewScanner(r)
-		hadLines := false
-		for scanner.Scan() {
-			line := scanner.Text()
-			if line == "" || strings.HasPrefix(line, "#") {
-				continue
-			}
-			hadLines = true
-
-			parts := strings.SplitN(line, "  ", 2)
-			if len(parts) != 2 {
-				parts = strings.SplitN(line, " ", 2)
-				if len(parts) != 2 {
-					fmt.Fprintf(stderr, "sha3sum: %s: improperly formatted checksum line\n", checksumFile)
-					exitCode = 1
-					continue
-				}
-				parts[1] = strings.TrimLeft(parts[1], " ")
-			}
-
-			expectedHash := parts[0]
-			targetFile := parts[1]
-
-			// Autodetect algorithm size based on hash length if check mode doesn't lock it down
-			checkAlg := alg
-			if checkAlg == "" {
-				switch len(expectedHash) {
-				case 56:
-					checkAlg = "224"
-				case 64:
-					checkAlg = "256"
-				case 96:
-					checkAlg = "384"
-				case 128:
-					checkAlg = "512"
-				}
-			}
-
-			tf, err := os.Open(targetFile)
-			if err != nil {
-				fmt.Fprintf(stderr, "%s: FAILED open or read\n", targetFile)
-				results = append(results, CheckResult{File: targetFile, Status: "FAILED"})
-				exitCode = 1
-				continue
-			}
-
-			actualHash, err := HashFile(tf, checkAlg)
-			tf.Close()
-			if err != nil {
-				fmt.Fprintf(stderr, "%s: FAILED open or read\n", targetFile)
-				results = append(results, CheckResult{File: targetFile, Status: "FAILED"})
-				exitCode = 1
-				continue
-			}
-
-			if actualHash == expectedHash {
-				results = append(results, CheckResult{File: targetFile, Status: "OK"})
-			} else {
-				results = append(results, CheckResult{File: targetFile, Status: "FAILED"})
-				exitCode = 1
-			}
-		}
-		if !hadLines {
-			fmt.Fprintf(stderr, "sha3sum: %s: no properly formatted checksum lines found\n", checksumFile)
-			exitCode = 1
-		}
-	}
-
-	common.Render("sha3sum", results, jsonMode, stdout, func() {
-		for _, r := range results {
-			fmt.Fprintf(stdout, "%s: %s\n", r.File, r.Status)
-		}
-	})
-
-	return exitCode
+	return common.DigestHashMode(digestSpec(alg), flags.Positional, flags.Stdin, jsonMode, stdin, stdout, stderr)
 }
 
 func init() {

@@ -4,6 +4,14 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-10-03] implement | Audit phases 1–3: writer injection (F1), digest consolidation (F2), coverage (F3)
+
+- **F1 (53 commands):** all error messages now use the injected `stderr` writer instead of `os.Stderr`. Special cases: `nice`/`nohup` thread writers into `Run()` (subprocess stdio, `*os.File` terminal check), `od` gained `errOut`, `tar` gained `errOut` on `createArchiveStream`. The daemon now passes separate stdout/stderr buffers and returns a `stderr` field in JSON-RPC responses — this fixed a class of accidental client errors (shared-buffer JSON corruption) and exposed the wc JSON-mode error envelope bug (fixed: `RenderError` on failure).
+- **F2:** new `pkg/common/digest.go` (`DigestHashMode`, `DigestCheckMode`, `DigestReader`). md5sum/sha1sum/sha256sum/sha512sum/sha3sum are thin wrappers: 1,485 → 348 LOC. Per-package behaviors preserved; sha3sum keeps `-a` + per-line autodetection. `cksum`/`sum` left as-is (different formats). Full output parity verified against baseline binary.
+- **F3:** whoami 78.9→100.0%, hostname 78.2→98.2%, diff 73.9→89.5%, gzip 72.7→87.3%, pkg/common 68.9→93.7% (direct digest-core tests). Function-seam pattern extended from PR #42.
+- Verification: unit all green, `go vet`/`gofmt` clean, overall coverage 86.3% (was 85.6%), BusyBox 871/16/30 (was 870/17/30 — no regressions, all 16 failures pre-existing awk).
+- Wiki updates: `posix_command_audit.md` (F1/F2/F3 marked done, matrix verdicts), `test_coverage_matrix.md`, `todos.md` (coverage-blocked section resolved).
+
 ## [2026-10-03] plan | POSIX command audit plan (branch `audit/posix-commands`)
 
 - New page `posix_command_audit.md`: full audit plan and matrix for all 115 commands.

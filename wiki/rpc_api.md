@@ -16,6 +16,14 @@ func (c *Client) Batch(ctx context.Context, reqs []BatchRequest) ([]BatchRespons
 func (c *Client) Notify(ctx context.Context, method string, params interface{}) error
 ```
 
+### Response shape (daemon)
+
+Every command response `result` contains `exitCode`, `data` (the utility's JSON payload),
+and `stderr` (human-readable error text). `rawOutput` mode returns `stdout` and `stderr`
+as raw text. RPC-level failures carry the utility's error envelope in `error.data.stderr`.
+The `stderr` field was added in the audit branch (`audit/posix-commands`, 2026-10-03)
+when the daemon switched from one shared output buffer to separate stdout/stderr buffers.
+
 ---
 
 ## Typed Utility Helpers

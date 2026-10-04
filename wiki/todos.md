@@ -21,15 +21,14 @@ This document serves as the live registry of remaining work, active plans, and k
 
 Blocked by upstream `goawk` v1.31.0 engine limitations: no bitwise ops, hex/octal constants, function arg parsing (4 tests), nested loop scoping, empty-paren handling, negative field access, continue/break edges, backslash-newline handling. *See:* [wiki/deferred.md](deferred.md).
 
-### Coverage — 12 packages blocked (hard-to-mock error paths)
+### Coverage — 0 packages blocked ✅ RESOLVED (audit Phase 3, 2026-10-03)
 
-| Tier | Packages | Blocker |
-|------|----------|---------|
-| Near 80% (78-79%) | `whoami`, `cp`, `tee`, `hostname` | Syscall error mocking (`user.Current()`) |
-| Mid-range (73-77%) | `client`, `internal/daemon`, `nohup`, `diff` | Integration test infra (spawned daemon, file perms) |
-| Hard (64-71%) | `chgrp`, `logname`, `shell`, `gzip` | Deep I/O + OS-level error injection |
-
-13 packages pushed above 80% in Hardening V (25 → 12). The `pwd` blocker (`os.Getwd()` mocking) was solved in PR #42 with package-level function seams (`var osGetwd = os.Getwd`) — see [wiki/lessons_learned.md](lessons_learned.md). *See:* [wiki/hardening.md](hardening.md).
+All 12 packages are now ≥ 80% (project audit branch `audit/posix-commands`):
+`whoami` 100.0%, `hostname` 98.2%, `diff` 89.5%, `gzip` 87.3%, `nohup` 80.9%,
+`client` 83.7%, `internal/daemon` 82.4%, `chgrp` 83.3%, `logname` 80.0%, `shell` 90.2%,
+`cp` 82.6%, `tee` 92.3%. The function-seam pattern (`var userCurrent = user.Current`,
+`var osHostname = os.Hostname`) from PR #42 solved the syscall-mocking blockers.
+See [wiki/posix_command_audit.md](posix_command_audit.md).
 
 ### `start-stop-daemon` signal parsing consolidation
 

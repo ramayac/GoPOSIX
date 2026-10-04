@@ -30,11 +30,11 @@ var spec = common.FlagSpec{
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ln: %v\n", err)
+		fmt.Fprintf(stderr, "ln: %v\n", err)
 		return 2
 	}
 	if len(flags.Positional) < 2 {
-		fmt.Fprintln(os.Stderr, "ln: missing file operand")
+		fmt.Fprintln(stderr, "ln: missing file operand")
 		return 1
 	}
 	jsonMode := flags.Has("json")
@@ -59,7 +59,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		linkErr = os.Link(target, link)
 	}
 	if linkErr != nil {
-		fmt.Fprintf(os.Stderr, "ln: %v\n", linkErr)
+		fmt.Fprintf(stderr, "ln: %v\n", linkErr)
 		common.RenderError("ln", 1, "ELN", linkErr.Error(), jsonMode, stdout)
 		return 1
 	}
