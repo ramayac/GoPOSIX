@@ -2,6 +2,8 @@ package uname
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -47,5 +49,21 @@ func TestUnameAllFlags(t *testing.T) {
 				t.Errorf("uname %s: exit %d", f, code)
 			}
 		})
+	}
+}
+
+func TestCLIRunError(t *testing.T) {
+	orig := unameRun
+	defer func() { unameRun = orig }()
+	unameRun = func() (UnameResult, error) {
+		return UnameResult{}, fmt.Errorf("uname failed")
+	}
+	var out, errBuf bytes.Buffer
+	code := run([]string{}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "uname:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

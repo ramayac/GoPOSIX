@@ -262,3 +262,53 @@ func TestJoinCLI_NoMatches(t *testing.T) {
 		t.Errorf("expected empty output for no matches, got %q", out.String())
 	}
 }
+
+func TestCLIMissingOperands(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"only-one"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "missing file operands") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIFile1OpenError(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"/nonexistent-join-a", "/nonexistent-join-b"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "join:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIFile2OpenError(t *testing.T) {
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "a.txt")
+	os.WriteFile(f1, []byte("1 a\n"), 0644)
+	var out, errBuf bytes.Buffer
+	code := run([]string{f1, "/nonexistent-join-b"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "join:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIRunError(t *testing.T) {
+	dir := t.TempDir()
+	d1 := filepath.Join(dir, "d1")
+	os.MkdirAll(d1, 0755)
+	var out, errBuf bytes.Buffer
+	code := run([]string{d1, d1}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "join:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

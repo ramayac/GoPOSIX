@@ -263,3 +263,40 @@ func TestCLI_LongFlags(t *testing.T) {
 		t.Error("--no-create should not create file")
 	}
 }
+
+func TestCLIInvalidTimeFormat(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"-t", "not-a-time", "somefile"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "invalid date format") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIMissingOperand(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "missing file operand") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIRunError(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("permission test needs a non-root user")
+	}
+	// Chtimes on /proc files fails with EPERM.
+	var out, errBuf bytes.Buffer
+	code := run([]string{"/proc/version"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "touch:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

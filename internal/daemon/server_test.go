@@ -1193,3 +1193,60 @@ func TestDaemonStdinSupport(t *testing.T) {
 		t.Errorf("expected stdin content in response, got: %q", data)
 	}
 }
+
+// rawTextCommand is a fake utility that ignores --json and writes plain text.
+// It exercises the envelope-fallback path in processRequest.
+func init() {
+	dispatch.Register(dispatch.Command{
+		Name:  "rawtexttest",
+		Usage: "test-only command that emits non-JSON output",
+		Run: func(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
+			fmt.Fprintln(stdout, "not-an-envelope")
+			return 0
+		},
+	})
+}
+
+func TestProcessRequest_NonJSONFallback(t *testing.T) {
+	s := NewServer("/tmp/test-fallback.sock", 1, "")
+	req := Request{JSONRPC: "2.0", Method: "goposix.rawtexttest", Params: nil, ID: 1}
+	res := s.processRequest(req)
+	if res == nil {
+		t.Fatal("expected response")
+	}
+	if res.Error != nil {
+		t.Fatalf("unexpected error: %v", res.Error.Message)
+	}
+	result, ok := res.Result.(map[string]interface{})
+	if !ok {
+		t.Fatal("expected Result map")
+	}
+	data, _ := result["data"].(string)
+	if data != "not-an-envelope\n" {
+		t.Errorf("data = %q, want %q", data, "not-an-envelope\n")
+	}
+}
+
+func TestProcessRequest_ErrorEnvelopeStderr(t *testing.T) {
+	s := NewServer("/tmp/test-errstderr.sock", 1, "")
+	// testcmd with a syntax error emits an error envelope (RenderError).
+	params, _ := json.Marshal(GoposixParams{Flags: []string{"hello", "world"}})
+	req := Request{JSONRPC: "2.0", Method: "goposix.test", Params: params, ID: 1}
+	res := s.processRequest(req)
+	if res == nil {
+		t.Fatal("expected response")
+	}
+	if res.Error == nil {
+		t.Fatal("expected RPC error for syntax error")
+	}
+	errData, ok := res.Error.Data.(map[string]interface{})
+	if !ok {
+		t.Fatal("expected error Data map")
+	}
+	if _, ok := errData["stderr"].(string); !ok {
+		t.Errorf("expected stderr field in error data, got %v", errData["stderr"])
+	}
+	if code, ok := errData["code"].(string); !ok || code != "SYNTAX" {
+		t.Errorf("expected code SYNTAX, got %v", errData["code"])
+	}
+}

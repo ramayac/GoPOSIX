@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -381,5 +382,79 @@ func TestRunCopyDirWithSymlink(t *testing.T) {
 	}
 	if target, err := os.Readlink(link); err != nil || target != "target.txt" {
 		t.Errorf("readlink = %q, %v; want target.txt", target, err)
+	}
+}
+
+func TestCLIMissingOperand(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"only-one"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "missing file operand") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIParentsDstMissing(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.txt")
+	os.WriteFile(src, []byte("x"), 0644)
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--parents", src, filepath.Join(dir, "no-such-dst")}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "cp:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIParentsDstNotDir(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.txt")
+	dst := filepath.Join(dir, "dstfile")
+	os.WriteFile(src, []byte("x"), 0644)
+	os.WriteFile(dst, []byte("y"), 0644)
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--parents", src, dst}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "not a directory") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIParentsMkdirFail(t *testing.T) {
+	dir := t.TempDir()
+	// Relative src "s/a/b/c.txt"; dst/s exists as a FILE.
+	os.MkdirAll(filepath.Join(dir, "s", "a", "b"), 0755)
+	os.WriteFile(filepath.Join(dir, "s", "a", "b", "c.txt"), []byte("x"), 0644)
+	dst := filepath.Join(dir, "d")
+	os.MkdirAll(dst, 0755)
+	os.WriteFile(filepath.Join(dst, "s"), []byte("blocker"), 0644)
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--parents", "s/a/b/c.txt", dst}, nil, &out, &errBuf, dir)
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "cp:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIParentsCopyFail(t *testing.T) {
+	dir := t.TempDir()
+	missing := filepath.Join(dir, "gone.txt")
+	dst := filepath.Join(dir, "d")
+	os.MkdirAll(dst, 0755)
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--parents", missing, dst}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "cp:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

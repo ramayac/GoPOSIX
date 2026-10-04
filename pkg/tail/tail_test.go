@@ -292,3 +292,14 @@ func TestCLI_ShortFile(t *testing.T) {
 		t.Errorf("expected 2 lines from short file, got %d", len(lines))
 	}
 }
+
+func TestCLIRunError(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"/tmp"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "tail:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

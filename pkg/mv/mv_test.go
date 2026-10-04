@@ -221,3 +221,26 @@ func TestCLI_JSON(t *testing.T) {
 		t.Errorf("expected JSON, got %q", out.String())
 	}
 }
+
+func TestCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "mv:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIRunError(t *testing.T) {
+	dir := t.TempDir()
+	var out, errBuf bytes.Buffer
+	code := run([]string{filepath.Join(dir, "missing-src"), filepath.Join(dir, "dst")}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "mv:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

@@ -236,7 +236,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		prefix = flags.Positional[1]
 	}
 
-	var input io.Reader = os.Stdin
+	var input io.Reader = stdin
+	if input == nil {
+		input = os.Stdin
+	}
 	fileArg := ""
 	if len(flags.Positional) > 0 && flags.Positional[0] != "-" {
 		fileArg = flags.Positional[0]

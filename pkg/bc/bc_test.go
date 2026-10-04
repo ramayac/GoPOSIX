@@ -578,3 +578,13 @@ func TestRunMathLibErrorPropagates(t *testing.T) {
 		t.Fatal("expected error from Run when math lib is broken")
 	}
 }
+
+func TestNewInterpreterMathLibExecuteError(t *testing.T) {
+	orig := mathLibSource
+	defer func() { mathLibSource = orig }()
+	mathLibSource = "1/0" // parses but fails at runtime
+
+	if _, err := NewInterpreter(io.Discard, nil, true); err == nil {
+		t.Fatal("expected execute error for broken math lib")
+	}
+}

@@ -35,3 +35,14 @@ func TestDFInvalidPath(t *testing.T) {
 		t.Errorf("exit %d, want 1 for invalid path", code)
 	}
 }
+
+func TestCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "df:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

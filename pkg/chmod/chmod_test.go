@@ -3,6 +3,7 @@ package chmod
 import (
 	"bytes"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -151,5 +152,42 @@ func TestCLI_NonexistentFile(t *testing.T) {
 	code := run([]string{"0755", "/nonexistent_12345"}, nil, &out, &out, "")
 	if code != 1 {
 		t.Errorf("expected exit 1 for nonexistent file, got %d", code)
+	}
+}
+
+func TestCLISymbolicStatError(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"u+x", "/nonexistent-chmod-file"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "chmod:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLISymbolicInvalidOp(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "f")
+	os.WriteFile(f, []byte("x"), 0644)
+	var out, errBuf bytes.Buffer
+	code := run([]string{"u+", f}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "chmod:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLISymbolicChmodError(t *testing.T) {
+	// /proc files reject chmod even as root (EPERM).
+	var out, errBuf bytes.Buffer
+	code := run([]string{"u+x", "/proc/version"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "chmod:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

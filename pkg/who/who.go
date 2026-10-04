@@ -116,6 +116,9 @@ func readUtmp(path string) ([]WhoUser, error) {
 }
 
 // Run reads utmp and returns logged-in users.
+// whoRun is a seam for Run so error paths can be tested.
+var whoRun = Run
+
 func Run() (WhoResult, error) {
 	var utmpPaths = []string{
 		"/var/run/utmp",
@@ -143,7 +146,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	quick := flags.Has("q")
 	heading := flags.Has("H")
 
-	result, err := Run()
+	result, err := whoRun()
 	if err != nil {
 		fmt.Fprintf(stderr, "who: %v\n", err)
 		common.RenderError("who", 1, "EWHO", err.Error(), jsonMode, stdout)

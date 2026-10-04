@@ -3,6 +3,7 @@ package nice
 import (
 	"bytes"
 	"io"
+	"strings"
 	"testing"
 )
 
@@ -69,5 +70,16 @@ func TestNice_CLIRun(t *testing.T) {
 		// nice without arguments just prints current niceness
 		rc := run([]string{"echo", "test"}, nil, &outBuf, &errBuf, "")
 		_ = rc
+	}
+}
+
+func TestCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "nice:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

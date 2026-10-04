@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 )
@@ -75,5 +76,16 @@ func TestLinkJson(t *testing.T) {
 	}
 	if !bytes.Contains(buf.Bytes(), []byte(`"source"`)) {
 		t.Error("JSON output missing source field")
+	}
+}
+
+func TestCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "link:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

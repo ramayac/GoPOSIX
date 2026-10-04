@@ -637,3 +637,25 @@ func TestFormatDate_MoreSpecifiers(t *testing.T) {
 		}
 	}
 }
+
+func TestRunBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "date:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestRunInvalidDateString(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"-d", "not-a-date"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "invalid date") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

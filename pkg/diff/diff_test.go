@@ -808,3 +808,17 @@ func TestGenerateDiff_IgnoredWhitespaceOps(t *testing.T) {
 		t.Errorf("expected real change lines in hunk, got %q", joined)
 	}
 }
+
+func TestDiffRun_SecondFileReadError(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	os.WriteFile(a, []byte("x\n"), 0644)
+	var out, errBuf bytes.Buffer
+	code := run([]string{a, filepath.Join(dir, "missing")}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "diff:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

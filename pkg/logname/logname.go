@@ -22,6 +22,9 @@ var spec = common.FlagSpec{
 	},
 }
 
+// userCurrent is a seam for user.Current so error paths can be tested.
+var userCurrent = user.Current
+
 // Run returns the login name of the user.
 // POSIX: returns the name from getlogin(), falling back to LOGNAME env.
 func Run() (LognameResult, error) {
@@ -30,7 +33,7 @@ func Run() (LognameResult, error) {
 		return LognameResult{Logname: name}, nil
 	}
 	// Fall back to current user
-	u, err := user.Current()
+	u, err := userCurrent()
 	if err != nil {
 		return LognameResult{}, fmt.Errorf("cannot determine login name: %w", err)
 	}

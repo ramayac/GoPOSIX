@@ -120,3 +120,14 @@ func TestDuMultipleRoots(t *testing.T) {
 		t.Error("expected output")
 	}
 }
+
+func TestCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "du:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

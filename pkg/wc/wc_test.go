@@ -261,3 +261,14 @@ func TestCountScanner_Empty(t *testing.T) {
 		t.Errorf("expected all zeros, got %+v", result)
 	}
 }
+
+func TestCLIJSONMissingFile(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--json", "/nonexistent-wc-file"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(out.String(), "IO") {
+		t.Errorf("expected JSON error envelope, got %q", out.String())
+	}
+}

@@ -31,6 +31,9 @@ var spec = common.FlagSpec{
 	},
 }
 
+// unameRun is a seam for Run so error paths can be tested.
+var unameRun = Run
+
 // charsToString converts a null-terminated byte array to a Go string.
 func charsToString(chars [65]int8) string {
 	b := make([]byte, 0, 65)
@@ -51,7 +54,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 	jsonMode := flags.Has("json")
 
-	result, err := Run()
+	result, err := unameRun()
 	if err != nil {
 		fmt.Fprintf(stderr, "uname: %v\n", err)
 		common.RenderError("uname", 1, "EUNAME", err.Error(), jsonMode, stdout)

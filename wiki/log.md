@@ -4,6 +4,15 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-10-03] test | 100% patch coverage — resolve Codecov comment on PR #43
+
+- Codecov reported 74.33% patch coverage with 86 missing lines. Local analysis found 115 missing executable lines across 46 files (all F1/F2/F6/F7 error branches).
+- Added ~70 tests: bad-flag/missing-operand triggers for the F1 packages, cp --parents error paths, daemon RunDaemon failure, date invalid -d, diff second-file read error, join open/Run errors, chmod symbolic-mode errors, rev/tail directory reads, split suffix overflow (numeric -a 1), sha3sum check-mode digest lengths, tar stripped-prefix message, testcmd syntax errors, wc JSON error envelope, yes --count without value.
+- New function seams: `userCurrent` (logname), `unameRun` (uname), `whoRun` (who). bc gains `mathLibSource` execute-error test. Daemon tests add a fake raw-output command (non-JSON fallback) and a testcmd error-envelope stderr check.
+- `pkg/common` gained tests for the digest and decompress cores (SilenceLog, panic recovery, cat-mode raw errors, dest open failure, copy-error cleanup, hash write errors, checksum single-space lines).
+- Fixed a real bug: `pkg/split` ignored the injected stdin for `-` and read `os.Stdin` (same class as F1).
+- Verification: unit green, vet/fmt clean, overall coverage 87.5% (was 86.3%), BusyBox 871/16/30 (16 pre-existing awk, no regressions). Patch coverage now 100% (0 missing lines).
+
 ## [2026-10-03] refactor | F6 + F7 resolved: bc panic removal, shared decompression core
 
 - **F6:** `pkg/bc` `NewInterpreter` now returns `(*Interpreter, error)` — the two `panic` calls in the math-library load path are gone. `Run` propagates the error; `bcRun` renders it. New `mathLibSource` data seam lets tests break the embedded library. Coverage 83.6%.

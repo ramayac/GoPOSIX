@@ -1,6 +1,6 @@
 # Phase 28 — POSIX Command Audit (Plan & Matrix)
 
-> **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — phases 0–3 done
+> **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — phases 0–3 done, 100% patch coverage
 >
 > Companion to [wiki/test_coverage_matrix.md](test_coverage_matrix.md) (test status) and [wiki/todos.md](todos.md) (open work).
 > This page is the plan and tracking matrix for a one-shot audit of every POSIX command.
@@ -116,7 +116,7 @@ against the pre-refactor binary. All four packages now at 100% coverage.
 | 1 | F1 mechanical fix: injected writers | 53 | `make test` + `make testsuite` + `go vet` | ✅ DONE (870/17/30) |
 | 2 | F2 digest consolidation + F5 signal consolidation | 8 | BusyBox suite + output parity | ✅ DONE (F2 + F5) |
 | 3 | F3 coverage drive | 4 | `make cover-pkg` ≥ 80% | ✅ DONE (whoami 100, hostname 98.2, diff 89.5, gzip 87.3) |
-| 4 | Deep audit of XL/L commands (one PR each) | 24 | per-command checklist + suites | ▶️ NEXT |
+| 4 | Deep audit of XL/L commands (one PR each) | 24 | per-command checklist + suites | ▶️ NEXT (prep: Codecov patch coverage 100%) |
 | 5 | Sweep of M/S commands (batched) | 87 | per-command checklist + suites | ⏳ pending |
 | 6 | Decide F6/F7 and close all open verdicts | — | matrix 100% filled | ⚠️ F6+F7 done; matrix still filling |
 

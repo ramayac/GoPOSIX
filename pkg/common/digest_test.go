@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"hash"
 	"os"
 	"path/filepath"
@@ -240,5 +241,94 @@ func TestDigestCheckMode_JSON(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), `"status":"OK"`) {
 		t.Errorf("expected JSON result, got %q", out.String())
+	}
+}
+
+// errorReader fails on every Read.
+type errorReader struct{}
+
+func (errorReader) Read([]byte) (int, error) { return 0, errors.New("read failed") }
+
+// errorHash fails on every Write.
+type errorHash struct{ hash.Hash }
+
+func (errorHash) Write([]byte) (int, error) { return 0, errors.New("write failed") }
+
+func TestDigestReaderError(t *testing.T) {
+	if _, err := DigestReader(md5.New(), errorReader{}); err == nil {
+		t.Fatal("expected error from failing reader")
+	}
+}
+
+func TestDigestHashMode_ReadError(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := DigestHashMode(digestTestSpec("md5sum", "md5", md5.New), []string{"-"}, false, false, errorReader{}, &out, &errBuf)
+	if code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	if !strings.Contains(errBuf.String(), "md5sum: -: read failed") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestDigestCheckMode_SingleSpaceLine(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "a.txt")
+	os.WriteFile(f, []byte("hello"), 0644)
+	digest, _ := DigestReader(md5.New(), strings.NewReader("hello"))
+	// Single space separator (GNU allows it) — exercises the TrimLeft path.
+	cf := filepath.Join(dir, "checks.md5")
+	os.WriteFile(cf, []byte(digest+" "+f+"\n"), 0644)
+
+	var out, errBuf bytes.Buffer
+	code := DigestCheckMode(digestTestSpec("md5sum", "md5", md5.New), []string{cf}, false, strings.NewReader(""), &out, &errBuf)
+	if code != 0 {
+		t.Fatalf("exit %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), f+": OK") {
+		t.Errorf("expected OK line, got %q", out.String())
+	}
+}
+
+func TestDigestCheckMode_ResolveAlgError(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "a.txt")
+	os.WriteFile(f, []byte("hello"), 0644)
+	cf := filepath.Join(dir, "checks.txt")
+	os.WriteFile(cf, []byte("abcd  "+f+"\n"), 0644)
+
+	spec := digestTestSpec("sha3sum", "sha3-256", sha256.New)
+	spec.CheckNoFilesStdin = true
+	spec.CheckResolveAlg = func(expectedHash string) (hash.Hash, string, error) {
+		return nil, "", errors.New("unknown digest length")
+	}
+	var out, errBuf bytes.Buffer
+	code := DigestCheckMode(spec, []string{cf}, false, strings.NewReader(""), &out, &errBuf)
+	if code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	if !strings.Contains(errBuf.String(), "sha3sum: unknown digest length") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestDigestCheckMode_HashWriteError(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "a.txt")
+	os.WriteFile(f, []byte("hello"), 0644)
+	cf := filepath.Join(dir, "checks.txt")
+	os.WriteFile(cf, []byte("abcd  "+f+"\n"), 0644)
+
+	spec := digestTestSpec("sha3sum", "sha3-256", sha256.New)
+	spec.CheckResolveAlg = func(expectedHash string) (hash.Hash, string, error) {
+		return errorHash{sha256.New()}, "sha3-256", nil
+	}
+	var out, errBuf bytes.Buffer
+	code := DigestCheckMode(spec, []string{cf}, false, strings.NewReader(""), &out, &errBuf)
+	if code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	if !strings.Contains(errBuf.String(), "FAILED open or read") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }

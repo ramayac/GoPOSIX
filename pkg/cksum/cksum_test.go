@@ -133,3 +133,25 @@ func TestCksumMultipleFiles(t *testing.T) {
 		t.Errorf("cksum multiple: exit %d", code)
 	}
 }
+
+func TestCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"--no-such-flag"}, nil, &out, &errBuf, "")
+	if code != 2 {
+		t.Errorf("expected exit 2, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "cksum:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIMissingFile(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := run([]string{"/nonexistent-cksum-file"}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "cksum:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

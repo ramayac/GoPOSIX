@@ -430,3 +430,14 @@ func TestOd_TFlagDecimal(t *testing.T) {
 		t.Error("expected output for -t d2")
 	}
 }
+
+func TestCLIBadFlag(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := odRun([]string{"--no-such-flag"}, strings.NewReader(""), &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "od:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}

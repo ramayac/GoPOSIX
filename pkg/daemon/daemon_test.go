@@ -2,7 +2,9 @@ package daemon
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -67,4 +69,18 @@ func TestCLI_DefaultSocketFlag(t *testing.T) {
 		run([]string{"-s", socket}, nil, &out, &out, "")
 	}()
 	time.Sleep(100 * time.Millisecond)
+}
+
+func TestCLIRunDaemonError(t *testing.T) {
+	dir := t.TempDir()
+	blocker := filepath.Join(dir, "plainfile")
+	os.WriteFile(blocker, []byte("x"), 0644)
+	var out, errBuf bytes.Buffer
+	code := run([]string{"-s", filepath.Join(blocker, "sub", "sock")}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf.String(), "daemon:") {
+		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
 }
