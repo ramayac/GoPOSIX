@@ -1,6 +1,6 @@
 # Phase 28 — POSIX Command Audit (Plan & Matrix)
 
-> **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — F8–F14 shipped in PR #44
+> **Created:** 2026-10-03 | **Branch:** `audit/posix-commands` | **Commands:** 115 | **Status:** PHASE 4 (deep audit of XL/L commands) — F8–F14 shipped in PR #44, 5d JSON work shipped in PR #46 (`audit/5d-json`)
 > **Preflight:** 2026-10-03 — matrix refreshed from the tree, `PreAudit` score added (see §5a). Corrected XL/L scope: 7 commands, not 24.
 >
 > Companion to [wiki/test_coverage_matrix.md](test_coverage_matrix.md) (test status) and [wiki/todos.md](todos.md) (open work).
@@ -119,7 +119,7 @@ against the pre-refactor binary. All four packages now at 100% coverage.
 | 1 | F1 mechanical fix: injected writers | 53 | `make test` + `make testsuite` + `go vet` | ✅ DONE (870/17/30) |
 | 2 | F2 digest consolidation + F5 signal consolidation | 8 | BusyBox suite + output parity | ✅ DONE (F2 + F5) |
 | 3 | F3 coverage drive | 4 | `make cover-pkg` ≥ 80% | ✅ DONE (whoami 100, hostname 98.2, diff 89.5, gzip 87.3) |
-| 4 | Deep audit of XL/L commands (one PR each) | 7 | per-command checklist + suites | ▶️ IN PROGRESS — F8–F11, F13, F14 done in PR #44 (`audit/f8-f11-json-parser-core`); per-command deep audit (god functions, JSON schemas) still open |
+| 4 | Deep audit of XL/L commands (one PR each) | 7 | per-command checklist + suites | ▶️ IN PROGRESS — F8–F11, F13, F14 done in PR #44 (`audit/f8-f11-json-parser-core`); F12, F15, and the JSON-RPC daemon-test gap done in PR #46 (`audit/5d-json`); per-command deep audit (god functions) still open |
 | 5 | Sweep of M/S commands (batched) | 87 | per-command checklist + suites | ⏳ pending |
 | 6 | Decide F6/F7 and close all open verdicts | — | matrix 100% filled | ⚠️ F6+F7 done; matrix still filling |
 
@@ -146,32 +146,32 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 
 | Command | Tier | LOC | T-LOC | Cov | BB | IO | PreAudit | Verdict | Notes |
 |---------|:----:|----:|------:|----:|:--:|:--:|:--------:|:-------:|-------|
-| `bc` | XL | 2587 | 590 | 83.7% | ✅ 81/81 | — | 5.50 | IMPROVE | F6 ✅ NewInterpreter returns error (no panic); mathLibSource seam · F8 ✅ `peek`/`next` cursor shared with `testcmd` (token cursor); F9 ✅ `RatToInt64`/`RatTruncate` moved to `pkg/common/rat.go` · F10 ✅ flag errors honour `--json` · Preflight open: `eval` 486 lines, `NextToken` 284 lines · no JSON schema or daemon test |
+| `bc` | XL | 2587 | 590 | 83.7% | ✅ 81/81 | — | 5.50 | IMPROVE | F6 ✅ NewInterpreter returns error (no panic); mathLibSource seam · F8 ✅ `peek`/`next` cursor shared with `testcmd` (token cursor); F9 ✅ `RatToInt64`/`RatTruncate` moved to `pkg/common/rat.go` · F10 ✅ flag errors honour `--json` · F12 ✅ schema + fixture + daemon test (tier9) · Preflight open: `eval` 486 lines, `NextToken` 284 lines |
 | `sed` | L | 1181 | 1060 | 80.1% | ✅ 103/103 | — | 3.75 | IMPROVE | Preflight: `parseInstruction` 266 lines, `execFlat` 184 lines · F10 ✅ flag errors honour `--json` · coverage 80.1% is the lowest of the large tools |
 | `printf` | L | 749 | 744 | 83.7% | ✅ 26/26 | — | 3.75 | KEEP ✅ | F11 ✅ `processEscapes`/`processEscapesForB` now wrap `common.ExpandEscapes` · F10 ✅ flag errors honour `--json` · Preflight: no other open items |
 | `date` | L | 746 | 661 | 83.8% | ✅ 7/7 | — | 3.75 | IMPROVE | Preflight: `parsePOSIXTZ` is a 263-line closure nest · lift the inner funcs for testability · `--json` ignored on flag errors |
 | `patch` | M | 600 | 381 | 82.1% | ✅ 11/11 | — | 3.75 | IMPROVE | Preflight: `Run` 120 lines · `--json` ignored on flag errors |
-| `mount` | S | 317 | 178 | 80.6% | ⚠️ 0/1 (1 skip) | — | 3.75 | KEEP | Preflight: small and clean, `mountRun` is injectable · all BusyBox cases need root · no JSON schema or daemon test |
+| `mount` | S | 317 | 178 | 80.6% | ⚠️ 0/1 (1 skip) | — | 3.75 | KEEP ✅ | Preflight: small and clean, `mountRun` is injectable · all BusyBox cases need root · F12 ✅ schema + fixture + daemon test (tier9) |
 | `tar` | L | 1114 | 1537 | 82.3% | ✅ 31/31 | — | 3.50 | IMPROVE | Preflight: `extractArchiveStream` 196 lines, `createArchiveStream` 183 lines · `--json` ignored on flag errors · BusyBox 33/33 isolated |
-| `hexdump` | M | 562 | 236 | 84.7% | ✅ 3/3 | — | 3.50 | IMPROVE | Preflight: `Run` 202 lines · thin tests (T-LOC/LOC 0.42) · no JSON schema or daemon test · `--json` ignored on flag errors |
-| `dc` | L | 1149 | 628 | 89.0% | ✅ 36/36 | — | 3.25 | IMPROVE | Preflight: `evalDC` is a 569-line god function · F9 ✅ `RatToInt64`/`RatTruncate` moved to `pkg/common/rat.go` · F10 ✅ flag errors honour `--json` · no JSON schema · BusyBox 36/36 |
-| `start-stop-daemon` | M | 366 | 242 | 80.7% | ✅ 4/4 | — | 3.25 | IMPROVE | F5 ✅ · Preflight: `run` 237 lines · no JSON schema · BusyBox 4/4 |
-| `unzip` | M | 458 | 403 | 80.5% | ✅ 4/4 | — | 3.00 | IMPROVE | Preflight: `run` 341 lines (god function) · no JSON schema |
-| `cpio` | M | 456 | 449 | 82.0% | ✅ 2/9 (7 skip) | — | 3.00 | KEEP | Preflight: balanced helpers, no duplication found · 7 of 9 BusyBox cases are root skips · no JSON schema |
-| `uudecode` | S | 323 | 217 | 84.6% | — | — | 3.00 | IMPROVE | Preflight: `run` 282 lines (god function) · no BusyBox tests · no JSON schema |
-| `tsort` | S | 145 | 73 | 84.3% | ✅ 20/20 | — | 3.00 | IMPROVE | Preflight: thin tests · `--json` ignored on flag errors (confirmed) · no JSON schema |
+| `hexdump` | M | 562 | 236 | 84.7% | ✅ 3/3 | — | 3.50 | IMPROVE | Preflight: `Run` 202 lines · thin tests (T-LOC/LOC 0.42) · F10 ✅ flag errors honour `--json` · F12 ✅ schema + fixture + daemon test (tier9) |
+| `dc` | L | 1149 | 628 | 89.0% | ✅ 36/36 | — | 3.25 | IMPROVE | Preflight: `evalDC` is a 569-line god function · F9 ✅ `RatToInt64`/`RatTruncate` moved to `pkg/common/rat.go` · F10 ✅ flag errors honour `--json` · F12 ✅ schema + fixture (daemon test present) · BusyBox 36/36 |
+| `start-stop-daemon` | M | 366 | 242 | 80.7% | ✅ 4/4 | — | 3.25 | IMPROVE | F5 ✅ · F12 ✅ schema + fixture (daemon test present) · Preflight: `run` 237 lines · BusyBox 4/4 |
+| `unzip` | M | 458 | 403 | 80.5% | ✅ 4/4 | — | 3.00 | IMPROVE | Preflight: `run` 341 lines (god function) · F12 ✅ schema + fixture (daemon test present) |
+| `cpio` | M | 456 | 449 | 82.0% | ✅ 2/9 (7 skip) | — | 3.00 | KEEP ✅ | Preflight: balanced helpers, no duplication found · 7 of 9 BusyBox cases are root skips · F12 ✅ schema + fixture + daemon test · F16 ⏳ `-o --json` mixes the archive stream with the envelope on stdout |
+| `uudecode` | S | 323 | 217 | 84.6% | — | — | 3.00 | IMPROVE | Preflight: `run` 282 lines (god function) · no BusyBox tests · F12 ✅ schema + fixture (daemon test present) |
+| `tsort` | S | 145 | 73 | 84.3% | ✅ 20/20 | — | 3.00 | KEEP ✅ | Preflight: thin tests · F10 ✅ flag errors honour `--json` · F12 ✅ schema + fixture + daemon test |
 | `grep` | M | 648 | 839 | 84.8% | ✅ 53/53 | — | 2.75 | REFACTOR | Preflight: `grepRun` is a 432-line god function (flags + pattern compile + traversal + output) · `--json` ignored on flag errors |
-| `ar` | M | 484 | 516 | 81.6% | ✅ 2/2 | — | 2.75 | IMPROVE | Preflight: `arRun` 88 lines, balanced · daemon test present but no JSON schema · `--json` ignored on flag errors |
-| `makedevs` | S | 335 | 156 | 87.3% | ⚠️ 0/1 (1 skip) | — | 2.75 | IMPROVE | Preflight: no JSON schema and no daemon test · BusyBox case needs root |
-| `mdev` | S | 309 | 146 | 87.4% | ⚠️ 0/12 (12 skip) | — | 2.75 | IMPROVE | Preflight: no JSON schema and no daemon test · BusyBox cases need root |
+| `ar` | M | 484 | 516 | 81.6% | ✅ 2/2 | — | 2.75 | KEEP ✅ | Preflight: `arRun` 88 lines, balanced · F10 ✅ flag errors honour `--json` · F12 ✅ schema + fixture (daemon test present) |
+| `makedevs` | S | 335 | 156 | 87.3% | ⚠️ 0/1 (1 skip) | — | 2.75 | KEEP ✅ | F12 ✅ schema + fixture + daemon test (tier9) · BusyBox case needs root |
+| `mdev` | S | 309 | 146 | 87.4% | ⚠️ 0/12 (12 skip) | — | 2.75 | KEEP ✅ | F12 ✅ schema + fixture + daemon test (tier9) · 5d.1 ✅ usage error honours `--json` · BusyBox cases need root |
 | `nohup` | S | 121 | 110 | 80.9% | — | — | 2.75 | KEEP | Preflight: clean; `Run` library function and `terminalCheck` seam · schema and daemon test present |
 | `logger` | S | 219 | 311 | 98.6% | — | ⚠ global | 2.50 | IMPROVE | Preflight: package-global `stderrWriter` (daemon re-entrancy risk); replace it with an injected writer (P1) · schema and daemon test present |
-| `wget` | S | 191 | 172 | 81.4% | ✅ 4/4 | — | 2.50 | IMPROVE | Preflight: `http.Client{}` has no timeout, so it can block the daemon · no JSON schema and no daemon test |
+| `wget` | S | 191 | 172 | 81.4% | ✅ 4/4 | — | 2.50 | IMPROVE | Preflight: `http.Client{}` has no timeout, so it can block the daemon · F12 ✅ schema + fixture + daemon test (tier9) · 5d.1 ✅ missing-URL error honours `--json` |
 | `diff` | L | 836 | 824 | 90.3% | ✅ 20/20 | — | 2.25 | IMPROVE | F1+F3: tests 89.5% · Preflight: LOC corrected; now L tier, not XL. F1+F3 applied; deep audit open. |
-| `xxd` | M | 371 | 239 | 86.4% | ✅ 7/7 | — | 2.25 | IMPROVE | Preflight: `reverseStandard` (99) and `reversePlain` (85) repeat the hex-scan loop · no JSON schema and no daemon test |
-| `mkfs_minix` | S | 312 | 121 | 86.4% | ✅ 1/1 | — | 2.25 | IMPROVE | Preflight: `Run` 177 lines · no JSON schema and no daemon test · `--json` ignored on flag errors |
+| `xxd` | M | 371 | 239 | 86.4% | ✅ 7/7 | — | 2.25 | IMPROVE | Preflight: `reverseStandard` (99) and `reversePlain` (85) repeat the hex-scan loop · F12 ✅ schema + fixture + daemon test (tier9) |
+| `mkfs_minix` | S | 312 | 121 | 86.4% | ✅ 1/1 | — | 2.25 | KEEP ✅ | Preflight: `Run` 177 lines (observation for Phase 5) · F10 ✅ flag errors honour `--json` · F12 ✅ schema (`mkfs.minix.schema.json`, dispatch name) + fixture + daemon test (tier9) |
 | `unexpand` | S | 257 | 287 | 82.8% | ✅ 24/24 | — | 2.25 | KEEP | Preflight: clean; its `Transform` is the inverse of `expand`'s, not a copy · schema and daemon test present |
-| `cryptpw` | S | 241 | 335 | 82.4% | ✅ 7/7 | — | 2.25 | IMPROVE | Preflight: daemon test present but no JSON schema · flag errors honour `--json` |
+| `cryptpw` | S | 241 | 335 | 82.4% | ✅ 7/7 | — | 2.25 | KEEP ✅ | F12 ✅ schema + fixture (daemon test present) · flag errors honour `--json` |
 | `readlink` | S | 208 | 251 | 81.2% | ✅ 6/6 | — | 2.25 | KEEP | Preflight: clean; `evalSymlinksUnder` 78 lines · schema and daemon test present |
 | `cmp` | S | 193 | 286 | 82.3% | ✅ 1/1 | — | 2.25 | KEEP | Preflight: clean; `Compare` differs from `comm`'s (bytes vs sorted merge) · schema and daemon test present |
 | `expand` | S | 122 | 149 | 81.4% | ✅ 3/3 | — | 2.25 | KEEP | Preflight: clean, 122 lines · schema and daemon test present |
@@ -179,18 +179,18 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `od` | M | 522 | 443 | 85.3% | ✅ 4/4 | — | 2.00 | KEEP | Preflight: balanced; `Run` 65 lines · schema and daemon test present |
 | `expr` | M | 446 | 397 | 87.1% | ✅ 2/2 | — | 2.00 | KEEP ✅ | F8 ✅ `peek`/`next`/`done` now use `common.TokenCursor` · F10 ✅ flag errors honour `--json` · schema and daemon test present |
 | `ls` | M | 443 | 377 | 88.6% | ✅ 5/5 | — | 2.00 | KEEP ✅ | F14 ✅ `common.HumanSize` (truncated) · schema and daemon test present |
-| `cal` | S | 348 | 144 | 85.8% | ✅ 1/1 | — | 2.00 | IMPROVE | Preflight: daemon test present but no JSON schema · `RenderMonth` 118 lines |
-| `uuencode` | S | 251 | 134 | 88.3% | ✅ 19/19 | — | 2.00 | IMPROVE | Preflight: `run` 167 lines · daemon test present but no JSON schema · flag errors honour `--json` |
-| `dd` | S | 332 | 208 | 88.8% | ✅ 6/6 | — | 1.75 | IMPROVE | Preflight: the only command with no `--json` output · `Run` 212 lines · daemon test present |
-| `taskset` | S | 285 | 191 | 86.4% | ✅ 3/3 | — | 1.75 | IMPROVE | Preflight: daemon test present but no JSON schema · `run` 162 lines |
+| `cal` | S | 348 | 144 | 85.8% | ✅ 1/1 | — | 2.00 | KEEP ✅ | F12 ✅ schema + fixture (daemon test present) · `RenderMonth` 118 lines (observation for Phase 5) |
+| `uuencode` | S | 251 | 134 | 88.3% | ✅ 19/19 | — | 2.00 | IMPROVE | Preflight: `run` 167 lines · F12 ✅ schema + fixture (daemon test present) · flag errors honour `--json` |
+| `dd` | S | 332 | 208 | 88.8% | ✅ 6/6 | — | 1.75 | KEEP ✅ | F15 ✅ documented exception: no `--json` output (see [wiki/json_schema.md](json_schema.md)) · `Run` 212 lines (observation for Phase 5) · daemon test present |
+| `taskset` | S | 285 | 191 | 86.4% | ✅ 3/3 | — | 1.75 | IMPROVE | Preflight: `run` 162 lines · F12 ✅ schema + fixture (daemon test present) |
 | `uname` | S | 152 | 69 | 93.0% | — | — | 1.75 | KEEP | Preflight: clean; platform-split `Run()` in uname_linux.go/uname_darwin.go · schema and daemon test present |
-| `which` | S | 126 | 96 | 86.0% | ✅ 1/1 | — | 1.75 | IMPROVE | Preflight: no JSON schema · small and clean otherwise |
-| `daemon` | S | 54 | 86 | 94.1% | — | — | 1.75 | KEEP | Preflight: daemon control command; `--json` and JSON-RPC do not apply |
+| `which` | S | 126 | 96 | 86.0% | ✅ 1/1 | — | 1.75 | KEEP ✅ | F12 ✅ schema + fixture + daemon test · 5d.1 ✅ missing-argument error honours `--json` · small and clean otherwise |
+| `daemon` | S | 54 | 86 | 94.1% | — | — | 1.75 | KEEP ✅ | Preflight: daemon control command · F15 ✅ documented exemption: `--json` and JSON-RPC do not apply |
 | `testcmd` | M | 410 | 625 | 92.8% | — | — | 1.50 | KEEP ✅ | F8 ✅ `peek`/`next`/`done` now use `common.TokenCursor` · F10 ✅ flag errors honour `--json` · `--json` works and the daemon test asserts the bool result; schema is `test.schema.json` |
-| `factor` | S | 346 | 165 | 93.9% | ✅ 13/13 | — | 1.50 | IMPROVE | Preflight: daemon test present but no JSON schema · F10 ✅ its `PreProcess` turns unknown flags into positional args, so no flag-error path exists |
+| `factor` | S | 346 | 165 | 93.9% | ✅ 13/13 | — | 1.50 | KEEP ✅ | F12 ✅ schema + fixture (daemon test present) · F10 ✅ its `PreProcess` turns unknown flags into positional args, so no flag-error path exists |
 | `wc` | S | 311 | 274 | 88.6% | ✅ 5/5 | — | 1.50 | KEEP | Preflight: clean; `CountProper` 93 lines · schema and daemon test present |
 | `join` | S | 304 | 314 | 89.7% | — | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
-| `seq` | S | 284 | 263 | 89.7% | ✅ 21/21 | — | 1.50 | IMPROVE | Preflight: daemon test present but no JSON schema · `run` 133 lines |
+| `seq` | S | 284 | 263 | 89.7% | ✅ 21/21 | — | 1.50 | KEEP ✅ | F12 ✅ schema + fixture (daemon test present) · 5d.1 ✅ usage errors honour `--json` · `run` 133 lines (observation for Phase 5) |
 | `tr` | S | 265 | 148 | 90.8% | ✅ 6/6 | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
 | `who` | S | 193 | 400 | 89.4% | — | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
 | `chown` | S | 109 | 66 | 97.4% | — | — | 1.50 | KEEP ✅ | F13 ✅ `common.LookupUID`/`common.LookupGID` · schema and daemon test present |
@@ -204,16 +204,16 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `cat` | S | 220 | 464 | 89.6% | ✅ 1/1 | — | 1.25 | KEEP | Preflight: clean; canonical `catRun()` injectable entry · schema and daemon test present |
 | `awk` | S | 208 | 558 | 90.0% | ⚠️ 36/53 (17 fail, deferred) | — | 1.25 | KEEP | Preflight: the 17 BusyBox fails are deferred goawk engine limits · schema and daemon test present |
 | `uniq` | S | 193 | 239 | 88.4% | ✅ 15/15 | — | 1.25 | KEEP | Preflight: clean · schema and daemon test present |
-| `rx` | S | 182 | 279 | 86.2% | ✅ 1/1 | — | 1.25 | IMPROVE | Preflight: no JSON schema and no daemon test · 1 flaky BusyBox test (handshake race) |
+| `rx` | S | 182 | 279 | 86.2% | ✅ 1/1 | — | 1.25 | IMPROVE | F12 ✅ schema + fixture + daemon test (tier9) · 5d.1 ✅ error path honours `--json`, handshake bytes no longer pollute stdout in JSON mode · 1 flaky BusyBox test (handshake race, deferred) |
 | `rm` | S | 152 | 198 | 87.3% | ✅ 1/1 | — | 1.25 | KEEP | Preflight: clean; root protection present · schema and daemon test present |
-| `pidof` | S | 148 | 114 | 96.7% | ✅ 4/4 | — | 1.25 | IMPROVE | Preflight: no JSON schema · `run` 112 lines |
-| `uptime` | S | 146 | 169 | 88.5% | ✅ 1/1 | — | 1.25 | IMPROVE | Preflight: no JSON schema · `run` 96 lines |
+| `pidof` | S | 148 | 114 | 96.7% | ✅ 4/4 | — | 1.25 | KEEP ✅ | F12 ✅ schema + fixture (daemon test present) · 5d.1 ✅ missing-operand error honours `--json` · `run` 112 lines (observation for Phase 5) |
+| `uptime` | S | 146 | 169 | 88.5% | ✅ 1/1 | — | 1.25 | KEEP ✅ | F12 ✅ schema + fixture (daemon test present) · `run` 96 lines (observation for Phase 5) |
 | `chgrp` | S | 86 | 77 | 96.7% | — | — | 1.25 | KEEP ✅ | F13 ✅ `common.LookupGID` · schema and daemon test present |
 | `split` | S | 273 | 375 | 92.6% | — | — | 1.00 | KEEP | Preflight: clean layering (`Run` library plus `run` CLI) · schema and daemon test present |
 | `cut` | S | 266 | 219 | 90.8% | ✅ 25/25 | — | 1.00 | KEEP | Preflight: clean layering (`Run` library plus `cutRun` CLI) · schema and daemon test present |
-| `tree` | S | 248 | 212 | 98.0% | ✅ 4/4 | — | 1.00 | IMPROVE | Preflight: daemon test present but no JSON schema · `buildTree` 87 lines |
+| `tree` | S | 248 | 212 | 98.0% | ✅ 4/4 | — | 1.00 | KEEP ✅ | F12 ✅ schema + fixture (daemon test present) · `buildTree` 87 lines (observation for Phase 5) |
 | `xargs` | S | 213 | 177 | 94.1% | ✅ 12/12 | — | 1.00 | IMPROVE | Preflight: `xargsRun` is 159 lines with 29 branches · schema and daemon test present |
-| `shell` | S | 187 | 229 | 90.2% | — | — | 1.00 | IMPROVE | Preflight: no `--json` support (`--json` is read as a file name); the daemon test asserts nothing; no schema (F15) |
+| `shell` | S | 187 | 229 | 90.2% | — | — | 1.00 | KEEP ✅ | F15 ✅ `--json` support in inline, file, and pipe modes; envelope data `{exitCode, stdout, stderr}`; the daemon test asserts it (tier9) · F12 ✅ schema + fixture · 5d.1 ✅ error paths honour `--json` |
 | `chmod` | S | 172 | 193 | 92.7% | — | — | 1.00 | KEEP | Preflight: clean; `applySymbolicMode` 63 lines · schema and daemon test present |
 | `cksum` | S | 155 | 157 | 94.5% | — | — | 1.00 | KEEP | Preflight: clean; `Run` library layer plus a `posixCRC` helper · schema and daemon test present |
 | `du` | S | 145 | 133 | 91.9% | ✅ 6/6 | — | 1.00 | KEEP ✅ | F14 ✅ `common.HumanSize` (rounded) · schema and daemon test present |
@@ -225,15 +225,15 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `fold` | S | 250 | 469 | 91.8% | ✅ 4/4 | — | 0.75 | KEEP | Preflight: clean and small · schema and daemon test present |
 | `head` | S | 210 | 528 | 94.3% | ✅ 4/4 | — | 0.75 | KEEP | Preflight: clean; `headRun` 108 lines · schema and daemon test present |
 | `echo` | S | 194 | 258 | 97.8% | ✅ 11/11 | — | 0.75 | KEEP ✅ | F11 ✅ `processEscapes` now wraps `common.ExpandEscapes` · schema and daemon test present |
-| `realpath` | S | 188 | 211 | 94.7% | ✅ 10/10 | — | 0.75 | IMPROVE | Preflight: no JSON schema · `resolvePathFlags` 95 lines |
-| `hostid` | S | 160 | 284 | 96.3% | ✅ 1/1 | — | 0.75 | IMPROVE | Preflight: no JSON schema · small and clean otherwise |
+| `realpath` | S | 188 | 211 | 94.7% | ✅ 10/10 | — | 0.75 | KEEP ✅ | F12 ✅ schema + fixture (daemon test present) · `resolvePathFlags` 95 lines (observation for Phase 5) |
+| `hostid` | S | 160 | 284 | 96.3% | ✅ 1/1 | — | 0.75 | KEEP ✅ | F12 ✅ schema + fixture (daemon test present) · small and clean otherwise |
 | `strings` | S | 152 | 223 | 91.5% | ✅ 1/1 | — | 0.75 | KEEP | Preflight: clean; `stringsRun` 70 lines · schema and daemon test present |
 | `hostname` | S | 146 | 310 | 98.2% | ✅ 4/4 | — | 0.75 | KEEP ✅ | F1+F3: function seams, 98.2% |
 | `nl` | S | 142 | 182 | 97.1% | ✅ 4/4 | — | 0.75 | KEEP | Preflight: clean; `nlRun` 71 lines · schema and daemon test present |
 | `touch` | S | 142 | 302 | 91.3% | ✅ 3/3 | — | 0.75 | KEEP | Preflight: clean; `run` 74 lines · schema and daemon test present |
 | `stat` | S | 141 | 115 | 100.0% | — | — | 0.75 | KEEP | Preflight: clean, 100% coverage, no function over 60 lines · schema and daemon test present |
 | `tee` | S | 129 | 185 | 92.3% | ✅ 2/2 | — | 0.75 | KEEP | Preflight: clean; `teeRun` 81 lines · schema and daemon test present |
-| `rev` | S | 126 | 139 | 98.2% | ✅ 4/4 | — | 0.75 | IMPROVE | Preflight: no JSON schema · `run` 85 lines |
+| `rev` | S | 126 | 139 | 98.2% | ✅ 4/4 | — | 0.75 | KEEP ✅ | F12 ✅ schema + fixture (daemon test present) · `run` 85 lines (observation for Phase 5) |
 | `mv` | S | 112 | 246 | 96.0% | ✅ 14/14 | — | 0.75 | KEEP | Preflight: clean and small · schema and daemon test present |
 | `printenv` | S | 79 | 78 | 100.0% | — | — | 0.75 | KEEP | Preflight: clean, 100% coverage · schema and daemon test present |
 | `basename` | S | 61 | 97 | 95.2% | ✅ 2/2 | — | 0.75 | KEEP | Preflight: clean and small · schema and daemon test present |
@@ -245,22 +245,22 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `whoami` | S | 66 | 130 | 100.0% | — | — | 0.50 | KEEP ✅ | F1+F3: userCurrent seam, 100% |
 | `link` | S | 64 | 91 | 100.0% | — | — | 0.50 | KEEP | Preflight: clean, 100% coverage · schema and daemon test present |
 | `unlink` | S | 63 | 94 | 100.0% | — | — | 0.50 | KEEP | Preflight: clean, 100% coverage · schema and daemon test present |
-| `sha512sum` | S | 59 | 176 | 100.0% | — | — | 0.50 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
+| `sha512sum` | S | 59 | 176 | 100.0% | — | — | 0.50 | KEEP ✅ | F1+F2: shared digest core, 100% cov · F12 ✅ schema + fixture |
 | `sha256sum` | S | 58 | 208 | 100.0% | — | — | 0.50 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
 | `sum` | S | 132 | 238 | 100.0% | ✅ 4/4 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
-| `sha3sum` | S | 114 | 294 | 100.0% | ✅ 2/2 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core + -a autodetect |
+| `sha3sum` | S | 114 | 294 | 100.0% | ✅ 2/2 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core + -a autodetect · F12 ✅ schema + fixture |
 | `pwd` | S | 102 | 219 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
 | `mkdir` | S | 79 | 138 | 100.0% | ✅ 2/2 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
 | `ln` | S | 78 | 122 | 100.0% | ✅ 6/6 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
 | `rmdir` | S | 69 | 133 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
 | `truefalse` | S | 60 | 87 | 100.0% | ✅ 4/4 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schemas `true` and `false` present |
-| `sha1sum` | S | 59 | 177 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
+| `sha1sum` | S | 59 | 177 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core, 100% cov · F12 ✅ schema + fixture |
 | `md5sum` | S | 58 | 202 | 100.0% | ✅ 2/2 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
-| `bunzip2` | S | 51 | 194 | 100.0% | ✅ 11/11 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov |
-| `uncompress` | S | 51 | 179 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP ✅ | F7: shared decompress core + recover/log suppress, 100% cov |
+| `bunzip2` | S | 51 | 194 | 100.0% | ✅ 11/11 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov · F12 ✅ schema + fixture · F16 ⏳ `-c --json` mixes the data stream with the envelope |
+| `uncompress` | S | 51 | 179 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP ✅ | F7: shared decompress core + recover/log suppress, 100% cov · F12 ✅ schema + fixture · F16 ⏳ `-c --json` mixes the data stream with the envelope |
 | `dirname` | S | 49 | 66 | 100.0% | ✅ 7/7 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
-| `unlzma` | S | 47 | 204 | 100.0% | ✅ 3/3 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov |
-| `bzcat` | S | 39 | 142 | 100.0% | ✅ 3/3 | — | 0.00 | KEEP ✅ | F7: shared decompress core (cat mode), 100% cov |
+| `unlzma` | S | 47 | 204 | 100.0% | ✅ 3/3 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov · F12 ✅ schema + fixture · F16 ⏳ `-c --json` mixes the data stream with the envelope |
+| `bzcat` | S | 39 | 142 | 100.0% | ✅ 3/3 | — | 0.00 | KEEP ✅ | F7: shared decompress core (cat mode), 100% cov · F12 ✅ schema + fixture · F16 ⏳ cat mode always mixes the data stream with the envelope on stdout |
 
 ### 5a. Pre-Audit Score (preflight)
 
@@ -352,7 +352,7 @@ third copy. Merge them into one helper with a `\c` option.
 semantics (`\0NNN` octal, `\c` passed through); `EscapeArg` is the echo -e / printf `%b`
 semantics (bare `\0` = NUL, `\1`–`\7` octal). `printf` and `echo` now wrap this helper.
 
-#### F12 — 39 commands have no published JSON schema ⏳ OPEN
+#### F12 — 39 commands have no published JSON schema ✅ DONE
 [wiki/json_schema.md](json_schema.md) requires a schema for every `--json` utility. 39 of the 115
 audited commands have no file in `test/schemas/`: `bc`, `mount`, `hexdump`, `dc`,
 `start-stop-daemon`, `unzip`, `cpio`, `uudecode`, `tsort`, `ar`, `makedevs`, `mdev`,
@@ -361,9 +361,14 @@ audited commands have no file in `test/schemas/`: `bc`, `mount`, `hexdump`, `dc`
 `sha512sum`, `sha3sum`, `sha1sum`, `bunzip2`, `uncompress`, `unlzma`, `bzcat`.
 Add the schema and a fixture for each command.
 
+**Resolution:** 37 new schemas plus golden fixtures. `dd` (no `--json` support) and
+`daemon` (control command) are documented exemptions in [wiki/json_schema.md](json_schema.md).
+`make validate-schemas` now reports 114 passed, 0 failed, 0 skipped. Details in §5d.
+
 **Name trap:** a schema can exist under a different name than the command. `testcmd` uses
 `test.schema.json`, and `truefalse` uses `true.schema.json` and `false.schema.json`. Match on the
-alias before you report a schema as missing.
+alias before you report a schema as missing. The same trap applied to `mkfs_minix`: the
+dispatch name is `mkfs.minix`, so the schema is `mkfs.minix.schema.json`.
 
 #### F13 — UID/GID lookup helpers duplicated between `chgrp` and `chown` ✅ DONE
 `lookupGID` is byte-identical in [pkg/chgrp](../pkg/chgrp) and [pkg/chown](../pkg/chown), and
@@ -386,12 +391,18 @@ finding sets the verdict for both commands.
 not the `1.0K`/`1K` pair in the original note. Both commands keep thin local wrappers so their
 unit tests still call `humanSize`.
 
-#### F15 — Two commands break the "`--json` for all" contract ⏳ OPEN
+#### F15 — Two commands break the "`--json` for all" contract ✅ DONE
 [wiki/json_schema.md](json_schema.md) states that all utilities support `--json`. `dd` is the
 documented exception. `shell` is an undocumented one: `goposix shell --json -c 'echo hi'` treats
 `--json` as a file name and fails. The shell daemon test only logs its result and asserts nothing,
 so the gap stays hidden. Either add `--json` to `shell` and assert it in the test, or document the
 exemption in [wiki/json_schema.md](json_schema.md).
+
+**Resolution:** `shell` now parses `--json` in all three modes (inline, script file, pipe) and
+renders the envelope with `data = {exitCode, stdout, stderr}`. The script's own exit code travels
+in `data.exitCode` and as the process exit code. The daemon test in
+[test/posix-json/tier9_json_contract_test.go](../test/posix-json/tier9_json_contract_test.go)
+asserts both a successful script and a failing one. `dd` remains the documented exception.
 
 #### P1 — `logger` uses a package-global writer ⏳ OPEN
 [pkg/logger/logger.go](../pkg/logger/logger.go) keeps a package-level `stderrWriter` that defaults
@@ -459,9 +470,32 @@ All JSON-related findings from the audit, with their current status.
 | ID | Issue | Scope | Status | Notes |
 |----|-------|-------|--------|-------|
 | F10 | Flag errors ignore `--json` and print plain text | 93 `ParseFlags` call sites | ✅ DONE (PR #44) | `common.HasJSONFlag` + `common.RenderFlagError`; every call site now returns the JSON envelope. `factor` is exempt (its `PreProcess` turns unknown flags into positionals). |
-| F12 | No published JSON schema | 39 commands: `bc`, `mount`, `hexdump`, `dc`, `start-stop-daemon`, `unzip`, `cpio`, `uudecode`, `tsort`, `ar`, `makedevs`, `mdev`, `mkfs_minix`, `wget`, `xxd`, `cryptpw`, `cal`, `uuencode`, `dd`, `taskset`, `which`, `daemon`, `factor`, `seq`, `rx`, `pidof`, `uptime`, `tree`, `shell`, `realpath`, `hostid`, `rev`, `sha512sum`, `sha3sum`, `sha1sum`, `bunzip2`, `uncompress`, `unlzma`, `bzcat` | ⏳ OPEN | Add a schema in `test/schemas/` and a fixture per command. Match on alias (`test` → `test.schema.json`, `truefalse` → `true.schema.json`/`false.schema.json`). |
-| F15 | Breaks the "`--json` for all" contract | `dd`, `shell` | ⏳ OPEN | `dd` is the documented exception. `shell` treats `--json` as a file name; add `--json` and assert it in the daemon test, or document the exemption in `wiki/json_schema.md`. |
-| — | Missing JSON-RPC daemon test | commands marked ❌ in the matrix | ⏳ OPEN | Fold into F12: a schema fixture plus a daemon assertion per command. |
+| F12 | No published JSON schema | 39 commands: `bc`, `mount`, `hexdump`, `dc`, `start-stop-daemon`, `unzip`, `cpio`, `uudecode`, `tsort`, `ar`, `makedevs`, `mdev`, `mkfs_minix`, `wget`, `xxd`, `cryptpw`, `cal`, `uuencode`, `dd`, `taskset`, `which`, `daemon`, `factor`, `seq`, `rx`, `pidof`, `uptime`, `tree`, `shell`, `realpath`, `hostid`, `rev`, `sha512sum`, `sha3sum`, `sha1sum`, `bunzip2`, `uncompress`, `unlzma`, `bzcat` | ✅ DONE (PR #46) | 37 new schemas in `test/schemas/` plus golden fixtures. Name trap resolved: `mkfs_minix` registers as `mkfs.minix`, so the schema is `mkfs.minix.schema.json`. `dd` (documented exception, no `--json`) and `daemon` (control command, `--json` and JSON-RPC do not apply) are documented exemptions in [wiki/json_schema.md](json_schema.md). `make validate-schemas` now reports 114 passed, 0 failed, 0 skipped. |
+| F15 | Breaks the "`--json` for all" contract | `dd`, `shell` | ✅ DONE (PR #46) | `shell` now parses `--json` and returns the envelope (`data = {exitCode, stdout, stderr}`) in all three modes (inline, file, pipe); the script's own exit code travels in `data.exitCode` and as the process exit code. The daemon test asserts the envelope. `dd` stays the documented exception. |
+| — | Missing JSON-RPC daemon test | commands marked ❌ in the matrix | ✅ DONE (PR #46) | New `test/posix-json/tier9_json_contract_test.go` covers `bc`, `mount`, `hexdump`, `makedevs`, `mdev`, `mkfs.minix`, `wget`, `xxd`, `rx`, and `shell` over JSON-RPC. |
+
+### 5d.1 JSON error-path fixes (found during 5d work)
+
+While building the schemas and daemon tests, the audit found usage-error paths that printed
+plain text even with `--json`. The JSON contract applies to every output, so these paths now
+call `common.RenderError` when `--json` is present:
+
+| Command | Error path | Envelope code |
+|---------|------------|---------------|
+| `wget` | missing URL | `MISSING_ARGUMENT` |
+| `which` | missing argument | `MISSING_ARGUMENT` |
+| `seq` | wrong argument count, non-numeric argument | `INVALID_ARGUMENT` |
+| `pidof` | missing operand | `MISSING_ARGUMENT` |
+| `mdev` | no `-s`/`-d` and no hotplug env | `USAGE` |
+| `rx` | no sender (handshake timeout), protocol bytes no longer pollute stdout in JSON mode | `RECEIVE_ERROR` |
+| `shell` | missing `-c` argument, unreadable script file | `MISSING_ARGUMENT`, `SHELL_ERROR` |
+
+### 5d.2 Open JSON follow-ups (new findings, not fixed here)
+
+| ID | Issue | Notes |
+|----|-------|-------|
+| F16 | Raw payload mixes with the envelope on stdout | `bzcat --json`, `bunzip2/unlzma/uncompress -c --json`, `gzip -c --json`, and `cpio -o --json` write the raw data stream to stdout before the JSON envelope. Over JSON-RPC the daemon cannot parse the mixed output. Fixing this changes F7-core behavior, so it is recorded here for the Phase 4/5 deep audit of those tools. The `bzcat` golden fixture keeps only the trailing JSON line for this reason. |
+| P7 | 31 pre-existing schemas had no golden fixture | Regenerating fixtures with `gen_golden.sh` (after fixing its `set -u` bug and the `%b` escape handling) closed 30 of 31 gaps. `who` was the last: it emitted `"users": null` with no utmp file, which its schema rejects. `pkg/who` now emits `[]`; the schema and fixture validate. No open item remains. |
 
 ## 6. Definition of Done
 

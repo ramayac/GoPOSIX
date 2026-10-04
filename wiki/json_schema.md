@@ -51,12 +51,17 @@ make validate-schemas
 
 ## Utility Schemas
 
-Schemas are provided for all 77 utilities that support `--json` output:
+Schemas are provided for all 114 utilities that support `--json` output (including the `test`, `true`, and `false` alias names):
 
 | Utility | Data Shape |
 |---------|-----------|
+| `ar` | `{"archive": "string", "members": [{"name": "string", "size": int, "mod_time": int, "mode": int, "uid": int, "gid": int}]}` |
 | `awk` | `{"lines": ["string"], "lineCount": int, "status": int}` |
 | `basename` | `{"result": "string"}` |
+| `bc` | `{"lines": ["string"]}` |
+| `bunzip2` | `{"files": [{"source": "string", "destination": "string", "bytesResult": int, "error": "string"}]}` |
+| `bzcat` | `{"files": [{"source": "string", "bytesResult": int, "error": "string"}]}` |
+| `cal` | `{"year": int, "month": int, "julian": bool, "monday_start": bool, "calendar": "string"}` |
 | `cat` | `{"lines": ["string"], "lineCount": int}` |
 | `chgrp` | `{"changed": [{"path": "string"}]}` |
 | `chmod` | `{"changed": [{"path": "string", "mode": "string"}]}` |
@@ -65,7 +70,10 @@ Schemas are provided for all 77 utilities that support `--json` output:
 | `cmp` | `{"equal": bool, "byte_pos": int, "line_num": int, "val1": int, "val2": int}` |
 | `comm` | `{"only_file1": ["string"], "only_file2": ["string"], "both": ["string"]}` |
 | `cp` | `{"copied": [{"from": "string", "to": "string"}]}` |
+| `cpio` | `{"members": [{"name": "string", "size": int, "mode": int, "mod_time": int}]}` |
+| `cryptpw` | `{"password": "string", "method": "string", "salt": "string", "hash": "string"}` |
 | `cut` | `{"lines": [{"fields": ["string"]}]}` |
+| `dc` | `{"output": ["string"]}` or null |
 | `date` | `{"iso": "string", "unix": int, "utc": "string", "timezone": "string"}` |
 | `df` | `[{"filesystem": "string", "size": int, "used": int, "avail": int, "mountpoint": "string"}]` |
 | `diff` | `{"files": ["string"], "differ": bool, "hunks": [...]}` |
@@ -75,12 +83,15 @@ Schemas are provided for all 77 utilities that support `--json` output:
 | `env` | `{"vars": {"key": "value", ...}}` |
 | `expand` | `{"lines": ["string"]}` |
 | `expr` | `{"result": "string", "exitCode": int}` |
+| `factor` | `{"results": [{"input": "string", "factors": [int], "error": "string"}]}` |
 | `false` | `{"exitCode": int, "value": bool}` |
 | `find` | `[{"path": "string", "type": "string", "size": int, "mtime": "string"}]` |
 | `fold` | `{"lines": ["string"]}` |
 | `grep` | `[{"file": "string", "line": int, "text": "string", "matches": ["string"]}]` |
 | `gzip` | `[{"file": "string", "originalSize": int, "newSize": int, "ratio": number}]` |
 | `head` | `{"lines": ["string"], "lineCount": int}` |
+| `hexdump` | `{"lines": ["string"]}` |
+| `hostid` | `{"hostid": "string"}` |
 | `hostname` | `{"hostname": "string"}` |
 | `id` | `{"uid": int, "user": "string", "gid": int, "group": "string", "groups": ["string"]}` |
 | `join` | `{"records": [{"key": "value"}]}` |
@@ -90,9 +101,13 @@ Schemas are provided for all 77 utilities that support `--json` output:
 | `logger` | `{"priority": "string", "tag": "string", "message": "string"}` |
 | `logname` | `{"logname": "string"}` |
 | `ls` | `{"path": "string", "files": [...], "total": int}` or `[{...}]` |
+| `makedevs` | `{"table": "string", "rootdir": "string", "created": [{"name": "string", "type": "string", "mode": "string", "uid": int, "gid": int, "major": int, "minor": int, "status": "string", "error": "string"}], "failedCount": int}` |
+| `mdev` | `{"devices": [{"name": "string", "type": "string", "major": int, "minor": int, "path": "string"}]}` |
 | `md5sum` | `[{"file": "string", "hash": "string", "algorithm": "md5"}]` or check mode |
+| `mkfs.minix` | `{"inodes": int, "zones": int, "first_data_zone": int, "imap_blocks": int, "zmap_blocks": int}` |
 | `mkdir` | `{"created": ["string"]}` |
 | `mkfifo` | `{"path": "string", "mode": "string"}` |
+| `mount` | `{"mounts": [{"device": "string", "mountpoint": "string", "fstype": "string", "options": "string"}]}` |
 | `mv` | `{"moved": [{"from": "string", "to": "string"}]}` |
 | `nice` | `{"adjustment": int, "command": ["string"], "exit_code": int}` |
 | `nl` | `{"lines": [{"number": int, "text": "string"}]}` |
@@ -100,40 +115,62 @@ Schemas are provided for all 77 utilities that support `--json` output:
 | `od` | `{"records": ["string"]}` |
 | `paste` | `{"records": [["string"]]}` |
 | `patch` | `{"file": "string", "applied": int, "rejected": int, "is_new": bool, "message": "string"}` |
+| `pidof` | `{"pids": [int]}` |
 | `printenv` | `{"vars": {"key": "value", ...}}` |
 | `printf` | `{"output": "string"}` |
 | `ps` | `[{"pid": int, "ppid": int, "user": "string", "cmd": "string", "cpu": "string", "mem": "string"}]` |
 | `pwd` | `{"path": "string"}` |
 | `readlink` | `{"path": "string", "target": "string"}` |
+| `realpath` | `{"resolved": {"path": "string"}}` |
+| `rev` | `{"lines": ["string"], "line_count": int}` |
 | `rm` | `{"removed": ["string"], "errors": ["string"]}` |
 | `rmdir` | `{"removed": ["string"]}` |
+| `rx` | `{"bytesWritten": int, "fileName": "string"}` or null |
 | `sed` | `{"lines": ["string"], "lineCount": int, "changed": bool, "scripts": ["string"]}` |
+| `seq` | `{"sequence": ["string"]}` |
+| `sha1sum` | `[{"file": "string", "hash": "string", "algorithm": "sha1"}]` or check mode |
 | `sha256sum` | `[{"file": "string", "hash": "string", "algorithm": "sha256"}]` or check mode |
+| `sha3sum` | `[{"file": "string", "hash": "string", "algorithm": "string"}]` or check mode |
+| `sha512sum` | `[{"file": "string", "hash": "string", "algorithm": "sha512"}]` or check mode |
+| `shell` | `{"exitCode": int, "stdout": "string", "stderr": "string"}` |
 | `sleep` | `{"duration": number, "requested": number, "interrupted": bool}` |
 | `sort` | `{"lines": ["string"], "count": int}` |
 | `split` | `{"files": ["string"], "chunks": int}` |
+| `start-stop-daemon` | `{"action": "string", "matchedPids": [int], "newPid": int, "commandLine": ["string"], "status": "string"}` |
 | `stat` | `{"path": "string", "size": int, "mode": "string", ...}` |
 | `strings` | `{"strings": [{"offset": int, "value": "string"}]}` |
 | `sum` | `{"files": [{"file": "string", "checksum": int, "blocks": int}]}` |
 | `tail` | `{"lines": ["string"], "lineCount": int}` |
+| `taskset` | `{"pid": int, "currentMask": "string", "newMask": "string", "command": "string"}` |
 | `tar` | `[{"name": "string", "size": int, "mode": "string"}]` |
 | `tee` | `{"bytesWritten": int, "files": ["string"]}` |
 | `test` | `{"result": bool}` |
 | `touch` | `{"touched": ["string"]}` |
 | `tr` | `{"lines": ["string"], "lineCount": int, "bytesIn": int, "bytesOut": int}` |
+| `tree` | `{"trees": [{"name": "string", "type": "string", "target": "string", "contents": [...]}], "report": {"directories": int, "files": int}}` |
 | `true` | `{"exitCode": int, "value": bool}` |
+| `tsort` | `{"nodes": ["string"]}` or null |
 | `tty` | `{"is_tty": bool, "path": "string"}` |
 | `uname` | `{"sysname": "string", "nodename": "string", "release": "string", "version": "string", "machine": "string"}` |
+| `uncompress` | `{"files": [{"source": "string", "destination": "string", "bytesResult": int, "error": "string"}]}` |
 | `unexpand` | `{"lines": ["string"]}` |
+| `unlzma` | `{"files": [{"source": "string", "destination": "string", "bytesResult": int, "error": "string"}]}` |
 | `uniq` | `[{"line": "string", "count": int}]` |
 | `unlink` | `{"removed": "string"}` |
+| `unzip` | `{"archive": "string", "files": [{"name": "string", "size": int, "compressedSize": int, "isDir": bool}]}` |
+| `uptime` | `{"current_time": "string", "uptime": number, "users": int, "load_1m": number, "load_5m": number, "load_15m": number}` |
+| `uudecode` | `{"source": "string", "destination": "string", "bytesDecoded": int}` |
+| `uuencode` | `{"source": "string", "remoteName": "string", "encodedData": "string", "format": "string"}` |
 | `wc` | `{"lines": int, "words": int, "bytes": int, "chars": int}` or multi-file map |
+| `wget` | `{"url": "string", "output_file": "string", "bytes_downloaded": int, "status_code": int}` |
+| `which` | `{"matches": {"name": ["path"]}}` |
 | `who` | `{"users": [{"name": "string", "terminal": "string", "time": "string", "host": "string"}], "count": int}` |
 | `whoami` | `{"user": "string", "uid": int}` |
 | `xargs` | `[{"command": "string", "exitCode": int}]` |
+| `xxd` | `{"lines": ["string"]}` |
 | `yes` | `{"string": "string", "count": int, "truncated": bool}` |
 
-Only `dd` does not yet support `--json` output.
+Only `dd` does not yet support `--json` output. The `daemon` control command is also exempt: `--json` and JSON-RPC do not apply to it (it manages the daemon process itself).
 
 ## Schema Versioning
 

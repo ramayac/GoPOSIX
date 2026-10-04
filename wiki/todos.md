@@ -22,7 +22,6 @@ Work stopped after the repository-level phases. The per-tool deep audit continue
 ### ✅ Done — phases 0–3, all findings F1–F7 resolved
 
 Delivered in [PR #43](https://github.com/ramayac/GoPOSIX/pull/43) (`audit/posix-commands`, 13 commits, awaiting review):
-
 | Finding | Result |
 |---------|--------|
 | F1 | All 53 commands use injected writers. Daemon separates stdout/stderr buffers and returns a `stderr` field in JSON-RPC responses. |
@@ -33,6 +32,16 @@ Delivered in [PR #43](https://github.com/ramayac/GoPOSIX/pull/43) (`audit/posix-
 | F7 | Shared decompression core in [pkg/common/decompress.go](../pkg/common/decompress.go). The four tools dropped from 950 to ~230 LOC. |
 
 Verification at stop: 100% patch coverage, overall coverage 87.6%, BusyBox 871/16/30 (17 awk failures deferred, no other regressions).
+
+### ✅ Done — 5d JSON Changes (PR #46, `audit/5d-json`)
+
+| Finding | Result |
+|---------|--------|
+| F12 | 37 new schemas in [test/schemas/](../test/schemas/) with golden fixtures. `dd` and `daemon` are documented exemptions. `make validate-schemas` now reports 114 passed, 0 failed, 0 skipped. |
+| F15 | `shell` parses `--json` in inline, file, and pipe modes; the daemon test asserts the envelope. `dd` remains the documented exception. |
+| Daemon tests | New [test/posix-json/tier9_json_contract_test.go](../test/posix-json/tier9_json_contract_test.go) covers `bc`, `mount`, `hexdump`, `makedevs`, `mdev`, `mkfs.minix`, `wget`, `xxd`, `rx`, `shell`. |
+| JSON error paths | `wget`, `which`, `seq`, `pidof`, `mdev`, `rx`, `shell` now honour `--json` on usage errors (see §5d.1 of the plan). |
+| P7 | `gen_golden.sh` fixed (`set -u` bug, `%b` escapes, absolute paths) and extended for all 38 new fixtures. `pkg/who` now emits `users: []` instead of `null`. |
 
 ### ▶️ Next when work resumes — Phase 4: deep audit of 7 XL/L commands
 
