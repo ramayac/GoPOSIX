@@ -452,6 +452,15 @@ func TestCoverageBoost(t *testing.T) {
 	var out3 bytes.Buffer
 	_ = Run(in3, strings.NewReader(""), &out3, false)
 
+	// Test special-variable ++/-- (scale, ibase, obase)
+	for _, prog := range []string{
+		"scale++; scale--",
+		"ibase++; ibase--",
+		"obase++; obase--",
+	} {
+		_ = Run(strings.NewReader(prog), strings.NewReader(""), &bytes.Buffer{}, false)
+	}
+
 	// Test error paths: invalid assignment lhs, invalid operations, etc.
 	for _, bad := range []string{
 		"5 = 3",
