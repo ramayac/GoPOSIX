@@ -1,1 +1,1 @@
-{"command":"touch","version":"dcdd733","schemaVersion":"1.0","exitCode":0,"data":{"touched":["/tmp/goposix-test-file"]},"error":null}
+{"command":"touch","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"touched":["/tmp/goposix-golden.cVsPf3/touchfile"]},"error":null}

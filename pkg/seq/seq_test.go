@@ -2,6 +2,7 @@ package seq
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -118,6 +119,72 @@ func TestSeqErrorsAndBounds(t *testing.T) {
 	code = run([]string{"1", "2", "abc"}, nil, &stdout, &stderr, "")
 	if code != 1 {
 		t.Errorf("expected exit 1, got %d", code)
+	}
+}
+
+func TestSeqJSONErrors(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+
+	// Invalid number of arguments in JSON mode
+	code := run([]string{"--json"}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope on stderr, got %q: %v", stderr.String(), err)
+	}
+	if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "INVALID_ARGUMENT" {
+		t.Fatalf("expected INVALID_ARGUMENT envelope, got %q", stderr.String())
+	}
+
+	// Non-numeric argument in JSON mode
+	stdout.Reset()
+	stderr.Reset()
+	code = run([]string{"--json", "abc"}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Errorf("expected exit 1, got %d", code)
+	}
+	if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope on stderr, got %q: %v", stderr.String(), err)
+	}
+	if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "INVALID_ARGUMENT" {
+		t.Fatalf("expected INVALID_ARGUMENT envelope, got %q", stderr.String())
+	}
+
+	// Non-numeric first/step in JSON mode
+	for _, args := range [][]string{
+		{"--json", "abc", "2"},
+		{"--json", "1", "abc", "2"},
+	} {
+		stdout.Reset()
+		stderr.Reset()
+		code = run(args, nil, &stdout, &stderr, "")
+		if code != 1 {
+			t.Errorf("args %v: expected exit 1, got %d", args, code)
+		}
+		if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+			t.Fatalf("args %v: expected JSON envelope on stderr, got %q: %v", args, stderr.String(), err)
+		}
+		if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "INVALID_ARGUMENT" {
+			t.Fatalf("args %v: expected INVALID_ARGUMENT envelope, got %q", args, stderr.String())
+		}
+	}
+
+	// Non-numeric first/step in plain mode
+	for _, args := range [][]string{
+		{"abc", "2"},
+		{"1", "abc", "2"},
+	} {
+		stdout.Reset()
+		stderr.Reset()
+		code = run(args, nil, &stdout, &stderr, "")
+		if code != 1 {
+			t.Errorf("args %v: expected exit 1, got %d", args, code)
+		}
+		if !strings.Contains(stderr.String(), "seq: invalid argument") {
+			t.Errorf("args %v: expected plain stderr error, got %q", args, stderr.String())
+		}
 	}
 }
 

@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://goposix.dev/schemas/mkfs.minix.schema.json",
+  "title": "GoPOSIX mkfs.minix --json output",
+  "description": "Validates the complete JSON output of goposix mkfs.minix --json.",
+  "type": "object",
+  "required": [
+    "command",
+    "version",
+    "schemaVersion",
+    "exitCode",
+    "data",
+    "error"
+  ],
+  "properties": {
+    "command": {
+      "type": "string",
+      "const": "mkfs.minix"
+    },
+    "version": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "exitCode": {
+      "type": "integer"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "inodes",
+        "zones",
+        "first_data_zone",
+        "imap_blocks",
+        "zmap_blocks"
+      ],
+      "properties": {
+        "inodes": {
+          "type": "integer"
+        },
+        "zones": {
+          "type": "integer"
+        },
+        "first_data_zone": {
+          "type": "integer"
+        },
+        "imap_blocks": {
+          "type": "integer"
+        },
+        "zmap_blocks": {
+          "type": "integer"
+        }
+      }
+    },
+    "error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

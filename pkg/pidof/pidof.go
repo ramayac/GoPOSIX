@@ -33,12 +33,17 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		return common.RenderFlagError("pidof", args, err, stderr, 1)
 	}
 
+	jsonMode := flags.Has("json")
+
 	if len(flags.Positional) == 0 {
-		fmt.Fprintf(stderr, "pidof: missing operand\n")
+		if jsonMode {
+			common.RenderError("pidof", 1, "MISSING_ARGUMENT", "missing operand", true, stderr)
+		} else {
+			fmt.Fprintf(stderr, "pidof: missing operand\n")
+		}
 		return 1
 	}
 
-	jsonMode := flags.Has("json")
 	single := flags.Has("s")
 
 	// Parse omit PIDs

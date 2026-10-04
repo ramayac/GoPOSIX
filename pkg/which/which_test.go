@@ -113,3 +113,29 @@ func TestCLIJsonBadFlag(t *testing.T) {
 		t.Fatalf("expected FLAG_ERROR envelope, got %q", stderr.String())
 	}
 }
+
+func TestWhichCLIJSONMissingArg(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"--json"}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope on stderr, got %q: %v", stderr.String(), err)
+	}
+	if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "MISSING_ARGUMENT" {
+		t.Fatalf("expected MISSING_ARGUMENT envelope, got %q", stderr.String())
+	}
+}
+
+func TestWhichCLIMissingArgPlain(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := run([]string{}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "which: missing argument") {
+		t.Errorf("expected plain stderr error, got %q", stderr.String())
+	}
+}

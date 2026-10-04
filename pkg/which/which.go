@@ -76,7 +76,11 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	if len(posArgs) == 0 {
 		// POSIX says if no arguments, exit status is 0 or 1.
 		// Standard which usually prints usage or exits. Let's exit with 1.
-		fmt.Fprintf(stderr, "which: missing argument\n")
+		if jsonMode {
+			common.RenderError("which", 1, "MISSING_ARGUMENT", "missing argument", true, stderr)
+		} else {
+			fmt.Fprintf(stderr, "which: missing argument\n")
+		}
 		return 1
 	}
 

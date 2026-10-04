@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://goposix.dev/schemas/rx.schema.json",
+  "title": "GoPOSIX rx --json output",
+  "description": "Validates the complete JSON output of goposix rx --json.",
+  "type": "object",
+  "required": [
+    "command",
+    "version",
+    "schemaVersion",
+    "exitCode",
+    "data",
+    "error"
+  ],
+  "properties": {
+    "command": {
+      "type": "string",
+      "const": "rx"
+    },
+    "version": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "exitCode": {
+      "type": "integer"
+    },
+    "data": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "bytesWritten",
+            "fileName"
+          ],
+          "properties": {
+            "bytesWritten": {
+              "type": "integer"
+            },
+            "fileName": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

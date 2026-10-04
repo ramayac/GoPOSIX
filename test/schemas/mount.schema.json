@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://goposix.dev/schemas/mount.schema.json",
+  "title": "GoPOSIX mount --json output",
+  "description": "Validates the complete JSON output of goposix mount --json.",
+  "type": "object",
+  "required": [
+    "command",
+    "version",
+    "schemaVersion",
+    "exitCode",
+    "data",
+    "error"
+  ],
+  "properties": {
+    "command": {
+      "type": "string",
+      "const": "mount"
+    },
+    "version": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "exitCode": {
+      "type": "integer"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "mounts"
+      ],
+      "properties": {
+        "mounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "device",
+              "mountpoint",
+              "fstype",
+              "options"
+            ],
+            "properties": {
+              "device": {
+                "type": "string"
+              },
+              "mountpoint": {
+                "type": "string"
+              },
+              "fstype": {
+                "type": "string"
+              },
+              "options": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://goposix.dev/schemas/mdev.schema.json",
+  "title": "GoPOSIX mdev --json output",
+  "description": "Validates the complete JSON output of goposix mdev --json.",
+  "type": "object",
+  "required": [
+    "command",
+    "version",
+    "schemaVersion",
+    "exitCode",
+    "data",
+    "error"
+  ],
+  "properties": {
+    "command": {
+      "type": "string",
+      "const": "mdev"
+    },
+    "version": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "exitCode": {
+      "type": "integer"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "devices"
+      ],
+      "properties": {
+        "devices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "type",
+              "major",
+              "minor",
+              "path"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "major": {
+                "type": "integer"
+              },
+              "minor": {
+                "type": "integer"
+              },
+              "path": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

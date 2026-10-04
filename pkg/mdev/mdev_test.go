@@ -2,6 +2,7 @@ package mdev
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -39,6 +40,28 @@ func TestMdevNoArgsNoEnv(t *testing.T) {
 	rc := mdevRun([]string{}, nil, &stdout, &stderr, "/tmp")
 	if rc == 0 {
 		t.Error("expected non-zero rc when no mode and no env vars")
+	}
+}
+
+func TestMdevNoArgsNoEnvJSON(t *testing.T) {
+	os.Unsetenv("ACTION")
+	os.Unsetenv("DEVPATH")
+	os.Unsetenv("SUBSYSTEM")
+	os.Unsetenv("MAJOR")
+	os.Unsetenv("MINOR")
+	os.Unsetenv("DEVNAME")
+
+	var stdout, stderr bytes.Buffer
+	rc := mdevRun([]string{"--json"}, nil, &stdout, &stderr, "/tmp")
+	if rc != 1 {
+		t.Fatalf("expected exit 1, got %d", rc)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope on stderr, got %q: %v", stderr.String(), err)
+	}
+	if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "USAGE" {
+		t.Fatalf("expected USAGE envelope, got %q", stderr.String())
 	}
 }
 

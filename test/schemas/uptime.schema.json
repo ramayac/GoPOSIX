@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://goposix.dev/schemas/uptime.schema.json",
+  "title": "GoPOSIX uptime --json output",
+  "description": "Validates the complete JSON output of goposix uptime --json.",
+  "type": "object",
+  "required": [
+    "command",
+    "version",
+    "schemaVersion",
+    "exitCode",
+    "data",
+    "error"
+  ],
+  "properties": {
+    "command": {
+      "type": "string",
+      "const": "uptime"
+    },
+    "version": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "exitCode": {
+      "type": "integer"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "current_time",
+        "uptime",
+        "users",
+        "load_1m",
+        "load_5m",
+        "load_15m"
+      ],
+      "properties": {
+        "current_time": {
+          "type": "string"
+        },
+        "uptime": {
+          "type": "number"
+        },
+        "users": {
+          "type": "integer"
+        },
+        "load_1m": {
+          "type": "number"
+        },
+        "load_5m": {
+          "type": "number"
+        },
+        "load_15m": {
+          "type": "number"
+        }
+      }
+    },
+    "error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

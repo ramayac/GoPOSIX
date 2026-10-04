@@ -1,0 +1,1 @@
+{"command":"start-stop-daemon","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"action":"stop","matchedPids":[],"status":"nothing stopped"},"error":null}

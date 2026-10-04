@@ -147,7 +147,9 @@
 | `split` | 86.3% | — | — | ✅ |
 | `tty` | 60.0% | — | — | ✅ |
 | `who` | 84.8% | — | — | ✅ |
-| `daemon` | 82.4% | — | — | ❌ |
+| `daemon` | 82.4% | — | — | —¹ |
+
+¹ The `daemon` command manages the daemon process itself. `--json` and JSON-RPC do not apply to it (documented exemption, Phase 28 F15).
 
 ## Tier 8 — Phase 26 Tier 4 + Phase 27 (High-Complexity & Privileged)
 
@@ -185,11 +187,9 @@
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `daemon` | 82.4% | — | — | ❌ |
+| `daemon` | 82.4% | — | — | —¹ |
 
----
-
-## Summary
+¹ The `daemon` command manages the daemon process itself. `--json` and JSON-RPC do not apply to it (documented exemption, Phase 28 F15).
 
 | Suite | Count | Status |
 |-------|-------|--------|

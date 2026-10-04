@@ -115,11 +115,52 @@ func TestRxJSONMode(t *testing.T) {
 	}
 }
 
+func TestRxJSONModeError(t *testing.T) {
+	// No sender: the handshake bytes must not pollute stdout, and the
+	// error must arrive as a JSON envelope on stderr.
+	var stdout, stderr strings.Builder
+	rc := run([]string{"--json", "/tmp/rx.out"}, strings.NewReader(""), &stdout, &stderr, "")
+	if rc != 1 {
+		t.Fatalf("JSON error mode returned %d, want 1", rc)
+	}
+	if stdout.Len() != 0 {
+		t.Errorf("expected empty stdout in JSON error mode, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), `"error":{`) || !strings.Contains(stderr.String(), "RECEIVE_ERROR") {
+		t.Errorf("expected JSON error envelope on stderr, got %q", stderr.String())
+	}
+}
+
 func TestRxMissingFile(t *testing.T) {
 	var stdout, stderr strings.Builder
 	rc := run(nil, strings.NewReader(""), &stdout, &stderr, "")
 	if rc == 0 {
 		t.Fatal("expected error for missing filename")
+	}
+}
+
+func TestRxTextModeError(t *testing.T) {
+	// No sender in text mode: plain stderr message, exit 1.
+	var stdout, stderr strings.Builder
+	rc := run([]string{"/tmp/rx.out"}, strings.NewReader(""), &stdout, &stderr, "")
+	if rc != 1 {
+		t.Fatalf("expected exit 1, got %d", rc)
+	}
+	if !strings.Contains(stderr.String(), "rx: no response from sender") {
+		t.Errorf("expected plain stderr error, got %q", stderr.String())
+	}
+}
+
+func TestRxTextModeSuccess(t *testing.T) {
+	// Immediate EOT in text mode: the handshake bytes go to stdout
+	// (serial-line use), and the process exits 0.
+	var stdout, stderr strings.Builder
+	rc := run([]string{"/tmp/rx.out"}, strings.NewReader(string([]byte{EOT})), &stdout, &stderr, "")
+	if rc != 0 {
+		t.Fatalf("expected exit 0, got %d (stderr: %q)", rc, stderr.String())
+	}
+	if stdout.Len() == 0 {
+		t.Error("expected handshake bytes on stdout in text mode")
 	}
 }
 

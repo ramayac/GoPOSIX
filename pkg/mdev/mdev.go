@@ -208,7 +208,11 @@ func mdevHotplug(jsonMode bool, stdout, stderr io.Writer) int {
 
 	if devPath == "" && action == "" {
 		// No env vars: print usage hint
-		fmt.Fprintln(stderr, "mdev: use -s to scan /sys/class or -d for dry-run discovery")
+		if jsonMode {
+			common.RenderError("mdev", 1, "USAGE", "use -s to scan /sys/class or -d for dry-run discovery", true, stderr)
+		} else {
+			fmt.Fprintln(stderr, "mdev: use -s to scan /sys/class or -d for dry-run discovery")
+		}
 		return 1
 	}
 
