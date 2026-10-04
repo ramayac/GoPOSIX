@@ -25,7 +25,7 @@ jobs:
           cache: true
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
           # Built with go1.27; the project targets Go 1.26, and older
           # linter binaries (go1.24) refuse to load the config.
