@@ -1,1 +1,1 @@
-{"command":"wc","version":"dcdd733","schemaVersion":"1.0","exitCode":0,"data":{"lines":1,"words":3,"bytes":6,"chars":6},"error":null}
+{"command":"wc","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"lines":2,"words":6,"bytes":12,"chars":12,"maxLineLength":5},"error":null}

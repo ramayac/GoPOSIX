@@ -1,1 +1,1 @@
-{"command":"rmdir","version":"dcdd733","schemaVersion":"1.0","exitCode":0,"data":{"removed":["/tmp/goposix_rmdir_test"]},"error":null}
+{"command":"rmdir","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"removed":["/tmp/goposix-golden.cVsPf3/testdir"]},"error":null}

@@ -1,0 +1,1 @@
+{"command":"mkfs.minix","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"inodes":352,"zones":1000,"first_data_zone":15,"imap_blocks":1,"zmap_blocks":1},"error":null}

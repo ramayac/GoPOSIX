@@ -1,0 +1,1 @@
+{"command":"wget","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"url":"https://example.com","output_file":"../../../../tmp/goposix-golden.cVsPf3/wget.html","bytes_downloaded":577,"status_code":200},"error":null}

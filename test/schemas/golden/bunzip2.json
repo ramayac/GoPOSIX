@@ -1,0 +1,1 @@
+{"command":"bunzip2","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"files":[{"source":"f12.txt.bz2","destination":"f12.txt","bytesResult":12}]},"error":null}

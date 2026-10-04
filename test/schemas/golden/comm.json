@@ -1,0 +1,1 @@
+{"command":"comm","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"only_file1":["beta"],"only_file2":["gamma"],"both":["alpha","hello"]},"error":null}
