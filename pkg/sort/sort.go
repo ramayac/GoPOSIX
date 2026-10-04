@@ -486,8 +486,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 func sortRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "sort: %v\n", err)
-		return 2
+		return common.RenderFlagError("sort", args, err, errOut, 2)
 	}
 	jsonMode := flags.Has("json")
 	reverse := flags.Has("r")

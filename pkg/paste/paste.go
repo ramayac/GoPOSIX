@@ -130,8 +130,7 @@ func parseDelimiters(s string) []string {
 func pasteRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "paste: %v\n", err)
-		return 2
+		return common.RenderFlagError("paste", args, err, errOut, 2)
 	}
 
 	jsonMode := flags.Has("json")

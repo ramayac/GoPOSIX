@@ -66,8 +66,7 @@ func NumberLines(r io.Reader, bodyType string, startNum, width int) ([]string, N
 func nlRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, nlSpec)
 	if err != nil {
-		fmt.Fprintf(errOut, "nl: %v\n", err)
-		return 2
+		return common.RenderFlagError("nl", args, err, errOut, 2)
 	}
 	jsonMode := flags.Has("json")
 	bodyType := flags.Get("b")

@@ -119,7 +119,7 @@ against the pre-refactor binary. All four packages now at 100% coverage.
 | 1 | F1 mechanical fix: injected writers | 53 | `make test` + `make testsuite` + `go vet` | ✅ DONE (870/17/30) |
 | 2 | F2 digest consolidation + F5 signal consolidation | 8 | BusyBox suite + output parity | ✅ DONE (F2 + F5) |
 | 3 | F3 coverage drive | 4 | `make cover-pkg` ≥ 80% | ✅ DONE (whoami 100, hostname 98.2, diff 89.5, gzip 87.3) |
-| 4 | Deep audit of XL/L commands (one PR each) | 7 | per-command checklist + suites | ▶️ NEXT (prep: Codecov patch coverage 100%) |
+| 4 | Deep audit of XL/L commands (one PR each) | 7 | per-command checklist + suites | ▶️ IN PROGRESS — F8/F9/F10/F11 done on `audit/f8-f11-json-parser-core`; per-command deep audit (god functions, JSON schemas) still open |
 | 5 | Sweep of M/S commands (batched) | 87 | per-command checklist + suites | ⏳ pending |
 | 6 | Decide F6/F7 and close all open verdicts | — | matrix 100% filled | ⚠️ F6+F7 done; matrix still filling |
 
@@ -146,15 +146,15 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 
 | Command | Tier | LOC | T-LOC | Cov | BB | IO | PreAudit | Verdict | Notes |
 |---------|:----:|----:|------:|----:|:--:|:--:|:--------:|:-------:|-------|
-| `bc` | XL | 2587 | 590 | 83.7% | ✅ 81/81 | — | 5.50 | REFACTOR | F6 ✅ NewInterpreter returns error (no panic); mathLibSource seam · Preflight: `eval` 486 lines, `NextToken` 284 lines · F8 lexer helpers and F9 `big.Rat` helpers duplicated with `dc` · no JSON schema or daemon test · `--json` ignored on flag errors |
-| `sed` | L | 1181 | 1060 | 80.1% | ✅ 103/103 | — | 3.75 | IMPROVE | Preflight: `parseInstruction` 266 lines, `execFlat` 184 lines · F8 lexer cursor · coverage 80.1% is the lowest of the large tools · `--json` ignored on flag errors |
-| `printf` | L | 749 | 744 | 83.7% | ✅ 26/26 | — | 3.75 | IMPROVE | Preflight: `processEscapes` (88 lines) and `processEscapesForB` (77 lines) are near-duplicates (F11) · `--json` ignored on flag errors |
+| `bc` | XL | 2587 | 590 | 83.7% | ✅ 81/81 | — | 5.50 | IMPROVE | F6 ✅ NewInterpreter returns error (no panic); mathLibSource seam · F8 ✅ `peek`/`next` cursor shared with `testcmd` (token cursor); F9 ✅ `RatToInt64`/`RatTruncate` moved to `pkg/common/rat.go` · F10 ✅ flag errors honour `--json` · Preflight open: `eval` 486 lines, `NextToken` 284 lines · no JSON schema or daemon test |
+| `sed` | L | 1181 | 1060 | 80.1% | ✅ 103/103 | — | 3.75 | IMPROVE | Preflight: `parseInstruction` 266 lines, `execFlat` 184 lines · F10 ✅ flag errors honour `--json` · coverage 80.1% is the lowest of the large tools |
+| `printf` | L | 749 | 744 | 83.7% | ✅ 26/26 | — | 3.75 | KEEP ✅ | F11 ✅ `processEscapes`/`processEscapesForB` now wrap `common.ExpandEscapes` · F10 ✅ flag errors honour `--json` · Preflight: no other open items |
 | `date` | L | 746 | 661 | 83.8% | ✅ 7/7 | — | 3.75 | IMPROVE | Preflight: `parsePOSIXTZ` is a 263-line closure nest · lift the inner funcs for testability · `--json` ignored on flag errors |
 | `patch` | M | 600 | 381 | 82.1% | ✅ 11/11 | — | 3.75 | IMPROVE | Preflight: `Run` 120 lines · `--json` ignored on flag errors |
 | `mount` | S | 317 | 178 | 80.6% | ⚠️ 0/1 (1 skip) | — | 3.75 | KEEP | Preflight: small and clean, `mountRun` is injectable · all BusyBox cases need root · no JSON schema or daemon test |
 | `tar` | L | 1114 | 1537 | 82.3% | ✅ 31/31 | — | 3.50 | IMPROVE | Preflight: `extractArchiveStream` 196 lines, `createArchiveStream` 183 lines · `--json` ignored on flag errors · BusyBox 33/33 isolated |
 | `hexdump` | M | 562 | 236 | 84.7% | ✅ 3/3 | — | 3.50 | IMPROVE | Preflight: `Run` 202 lines · thin tests (T-LOC/LOC 0.42) · no JSON schema or daemon test · `--json` ignored on flag errors |
-| `dc` | L | 1149 | 628 | 89.0% | ✅ 36/36 | — | 3.25 | REFACTOR | Preflight: `evalDC` is a 569-line god function · F9 `big.Rat` helpers duplicated with `bc` · no JSON schema · `--json` ignored on flag errors · BusyBox 36/36 |
+| `dc` | L | 1149 | 628 | 89.0% | ✅ 36/36 | — | 3.25 | IMPROVE | Preflight: `evalDC` is a 569-line god function · F9 ✅ `RatToInt64`/`RatTruncate` moved to `pkg/common/rat.go` · F10 ✅ flag errors honour `--json` · no JSON schema · BusyBox 36/36 |
 | `start-stop-daemon` | M | 366 | 242 | 80.7% | ✅ 4/4 | — | 3.25 | IMPROVE | F5 ✅ · Preflight: `run` 237 lines · no JSON schema · BusyBox 4/4 |
 | `unzip` | M | 458 | 403 | 80.5% | ✅ 4/4 | — | 3.00 | IMPROVE | Preflight: `run` 341 lines (god function) · no JSON schema |
 | `cpio` | M | 456 | 449 | 82.0% | ✅ 2/9 (7 skip) | — | 3.00 | KEEP | Preflight: balanced helpers, no duplication found · 7 of 9 BusyBox cases are root skips · no JSON schema |
@@ -177,7 +177,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `expand` | S | 122 | 149 | 81.4% | ✅ 3/3 | — | 2.25 | KEEP | Preflight: clean, 122 lines · schema and daemon test present |
 | `sort` | M | 653 | 537 | 86.2% | ✅ 27/27 | — | 2.00 | IMPROVE | Preflight: exported `Run` takes unexported types (`lineItem`, `keySpec`), so it is unusable as an API · schema and daemon test present |
 | `od` | M | 522 | 443 | 85.3% | ✅ 4/4 | — | 2.00 | KEEP | Preflight: balanced; `Run` 65 lines · schema and daemon test present |
-| `expr` | M | 446 | 397 | 87.1% | ✅ 2/2 | — | 2.00 | IMPROVE | Preflight: parser helpers duplicated with `bc` and `testcmd` (F8) · schema and daemon test present |
+| `expr` | M | 446 | 397 | 87.1% | ✅ 2/2 | — | 2.00 | KEEP ✅ | F8 ✅ `peek`/`next`/`done` now use `common.TokenCursor` · F10 ✅ flag errors honour `--json` · schema and daemon test present |
 | `ls` | M | 443 | 377 | 88.6% | ✅ 5/5 | — | 2.00 | IMPROVE | Preflight: `humanSize` duplicates `du`'s with a different format · schema and daemon test present |
 | `cal` | S | 348 | 144 | 85.8% | ✅ 1/1 | — | 2.00 | IMPROVE | Preflight: daemon test present but no JSON schema · `RenderMonth` 118 lines |
 | `uuencode` | S | 251 | 134 | 88.3% | ✅ 19/19 | — | 2.00 | IMPROVE | Preflight: `run` 167 lines · daemon test present but no JSON schema · flag errors honour `--json` |
@@ -186,7 +186,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `uname` | S | 152 | 69 | 93.0% | — | — | 1.75 | KEEP | Preflight: clean; platform-split `Run()` in uname_linux.go/uname_darwin.go · schema and daemon test present |
 | `which` | S | 126 | 96 | 86.0% | ✅ 1/1 | — | 1.75 | IMPROVE | Preflight: no JSON schema · small and clean otherwise |
 | `daemon` | S | 54 | 86 | 94.1% | — | — | 1.75 | KEEP | Preflight: daemon control command; `--json` and JSON-RPC do not apply |
-| `testcmd` | M | 410 | 625 | 92.8% | — | — | 1.50 | IMPROVE | Preflight: `--json` works and the daemon test asserts the bool result; schema is `test.schema.json` · F8 parser helpers |
+| `testcmd` | M | 410 | 625 | 92.8% | — | — | 1.50 | KEEP ✅ | F8 ✅ `peek`/`next`/`done` now use `common.TokenCursor` · F10 ✅ flag errors honour `--json` · `--json` works and the daemon test asserts the bool result; schema is `test.schema.json` |
 | `factor` | S | 346 | 165 | 93.9% | ✅ 13/13 | — | 1.50 | IMPROVE | Preflight: daemon test present but no JSON schema · flag errors honour `--json` |
 | `wc` | S | 311 | 274 | 88.6% | ✅ 5/5 | — | 1.50 | KEEP | Preflight: clean; `CountProper` 93 lines · schema and daemon test present |
 | `join` | S | 304 | 314 | 89.7% | — | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
@@ -224,7 +224,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `cp` | S | 329 | 460 | 90.7% | ✅ 14/14 | — | 0.75 | KEEP | Preflight: clean; `run` 124 lines · schema and daemon test present |
 | `fold` | S | 250 | 469 | 91.8% | ✅ 4/4 | — | 0.75 | KEEP | Preflight: clean and small · schema and daemon test present |
 | `head` | S | 210 | 528 | 94.3% | ✅ 4/4 | — | 0.75 | KEEP | Preflight: clean; `headRun` 108 lines · schema and daemon test present |
-| `echo` | S | 194 | 258 | 97.8% | ✅ 11/11 | — | 0.75 | IMPROVE | Preflight: `processEscapes` (92 lines) duplicates `printf`'s escape logic (F11) · schema and daemon test present |
+| `echo` | S | 194 | 258 | 97.8% | ✅ 11/11 | — | 0.75 | KEEP ✅ | F11 ✅ `processEscapes` now wraps `common.ExpandEscapes` · schema and daemon test present |
 | `realpath` | S | 188 | 211 | 94.7% | ✅ 10/10 | — | 0.75 | IMPROVE | Preflight: no JSON schema · `resolvePathFlags` 95 lines |
 | `hostid` | S | 160 | 284 | 96.3% | ✅ 1/1 | — | 0.75 | IMPROVE | Preflight: no JSON schema · small and clean otherwise |
 | `strings` | S | 152 | 223 | 91.5% | ✅ 1/1 | — | 0.75 | KEEP | Preflight: clean; `stringsRun` 70 lines · schema and daemon test present |
@@ -304,28 +304,51 @@ not from the code).
 
 ### 5b. Preflight Findings
 
-#### F8 — Hand-rolled parser helpers duplicated across 4 packages ⏳ OPEN
+#### F8 — Hand-rolled parser helpers duplicated across 4 packages ✅ DONE
 `bc`, `expr`, `sed`, and `testcmd` each define `peek`, `next`, `parseOr`, `parseAnd`, and
 `parsePrimary`. The lexer and operator-precedence logic is repeated in all four. This is the
 highest-value structural item the preflight found. Move the logic to a shared expression core in
 [pkg/common](../pkg/common).
 
-#### F9 — `big.Rat` helpers duplicated between `bc` and `dc` ⏳ OPEN
+**Resolution:** new [pkg/common/cursor.go](../pkg/common/cursor.go) provides `TokenCursor`
+(`Peek`/`Next`/`Done`/`Lookahead`/`Has`). `expr` and `testcmd` now embed it. `bc` and `sed`
+keep their local cursors: they walk different token types (`Token` and byte) with different
+grammars, so a shared cursor would not reduce duplication there. The `parseOr`/`parseAnd`/
+`parsePrimary` chains differ in token type and semantics, so they stay per-package.
+
+#### F9 — `big.Rat` helpers duplicated between `bc` and `dc` ✅ DONE
 `ratToInt64`, `truncateRat`, and `formatRat` exist in both [pkg/bc](../pkg/bc) and
 [pkg/dc](../pkg/dc), with the same truncate-toward-zero semantics. Move them to one core, for
 example `pkg/common/rat.go`. This finding sets the verdict for both commands.
 
-#### F10 — The JSON contract breaks on flag-parse errors in 83 of 93 commands ⏳ OPEN
+**Resolution:** new [pkg/common/rat.go](../pkg/common/rat.go) provides `RatToInt64` and
+`RatTruncate`. Both packages call them; the local copies are deleted. `formatRat` stays
+per-package: `bc` supports non-decimal output bases and `forceNeg`, `dc` supports `negZero`
+and per-number fractional digits, so their formatters are not interchangeable.
+
+#### F10 — The JSON contract breaks on flag-parse errors in 83 of 93 commands ✅ DONE
 `--json` must return the JSON envelope. A bad flag is detected before `jsonMode` is known, so a
 command must pre-scan the arguments. Only 10 packages do. The other 83 print plain text.
 For example, `goposix unzip --json --nope` returns the JSON envelope, but
 `goposix tsort --json --nope` returns `tsort: unknown flag: --nope`. Add the pre-scan and the
 flag-error block to [pkg/common](../pkg/common) and use it in every command.
 
-#### F11 — Escape-sequence logic is duplicated three times ⏳ OPEN
+**Resolution:** new `common.HasJSONFlag` and `common.RenderFlagError` in
+[pkg/common/flagerr.go](../pkg/common/flagerr.go). `RenderFlagError(name, args, err, errOut,
+exitCode)` pre-scans `--json`, writes the JSON error envelope (code `FLAG_ERROR`) when set,
+and writes a plain `<name>: <message>` line otherwise; the caller supplies the historical exit
+code. All 93 `ParseFlags` call sites in `pkg/` now use it, including `date` (keeps the BusyBox
+banner in the plain path), `gzip` (`cmdName`), and the shared digest/decompress cores.
+
+#### F11 — Escape-sequence logic is duplicated three times ✅ DONE
 [pkg/printf/printf.go](../pkg/printf/printf.go) holds two near-identical processors
 (`processEscapes`, 88 lines, and `processEscapesForB`, 77 lines). [pkg/echo](../pkg/echo) holds a
 third copy. Merge them into one helper with a `\c` option.
+
+**Resolution:** new `common.ExpandEscapes(s, mode)` in
+[pkg/common/escape.go](../pkg/common/escape.go). `EscapeFormat` is the printf format-string
+semantics (`\0NNN` octal, `\c` passed through); `EscapeArg` is the echo -e / printf `%b`
+semantics (bare `\0` = NUL, `\1`–`\7` octal). `printf` and `echo` now wrap this helper.
 
 #### F12 — 39 commands have no published JSON schema ⏳ OPEN
 [wiki/json_schema.md](json_schema.md) requires a schema for every `--json` utility. 39 of the 115

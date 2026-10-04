@@ -27,7 +27,7 @@ func Evaluate(tokens []string) (bool, error) {
 	if len(tokens) == 0 {
 		return false, nil // no args = false
 	}
-	p := &testParser{tokens: tokens}
+	p := &testParser{TokenCursor: common.NewTokenCursor(tokens)}
 	result, err := p.parseExpr()
 	if err != nil {
 		return false, err
@@ -39,26 +39,12 @@ func Evaluate(tokens []string) (bool, error) {
 }
 
 type testParser struct {
-	tokens []string
-	pos    int
+	*common.TokenCursor
 }
 
-func (p *testParser) peek() string {
-	if p.pos >= len(p.tokens) {
-		return ""
-	}
-	return p.tokens[p.pos]
-}
-
-func (p *testParser) next() string {
-	tok := p.peek()
-	p.pos++
-	return tok
-}
-
-func (p *testParser) done() bool {
-	return p.pos >= len(p.tokens)
-}
+func (p *testParser) peek() string { return p.Peek() }
+func (p *testParser) next() string { return p.Next() }
+func (p *testParser) done() bool   { return p.Done() }
 
 // Grammar:
 //   expr     → orExpr
@@ -107,7 +93,7 @@ func (p *testParser) parseNot() (bool, error) {
 	if p.peek() == "!" {
 		// If '!' is followed by a binary operator, it's a string literal,
 		// not the NOT operator. E.g., "test '!' = '!'" should compare strings.
-		if p.pos+1 < len(p.tokens) && isBinaryOp(p.tokens[p.pos+1]) {
+		if p.Has(1) && isBinaryOp(p.Lookahead(1)) {
 			return p.parsePrimary()
 		}
 		p.next()
@@ -136,7 +122,7 @@ func (p *testParser) parsePrimary() (bool, error) {
 	// Parenthesized expression — but only if '(' is NOT followed by a binary
 	// operator (i.e., "test '(' = '('" should compare strings).
 	if tok == "(" {
-		if p.pos+1 < len(p.tokens) && isBinaryOp(p.tokens[p.pos+1]) {
+		if p.Has(1) && isBinaryOp(p.Lookahead(1)) {
 			// '(' is a string literal, fall through to bare string handling
 		} else {
 			p.next()
@@ -157,8 +143,8 @@ func (p *testParser) parsePrimary() (bool, error) {
 	// as a non-empty string (true). E.g., "test -f" → true.
 	if isUnaryOp(tok) {
 		// Look ahead: is there an argument, and is the next token NOT a binary op?
-		hasArg := p.pos+1 < len(p.tokens)
-		nextIsBinary := hasArg && isBinaryOp(p.tokens[p.pos+1])
+		hasArg := p.Has(1)
+		nextIsBinary := hasArg && isBinaryOp(p.Lookahead(1))
 		if hasArg && !nextIsBinary {
 			p.next()
 			arg := p.next()

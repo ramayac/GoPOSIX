@@ -179,8 +179,7 @@ func evalSymlinksUnder(base, relPath string) (string, bool) {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "readlink: %v\n", err)
-		return 2
+		return common.RenderFlagError("readlink", args, err, stderr, 2)
 	}
 	jsonMode := flags.Has("json")
 	if len(flags.Positional) == 0 {

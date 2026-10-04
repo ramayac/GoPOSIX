@@ -306,8 +306,7 @@ func printLong(stdout io.Writer, fi FileInfo, showInode, showBlocks, humanReadab
 func lsRun(args []string, out, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "ls: %v\n", err)
-		return 2
+		return common.RenderFlagError("ls", args, err, errOut, 2)
 	}
 	jsonMode := flags.Has("json")
 	showAll := flags.Has("a")

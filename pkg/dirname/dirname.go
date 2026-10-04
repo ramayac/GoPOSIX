@@ -29,8 +29,7 @@ func Run(path string) DirnameResult {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "dirname: %v\n", err)
-		return 2
+		return common.RenderFlagError("dirname", args, err, stderr, 2)
 	}
 	if len(flags.Positional) == 0 {
 		fmt.Fprintln(stderr, "dirname: missing operand")

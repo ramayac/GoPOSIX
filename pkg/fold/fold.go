@@ -182,8 +182,7 @@ func foldLineRunes(line string, width int, spaceBreak bool) []byte {
 func foldRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "fold: %v\n", err)
-		return 2
+		return common.RenderFlagError("fold", args, err, errOut, 2)
 	}
 
 	jsonMode := flags.Has("json")

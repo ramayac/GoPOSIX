@@ -190,8 +190,7 @@ func splitLines(s string) []string {
 func unexpandRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "unexpand: %v\n", err)
-		return 2
+		return common.RenderFlagError("unexpand", args, err, errOut, 2)
 	}
 
 	jsonMode := flags.Has("json")

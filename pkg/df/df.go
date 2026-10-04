@@ -27,8 +27,7 @@ type FSInfo struct {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "df: %v\n", err)
-		return 1
+		return common.RenderFlagError("df", args, err, stderr, 1)
 	}
 
 	path := "/"

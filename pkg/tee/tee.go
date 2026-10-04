@@ -42,8 +42,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 func teeRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "tee: %v\n", err)
-		return 2
+		return common.RenderFlagError("tee", args, err, errOut, 2)
 	}
 	appendMode := flags.Has("a")
 	jsonMode := flags.Has("json")

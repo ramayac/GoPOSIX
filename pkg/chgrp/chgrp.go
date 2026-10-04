@@ -29,8 +29,7 @@ type ChgrpResp struct {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "chgrp: %v\n", err)
-		return 1
+		return common.RenderFlagError("chgrp", args, err, stderr, 1)
 	}
 
 	if len(flags.Positional) < 2 {

@@ -1539,9 +1539,9 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 		case *VarExpr:
 			switch lhs.Name {
 			case "scale":
-				ip.Scale = int(ratToInt64(rhsVal.Rat))
+				ip.Scale = int(common.RatToInt64(rhsVal.Rat))
 			case "ibase":
-				ip.Ibase = int(ratToInt64(rhsVal.Rat))
+				ip.Ibase = int(common.RatToInt64(rhsVal.Rat))
 				if ip.Ibase < 2 {
 					ip.Ibase = 2
 				}
@@ -1549,7 +1549,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 					ip.Ibase = 36
 				}
 			case "obase":
-				ip.Obase = int(ratToInt64(rhsVal.Rat))
+				ip.Obase = int(common.RatToInt64(rhsVal.Rat))
 			case "last":
 				ip.Last = rhsVal
 			default:
@@ -1608,7 +1608,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			if resScale > limit {
 				resScale = limit
 			}
-			res = truncateRat(res, resScale)
+			res = common.RatTruncate(res, resScale)
 			if res.Sign() == 0 {
 				resScale = 0
 			}
@@ -1618,7 +1618,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			}
 			res.Quo(lhsVal.Rat, rhsVal.Rat)
 			resScale = ip.Scale
-			res = truncateRat(res, resScale)
+			res = common.RatTruncate(res, resScale)
 			if res.Sign() == 0 {
 				resScale = 0
 			}
@@ -1627,7 +1627,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 				return newValVoid(), fmt.Errorf("modulo by zero")
 			}
 			div := big.NewRat(0, 1).Quo(lhsVal.Rat, rhsVal.Rat)
-			divTruncated := truncateRat(div, ip.Scale)
+			divTruncated := common.RatTruncate(div, ip.Scale)
 			term := big.NewRat(0, 1).Mul(rhsVal.Rat, divTruncated)
 			res.Sub(lhsVal.Rat, term)
 
@@ -1635,12 +1635,12 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 			if lhsVal.Scale > resScale {
 				resScale = lhsVal.Scale
 			}
-			res = truncateRat(res, resScale)
+			res = common.RatTruncate(res, resScale)
 			if res.Sign() == 0 {
 				resScale = 0
 			}
 		case TokPower:
-			exponent := ratToInt64(rhsVal.Rat)
+			exponent := common.RatToInt64(rhsVal.Rat)
 			res = ratPower(lhsVal.Rat, exponent)
 
 			if res.Sign() == 0 {
@@ -1657,7 +1657,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 					resScale = limit
 				}
 			}
-			res = truncateRat(res, resScale)
+			res = common.RatTruncate(res, resScale)
 			if res.Sign() == 0 {
 				resScale = 0
 			}
@@ -1736,9 +1736,9 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 				nextVal := newValNum(next, 0)
 				switch varName {
 				case "scale":
-					ip.Scale = int(ratToInt64(next))
+					ip.Scale = int(common.RatToInt64(next))
 				case "ibase":
-					v := int(ratToInt64(next))
+					v := int(common.RatToInt64(next))
 					if v < 2 {
 						v = 2
 					}
@@ -1747,7 +1747,7 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 					}
 					ip.Ibase = v
 				case "obase":
-					ip.Obase = int(ratToInt64(next))
+					ip.Obase = int(common.RatToInt64(next))
 				case "last":
 					ip.Last = nextVal
 				}
@@ -1964,12 +1964,6 @@ func (ip *Interpreter) eval(expr Expr) (Val, error) {
 	}
 
 	return newValVoid(), nil
-}
-
-func ratToInt64(r *big.Rat) int64 {
-	// Quo truncates toward zero, matching bc's integer truncation semantics
-	intPart := big.NewInt(0).Quo(r.Num(), r.Denom())
-	return intPart.Int64()
 }
 
 func ratPower(r *big.Rat, exponent int64) *big.Rat {
@@ -2319,27 +2313,6 @@ func idxString(r *big.Rat) string {
 	return idxInt.String()
 }
 
-func truncateRat(r *big.Rat, scale int) *big.Rat {
-	if scale < 0 {
-		scale = 0
-	}
-	factor := big.NewInt(1)
-	ten := big.NewInt(10)
-	for i := 0; i < scale; i++ {
-		factor.Mul(factor, ten)
-	}
-
-	temp := big.NewRat(0, 1).Mul(r, big.NewRat(0, 1).SetInt(factor))
-
-	num := temp.Num()
-	denom := temp.Denom()
-	// Use Quo (truncation toward zero) not Div (floor toward -infinity)
-	intPart := big.NewInt(0).Quo(num, denom)
-
-	res := big.NewRat(0, 1).SetFrac(intPart, factor)
-	return res
-}
-
 func Run(program io.Reader, stdin io.Reader, w io.Writer, mathLib bool) error {
 	// Read entire input from program
 	var buf bytes.Buffer
@@ -2365,8 +2338,7 @@ func Run(program io.Reader, stdin io.Reader, w io.Writer, mathLib bool) error {
 func bcRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "bc: %v\n", err)
-		return 2
+		return common.RenderFlagError("bc", args, err, errOut, 2)
 	}
 
 	mathLib := flags.Has("l")

@@ -187,6 +187,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	flags, err := common.ParseFlags(rawArgs, spec)
 	if err != nil {
+		if common.HasJSONFlag(args) {
+			return common.RenderFlagError("date", args, err, stderr, 1)
+		}
 		fmt.Fprintln(stderr, "BusyBox v1.36.1-goposix multi-call binary")
 		fmt.Fprintf(stderr, "date: %v\n", err)
 		return 1

@@ -9,7 +9,6 @@ package echo
 import (
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 
 	"github.com/ramayac/goposix/internal/dispatch"
@@ -32,91 +31,7 @@ func Run(noNewline, escape bool, words []string) EchoResult {
 
 // processEscapes expands \n, \t, \\, \NNN (octal), etc. like echo -e.
 func processEscapes(s string) string {
-	var sb strings.Builder
-	for i := 0; i < len(s); i++ {
-		if s[i] == '\\' && i+1 < len(s) {
-			i++
-			c := s[i]
-			switch c {
-			case 'n':
-				sb.WriteByte('\n')
-			case 't':
-				sb.WriteByte('\t')
-			case 'r':
-				sb.WriteByte('\r')
-			case '\\':
-				sb.WriteByte('\\')
-			case 'a':
-				sb.WriteByte('\a')
-			case 'b':
-				sb.WriteByte('\b')
-			case 'v':
-				sb.WriteByte('\v')
-			case 'x':
-				// hex
-				if i+1 < len(s) {
-					hex := 0
-					j := i + 1
-					for ; j < len(s) && j < i+3; j++ {
-						h := s[j]
-						if h >= '0' && h <= '9' {
-							hex = hex*16 + int(h-'0')
-						} else if h >= 'a' && h <= 'f' {
-							hex = hex*16 + int(h-'a'+10)
-						} else if h >= 'A' && h <= 'F' {
-							hex = hex*16 + int(h-'A'+10)
-						} else {
-							break
-						}
-					}
-					if j > i+1 {
-						sb.WriteByte(byte(hex))
-						i = j - 1
-					} else {
-						sb.WriteByte('\\')
-						sb.WriteByte('x')
-					}
-				} else {
-					sb.WriteByte('\\')
-					sb.WriteByte('x')
-				}
-			default:
-				// Handle octal escape: \NNN where N is 0-7 (1-3 digits).
-				// \0 is special: the 0 is a marker, digits start after it.
-				// \1-\7: the digit IS the first octal digit.
-				if c == '0' {
-					// \0: consume up to 3 octal digits starting from i+1.
-					start := i + 1
-					end := start
-					for end < len(s) && end < start+3 && s[end] >= '0' && s[end] <= '7' {
-						end++
-					}
-					if end > start {
-						oct, _ := strconv.ParseUint(s[start:end], 8, 8)
-						sb.WriteByte(byte(oct))
-						i = end - 1
-					} else {
-						sb.WriteByte(0)
-					}
-				} else if c >= '1' && c <= '7' {
-					oct := int(c - '0')
-					j := i + 1
-					for ; j < len(s) && j < i+3 && s[j] >= '0' && s[j] <= '7'; j++ {
-						oct = oct*8 + int(s[j]-'0')
-					}
-					sb.WriteByte(byte(oct))
-					i = j - 1
-				} else {
-					// Unknown escape: preserve backslash + char
-					sb.WriteByte('\\')
-					sb.WriteByte(c)
-				}
-			}
-		} else {
-			sb.WriteByte(s[i])
-		}
-	}
-	return sb.String()
+	return common.ExpandEscapes(s, common.EscapeArg)
 }
 
 // parseEchoFlags manually extracts echo-specific flags from the start of args.
