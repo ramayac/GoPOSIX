@@ -1,1 +1,1 @@
-{"command":"unlink","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"removed":"/tmp/goposix-golden.cVsPf3/testlink"},"error":null}
+{"command":"unlink","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":{"removed":"/tmp/goposix-golden.iaOQAL/testlink"},"error":null}

@@ -1,1 +1,1 @@
-{"command":"hexdump","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"lines":["0000000 6568 6c6c 006f","0000005"]},"error":null}
+{"command":"hexdump","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":{"lines":["0000000 6568 6c6c 006f","0000005"]},"error":null}

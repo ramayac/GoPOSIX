@@ -1,13 +1,13 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-10-03 | **Utilities:** 115 | **Coverage:** 87.6% | **BusyBox:** 871/16/30 (98.2%) | **JSON-RPC Daemon:** 115/115 (100.0%)
+> **Last updated:** 2026-10-04 | **Utilities:** 115 | **Coverage:** 88.1% | **BusyBox:** 870/17/30 (98.1%) | **JSON-RPC Daemon:** 115/115 (100.0%)
 
 This document serves as the live registry of remaining work, active plans, and known limitations in GoPOSIX.
 
 ---
 
 > 📊 **Per-utility status** → **[wiki/test_coverage_matrix.md](test_coverage_matrix.md)**
-> 🔍 **Command audit plan (PAUSED — see section below)** → **[wiki/28_posix_command_audit.md](28_posix_command_audit.md)**
+> 🔍 **Command audit plan (ACTIVE — PR #47 in review)** → **[wiki/28_posix_command_audit.md](28_posix_command_audit.md)**
 > 🛡️ **Hardening V results** → **[wiki/hardening.md](hardening.md)**
 > ⚡ **Performance opportunities** → **[wiki/performance.md](performance.md)**
 > ✅ **Completed changelog** → **[wiki/log.md](log.md)**
@@ -15,9 +15,10 @@ This document serves as the live registry of remaining work, active plans, and k
 
 ---
 
-## 🟡 Phase 28 — POSIX Command Audit (paused 2026-10-03)
+## 🟡 Phase 28 — POSIX Command Audit (active)
 
-Work stopped after the repository-level phases. The per-tool deep audit continues later.
+All numbered findings are resolved. PR #47 (draft, `audit/whatsleft`) closes F16, P1, P2, P4
+and is in review. The per-tool deep audit continues after it merges.
 
 ### ✅ Done — phases 0–3, all findings F1–F7 resolved
 
@@ -37,28 +38,35 @@ Verification at stop: 100% patch coverage, overall coverage 87.6%, BusyBox 871/1
 
 | Finding | Result |
 |---------|--------|
-| F12 | 37 new schemas in [test/schemas/](../test/schemas/) with golden fixtures. `dd` and `daemon` are documented exemptions. `make validate-schemas` now reports 114 passed, 0 failed, 0 skipped. |
+| F12 | 37 new schemas in [test/schemas/](../test/schemas/) with golden fixtures. `dd` and `daemon` are documented exemptions. `make validate-schemas` reports 0 skipped (115 passed since PR #47 added the `gunzip` schema). |
 | F15 | `shell` parses `--json` in inline, file, and pipe modes; the daemon test asserts the envelope. `dd` remains the documented exception. |
 | Daemon tests | New [test/posix-json/tier9_json_contract_test.go](../test/posix-json/tier9_json_contract_test.go) covers `bc`, `mount`, `hexdump`, `makedevs`, `mdev`, `mkfs.minix`, `wget`, `xxd`, `rx`, `shell`. |
 | JSON error paths | `wget`, `which`, `seq`, `pidof`, `mdev`, `rx`, `shell` now honour `--json` on usage errors (see §5d.1 of the plan). |
 | P7 | `gen_golden.sh` fixed (`set -u` bug, `%b` escapes, absolute paths) and extended for all 38 new fixtures. `pkg/who` now emits `users: []` instead of `null`. |
 
-### ▶️ Next when work resumes — Phase 4: deep audit of 7 XL/L commands
+### ✅ Done — open findings F16, P1, P2, P4 (PR #47, `audit/whatsleft`, in review)
 
-The plan preflight corrected the XL/L scope to 7 commands (non-test LOC ≥ 700):
-`bc` (score 5.50), `sed` (3.75), `printf`, `date`, `tar`, `dc`, `diff`.
-Work one PR per command, ordered by the `PreAudit` score in
-[wiki/28_posix_command_audit.md](28_posix_command_audit.md). After that: Phase 5 sweeps the M/S commands.
+| Finding | Result |
+|---------|--------|
+| F16 | JSON stdout modes embed the payload as base64 `content` inside the envelope (F7 decompress core, `pkg/gzip`, `cpio -o` without `-F`). Text mode unchanged. Schemas for the six tools plus the new `gunzip` schema gained the optional `content` field. |
+| P1 | `logger.Run` takes the injected `errOut io.Writer`; the package-global `stderrWriter` and the swap logic are deleted. Coverage 98.5%. |
+| P2 | All 115 coverage cells in [wiki/test_coverage_matrix.md](test_coverage_matrix.md) refreshed from a `go test -cover` run (84 rows changed). Overall coverage 88.1%. |
+| P4 | The harness builds the applet links in a per-run `mktemp -d` (removed on exit) and uses `.tmpdir.$applet.$$`. The tracked `runtest-tempdir-links/` tree is deleted from the repo. Verified with concurrent same-applet runs: zero failures. |
+
+### ▶️ Next — Phase 4: deep audit of the XL/L commands
+
+One PR per command, ordered by the `PreAudit` score:
+`bc` (5.50) → `sed` (3.75) → `date` (3.75) → `tar` (3.50) → `dc` (3.25) → `diff` (2.25).
+`printf` is done (`KEEP ✅`). See plan §6 in
+[wiki/28_posix_command_audit.md](28_posix_command_audit.md).
 
 ### ⏳ Open audit items
 
 | Item | What |
 |------|------|
-| F8 | Hand-rolled parser helpers duplicated across `bc`, `expr`, `sed`, `testcmd`. Move to a shared expression core in `pkg/common`. |
-| P1 | `logger` keeps a package-global `stderrWriter`. Replace with an injected writer (daemon safety, audit item 10). |
-| P2 | [wiki/test_coverage_matrix.md](test_coverage_matrix.md) is stale (e.g. `chmod` 68.3% vs 92.7% measured). Refresh from the tree. |
-| P4 | Two `make testsuite` runs in the same checkout corrupt each other (shared `runtest-tempdir-links`). Re-run an applet alone before reporting a regression. |
-| README | Add the Phase 28 link after PR #43 merges. |
+| PR #47 | Draft in review — closes F16, P1, P2, P4. Merge after review. |
+| Phase 4 | Deep audit of 6 commands: `bc`, `sed`, `date`, `tar`, `dc`, `diff`. |
+| Phase 5 | 13 open verdicts: `grep` (REFACTOR), `patch`, `hexdump`, `start-stop-daemon`, `unzip`, `uudecode`, `wget`, `xxd`, `sort`, `uuencode`, `taskset`, `rx`, `xargs`. |
 
 ---
 

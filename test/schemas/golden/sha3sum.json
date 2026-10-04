@@ -1,1 +1,1 @@
-{"command":"sha3sum","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":[{"file":"/tmp/goposix-golden.cVsPf3/f12.txt","hash":"7eda3e8d26f147821a258850956f9ed640fb0b3a8a04ae56a2f58a32","algorithm":"sha3-224"}],"error":null}
+{"command":"sha3sum","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":[{"file":"/tmp/goposix-golden.iaOQAL/f12.txt","hash":"7eda3e8d26f147821a258850956f9ed640fb0b3a8a04ae56a2f58a32","algorithm":"sha3-224"}],"error":null}

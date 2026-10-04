@@ -1,1 +1,1 @@
-{"command":"patch","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"file":"/tmp/goposix-golden.cVsPf3/data2.txt","applied":1,"rejected":0},"error":null}
+{"command":"patch","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":{"file":"/tmp/goposix-golden.iaOQAL/data2.txt","applied":1,"rejected":0},"error":null}

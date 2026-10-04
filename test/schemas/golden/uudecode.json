@@ -1,1 +1,1 @@
-{"command":"uudecode","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"source":"/tmp/goposix-golden.cVsPf3/enc.uue","destination":"/tmp/goposix-golden.cVsPf3/dec.txt","bytesDecoded":12},"error":null}
+{"command":"uudecode","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":{"source":"/tmp/goposix-golden.iaOQAL/enc.uue","destination":"/tmp/goposix-golden.iaOQAL/dec.txt","bytesDecoded":12},"error":null}

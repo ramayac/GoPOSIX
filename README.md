@@ -4,7 +4,7 @@ A Go-native, single-binary POSIX userland with 115 tools. Runs as a persistent J
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ramayac/goposix.svg)](https://pkg.go.dev/github.com/ramayac/goposix)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ramayac/goposix)](https://goreportcard.com/report/github.com/ramayac/goposix)
+[![golangci-lint](https://github.com/ramayac/goposix/actions/workflows/lint.yml/badge.svg)](https://golangci-lint.run/)
 [![codecov](https://codecov.io/gh/ramayac/goposix/graph/badge.svg)](https://codecov.io/gh/ramayac/goposix)
 [![Go Version](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go)](https://go.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -123,6 +123,7 @@ Every command response also includes a `stderr` field with human-readable error 
 - [Security Model](wiki/security.md)
 - [JSON Schema](wiki/json_schema.md) — `--json` output schemas for every utility
 - [Test Coverage & Compliance Matrix](wiki/test_coverage_matrix.md) — 871/917 (98.2%) BusyBox pass rate
+- [POSIX Command Audit Plan](wiki/28_posix_command_audit.md) — Phase 28 audit plan, matrix, and remaining work
 - [POSIX FAQ](wiki/posix_faq.md)
 - [Performance Quick Reference](wiki/performance.md)
 

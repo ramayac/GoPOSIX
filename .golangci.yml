@@ -1,0 +1,18 @@
+# golangci-lint configuration for GoPOSIX (v2 format).
+# See https://golangci-lint.run/ for the full reference.
+
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  # errcheck is deferred. The code has many pre-existing unchecked errors.
+  enable:
+    - govet
+    - ineffassign
+    - staticcheck
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

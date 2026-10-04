@@ -1,1 +1,1 @@
-{"command":"uptime","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":{"current_time":"09:52:13","uptime":1720.48,"users":0,"load_1m":1.26,"load_5m":1.1,"load_15m":0.83},"error":null}
+{"command":"uptime","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":{"current_time":"12:56:41","uptime":12788.76,"users":0,"load_1m":0.49,"load_5m":0.49,"load_15m":0.28},"error":null}

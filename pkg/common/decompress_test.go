@@ -2,6 +2,8 @@ package common
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -52,8 +54,57 @@ func TestDecompressMode_StdinJSON(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit %d, want 0", code)
 	}
-	if !strings.Contains(out.String(), `"source":"-"`) {
-		t.Errorf("expected stdin JSON entry, got %q", out.String())
+	// F16: stdout carries only the envelope; the payload travels as
+	// base64 content inside it.
+	var env struct {
+		Command string `json:"command"`
+		Data    struct {
+			Files []DecompFileInfo `json:"files"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope, got %q: %v", out.String(), err)
+	}
+	if env.Command != "fakedec" || len(env.Data.Files) != 1 || env.Data.Files[0].Source != "-" {
+		t.Fatalf("unexpected envelope: %q", out.String())
+	}
+	if env.Data.Files[0].BytesResult != 5 {
+		t.Errorf("expected bytesResult 5, got %d", env.Data.Files[0].BytesResult)
+	}
+	if env.Data.Files[0].Content != base64.StdEncoding.EncodeToString([]byte("hello")) {
+		t.Errorf("expected base64 content, got %q", env.Data.Files[0].Content)
+	}
+}
+
+func TestDecompressMode_StdoutFileJSON(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "data.xz")
+	if err := os.WriteFile(src, []byte("payload"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	spec := fakeDecompressSpec("fakedec")
+	var out, errBuf bytes.Buffer
+	code := DecompressMode(spec, []string{"--json", "-c", src}, nil, &out, &errBuf, "")
+	if code != 0 {
+		t.Fatalf("exit %d, want 0 (stderr: %q)", code, errBuf.String())
+	}
+	var env struct {
+		Data struct {
+			Files []DecompFileInfo `json:"files"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope, got %q: %v", out.String(), err)
+	}
+	if len(env.Data.Files) != 1 {
+		t.Fatalf("expected one entry, got %q", out.String())
+	}
+	entry := env.Data.Files[0]
+	if entry.Destination != "-" || entry.BytesResult != 7 {
+		t.Errorf("unexpected entry: %+v", entry)
+	}
+	if entry.Content != base64.StdEncoding.EncodeToString([]byte("payload")) {
+		t.Errorf("expected base64 content, got %q", entry.Content)
 	}
 }
 
@@ -486,5 +537,75 @@ func TestDecompressMode_SrcOpenError(t *testing.T) {
 	}
 	if !strings.Contains(errBuf.String(), "permission denied") {
 		t.Errorf("expected permission error, got %q", errBuf.String())
+	}
+}
+
+// errorAfterReader yields one byte and then fails, to exercise the
+// mid-stream error branches of the JSON stdout capture path.
+type errorAfterReader struct{}
+
+func (errorAfterReader) Read(p []byte) (int, error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+	p[0] = 'x'
+	return 1, errors.New("boom")
+}
+
+func TestDecompressMode_StdoutJSONMidStreamError(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "data.xz")
+	if err := os.WriteFile(src, []byte("payload"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	spec := fakeDecompressSpec("fakedec")
+	spec.NewReader = func(r io.Reader) (io.Reader, error) {
+		return errorAfterReader{}, nil
+	}
+	var out, errBuf bytes.Buffer
+	code := DecompressMode(spec, []string{"--json", "-c", src}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	var env struct {
+		Data struct {
+			Files []DecompFileInfo `json:"files"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope, got %q: %v", out.String(), err)
+	}
+	if len(env.Data.Files) != 1 || env.Data.Files[0].Error != "corrupted data" {
+		t.Errorf("expected corrupted-data entry, got %+v", env.Data.Files)
+	}
+}
+
+func TestDecompressMode_StdoutJSONMidStreamErrorCatMode(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "data.raw")
+	if err := os.WriteFile(src, []byte("payload"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	spec := fakeDecompressSpec("fakecat")
+	spec.CatMode = true
+	spec.Suffixes = nil // cat mode: no suffix check
+	spec.NewReader = func(r io.Reader) (io.Reader, error) {
+		return errorAfterReader{}, nil
+	}
+	var out, errBuf bytes.Buffer
+	code := DecompressMode(spec, []string{"--json", src}, nil, &out, &errBuf, "")
+	if code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	var env struct {
+		Data struct {
+			Files []DecompFileInfo `json:"files"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope, got %q: %v", out.String(), err)
+	}
+	if len(env.Data.Files) != 1 || env.Data.Files[0].Error != "boom" {
+		t.Errorf("expected boom entry (cat mode returns the raw error), got %+v", env.Data.Files)
 	}
 }

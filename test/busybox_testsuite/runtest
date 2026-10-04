@@ -22,9 +22,9 @@ run_applet_testcase()
 	testname="${testname##*/}" # take basename
 	# Removed .config checks for goposix
 
-	rm -rf ".tmpdir.$applet"
-	mkdir -p ".tmpdir.$applet"
-	cd ".tmpdir.$applet" || return 1
+	rm -rf ".tmpdir.$applet.$$"
+	mkdir -p ".tmpdir.$applet.$$"
+	cd ".tmpdir.$applet.$$" || return 1
 
 #	echo "Running testcase $testcase"
 	# All old-style tests use a shared PATH that finds goposix first.
@@ -43,7 +43,7 @@ run_applet_testcase()
 	fi
 
 	cd ..
-	rm -rf ".tmpdir.$applet"
+	rm -rf ".tmpdir.$applet.$$"
 
 	return $status
 }
@@ -99,15 +99,17 @@ if [ $# -ne 0 ]; then
 	applets="$@"
 fi
 
-# Populate a directory with links to all busybox applets
-
-LINKSDIR="$bindir/runtest-tempdir-links"
+# Populate a directory with links to all busybox applets.
+#
+# P4 fix: the link directory is unique per run. A shared directory made
+# concurrent runs delete each other's symlinks mid-test. The temp dir is
+# removed on exit.
+LINKSDIR=$(mktemp -d -t runtest-links.XXXXXX)
 export LINKSDIR
+trap 'rm -rf "$LINKSDIR" "$BBDIR"' EXIT
 
 # Comment this line out if you have put a different binary in $LINKSDIR
 # (say, a "standard" tool's binary) in order to run tests against it:
-rm -rf "$LINKSDIR" 2>/dev/null
-
 mkdir "$LINKSDIR" 2>/dev/null
 for i in $implemented; do
 	# Note: if $LINKSDIR/applet exists, we do not overwrite it.
@@ -121,7 +123,6 @@ done
 # same binary being tested. Without this, CI finds /usr/bin/busybox.
 BBDIR=$(mktemp -d)
 ln -s "$bindir/goposix" "$BBDIR/busybox"
-trap 'rm -rf "$BBDIR"' EXIT
 
 # Prepend BBDIR (busybox → goposix) and LINKSDIR (applet → goposix) to PATH
 # so both 'busybox <applet>' and direct applet calls route to goposix.

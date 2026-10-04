@@ -1,1 +1,1 @@
-{"command":"uniq","version":"v1.2.5","schemaVersion":"1.0","exitCode":0,"data":[{"line":"a","count":2},{"line":"b","count":1},{"line":"c","count":1}],"error":null}
+{"command":"uniq","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":[{"line":"a","count":2},{"line":"b","count":1},{"line":"c","count":1}],"error":null}

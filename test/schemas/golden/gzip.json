@@ -1,1 +1,1 @@
-{"command":"gzip","version":"0.1.0","schemaVersion":"1.0","exitCode":0,"data":[{"file":"test.txt","originalSize":1024,"newSize":512,"ratio":50.0}],"error":null}
+{"command":"gzip","version":"v1.2.6-1-g8a48df7","schemaVersion":"1.0","exitCode":0,"data":[{"file":"/tmp/goposix-golden.iaOQAL/gz.txt","originalSize":12,"newSize":36,"ratio":0.3333333333333333,"content":"H4sIAAAAAAAA/8pIzcnJVyjPL8pJ4QIEAAD//y07CK8MAAAA"}],"error":null}

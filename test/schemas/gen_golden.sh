@@ -138,13 +138,17 @@ gen       sha512sum --json "$TMPDIR/f12.txt"
 gen       sha3sum   --json "$TMPDIR/f12.txt"
 gen       sha1sum   --json "$TMPDIR/f12.txt"
 
+# gzip: F16 — JSON stdout mode embeds the payload as base64 content.
+echo "hello world" > "$TMPDIR/gz.txt"
+gen gzip --json -c "$TMPDIR/gz.txt"
+( cd "$TMPDIR" && "$GOPOSIX_ABS" gzip -c gz.txt 2>/dev/null | "$GOPOSIX_ABS" gunzip --json > "$GOLDEN_ABS/gunzip.json" 2>/dev/null )
+
 # Decompress family: system compressors provide the input files.
 bzip2 -kc "$TMPDIR/f12.txt" > "$TMPDIR/f12.txt.bz2"
 lzma  -kc "$TMPDIR/f12.txt" > "$TMPDIR/f12.txt.lzma"
-# bzcat is cat mode: decompressed bytes and the envelope share stdout, so
-# keep the trailing JSON line. The redirect paths are absolute because the
-# subshell changes the working directory.
-"$GOPOSIX_ABS" bzcat --json "$TMPDIR/f12.txt.bz2" 2>/dev/null | tail -1 > "$GOLDEN_ABS/bzcat.json"
+# bzcat is cat mode. F16: in JSON mode the payload travels as base64
+# content inside the envelope, so the fixture is a clean JSON envelope.
+( cd "$TMPDIR" && rm -f f12.txt && "$GOPOSIX_ABS" bzcat --json f12.txt.bz2 > "$GOLDEN_ABS/bzcat.json" 2>/dev/null )
 ( cd "$TMPDIR" && rm -f f12.txt && "$GOPOSIX_ABS" bunzip2 --json f12.txt.bz2 > "$GOLDEN_ABS/bunzip2.json" 2>/dev/null )
 ( cd "$TMPDIR" && rm -f f12.txt && "$GOPOSIX_ABS" unlzma --json f12.txt.lzma > "$GOLDEN_ABS/unlzma.json" 2>/dev/null )
 # uncompress has no .Z compressor on this host: the unknown-suffix shape
