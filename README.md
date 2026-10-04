@@ -101,6 +101,8 @@ c.Grep(ctx, []string{"foo"}, client.WithStdin("line1\nline2\nfoo\n"))
 c.Wc(ctx, []string{"-l"}, client.WithStdin("line1\nline2\nline3\n"))
 ```
 
+Every command response also includes a `stderr` field with human-readable error text. `rawOutput` mode returns `stdout` and `stderr` as raw text.
+
 ## Performance
 
 | Metric | GoPOSIX | BusyBox |
