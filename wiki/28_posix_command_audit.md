@@ -108,7 +108,7 @@ duplicated wrapper logic (header checks, multi-stream handling).
 | Phase | Scope | Commands | Verify | Status |
 |-------|-------|----------|--------|--------|
 | 0 | This plan + matrix snapshot | — | committed on `audit/posix-commands` | ✅ DONE |
-| 1 | F1 mechanical fix: injected writers | 53 | `make test` + `make testsuite` + `go vet` | ✅ DONE (871/16/30) |
+| 1 | F1 mechanical fix: injected writers | 53 | `make test` + `make testsuite` + `go vet` | ✅ DONE (870/17/30) |
 | 2 | F2 digest consolidation + F5 signal consolidation | 8 | BusyBox suite + output parity | ✅ DONE (F2 + F5) |
 | 3 | F3 coverage drive | 4 | `make cover-pkg` ≥ 80% | ✅ DONE (whoami 100, hostname 98.2, diff 89.5, gzip 87.3) |
 | 4 | Deep audit of XL/L commands (one PR each) | 24 | per-command checklist + suites | ▶️ NEXT |
