@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage & Compliance Matrix
 
-> **Last updated:** 2026-10-03 | **BusyBox:** 871 pass / 16 fail / 30 skip | **Branch:** `audit/posix-commands` | **Overall Coverage:** 86.3% | **JSON-RPC:** 115/115 (100.0%)
+> **Last updated:** 2026-10-03 | **BusyBox:** 870 pass / 17 fail / 30 skip | **Branch:** `audit/posix-commands` | **Overall Coverage:** 86.3% | **JSON-RPC:** 115/115 (100.0%)
 >
 > Canonical per-utility test status for all 115 utilities. Covers unit coverage,
 > BusyBox integration tests, and JSON-RPC daemon tests. Replaces the former
@@ -161,7 +161,7 @@
 | `uuencode` | 88.3% | 19 | ✅ 19/19 | ✅ |
 | `uudecode` | 80.5% | — | — | ✅ |
 | `taskset` | 86.4% | 3 | ✅ 3/3 | ✅ |
-| `start-stop-daemon` | 82.1% | 4 | ✅ 4/4 | ✅ |
+| `start-stop-daemon` | 80.7% | 4 | ✅ 4/4 | ✅ |
 | `cryptpw` | 82.4% | 7 | ✅ 7/7 | ✅ |
 | `makedevs` | 87.3% | 1 | ⚠️ 0/1 (1 skip) | ⚠️ skip |
 | `ar` | 80.0% | 2 | ✅ 2/2 | ✅ |

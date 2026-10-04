@@ -148,7 +148,7 @@ duplicated wrapper logic (header checks, multi-stream handling).
 | `fold` | L | 719 | 469 | 91.8% | ✅ 4/4 | — |  |  |
 | `cp` | L | 714 | 385 | 82.6% | ✅ 14/14 | — |  |  |
 | `cat` | M | 684 | 464 | 89.6% | ✅ 1/1 | — |  |  |
-| `start-stop-daemon` | M | 634 | 240 | 82.1% | ✅ 4/4 | IMPROVE | F5: uses common.ParseSignal (was 7-name local parser) |  |
+| `start-stop-daemon` | M | 634 | 240 | 80.7% | ✅ 4/4 | IMPROVE | F5: uses common.ParseSignal (was 7-name local parser) |  |
 | `split` | M | 621 | 351 | 86.3% | — | — |  |  |
 | `xxd` | M | 610 | 239 | 86.4% | ✅ 7/7 | — |  |  |
 | `comm` | M | 591 | 346 | 88.8% | ✅ 9/9 | — |  |  |
