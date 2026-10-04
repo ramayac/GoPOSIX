@@ -69,8 +69,7 @@ func Transform(input string, tabWidth int, initialOnly bool) string {
 func expandRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, expSpec)
 	if err != nil {
-		fmt.Fprintf(errOut, "expand: %v\n", err)
-		return 2
+		return common.RenderFlagError("expand", args, err, errOut, 2)
 	}
 	jsonMode := flags.Has("json")
 	initialOnly := flags.Has("i")

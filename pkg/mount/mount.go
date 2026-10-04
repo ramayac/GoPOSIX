@@ -65,8 +65,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 func mountRun(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, flagSpec)
 	if err != nil {
-		fmt.Fprintf(stderr, "mount: %v\n", err)
-		return 1
+		return common.RenderFlagError("mount", args, err, stderr, 1)
 	}
 
 	pos := flags.Positional

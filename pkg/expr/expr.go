@@ -33,26 +33,12 @@ type ExprResult struct {
 // --- Evaluator ---
 
 type parser struct {
-	tokens []string
-	pos    int
+	*common.TokenCursor
 }
 
-func (p *parser) peek() string {
-	if p.pos >= len(p.tokens) {
-		return ""
-	}
-	return p.tokens[p.pos]
-}
-
-func (p *parser) next() string {
-	tok := p.peek()
-	p.pos++
-	return tok
-}
-
-func (p *parser) done() bool {
-	return p.pos >= len(p.tokens)
-}
+func (p *parser) peek() string { return p.Peek() }
+func (p *parser) next() string { return p.Next() }
+func (p *parser) done() bool   { return p.Done() }
 
 // Eval evaluates a POSIX expr expression. Returns the result string and the
 // POSIX exit code: 0 if result is non-null and non-zero, 1 otherwise, 2 on error.
@@ -60,7 +46,7 @@ func Eval(tokens []string) (string, int, error) {
 	if len(tokens) == 0 {
 		return "", 2, fmt.Errorf("missing operand")
 	}
-	p := &parser{tokens: tokens}
+	p := &parser{TokenCursor: common.NewTokenCursor(tokens)}
 	result, err := p.parseOr()
 	if err != nil {
 		return "", 2, err

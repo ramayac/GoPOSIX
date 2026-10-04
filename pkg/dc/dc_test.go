@@ -1,6 +1,9 @@
 package dc
 
 import (
+	"bytes"
+	"encoding/json"
+
 	"math/big"
 	"strings"
 	"testing"
@@ -625,4 +628,21 @@ func TestDcMoreOps(t *testing.T) {
 	testDC(t, "modular exponentiation", "4 3 5 | p", "4\n")
 	testDCFail(t, "modulo by zero", "7 0 %", "remainder by zero")
 	testDCFail(t, "sqrt negative", "_9 v", "square root of negative")
+}
+
+func TestCLIJsonBadFlag(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	args := []string{"--json", "--nope"}
+	code := run(args, nil, &stdout, &stderr, "")
+	if code == 0 {
+		t.Fatal("expected non-zero exit for bad flag")
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope on stderr, got %q: %v", stderr.String(), err)
+	}
+	if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "FLAG_ERROR" {
+		t.Fatalf("expected FLAG_ERROR envelope, got %q", stderr.String())
+	}
 }

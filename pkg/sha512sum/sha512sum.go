@@ -3,7 +3,6 @@ package sha512sum
 
 import (
 	"crypto/sha512"
-	"fmt"
 	"io"
 	"os"
 
@@ -36,8 +35,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "sha512sum: %v\n", err)
-		return 1
+		return common.RenderFlagError("sha512sum", args, err, stderr, 1)
 	}
 
 	jsonMode := flags.Has("json")

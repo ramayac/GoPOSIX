@@ -82,8 +82,7 @@ func findRun(args []string, stdout io.Writer, errOut io.Writer, stdin io.Reader,
 
 	flags, err := common.ParseFlags(args, specCopy)
 	if err != nil {
-		fmt.Fprintf(errOut, "find: %v\n", err)
-		return 1
+		return common.RenderFlagError("find", args, err, errOut, 1)
 	}
 
 	root := "."

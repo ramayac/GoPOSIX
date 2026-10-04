@@ -57,8 +57,7 @@ func Run(adjustment int, command []string, stdin io.Reader, stdout, stderr io.Wr
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "nice: %v\n", err)
-		return 2
+		return common.RenderFlagError("nice", args, err, stderr, 2)
 	}
 	jsonMode := flags.Has("json")
 

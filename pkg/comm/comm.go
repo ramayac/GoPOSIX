@@ -151,8 +151,7 @@ func readLines(r io.Reader) ([]string, error) {
 func commRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "comm: %v\n", err)
-		return 2
+		return common.RenderFlagError("comm", args, err, errOut, 2)
 	}
 
 	jsonMode := flags.Has("json")

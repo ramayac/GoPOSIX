@@ -73,8 +73,7 @@ func Compare(r1, r2 io.Reader, limit int, verbose bool) ([]DiffEntry, bool) {
 func cmpRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, cmpSpec)
 	if err != nil {
-		fmt.Fprintf(errOut, "cmp: %v\n", err)
-		return 2
+		return common.RenderFlagError("cmp", args, err, errOut, 2)
 	}
 	jsonMode := flags.Has("json")
 	silent := flags.Has("s")

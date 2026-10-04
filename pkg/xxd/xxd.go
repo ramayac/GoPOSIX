@@ -318,8 +318,7 @@ func hexVal(char byte) (bool, byte) {
 func xxdRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "xxd: %v\n", err)
-		return 2
+		return common.RenderFlagError("xxd", args, err, errOut, 2)
 	}
 
 	plainMode := flags.Has("p")

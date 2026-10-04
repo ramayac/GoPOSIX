@@ -145,8 +145,7 @@ func formatNum(val float64, precision int, intWidth int, equalWidth bool) string
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "seq: %v\n", err)
-		return 2
+		return common.RenderFlagError("seq", args, err, stderr, 2)
 	}
 
 	separator := "\n"

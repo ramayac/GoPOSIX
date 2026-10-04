@@ -187,14 +187,6 @@ func dupVal(v dcValue) dcValue {
 	return dcValue{rat: new(big.Rat).Set(v.rat), fracDigits: v.fracDigits}
 }
 
-func ratToInt64(r *big.Rat) int64 {
-	if r.IsInt() {
-		return r.Num().Int64()
-	}
-	q := new(big.Int).Quo(r.Num(), r.Denom())
-	return q.Int64()
-}
-
 func formatRat(r *big.Rat, scale int, negZero bool) string {
 	if r.Sign() == 0 {
 		return "0"
@@ -314,8 +306,7 @@ func parseRegName(state *dcState, runes []rune, i *int) string {
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "dc: %v\n", err)
-		return 2
+		return common.RenderFlagError("dc", args, err, stderr, 2)
 	}
 
 	jsonMode := flags.Has("json")
@@ -627,7 +618,7 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 			if fd > maxScale {
 				fd = maxScale
 			}
-			r = truncateRat(r, fd)
+			r = common.RatTruncate(r, fd)
 			neg := isNegVal(a) != isNegVal(b)
 			state.stack = append(state.stack, dcValue{
 				rat:        r,
@@ -644,7 +635,7 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 				return fmt.Errorf("divide by zero")
 			}
 			r := new(big.Rat).Quo(a.rat, b.rat)
-			r = truncateRat(r, state.scale)
+			r = common.RatTruncate(r, state.scale)
 			neg := isNegVal(a) != isNegVal(b)
 			state.stack = append(state.stack, dcValue{
 				rat:        r,
@@ -662,11 +653,11 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 			}
 			// Scale-aware modulus: a - (a / b) * b
 			q := new(big.Rat).Quo(a.rat, b.rat)
-			q = truncateRat(q, state.scale)
+			q = common.RatTruncate(q, state.scale)
 			prod := new(big.Rat).Mul(q, b.rat)
 			r := new(big.Rat).Sub(a.rat, prod)
 			fd := maxInt(a.fracDigits, state.scale+b.fracDigits)
-			r = truncateRat(r, fd)
+			r = common.RatTruncate(r, fd)
 			neg := isNegVal(a)
 			state.stack = append(state.stack, dcValue{
 				rat:        r,
@@ -683,11 +674,11 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 				return fmt.Errorf("divide by zero")
 			}
 			q := new(big.Rat).Quo(a.rat, b.rat)
-			q = truncateRat(q, state.scale)
+			q = common.RatTruncate(q, state.scale)
 			prod := new(big.Rat).Mul(q, b.rat)
 			rem := new(big.Rat).Sub(a.rat, prod)
 			remScale := maxInt(a.fracDigits, state.scale+b.fracDigits)
-			rem = truncateRat(rem, remScale)
+			rem = common.RatTruncate(rem, remScale)
 
 			qNeg := isNegVal(a) != isNegVal(b)
 			remNeg := isNegVal(a)
@@ -708,7 +699,7 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 			if !ok {
 				return fmt.Errorf("stack empty")
 			}
-			exp := ratToInt64(b.rat)
+			exp := common.RatToInt64(b.rat)
 			r := new(big.Rat)
 			var resultFrac int
 			var neg bool
@@ -720,7 +711,7 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 			} else if exp < 0 {
 				r = ratPowInt(a.rat, -exp)
 				r.Inv(r)
-				r = truncateRat(r, state.scale)
+				r = common.RatTruncate(r, state.scale)
 				resultFrac = state.scale
 				neg = isNegVal(a) && ((-exp)%2 != 0)
 			} else {
@@ -730,7 +721,7 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 				if fd > maxScale {
 					fd = maxScale
 				}
-				r = truncateRat(r, fd)
+				r = common.RatTruncate(r, fd)
 				resultFrac = fd
 				neg = isNegVal(a) && (exp%2 != 0)
 			}
@@ -749,7 +740,7 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 				return fmt.Errorf("square root of negative number")
 			}
 			r := ratSqrtNewton(a.rat, state.scale)
-			r = truncateRat(r, maxInt(state.scale, a.fracDigits))
+			r = common.RatTruncate(r, maxInt(state.scale, a.fracDigits))
 			state.stack = append(state.stack, dcValue{
 				rat:        r,
 				fracDigits: maxInt(state.scale, a.fracDigits),
@@ -781,7 +772,7 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 			if !ok {
 				return fmt.Errorf("stack empty")
 			}
-			s := int(ratToInt64(v))
+			s := int(common.RatToInt64(v))
 			if s < 0 {
 				s = 0
 			}
@@ -994,7 +985,7 @@ func evalDC(state *dcState, input string, stdin io.Reader, output *[]string) err
 			if v.isStr {
 				s = v.str
 			} else {
-				code := int(ratToInt64(v.rat)) & 0xFF
+				code := int(common.RatToInt64(v.rat)) & 0xFF
 				s = string(rune(code))
 			}
 			pushStrDC(state, s)
@@ -1112,25 +1103,6 @@ func parseStringEscapes(s string) string {
 		}
 	}
 	return sb.String()
-}
-
-func truncateRat(r *big.Rat, scale int) *big.Rat {
-	if r.Sign() == 0 {
-		return new(big.Rat)
-	}
-	if scale <= 0 {
-		scale = 0
-	}
-	scaleFactor := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
-	scaled := new(big.Rat).Set(r)
-	scaled.Mul(scaled, new(big.Rat).SetInt(scaleFactor))
-
-	num := scaled.Num()
-	den := scaled.Denom()
-	q := new(big.Int).Quo(num, den)
-
-	result := new(big.Rat).SetFrac(q, scaleFactor)
-	return result
 }
 
 func isNegVal(v dcValue) bool {

@@ -121,8 +121,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 func grepRun(args []string, stdout, errOut io.Writer, stdinR io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "grep: %v\n", err)
-		return 2
+		return common.RenderFlagError("grep", args, err, errOut, 2)
 	}
 
 	var paths []string

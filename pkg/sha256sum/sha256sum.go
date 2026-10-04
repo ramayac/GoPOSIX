@@ -3,7 +3,6 @@ package sha256sum
 
 import (
 	"crypto/sha256"
-	"fmt"
 	"io"
 	"os"
 
@@ -35,8 +34,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "sha256sum: %v\n", err)
-		return 1
+		return common.RenderFlagError("sha256sum", args, err, stderr, 1)
 	}
 
 	jsonMode := flags.Has("json")

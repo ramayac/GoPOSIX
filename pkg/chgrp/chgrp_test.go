@@ -2,6 +2,7 @@ package chgrp
 
 import (
 	"bytes"
+	"github.com/ramayac/goposix/pkg/common"
 	"os"
 	"strings"
 	"testing"
@@ -29,21 +30,21 @@ func TestChgrpJSON(t *testing.T) {
 }
 
 func TestLookupGIDNumeric(t *testing.T) {
-	if got := lookupGID("12345"); got != 12345 {
-		t.Errorf("lookupGID(\"12345\") = %d, want 12345", got)
+	if got := common.LookupGID("12345"); got != 12345 {
+		t.Errorf("common.LookupGID(\"12345\") = %d, want 12345", got)
 	}
 }
 
 func TestLookupGIDByName(t *testing.T) {
 	// The root group exists on every POSIX system.
-	if got := lookupGID("root"); got != 0 {
-		t.Errorf("lookupGID(\"root\") = %d, want 0", got)
+	if got := common.LookupGID("root"); got != 0 {
+		t.Errorf("common.LookupGID(\"root\") = %d, want 0", got)
 	}
 }
 
 func TestLookupGIDUnknown(t *testing.T) {
-	if got := lookupGID("no-such-group-xyz"); got != -1 {
-		t.Errorf("lookupGID(unknown) = %d, want -1", got)
+	if got := common.LookupGID("no-such-group-xyz"); got != -1 {
+		t.Errorf("common.LookupGID(unknown) = %d, want -1", got)
 	}
 }
 

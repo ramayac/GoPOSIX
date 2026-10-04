@@ -69,12 +69,7 @@ func DecompressMode(spec DecompressSpec, args []string, stdin io.Reader, stdout,
 
 	flags, err := ParseFlags(args, spec.Flags)
 	if err != nil {
-		if jsonMode {
-			RenderError(spec.ProgName, 1, "FLAG_ERROR", err.Error(), true, stderr)
-		} else {
-			fmt.Fprintf(stderr, "%s: %v\n", spec.ProgName, err)
-		}
-		return 1
+		return RenderFlagError(spec.ProgName, args, err, stderr, 1)
 	}
 
 	if flags.Has("h") || flags.Has("help") {

@@ -1,6 +1,8 @@
 package cp
 
 import (
+	"encoding/json"
+
 	"bytes"
 	"os"
 	"path/filepath"
@@ -456,5 +458,22 @@ func TestCLIParentsCopyFail(t *testing.T) {
 	}
 	if !strings.Contains(errBuf.String(), "cp:") {
 		t.Errorf("expected stderr message, got %q", errBuf.String())
+	}
+}
+
+func TestCLIJsonBadFlag(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	args := []string{"--json", "--nope"}
+	code := run(args, nil, &stdout, &stderr, "")
+	if code == 0 {
+		t.Fatal("expected non-zero exit for bad flag")
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope on stderr, got %q: %v", stderr.String(), err)
+	}
+	if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "FLAG_ERROR" {
+		t.Fatalf("expected FLAG_ERROR envelope, got %q", stderr.String())
 	}
 }

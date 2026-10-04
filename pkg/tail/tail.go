@@ -103,8 +103,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "tail: %v\n", err)
-		return 2
+		return common.RenderFlagError("tail", args, err, stderr, 2)
 	}
 	jsonMode := flags.Has("json")
 	follow := flags.Has("f")

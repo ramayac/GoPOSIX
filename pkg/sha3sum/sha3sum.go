@@ -80,8 +80,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 	}
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(stderr, "sha3sum: %v\n", err)
-		return 1
+		return common.RenderFlagError("sha3sum", args, err, stderr, 1)
 	}
 
 	jsonMode := flags.Has("json")

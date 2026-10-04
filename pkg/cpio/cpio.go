@@ -70,8 +70,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 func cpioRun(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) int {
 	flags, err := common.ParseFlags(args, flagSpec)
 	if err != nil {
-		fmt.Fprintf(stderr, "cpio: %v\n", err)
-		return 1
+		return common.RenderFlagError("cpio", args, err, stderr, 1)
 	}
 
 	pos := flags.Positional

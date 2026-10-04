@@ -65,8 +65,7 @@ func Run(r io.Reader, sysv bool) (int, int) {
 func sumRun(args []string, stdout, errOut io.Writer, stdin io.Reader, cwd string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(errOut, "sum: %v\n", err)
-		return 2
+		return common.RenderFlagError("sum", args, err, errOut, 2)
 	}
 	jsonMode := flags.Has("json")
 	sysv := flags.Has("s")
