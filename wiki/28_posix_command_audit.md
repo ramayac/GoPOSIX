@@ -187,7 +187,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `which` | S | 126 | 96 | 86.0% | ✅ 1/1 | — | 1.75 | IMPROVE | Preflight: no JSON schema · small and clean otherwise |
 | `daemon` | S | 54 | 86 | 94.1% | — | — | 1.75 | KEEP | Preflight: daemon control command; `--json` and JSON-RPC do not apply |
 | `testcmd` | M | 410 | 625 | 92.8% | — | — | 1.50 | KEEP ✅ | F8 ✅ `peek`/`next`/`done` now use `common.TokenCursor` · F10 ✅ flag errors honour `--json` · `--json` works and the daemon test asserts the bool result; schema is `test.schema.json` |
-| `factor` | S | 346 | 165 | 93.9% | ✅ 13/13 | — | 1.50 | IMPROVE | Preflight: daemon test present but no JSON schema · flag errors honour `--json` |
+| `factor` | S | 346 | 165 | 93.9% | ✅ 13/13 | — | 1.50 | IMPROVE | Preflight: daemon test present but no JSON schema · F10 ✅ its `PreProcess` turns unknown flags into positional args, so no flag-error path exists |
 | `wc` | S | 311 | 274 | 88.6% | ✅ 5/5 | — | 1.50 | KEEP | Preflight: clean; `CountProper` 93 lines · schema and daemon test present |
 | `join` | S | 304 | 314 | 89.7% | — | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
 | `seq` | S | 284 | 263 | 89.7% | ✅ 21/21 | — | 1.50 | IMPROVE | Preflight: daemon test present but no JSON schema · `run` 133 lines |
@@ -339,6 +339,8 @@ exitCode)` pre-scans `--json`, writes the JSON error envelope (code `FLAG_ERROR`
 and writes a plain `<name>: <message>` line otherwise; the caller supplies the historical exit
 code. All 93 `ParseFlags` call sites in `pkg/` now use it, including `date` (keeps the BusyBox
 banner in the plain path), `gzip` (`cmdName`), and the shared digest/decompress cores.
+`factor` is the one exception: its `PreProcess` turns any unknown flag into a positional
+argument, so a flag-parse error cannot occur there and the helper call is not needed.
 
 #### F11 — Escape-sequence logic is duplicated three times ✅ DONE
 [pkg/printf/printf.go](../pkg/printf/printf.go) holds two near-identical processors

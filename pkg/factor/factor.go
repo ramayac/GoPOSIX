@@ -228,10 +228,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, cwd string) i
 		}
 	}
 
-	flags, err := common.ParseFlags(args, spec)
-	if err != nil {
-		return common.RenderFlagError("factor", args, err, stderr, 1)
-	}
+	flags, _ := common.ParseFlags(args, spec)
 
 	if flags.Has("h") || flags.Has("help") {
 		helpText := "Usage: factor [NUMBER]...\n\n" +
