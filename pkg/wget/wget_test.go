@@ -202,3 +202,14 @@ func TestCLIJsonMissingURL(t *testing.T) {
 		t.Fatalf("expected MISSING_ARGUMENT envelope, got %q", stderr.String())
 	}
 }
+
+func TestCLIMissingURLPlain(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := run([]string{}, nil, &stdout, &stderr, "")
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "wget: missing URL") {
+		t.Errorf("expected plain stderr error, got %q", stderr.String())
+	}
+}

@@ -398,3 +398,19 @@ func TestCLIRunError(t *testing.T) {
 		t.Errorf("expected stderr message, got %q", errBuf.String())
 	}
 }
+
+func TestRunNoUtmpFile(t *testing.T) {
+	orig := utmpPaths
+	utmpPaths = []string{"/nonexistent/utmp_xyz"}
+	defer func() { utmpPaths = orig }()
+	res, err := Run()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.Users == nil {
+		t.Error("expected non-nil empty users slice (JSON must emit [])")
+	}
+	if len(res.Users) != 0 || res.Count != 0 {
+		t.Errorf("expected empty result, got %#v", res)
+	}
+}

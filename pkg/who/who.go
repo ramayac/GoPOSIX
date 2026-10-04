@@ -119,12 +119,14 @@ func readUtmp(path string) ([]WhoUser, error) {
 // whoRun is a seam for Run so error paths can be tested.
 var whoRun = Run
 
-func Run() (WhoResult, error) {
-	var utmpPaths = []string{
-		"/var/run/utmp",
-		"/run/utmp",
-	}
+// utmpPaths is a package variable so tests can point it at a nonexistent
+// location and exercise the empty-result path.
+var utmpPaths = []string{
+	"/var/run/utmp",
+	"/run/utmp",
+}
 
+func Run() (WhoResult, error) {
 	for _, p := range utmpPaths {
 		users, err := readUtmp(p)
 		if err == nil {

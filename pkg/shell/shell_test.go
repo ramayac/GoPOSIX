@@ -3,6 +3,7 @@ package shell
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -132,6 +133,37 @@ func TestShellJSONFlagAfterScriptFlag(t *testing.T) {
 	}
 	if env.Command != "shell" {
 		t.Errorf("expected command shell, got %q", env.Command)
+	}
+}
+
+// errorReader always fails, like a broken pipe on stdin.
+type errorReader struct{}
+
+func (errorReader) Read([]byte) (int, error) { return 0, errors.New("read failure") }
+
+func TestShellPipeModeStdinError(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := shellRun([]string{}, errorReader{}, &stdout, &stderr, "")
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "shell: read failure") {
+		t.Errorf("expected plain stderr error, got %q", stderr.String())
+	}
+}
+
+func TestShellPipeModeStdinErrorJSON(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := shellRun([]string{"--json"}, errorReader{}, &stdout, &stderr, "")
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	var env map[string]interface{}
+	if err := json.Unmarshal(stderr.Bytes(), &env); err != nil {
+		t.Fatalf("expected JSON envelope on stderr, got %q: %v", stderr.String(), err)
+	}
+	if errInfo, ok := env["error"].(map[string]interface{}); !ok || errInfo["code"] != "SHELL_ERROR" {
+		t.Fatalf("expected SHELL_ERROR envelope, got %q", stderr.String())
 	}
 }
 

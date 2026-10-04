@@ -139,6 +139,31 @@ func TestRxMissingFile(t *testing.T) {
 	}
 }
 
+func TestRxTextModeError(t *testing.T) {
+	// No sender in text mode: plain stderr message, exit 1.
+	var stdout, stderr strings.Builder
+	rc := run([]string{"/tmp/rx.out"}, strings.NewReader(""), &stdout, &stderr, "")
+	if rc != 1 {
+		t.Fatalf("expected exit 1, got %d", rc)
+	}
+	if !strings.Contains(stderr.String(), "rx: no response from sender") {
+		t.Errorf("expected plain stderr error, got %q", stderr.String())
+	}
+}
+
+func TestRxTextModeSuccess(t *testing.T) {
+	// Immediate EOT in text mode: the handshake bytes go to stdout
+	// (serial-line use), and the process exits 0.
+	var stdout, stderr strings.Builder
+	rc := run([]string{"/tmp/rx.out"}, strings.NewReader(string([]byte{EOT})), &stdout, &stderr, "")
+	if rc != 0 {
+		t.Fatalf("expected exit 0, got %d (stderr: %q)", rc, stderr.String())
+	}
+	if stdout.Len() == 0 {
+		t.Error("expected handshake bytes on stdout in text mode")
+	}
+}
+
 func TestRxFlagError(t *testing.T) {
 	var stdout, stderr strings.Builder
 	rc := run([]string{"--bad-flag"}, strings.NewReader(""), &stdout, &stderr, "")
