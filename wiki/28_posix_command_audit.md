@@ -78,7 +78,7 @@ Four packages are below the per-package target: `diff` (73.9%), `gzip` (72.7%), 
 paths, hunk trimming. `gzip` 87.3%: stdin/dash modes, create/process failures, garbage
 input. `pkg/common` also lifted 68.9% → 93.7% with direct digest-core tests.
 
-### F4 — BusyBox failures
+### F4 — BusyBox failures ✅ ACKNOWLEDGED (awk deferred)
 
 `awk` has 17 failing tests (upstream goawk engine limits, deferred — see [wiki/deferred.md](deferred.md)).
 `rx` has 1 flaky test (handshake race). All other ⚠️ entries are root-required skips.
@@ -165,11 +165,11 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `makedevs` | S | 335 | 156 | 87.3% | ⚠️ 0/1 (1 skip) | — | 2.75 | IMPROVE | Preflight: no JSON schema and no daemon test · BusyBox case needs root |
 | `mdev` | S | 309 | 146 | 87.4% | ⚠️ 0/12 (12 skip) | — | 2.75 | IMPROVE | Preflight: no JSON schema and no daemon test · BusyBox cases need root |
 | `nohup` | S | 121 | 110 | 80.9% | — | — | 2.75 | KEEP | Preflight: clean; `Run` library function and `terminalCheck` seam · schema and daemon test present |
-| `mkfs_minix` | S | 312 | 121 | 86.4% | — | — | 2.50 | IMPROVE | Preflight: `Run` 177 lines · no JSON schema and no daemon test · `--json` ignored on flag errors |
 | `logger` | S | 219 | 311 | 98.6% | — | ⚠ global | 2.50 | IMPROVE | Preflight: package-global `stderrWriter` (daemon re-entrancy risk); replace it with an injected writer (P1) · schema and daemon test present |
 | `wget` | S | 191 | 172 | 81.4% | ✅ 4/4 | — | 2.50 | IMPROVE | Preflight: `http.Client{}` has no timeout, so it can block the daemon · no JSON schema and no daemon test |
 | `diff` | L | 836 | 824 | 90.3% | ✅ 20/20 | — | 2.25 | IMPROVE | F1+F3: tests 89.5% · Preflight: LOC corrected; now L tier, not XL. F1+F3 applied; deep audit open. |
 | `xxd` | M | 371 | 239 | 86.4% | ✅ 7/7 | — | 2.25 | IMPROVE | Preflight: `reverseStandard` (99) and `reversePlain` (85) repeat the hex-scan loop · no JSON schema and no daemon test |
+| `mkfs_minix` | S | 312 | 121 | 86.4% | ✅ 1/1 | — | 2.25 | IMPROVE | Preflight: `Run` 177 lines · no JSON schema and no daemon test · `--json` ignored on flag errors |
 | `unexpand` | S | 257 | 287 | 82.8% | ✅ 24/24 | — | 2.25 | KEEP | Preflight: clean; its `Transform` is the inverse of `expand`'s, not a copy · schema and daemon test present |
 | `cryptpw` | S | 241 | 335 | 82.4% | ✅ 7/7 | — | 2.25 | IMPROVE | Preflight: daemon test present but no JSON schema · flag errors honour `--json` |
 | `readlink` | S | 208 | 251 | 81.2% | ✅ 6/6 | — | 2.25 | KEEP | Preflight: clean; `evalSymlinksUnder` 78 lines · schema and daemon test present |
@@ -186,10 +186,9 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `uname` | S | 152 | 69 | 93.0% | — | — | 1.75 | KEEP | Preflight: clean; platform-split `Run()` in uname_linux.go/uname_darwin.go · schema and daemon test present |
 | `which` | S | 126 | 96 | 86.0% | ✅ 1/1 | — | 1.75 | IMPROVE | Preflight: no JSON schema · small and clean otherwise |
 | `daemon` | S | 54 | 86 | 94.1% | — | — | 1.75 | KEEP | Preflight: daemon control command; `--json` and JSON-RPC do not apply |
-| `testcmd` | M | 410 | 625 | 92.8% | — | — | 1.50 | IMPROVE | Preflight: `--json` works but there is no schema file and no daemon JSON-RPC test · F8 parser helpers |
+| `testcmd` | M | 410 | 625 | 92.8% | — | — | 1.50 | IMPROVE | Preflight: `--json` works and the daemon test asserts the bool result; schema is `test.schema.json` · F8 parser helpers |
 | `factor` | S | 346 | 165 | 93.9% | ✅ 13/13 | — | 1.50 | IMPROVE | Preflight: daemon test present but no JSON schema · flag errors honour `--json` |
 | `wc` | S | 311 | 274 | 88.6% | ✅ 5/5 | — | 1.50 | KEEP | Preflight: clean; `CountProper` 93 lines · schema and daemon test present |
-| `gzip` | S | 306 | 575 | 87.3% | ✅ 4/4 | — | 1.50 | KEEP ✅ | F3: tests 87.3% |
 | `join` | S | 304 | 314 | 89.7% | — | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
 | `seq` | S | 284 | 263 | 89.7% | ✅ 21/21 | — | 1.50 | IMPROVE | Preflight: daemon test present but no JSON schema · `run` 133 lines |
 | `tr` | S | 265 | 148 | 90.8% | ✅ 6/6 | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
@@ -197,6 +196,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `chown` | S | 109 | 66 | 97.4% | — | — | 1.50 | IMPROVE | Preflight: `lookupUID`/`lookupGID` are byte-identical to `chgrp`'s (F13) · schema and daemon test present |
 | `nice` | S | 107 | 85 | 90.5% | — | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
 | `df` | S | 74 | 48 | 95.8% | — | — | 1.50 | KEEP | Preflight: clean · schema and daemon test present |
+| `gzip` | S | 306 | 575 | 87.3% | ✅ 4/4 | — | 1.25 | KEEP ✅ | F3: tests 87.3% |
 | `find` | S | 251 | 293 | 89.8% | ✅ 13/13 | — | 1.25 | KEEP | Preflight: clean; keeps the documented `-exec` argument pre-processing · schema and daemon test present |
 | `comm` | S | 245 | 346 | 88.8% | ✅ 9/9 | — | 1.25 | KEEP | Preflight: clean · schema and daemon test present |
 | `tail` | S | 228 | 305 | 88.7% | ✅ 3/3 | — | 1.25 | KEEP | Preflight: clean; keeps the `-N` to `-n N` argument pre-processing · schema and daemon test present |
@@ -221,31 +221,30 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `yes` | S | 84 | 146 | 96.0% | — | — | 1.00 | KEEP | Preflight: clean, 47-line `run` · schema and daemon test present |
 | `sleep` | S | 81 | 100 | 93.8% | — | — | 1.00 | KEEP | Preflight: clean, 53-line `run` · schema and daemon test present |
 | `ps` | S | 60 | 40 | 100.0% | — | — | 1.00 | KEEP | Preflight: clean, 30-line `run`, 100% coverage · schema and daemon test present |
-| `cp` | S | 329 | 460 | 90.7% | ✅ 14/14 | — | 0.75 |  |  |
-| `fold` | S | 250 | 469 | 91.8% | ✅ 4/4 | — | 0.75 |  |  |
-| `head` | S | 210 | 528 | 94.3% | ✅ 4/4 | — | 0.75 |  |  |
-| `echo` | S | 194 | 258 | 97.8% | ✅ 11/11 | — | 0.75 |  |  |
-| `realpath` | S | 188 | 211 | 94.7% | ✅ 10/10 | — | 0.75 |  |  |
-| `hostid` | S | 160 | 284 | 96.3% | ✅ 1/1 | — | 0.75 |  |  |
-| `strings` | S | 152 | 223 | 91.5% | ✅ 1/1 | — | 0.75 |  |  |
+| `cp` | S | 329 | 460 | 90.7% | ✅ 14/14 | — | 0.75 | KEEP | Preflight: clean; `run` 124 lines · schema and daemon test present |
+| `fold` | S | 250 | 469 | 91.8% | ✅ 4/4 | — | 0.75 | KEEP | Preflight: clean and small · schema and daemon test present |
+| `head` | S | 210 | 528 | 94.3% | ✅ 4/4 | — | 0.75 | KEEP | Preflight: clean; `headRun` 108 lines · schema and daemon test present |
+| `echo` | S | 194 | 258 | 97.8% | ✅ 11/11 | — | 0.75 | IMPROVE | Preflight: `processEscapes` (92 lines) duplicates `printf`'s escape logic (F11) · schema and daemon test present |
+| `realpath` | S | 188 | 211 | 94.7% | ✅ 10/10 | — | 0.75 | IMPROVE | Preflight: no JSON schema · `resolvePathFlags` 95 lines |
+| `hostid` | S | 160 | 284 | 96.3% | ✅ 1/1 | — | 0.75 | IMPROVE | Preflight: no JSON schema · small and clean otherwise |
+| `strings` | S | 152 | 223 | 91.5% | ✅ 1/1 | — | 0.75 | KEEP | Preflight: clean; `stringsRun` 70 lines · schema and daemon test present |
 | `hostname` | S | 146 | 310 | 98.2% | ✅ 4/4 | — | 0.75 | KEEP ✅ | F1+F3: function seams, 98.2% |
-| `nl` | S | 142 | 182 | 97.1% | ✅ 4/4 | — | 0.75 |  |  |
-| `touch` | S | 142 | 302 | 91.3% | ✅ 3/3 | — | 0.75 |  |  |
-| `stat` | S | 141 | 115 | 100.0% | — | — | 0.75 |  |  |
-| `tee` | S | 129 | 185 | 92.3% | ✅ 2/2 | — | 0.75 |  |  |
-| `rev` | S | 126 | 139 | 98.2% | ✅ 4/4 | — | 0.75 |  |  |
-| `mv` | S | 112 | 246 | 96.0% | ✅ 14/14 | — | 0.75 |  |  |
-| `printenv` | S | 79 | 78 | 100.0% | — | — | 0.75 |  |  |
-| `basename` | S | 61 | 97 | 95.2% | ✅ 2/2 | — | 0.75 |  |  |
-| `kill` | S | 160 | 198 | 100.0% | — | — | 0.50 |  |  |
-| `tty` | S | 108 | 201 | 100.0% | — | — | 0.50 |  |  |
-| `mkfifo` | S | 81 | 99 | 100.0% | — | — | 0.50 |  |  |
-| `env` | S | 73 | 86 | 100.0% | — | — | 0.50 |  |  |
-| `logname` | S | 70 | 77 | 100.0% | — | — | 0.50 |  |  |
+| `nl` | S | 142 | 182 | 97.1% | ✅ 4/4 | — | 0.75 | KEEP | Preflight: clean; `nlRun` 71 lines · schema and daemon test present |
+| `touch` | S | 142 | 302 | 91.3% | ✅ 3/3 | — | 0.75 | KEEP | Preflight: clean; `run` 74 lines · schema and daemon test present |
+| `stat` | S | 141 | 115 | 100.0% | — | — | 0.75 | KEEP | Preflight: clean, 100% coverage, no function over 60 lines · schema and daemon test present |
+| `tee` | S | 129 | 185 | 92.3% | ✅ 2/2 | — | 0.75 | KEEP | Preflight: clean; `teeRun` 81 lines · schema and daemon test present |
+| `rev` | S | 126 | 139 | 98.2% | ✅ 4/4 | — | 0.75 | IMPROVE | Preflight: no JSON schema · `run` 85 lines |
+| `mv` | S | 112 | 246 | 96.0% | ✅ 14/14 | — | 0.75 | KEEP | Preflight: clean and small · schema and daemon test present |
+| `printenv` | S | 79 | 78 | 100.0% | — | — | 0.75 | KEEP | Preflight: clean, 100% coverage · schema and daemon test present |
+| `basename` | S | 61 | 97 | 95.2% | ✅ 2/2 | — | 0.75 | KEEP | Preflight: clean and small · schema and daemon test present |
+| `kill` | S | 160 | 198 | 100.0% | — | — | 0.50 | KEEP | Preflight: clean, 100% coverage; `run` 79 lines · schema and daemon test present |
+| `tty` | S | 108 | 201 | 100.0% | — | — | 0.50 | KEEP | Preflight: clean, 100% coverage · schema and daemon test present |
+| `mkfifo` | S | 81 | 99 | 100.0% | — | — | 0.50 | KEEP | Preflight: clean, 100% coverage · schema and daemon test present |
+| `env` | S | 73 | 86 | 100.0% | — | — | 0.50 | KEEP | Preflight: clean, 100% coverage · schema and daemon test present |
+| `logname` | S | 70 | 77 | 100.0% | — | — | 0.50 | KEEP | Preflight: clean, 100% coverage · schema and daemon test present |
 | `whoami` | S | 66 | 130 | 100.0% | — | — | 0.50 | KEEP ✅ | F1+F3: userCurrent seam, 100% |
-| `link` | S | 64 | 91 | 100.0% | — | — | 0.50 |  |  |
-| `unlink` | S | 63 | 94 | 100.0% | — | — | 0.50 |  |  |
-| `truefalse` | S | 60 | 87 | 100.0% | ✅ 4/4 | — | 0.50 |  |  |
+| `link` | S | 64 | 91 | 100.0% | — | — | 0.50 | KEEP | Preflight: clean, 100% coverage · schema and daemon test present |
+| `unlink` | S | 63 | 94 | 100.0% | — | — | 0.50 | KEEP | Preflight: clean, 100% coverage · schema and daemon test present |
 | `sha512sum` | S | 59 | 176 | 100.0% | — | — | 0.50 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
 | `sha256sum` | S | 58 | 208 | 100.0% | — | — | 0.50 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
 | `sum` | S | 132 | 238 | 100.0% | ✅ 4/4 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
@@ -254,6 +253,7 @@ For example, `md5sum` was refactored under F2 (completed), so its verdict is `KE
 | `mkdir` | S | 79 | 138 | 100.0% | ✅ 2/2 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
 | `ln` | S | 78 | 122 | 100.0% | ✅ 6/6 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
 | `rmdir` | S | 69 | 133 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schema and daemon test present |
+| `truefalse` | S | 60 | 87 | 100.0% | ✅ 4/4 | — | 0.00 | KEEP | Preflight: 100% coverage and a passing BusyBox suite; schemas `true` and `false` present |
 | `sha1sum` | S | 59 | 177 | 100.0% | ✅ 1/1 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
 | `md5sum` | S | 58 | 202 | 100.0% | ✅ 2/2 | — | 0.00 | KEEP ✅ | F1+F2: shared digest core, 100% cov |
 | `bunzip2` | S | 51 | 194 | 100.0% | ✅ 11/11 | — | 0.00 | KEEP ✅ | F7: shared decompress core, 100% cov |
@@ -289,10 +289,12 @@ A high score is a **priority signal, not a verdict**. The range is 0–10.
 | BusyBox root skip, or no BusyBox test | +0.25 | matrix |
 
 **Exemption rule:** a command with **100% coverage and a passing BusyBox suite scores 0**.
-Such a command is validated, so it is the weakest candidate for change. 13 commands qualify.
+Such a command is validated, so it is the weakest candidate for change. 14 commands qualify
+(`sum`, `pwd`, `mkdir`, `ln`, `rmdir`, `dirname`, `truefalse`, and the seven F1/F2/F7 refactors
+`sha3sum`, `sha1sum`, `md5sum`, `bunzip2`, `uncompress`, `unlzma`, `bzcat`).
 
-**Preflight result:** 1 command ≥ 5.0 · 13 commands 3.0–3.9 · 21 commands 2.0–2.9 ·
-80 commands < 2.0 (13 of those are exempt).
+**Preflight result:** 1 command ≥ 5.0 · 13 commands 3.0–4.9 · 21 commands 2.0–2.9 ·
+80 commands < 2.0 (14 of those are exempt).
 
 **Top candidates (PreAudit ≥ 3.0):** `bc`, `sed`, `printf`, `date`, `patch`, `mount`, `tar`,
 `hexdump`, `dc`, `start-stop-daemon`, `unzip`, `cpio`, `uudecode`, `tsort`. All 14 are inspected.
@@ -325,11 +327,18 @@ flag-error block to [pkg/common](../pkg/common) and use it in every command.
 (`processEscapes`, 88 lines, and `processEscapesForB`, 77 lines). [pkg/echo](../pkg/echo) holds a
 third copy. Merge them into one helper with a `\c` option.
 
-#### F12 — 44 commands have no published JSON schema ⏳ OPEN
-[wiki/json_schema.md](json_schema.md) requires a schema for every `--json` utility. Only 78 of the
-121 registered commands have a file in `test/schemas/`. Missing examples: `bc`, `cal`, `cpio`,
-`cryptpw`, `dc`, `hexdump`, `mount`, `tsort`, `unzip`, `uudecode`, `uuencode`, `wget`, `xxd`.
-Add the schema and a fixture for each command. `make validate-schemas` covers the ones that exist.
+#### F12 — 39 commands have no published JSON schema ⏳ OPEN
+[wiki/json_schema.md](json_schema.md) requires a schema for every `--json` utility. 39 of the 115
+audited commands have no file in `test/schemas/`: `bc`, `mount`, `hexdump`, `dc`,
+`start-stop-daemon`, `unzip`, `cpio`, `uudecode`, `tsort`, `ar`, `makedevs`, `mdev`,
+`mkfs_minix`, `wget`, `xxd`, `cryptpw`, `cal`, `uuencode`, `dd`, `taskset`, `which`, `daemon`,
+`factor`, `seq`, `rx`, `pidof`, `uptime`, `tree`, `shell`, `realpath`, `hostid`, `rev`,
+`sha512sum`, `sha3sum`, `sha1sum`, `bunzip2`, `uncompress`, `unlzma`, `bzcat`.
+Add the schema and a fixture for each command.
+
+**Name trap:** a schema can exist under a different name than the command. `testcmd` uses
+`test.schema.json`, and `truefalse` uses `true.schema.json` and `false.schema.json`. Match on the
+alias before you report a schema as missing.
 
 #### F13 — UID/GID lookup helpers duplicated between `chgrp` and `chown` ⏳ OPEN
 `lookupGID` is byte-identical in [pkg/chgrp](../pkg/chgrp) and [pkg/chown](../pkg/chown), and
@@ -381,9 +390,20 @@ both report 0 (`dc` 36/36, `tar` 33/33). AGENTS.md §4a also carried a fixed cov
 [wiki/test_coverage_matrix.md](test_coverage_matrix.md) as the single source. Keep the numbers in
 one place only. The same rule applies to the coverage gate: quote the gate, not the current value.
 
+#### P6 — Two BusyBox cells were wrong, and alias names broke the score ✅ FIXED
+1. `mkfs_minix` showed `⚠️ 0/1 (1 skip)`. An isolated run passes 1/1, and the companion matrix
+   agrees. The cell is now `✅ 1/1`, so the score drops 2.50 → 2.25.
+2. The BusyBox lookup keyed on the command name. Three matrix rows name two applets in one cell
+   (`true`/`false`, `gzip`/`gunzip`, `test`/`[`), so the lookup missed them. `truefalse` looked
+   unverified, and `gzip` lost its pass. The lookup now matches every backticked alias.
+3. The matrix marks `test` as JSON-RPC ❌. `test/posix-json/runner_test.go` asserts
+   `goposix.test` and checks the bool result, so the mark is stale.
+
+**Effect:** `truefalse` 0.50 → 0.00 (exempt), `gzip` 1.50 → 1.25, `mkfs_minix` 2.50 → 2.25.
+
 ## 6. Definition of Done
 
-- Every row has a verdict (blank = pending) and notes.
+- Every row has a verdict and notes. ✅ (115/115)
 - No row shows `REFACTOR` or `IMPROVE` for a finding that is already complete.
 - Findings F1–F15 and P1 are resolved or explicitly deferred with reasons.
 - Commands with `PreAudit = 0` (100% coverage and a passing BusyBox suite) need no change.
