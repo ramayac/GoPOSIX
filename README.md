@@ -22,7 +22,7 @@ Check out **[HISTORY.md](HISTORY.md)** for the story behind GoPOSIX, the project
 
 See **[wiki/rpc_quickstart.md](wiki/rpc_quickstart.md)** for the JSON-RPC protocol and **[wiki/usage.md](wiki/usage.md)** for CLI usage and Docker recipes.
 
-### CLI (secondary)
+### CLI
 
 ```bash
 docker pull ghcr.io/ramayac/goposix:cli

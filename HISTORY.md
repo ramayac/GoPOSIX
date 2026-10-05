@@ -16,7 +16,7 @@ It's kind of the "natural conclusion" ... right?????
 
 (Also deepseek-v4-pro had an very agressive [75% discount](https://api-docs.deepseek.com/quick_start/pricing)!, and I wanted to try [pi.dev](https://pi.dev) instead of Antigravity/ClaudeCode (I ended up using `agy` for some auditing))
 
-All things kind of aligned in the last month (May 2025) so here we are now.
+All things kind of aligned in the May 2025, so I would get the urge to work in something like this, and so here we are now and this is the project.
 
 I'm not the first to start something like this, there is [cugo](https://github.com/jcmdln/cugo) and [go-posix](https://github.com/nirenjan/go-posix), but sadly they seem to be abandoned, and no wonder! A project like this is a huge undertaking, its probably a year of solid work for 1 human, that being said, took about 3 weeks to do with AI, with the proper "harness" and "agentic development" approach, that's really something.
 
