@@ -1,6 +1,7 @@
 ---
 status: current
 description: "How to absorb a repo change into the wiki."
+references: [external:https://github.com/ramayac/go-wiki-engine, source:wiki/log.md]
 ---
 
 # Ingest Workflow

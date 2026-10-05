@@ -1,6 +1,7 @@
 ---
 status: legacy
 description: "Post-MVP fixes and utilities from Phases 14 to 18 (completed)."
+references: [source:pkg/dd/dd.go, source:pkg/patch/patch.go]
 ---
 
 # Post-MVP — Fixes & Utilities

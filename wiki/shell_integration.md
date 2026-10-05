@@ -1,6 +1,7 @@
 ---
 status: current
 description: "CLI-to-daemon forwarding for shell users."
+references: [source:forwarder.go, source:cmd/goposix/main.go]
 ---
 
 # Shell Integration — CLI-to-Daemon Forwarding

@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Append-only wiki maintenance timeline."
+references: [source:.wiki-instructions/wiki-maintainer.md]
 ---
 
 # Wiki Log

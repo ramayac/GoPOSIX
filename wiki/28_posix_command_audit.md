@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Phase 28: POSIX command audit plan, matrix, and remaining work."
+references: [source:wiki/test_coverage_matrix.md, source:test/posix-json]
 ---
 
 # Phase 28 — POSIX Command Audit (Plan & Matrix)

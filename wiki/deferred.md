@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Canonical registry of deferred and future work."
+references: [source:internal/shell/interpreter.go, source:forwarder.go, source:cmd/goposix/main.go]
 ---
 
 # Deferred & Future Work

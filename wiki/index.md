@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Wiki index: canonical page list."
+references: [source:wiki/schema.md]
 ---
 
 # Wiki Index

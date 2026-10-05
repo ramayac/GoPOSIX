@@ -1,6 +1,7 @@
 ---
 status: legacy
 description: "Blueprint for the Go-Alpine MVP: BusyBox replacement and tradeoffs."
+references: [source:docker/Dockerfile.openbox]
 ---
 
 # Blueprint: Go-Alpine MVP Plan

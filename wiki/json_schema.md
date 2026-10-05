@@ -1,6 +1,7 @@
 ---
 status: current
 description: "The --json output envelope and per-utility schemas."
+references: [source:test/schemas, source:test/validate_schemas.sh]
 ---
 
 # JSON Output Schemas

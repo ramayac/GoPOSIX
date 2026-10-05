@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Options for exposing daemon metrics to OS tools."
+references: [source:internal/daemon/observability.go, source:internal/daemon/server.go, source:internal/daemon/proctitle_linux.go]
 ---
 
 # GoPOSIX Observability

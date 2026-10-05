@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Project roadmap, current state, and phase index."
+references: [source:Makefile, source:wiki/todos.md]
 ---
 
 # GoPOSIX — Project Roadmap & State

@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Wiki structure contract."
+references: [external:https://github.com/ramayac/go-wiki-engine]
 ---
 
 # Wiki Schema (Structure Contract)

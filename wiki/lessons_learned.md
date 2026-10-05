@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Permanent record of insights and design decisions."
+references: [source:test/validate_schemas.sh, source:wiki/test_coverage_matrix.md]
 ---
 
 # Lessons Learned

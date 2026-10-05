@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Deploy GoPOSIX as a Docker Compose sidecar."
+references: [source:docker/Dockerfile]
 ---
 
 # Docker Compose

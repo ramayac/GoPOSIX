@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Deploy GoPOSIX as a Kubernetes sidecar."
+references: [source:docker/Dockerfile]
 ---
 
 # Kubernetes

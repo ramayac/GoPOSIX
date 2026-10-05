@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Usage guide: CLI, daemon, Docker, JSON-RPC."
+references: [source:docker/Dockerfile, source:cmd/goposix/main.go, external:https://github.com/ramayac/goposix]
 ---
 
 # Usage Guide

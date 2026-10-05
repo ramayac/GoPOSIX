@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Performance benchmark commands, scale, and results."
+references: [source:test/benchmark/runner.sh, source:test/benchmark/bench_client/main.go]
 ---
 
 # Performance Benchmarking — Quick Reference

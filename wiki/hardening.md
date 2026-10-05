@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Consolidated hardening phases across earlier project stages."
+references: [source:pkg/common/security.go, source:internal/shell/interpreter.go, source:docker/Dockerfile]
 ---
 
 # Hardening Phases — Consolidated

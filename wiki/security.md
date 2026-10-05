@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Security model and deployment posture."
+references: [source:pkg/common/security.go, source:internal/shell/interpreter.go, external:https://github.com/ramayac/GoPOSIX/security]
 ---
 
 # Security Model

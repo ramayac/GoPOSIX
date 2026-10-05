@@ -1,6 +1,7 @@
 ---
 status: current
 description: "POSIX compliance FAQ."
+references: [external:https://pubs.opengroup.org/onlinepubs/9699919799/, external:https://busybox.net/downloads/BusyBox.html, external:https://unix.org/what_is_unix/single_unix_specification.html]
 ---
 
 # POSIX Compliance FAQ

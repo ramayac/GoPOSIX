@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Self-upgrade (--version, --upgrade) and versioning."
+references: [source:upgrade.go, source:goposix.go, source:.goreleaser.yml, external:https://api.github.com/repos/ramayac/goposix/releases/latest]
 ---
 
 # Self-Upgrade & Versioning

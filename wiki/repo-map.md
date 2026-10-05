@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Current repo architecture and exclusions."
+references: [source:cmd/goposix/main.go, source:goposix.go, source:forwarder.go, source:Makefile, source:.goreleaser.yml, source:internal/daemon/server.go, source:docker/Dockerfile]
 ---
 
 # Repo Map

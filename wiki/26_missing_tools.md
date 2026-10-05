@@ -1,6 +1,7 @@
 ---
 status: legacy
 description: "Phase 26: analysis of missing BusyBox tools (completed)."
+references: [source:test/busybox_testsuite]
 ---
 
 # Phase 26 — Missing BusyBox Tools Analysis

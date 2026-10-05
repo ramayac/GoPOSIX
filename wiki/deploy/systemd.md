@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Run GoPOSIX as a systemd daemon on a Linux host."
+references: [source:docker/Dockerfile, external:https://github.com/ramayac/goposix]
 ---
 
 # systemd

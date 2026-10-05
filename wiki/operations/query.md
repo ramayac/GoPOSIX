@@ -1,6 +1,7 @@
 ---
 status: current
 description: "How to answer questions from the wiki first."
+references: [external:https://github.com/ramayac/go-wiki-engine, source:wiki/index.md]
 ---
 
 # Query Workflow

@@ -1,6 +1,7 @@
 ---
 status: current
 description: "System architecture: component flow, key packages, Docker images."
+references: [source:cmd/goposix/main.go, source:internal/daemon/server.go, source:internal/dispatch/dispatch.go, source:internal/shell/interpreter.go, source:pkg/common/flags.go, external:https://github.com/ramayac/goposix/releases]
 ---
 
 # System Architecture

@@ -1,6 +1,7 @@
 ---
 status: current
 description: "JSON-RPC 2.0 protocol reference."
+references: [source:internal/daemon/server.go]
 ---
 
 # JSON-RPC Protocol Reference

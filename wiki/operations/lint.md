@@ -1,6 +1,7 @@
 ---
 status: current
 description: "How to health-check and repair wiki drift."
+references: [external:https://github.com/ramayac/go-wiki-engine, source:wiki/schema.md]
 ---
 
 # Lint Workflow

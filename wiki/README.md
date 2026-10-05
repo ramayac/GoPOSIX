@@ -1,6 +1,7 @@
 ---
 status: current
 description: "Wiki entry point: purpose, rules, and navigation."
+references: [source:wiki/schema.md, external:https://github.com/ramayac/go-wiki-engine]
 ---
 
 # Wiki
