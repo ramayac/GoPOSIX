@@ -81,7 +81,9 @@ func (c *Client) Call(ctx context.Context, method string, params interface{}, re
 	if !ok {
 		deadline = time.Now().Add(c.timeout)
 	}
-	c.conn.SetDeadline(deadline)
+	if err := c.conn.SetDeadline(deadline); err != nil {
+		return err
+	}
 
 	if err := c.enc.Encode(req); err != nil {
 		return err
