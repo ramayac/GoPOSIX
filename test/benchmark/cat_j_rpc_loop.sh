@@ -4,7 +4,7 @@
 # Simulates a typical programmatic task flow repeated N times:
 #   ls → cat → grep → wc → find
 # Three modes compared:
-#   1. GoPOSIX daemon via Go SDK (persistent connection, 5 typed calls/iter)
+#   1. GoPOSIX daemon via raw JSON-RPC (persistent connection, 5 calls/iter)
 #   2. GoPOSIX daemon via socat (one connection per call — legacy, kept for comparison)
 #   3. BusyBox process-per-command (fork+exec per command)
 # =============================================================================
@@ -75,10 +75,10 @@ if ! kill -0 "$DAEMON_PID" 2>/dev/null; then
   exit 1
 fi
 
-# === Mode 1: GoPOSIX daemon via Go SDK (persistent connection, typed calls) ===
-echo "# GoPOSIX SDK RPC task loop ($ITERATIONS iterations)" >&2
+# === Mode 1: GoPOSIX daemon via raw JSON-RPC (persistent connection) ===
+echo "# GoPOSIX RPC task loop ($ITERATIONS iterations)" >&2
 for i in $(seq "$SAMPLES"); do
-  /bench/bench-sdk-client -socket "$SOCKET" -op rpc-loop -workspace "$WORKDIR/workspace" $ITERATIONS 2>/dev/null
+  /bench/bench-rpc-client -socket "$SOCKET" -op rpc-loop -workspace "$WORKDIR/workspace" $ITERATIONS 2>/dev/null
   sleep 1
 done | tee -a "$ACCUM"
 
@@ -115,11 +115,11 @@ bench_run "rpc_loop_fork_${ITERATIONS}_busybox" "$SAMPLES" \
 # ===========================================================================
 # Log: compute medians, emit table + findings.
 # ===========================================================================
-GPX_SDK_MED=$(grep "daemon_sdk_rpc-loop_${ITERATIONS}," "$ACCUM" | cut -d, -f3 | bench_median)
+GPX_RPC_MED=$(grep "daemon_rpc_rpc-loop_${ITERATIONS}," "$ACCUM" | cut -d, -f3 | bench_median)
 GPX_SOCAT_MED=$(grep "rpc_loop_socat_${ITERATIONS}_goposix," "$ACCUM" | cut -d, -f3 | bench_median)
 BBX_MED=$(grep "rpc_loop_fork_${ITERATIONS}_busybox," "$ACCUM" | cut -d, -f3 | bench_median)
 
-GPX_SDK_MED=${GPX_SDK_MED:-0}
+GPX_RPC_MED=${GPX_RPC_MED:-0}
 GPX_SOCAT_MED=${GPX_SOCAT_MED:-0}
 BBX_MED=${BBX_MED:-0}
 
@@ -145,25 +145,25 @@ else
   echo "| GPX Daemon (socat) | — | — | — |" >&2
 fi
 
-if [ "$(echo "$GPX_SDK_MED > 0" | bc -l 2>/dev/null)" = "1" ]; then
-  gpx_sdk_per=$(awk "BEGIN { printf \"%.2f\", ($GPX_SDK_MED / $ITERATIONS) * 1000 }" 2>/dev/null || echo "?")
-  echo "| **GPX Daemon (SDK)** | ${GPX_SDK_MED} | ${gpx_sdk_per} | — |" >&2
+if [ "$(echo "$GPX_RPC_MED > 0" | bc -l 2>/dev/null)" = "1" ]; then
+  gpx_rpc_per=$(awk "BEGIN { printf \"%.2f\", ($GPX_RPC_MED / $ITERATIONS) * 1000 }" 2>/dev/null || echo "?")
+  echo "| **GPX Daemon (RPC)** | ${GPX_RPC_MED} | ${gpx_rpc_per} | — |" >&2
 else
-  echo "| **GPX Daemon (SDK)** | — | — | — |" >&2
+  echo "| **GPX Daemon (RPC)** | — | — | — |" >&2
 fi
 
 echo "" >&2
 
 # Findings.
-if [ "$(echo "$GPX_SDK_MED > 0" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$BBX_MED > 0" | bc -l 2>/dev/null)" = "1" ]; then
-  if [ "$(echo "$GPX_SDK_MED < $BBX_MED" | bc -l 2>/dev/null)" = "1" ]; then
-    ratio=$(awk "BEGIN { printf \"%.1f\", $BBX_MED / $GPX_SDK_MED }" 2>/dev/null || echo "?")
-    echo "# FINDING: RPC task loop ($ITERATIONS iterations): GoPOSIX SDK wins — ${GPX_SDK_MED}s vs BusyBox ${BBX_MED}s (${ratio}× faster)." >&2
+if [ "$(echo "$GPX_RPC_MED > 0" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$BBX_MED > 0" | bc -l 2>/dev/null)" = "1" ]; then
+  if [ "$(echo "$GPX_RPC_MED < $BBX_MED" | bc -l 2>/dev/null)" = "1" ]; then
+    ratio=$(awk "BEGIN { printf \"%.1f\", $BBX_MED / $GPX_RPC_MED }" 2>/dev/null || echo "?")
+    echo "# FINDING: RPC task loop ($ITERATIONS iterations): GoPOSIX RPC wins — ${GPX_RPC_MED}s vs BusyBox ${BBX_MED}s (${ratio}× faster)." >&2
   else
-    ratio=$(awk "BEGIN { printf \"%.1f\", $GPX_SDK_MED / $BBX_MED }" 2>/dev/null || echo "?")
-    echo "# FINDING: RPC task loop ($ITERATIONS iterations): BusyBox wins — ${BBX_MED}s vs GoPOSIX SDK ${GPX_SDK_MED}s (${ratio}× faster)." >&2
+    ratio=$(awk "BEGIN { printf \"%.1f\", $GPX_RPC_MED / $BBX_MED }" 2>/dev/null || echo "?")
+    echo "# FINDING: RPC task loop ($ITERATIONS iterations): BusyBox wins — ${BBX_MED}s vs GoPOSIX RPC ${GPX_RPC_MED}s (${ratio}× faster)." >&2
   fi
 fi
-echo "# FINDING: Per-iteration: Go SDK ${gpx_sdk_per:-?}ms vs socat ${gpx_socat_per:-?}ms vs BusyBox ${bbx_per:-?}ms. SDK eliminates 5 socat connections per iteration." >&2
+echo "# FINDING: Per-iteration: Go RPC ${gpx_rpc_per:-?}ms vs socat ${gpx_socat_per:-?}ms vs BusyBox ${bbx_per:-?}ms. The persistent connection eliminates 5 socat connections per iteration." >&2
 
 rm -f "$ACCUM"

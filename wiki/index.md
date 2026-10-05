@@ -3,7 +3,7 @@
 ## Core
 
 - [README.md](README.md) | Purpose, rules, and shell-first navigation.
-- [usage.md](usage.md) | Usage guide: CLI, daemon, Docker Compose, Go SDK, recipes.
+- [usage.md](usage.md) | Usage guide: CLI, daemon, Docker Compose, JSON-RPC, recipes.
 - [schema.md](schema.md) | Wiki structure contract (not to be confused with [json_schema.md](json_schema.md) for `--json` output schemas).
 - [phases.md](phases.md) | Project roadmap, current state, and phase index.
 - [repo-map.md](repo-map.md) | Current repo architecture and exclusions.
@@ -18,11 +18,9 @@
 - [observability_exports.md](observability_exports.md) | Options for exposing daemon metrics to OS tools and external consumers.
 - [self_upgrade.md](self_upgrade.md) | Self-upgrade (`--version`, `--upgrade`).
 
-## SDK & API
+## JSON-RPC API
 
-- [sdk.md](sdk.md) | Go SDK guide — typed client, connection pooling, 60µs/call (primary interface).
-- [rpc_api.md](rpc_api.md) | JSON-RPC typed method reference (signature catalog).
-- [rpc_quickstart.md](rpc_quickstart.md) | JSON-RPC quickstart — raw protocol for non-Go clients.
+- [rpc_quickstart.md](rpc_quickstart.md) | JSON-RPC protocol reference — raw socket protocol.
 - [json_schema.md](json_schema.md) | `--json` output envelope and per-utility schemas.
 - [shell_integration.md](shell_integration.md) | CLI-to-daemon forwarding for shell users (socat, Python, Go helper).
 

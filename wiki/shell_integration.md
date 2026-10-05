@@ -256,22 +256,22 @@ _goposix_rpc() {
 | **Any system with Go** | Option 3 (thin binary) | Proper JSON, proper exit codes, 3ms start |
 | **Embedded/minimal** | Option 4 (bash /dev/tcp) | Zero dependencies, works everywhere bash works |
 | **Desktop/workstation** | Option 1 or 3 | socat is common; thin binary is clean |
-| **Production server** | Just use the Go SDK | Don't forward CLI at all — call `pkg/client` directly |
+| **Production server** | JSON-RPC directly | Don't forward the CLI at all — call the daemon over JSON-RPC |
 
 ---
 
 ## When NOT to Use Shell Forwarding
 
-1. **You're writing a Go program.** Use `pkg/client` directly at 60µs/call.
+1. **You're writing a program.** Call the daemon directly over JSON-RPC at 60µs/call.
 2. **You're doing bulk operations.** Shell forwarding still spawns a new process
-   (socat/nc/python) per invocation — the Go SDK's persistent connection is the
+   (socat/nc/python) per invocation — a persistent JSON-RPC connection is the
    right tool for loops.
 3. **You need stdin.** Shell forwarding can't stream stdin through JSON-RPC.
 4. **You need stderr capture.** The daemon's stderr goes to its own log, not
    back through the RPC response.
 
 Shell forwarding is for interactive use and shell scripts where 500µs is
-"fast enough" and the Go SDK isn't available.
+"fast enough" and a persistent JSON-RPC client isn't available.
 
 ---
 

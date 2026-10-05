@@ -141,7 +141,7 @@ cat_desc() {
     echo "GoPOSIX's persistent JSON-RPC daemon eliminates fork+exec overhead:"
     echo ""
     echo "- **Daemon amortized latency:** One process handles N requests; BusyBox spawns per call"
-    echo "- **RPC task loop throughput:** No shell parsing, typed client SDK, connection reuse"
+    echo "- **RPC task loop throughput:** No shell parsing, raw JSON-RPC, connection reuse"
     echo "- **Concurrent operations:** Go goroutines parallelize file I/O (aspirational)"
     echo ""
 

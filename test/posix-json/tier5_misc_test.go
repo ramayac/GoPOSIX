@@ -8,7 +8,6 @@ import (
 	"time"
 
 	_ "github.com/ramayac/goposix/pkg/basename"
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/dirname"
 	_ "github.com/ramayac/goposix/pkg/env"
 	_ "github.com/ramayac/goposix/pkg/expr"
@@ -20,6 +19,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/tree"
 	_ "github.com/ramayac/goposix/pkg/tsort"
 	_ "github.com/ramayac/goposix/pkg/xargs"
+	client "github.com/ramayac/goposix/test/testutil"
 )
 
 func TestTier5_Expr(t *testing.T) {

@@ -71,7 +71,6 @@ PKG_DIRS   := . \
               ./pkg/sed/... \
               ./internal/daemon/... \
               ./pkg/daemon/... \
-              ./pkg/client/... \
               ./pkg/sleep/... \
               ./pkg/date/... \
               ./pkg/dd/... \
@@ -231,8 +230,8 @@ test-v:
 #
 # Race detection is ~10x slower than normal tests and uses ~10x more memory.
 # Use this target during development when touching concurrent code (daemon,
-# shell, session manager, client SDK), before merging PRs that modify
-# goroutine coordination, or when debugging flaky test failures.
+# shell, session manager), before merging PRs that modify goroutine
+# coordination, or when debugging flaky test failures.
 #
 # Not included in the default 'test' or 'ci' targets due to overhead.
 .PHONY: test-race

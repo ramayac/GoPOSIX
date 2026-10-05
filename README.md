@@ -1,6 +1,6 @@
 # GoPOSIX
 
-A Go-native, single-binary POSIX userland with 115 tools. Runs as a persistent JSON-RPC daemon or multicall CLI, a typed Go SDK and ~98.2% BusyBox test compatibility (871 of 917 tests pass).
+A Go-native, single-binary POSIX userland with 115 tools. Runs as a persistent JSON-RPC daemon or multicall CLI, with ~98.2% BusyBox test compatibility (871 of 917 tests pass).
 
 [![CI](https://github.com/ramayac/goposix/actions/workflows/ci.yml/badge.svg)](https://github.com/ramayac/goposix/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ramayac/goposix.svg)](https://pkg.go.dev/github.com/ramayac/goposix)
@@ -20,7 +20,7 @@ Check out **[HISTORY.md](HISTORY.md)** for the story behind GoPOSIX, the project
 
 ## Quickstart
 
-See **[wiki/sdk.md](wiki/sdk.md)** for the full Go SDK guide and **[wiki/usage.md](wiki/usage.md)** for CLI usage and Docker recipes.
+See **[wiki/rpc_quickstart.md](wiki/rpc_quickstart.md)** for the JSON-RPC protocol and **[wiki/usage.md](wiki/usage.md)** for CLI usage and Docker recipes.
 
 ### CLI (secondary)
 
@@ -44,7 +44,7 @@ make ci           # full pipeline (test + testsuite + coverage + docker)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GOPOSIX_SOCKET` | `/var/run/goposix.sock` | Daemon UNIX socket path for CLI forwarding and client SDK connections |
+| `GOPOSIX_SOCKET` | `/var/run/goposix.sock` | Daemon UNIX socket path for CLI forwarding and JSON-RPC client connections |
 | `GOPOSIX_DEBUG` | (empty) | Set to `1` to enable verbose JSON-RPC request/response debug logging to stderr |
 | `GOPOSIX_SHELL_TIMEOUT` | `30s` | Shell execution timeout (Go duration format, e.g. `60s`, `5m`) |
 | `GOPOSIX_MAX_REQUEST_SIZE` | `1048576` (1MB) | Max JSON-RPC request size in bytes |
@@ -63,12 +63,11 @@ make ci           # full pipeline (test + testsuite + coverage + docker)
 
 ## Daemon Stdin
 
-The JSON-RPC daemon accepts a `stdin` field in request params, enabling stdin-consuming utilities (grep, sed, sort, wc, tr, head, tail, cut, tee, uniq, and 30+ others) to receive input directly through the Go SDK without temp files.
+The JSON-RPC daemon accepts a `stdin` field in request params, enabling stdin-consuming utilities (grep, sed, sort, wc, tr, head, tail, cut, tee, uniq, and 30+ others) to receive input directly through JSON-RPC without temp files.
 
-```go
-// Pass stdin through the daemon
-c.Grep(ctx, []string{"foo"}, client.WithStdin("line1\nline2\nfoo\n"))
-c.Wc(ctx, []string{"-l"}, client.WithStdin("line1\nline2\nline3\n"))
+```json
+{"jsonrpc":"2.0","method":"goposix.grep","params":{"flags":["foo"],"stdin":"line1\nline2\nfoo\n"},"id":1}
+{"jsonrpc":"2.0","method":"goposix.wc","params":{"flags":["-l"],"stdin":"line1\nline2\nline3\n"},"id":2}
 ```
 
 Every command response also includes a `stderr` field with human-readable error text. `rawOutput` mode returns `stdout` and `stderr` as raw text.
@@ -77,7 +76,7 @@ Every command response also includes a `stderr` field with human-readable error 
 
 | Metric | GoPOSIX | BusyBox |
 |--------|:------:|:------:|
-| Per-call latency (Go SDK, persistent) | **~60µs** | ~680µs (fork+exec) |
+| Per-call latency (JSON-RPC, persistent) | **~60µs** | ~680µs (fork+exec) |
 | Large-file grep | **significantly faster** | baseline |
 | Binary size | ~10 MB | ~800 KB |
 | Cold start | ~7ms | <1ms |
@@ -86,9 +85,7 @@ Every command response also includes a `stderr` field with human-readable error 
 
 ## Documentation
 
-- [Go SDK Guide](wiki/sdk.md) — typed client for all utilities
-- [RPC API Reference](wiki/rpc_api.md)
-- [JSON-RPC Protocol](wiki/rpc_quickstart.md) — raw socket protocol for non-Go clients
+- [JSON-RPC Protocol](wiki/rpc_quickstart.md) — socket protocol for clients
 - [Architecture](wiki/architecture.md)
 - [Security Model](wiki/security.md)
 - [JSON Schema](wiki/json_schema.md) — `--json` output schemas for every utility
@@ -101,7 +98,7 @@ Every command response also includes a `stderr` field with human-readable error 
 ## Quick Project Principles
 
 - **Multicall Binary:** Single binary dispatched via symlink or subcommand (`goposix ls`).
-- **Daemon-First:** The default image starts the persistent JSON-RPC daemon. Use the Go SDK for programmatic access. CLI is available as a secondary interface (`goposix:cli`).
+- **Daemon-First:** The default image starts the persistent JSON-RPC daemon. Use the JSON-RPC API for programmatic access. CLI is available as a secondary interface (`goposix:cli`).
 - **No CGO:** Static compilation for `FROM scratch` containers (`CGO_ENABLED=0`).
 - **Little Dependencies:** 12 external Go modules — 10 direct and 2 indirect. Direct: `mvdan.cc/sh/v3` (shell), `github.com/benhoyt/goawk` (`awk`), `github.com/blakesmith/ar` (`ar`), `github.com/cavaliergopher/cpio` (`cpio`), `github.com/hotei/dcompress` (`uncompress`), `github.com/sergeymakinen/go-crypt` and `github.com/tredoe/crypt` (`cryptpw`), `github.com/ulikunitz/xz` (`tar`, `unlzma`), `golang.org/x/sys` (syscalls), `golang.org/x/crypto` (`sha3sum`). Indirect: `github.com/hotei/mdr`, `golang.org/x/term`. No external libraries for flag parsing, output, or utility logic.
 - **`--json` Only:** Structured output via `--json` long flag only — no short-form (`-j`) collision with POSIX flags.

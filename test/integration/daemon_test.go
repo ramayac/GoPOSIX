@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/ramayac/goposix/internal/daemon"
-	"github.com/ramayac/goposix/pkg/client"
+	client "github.com/ramayac/goposix/test/testutil"
 
 	// Register all utilities so the daemon can dispatch them
 	_ "github.com/ramayac/goposix/pkg/cat"

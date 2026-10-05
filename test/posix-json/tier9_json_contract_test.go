@@ -14,10 +14,10 @@ import (
 	"time"
 
 	_ "github.com/ramayac/goposix/pkg/bc"
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/hexdump"
 	_ "github.com/ramayac/goposix/pkg/mkfs_minix"
 	_ "github.com/ramayac/goposix/pkg/xxd"
+	client "github.com/ramayac/goposix/test/testutil"
 )
 
 func TestTier9_Bc(t *testing.T) {

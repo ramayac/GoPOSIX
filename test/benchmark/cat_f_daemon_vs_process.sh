@@ -3,7 +3,7 @@
 # Cat F — Daemon vs Process-per-Call (The GoPOSIX Killer Feature).
 # Three modes compared:
 #   1. GoPOSIX daemon via socat (one connection per call)
-#   2. GoPOSIX daemon via Go SDK (persistent connection, typed client)
+#   2. GoPOSIX daemon via raw JSON-RPC (persistent connection)
 #   3. BusyBox process-per-call (fork+exec per invocation)
 # Uses echo as the simplest possible command.
 # =============================================================================
@@ -52,18 +52,18 @@ for N in "$N1" "$N2" "$N3"; do
   bench_run "daemon_socat_${N}_goposix" "$SAMPLES" \
     "( for i in \$(seq $N); do echo '$JSON_REQ' | socat -T2 - UNIX-CONNECT:$SOCKET >/dev/null 2>&1; done )" | tee -a "$ACCUM"
 
-  # === Mode 2: GoPOSIX daemon via Go SDK (persistent connection, typed client) ===
-  echo "# GoPOSIX SDK — $N echo calls" >&2
-  /bench/bench-sdk-client -socket "$SOCKET" -op echo $N > /tmp/bench_sdk_out 2>/tmp/bench_sdk_err
+  # === Mode 2: GoPOSIX daemon via raw JSON-RPC (persistent connection) ===
+  echo "# GoPOSIX RPC — $N echo calls" >&2
+  /bench/bench-rpc-client -socket "$SOCKET" -op echo $N > /tmp/bench_rpc_out 2>/tmp/bench_rpc_err
   if [ $? -eq 0 ]; then
-    # bench_client outputs: daemon_sdk_echo_N,1,wall,0,0,0
+    # bench_client outputs: daemon_rpc_echo_N,1,wall,0,0,0
     # We need 3 samples — run it 3 times.
     for i in $(seq "$SAMPLES"); do
-      /bench/bench-sdk-client -socket "$SOCKET" -op echo $N 2>/dev/null
+      /bench/bench-rpc-client -socket "$SOCKET" -op echo $N 2>/dev/null
       sleep 1
     done | tee -a "$ACCUM"
   else
-    echo "ERROR: bench_client failed: $(cat /tmp/bench_sdk_err)" >&2
+    echo "ERROR: bench_client failed: $(cat /tmp/bench_rpc_err)" >&2
   fi
 
   # Kill daemon before testing BusyBox.
@@ -85,7 +85,7 @@ done
   echo ""
   echo "## Cat F — Daemon Amortization (seconds, median of $SAMPLES)"
   echo ""
-  echo "| N Calls | GPX Daemon (socat) | GPX Daemon (SDK) | BusyBox Fork | SDK/BBX | Winner |"
+  echo "| N Calls | GPX Daemon (socat) | GPX Daemon (RPC) | BusyBox Fork | RPC/BBX | Winner |"
   echo "|--------:|:------------------:|:----------------:|:------------:|:-------:|:------:|"
 } >&2
 
@@ -93,37 +93,37 @@ FINDINGS_TMP=$(mktemp)
 
 for N in "$N1" "$N2" "$N3"; do
   gpx_socat=$(grep "daemon_socat_${N}_goposix," "$ACCUM" | cut -d, -f3 | bench_median)
-  gpx_sdk=$(grep "daemon_sdk_echo_${N}," "$ACCUM" | cut -d, -f3 | bench_median)
+  gpx_rpc=$(grep "daemon_rpc_echo_${N}," "$ACCUM" | cut -d, -f3 | bench_median)
   bbx_med=$(grep "daemon_fork_${N}_busybox," "$ACCUM" | cut -d, -f3 | bench_median)
 
   # Per-call costs in milliseconds.
   gpx_socat_per=$(awk "BEGIN { printf \"%.2f\", (${gpx_socat:-0} / $N) * 1000 }" 2>/dev/null || echo "?")
-  gpx_sdk_per=$(awk "BEGIN { printf \"%.2f\", (${gpx_sdk:-0} / $N) * 1000 }" 2>/dev/null || echo "?")
+  gpx_rpc_per=$(awk "BEGIN { printf \"%.2f\", (${gpx_rpc:-0} / $N) * 1000 }" 2>/dev/null || echo "?")
   bbx_per=$(awk "BEGIN { printf \"%.2f\", (${bbx_med:-0} / $N) * 1000 }" 2>/dev/null || echo "?")
 
-  if [ "$(echo "${bbx_med:-0} > 0" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "${gpx_sdk:-0} > 0" | bc -l 2>/dev/null)" = "1" ]; then
-    ratio=$(awk "BEGIN { printf \"%.1f\", ${gpx_sdk:-0} / ${bbx_med:-0} }" 2>/dev/null || echo "-")
-    if [ "$(echo "${gpx_sdk:-0} < ${bbx_med:-0}" | bc -l 2>/dev/null)" = "1" ]; then
-      winner="**GoPOSIX SDK**"
+  if [ "$(echo "${bbx_med:-0} > 0" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "${gpx_rpc:-0} > 0" | bc -l 2>/dev/null)" = "1" ]; then
+    ratio=$(awk "BEGIN { printf \"%.1f\", ${gpx_rpc:-0} / ${bbx_med:-0} }" 2>/dev/null || echo "-")
+    if [ "$(echo "${gpx_rpc:-0} < ${bbx_med:-0}" | bc -l 2>/dev/null)" = "1" ]; then
+      winner="**GoPOSIX RPC**"
     else
       winner="BusyBox"
     fi
-    echo "| $N | ${gpx_socat:-?} | ${gpx_sdk:-?} | ${bbx_med:-?} | ${ratio}× | $winner |" >&2
+    echo "| $N | ${gpx_socat:-?} | ${gpx_rpc:-?} | ${bbx_med:-?} | ${ratio}× | $winner |" >&2
   else
-    echo "| $N | ${gpx_socat:-?} | ${gpx_sdk:-?} | ${bbx_med:-?} | — | — |" >&2
+    echo "| $N | ${gpx_socat:-?} | ${gpx_rpc:-?} | ${bbx_med:-?} | — | — |" >&2
   fi
 
-  echo "# FINDING: N=$N: socat ${gpx_socat_per}ms/call, SDK ${gpx_sdk_per}ms/call, BusyBox fork ${bbx_per}ms/call" >> "$FINDINGS_TMP"
+  echo "# FINDING: N=$N: socat ${gpx_socat_per}ms/call, RPC ${gpx_rpc_per}ms/call, BusyBox fork ${bbx_per}ms/call" >> "$FINDINGS_TMP"
 done
 echo "" >&2
 
 cat "$FINDINGS_TMP" >&2
 
 # Summary.
-GPX_SDK_N3=$(grep "daemon_sdk_echo_${N3}," "$ACCUM" | cut -d, -f3 | bench_median)
+GPX_RPC_N3=$(grep "daemon_rpc_echo_${N3}," "$ACCUM" | cut -d, -f3 | bench_median)
 BBX_N3=$(grep "daemon_fork_${N3}_busybox" "$ACCUM" | cut -d, -f3 | bench_median)
-SDK_PER=$(awk "BEGIN { printf \"%.2f\", (${GPX_SDK_N3:-0} / $N3) * 1000 }" 2>/dev/null || echo "?")
+RPC_PER=$(awk "BEGIN { printf \"%.2f\", (${GPX_RPC_N3:-0} / $N3) * 1000 }" 2>/dev/null || echo "?")
 BBX_PER=$(awk "BEGIN { printf \"%.2f\", (${BBX_N3:-0} / $N3) * 1000 }" 2>/dev/null || echo "?")
-echo "# FINDING: Per-call at N=$N3: Go SDK ${SDK_PER}ms vs BusyBox fork ${BBX_PER}ms. The Go SDK with persistent connection eliminates socat overhead." >&2
+echo "# FINDING: Per-call at N=$N3: Go RPC ${RPC_PER}ms vs BusyBox fork ${BBX_PER}ms. The persistent JSON-RPC connection eliminates socat overhead." >&2
 
 rm -f "$FINDINGS_TMP" "$ACCUM"

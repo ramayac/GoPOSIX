@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/cut"
 	_ "github.com/ramayac/goposix/pkg/diff"
 	_ "github.com/ramayac/goposix/pkg/find"
@@ -20,6 +19,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/tr"
 	_ "github.com/ramayac/goposix/pkg/uniq"
 	_ "github.com/ramayac/goposix/pkg/wc"
+	client "github.com/ramayac/goposix/test/testutil"
 )
 
 func TestTier2_Grep(t *testing.T) {

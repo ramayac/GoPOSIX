@@ -2,10 +2,10 @@
 
 ## Purpose
 
-GoPOSIX is a Go-native POSIX userland with a persistent JSON-RPC 2.0 daemon and typed Go SDK.
+GoPOSIX is a Go-native POSIX userland with a persistent JSON-RPC 2.0 daemon.
 It replaces GNU Coreutils in Docker containers, delivering 60µs per RPC call (10.9× faster
-than BusyBox fork+exec). Primary consumers: Go programs making repeated filesystem calls
-via the SDK, and `FROM scratch` containers needing a minimal POSIX userland.
+than BusyBox fork+exec). Primary consumers: programs making repeated calls over JSON-RPC,
+and `FROM scratch` containers needing a minimal POSIX userland.
 
 ## High-Signal Areas
 
@@ -15,19 +15,17 @@ via the SDK, and `FROM scratch` containers needing a minimal POSIX userland.
 | `goposix.go` | Public API for downstream multicall binaries. `Main()`, `Run()`, `RunWithWriter()`. |
 | `forwarder.go` | M5 daemon forwarding — detects running daemon socket and forwards CLI commands (not yet wired into `main.go`). |
 | `pkg/common/` | Foundation libraries: `flags.go` (POSIX flag parser), `output.go` (JSON/text rendering), `security.go` (path traversal prevention), `io.go` (LimitWriter). |
-| `pkg/client/` | Go SDK for JSON-RPC daemon. Typed methods for all 115 utilities. Connection pooling, retry, batch requests. |
 | `pkg/<utility>/` | 115 POSIX utility packages. Each has `Run()` (library) + `run()` (CLI glue). Register via `dispatch.Register()` in `init()`. See [test_coverage_matrix.md](test_coverage_matrix.md) for the full catalog. |
 | `internal/daemon/` | JSON-RPC 2.0 daemon server. Session manager, rate limiter, observability (Prometheus + Go runtime stats + JSON /status + healthz/readyz), thread naming (`proctitle_*.go`, `threadname_*.go`), connection tracking for graceful shutdown. |
 | `internal/dispatch/` | Command registry. `Register()`, `Lookup()`, `List()`. |
 | `internal/shell/` | Sandboxed shell interpreter via `mvdan.cc/sh`. Path confinement, output limits. |
 | `docker/` | Dockerfiles: `Dockerfile` (daemon default), `Dockerfile.cli` (scratch CLI), `Dockerfile.debug` (Alpine+shell), `Dockerfile.goreleaser*` (release). |
 | `test/` | Unit tests (per-package `_test.go`), BusyBox integration suite, benchmark suite, JSON-RPC compliance tests. |
+| `test/testutil/` | Minimal raw JSON-RPC client used by the integration and posix-json tests. |
 | `wiki/` | Project documentation: phase plans, architecture, coverage matrix, performance, operations guides. |
-| `docs/` | Stubs redirecting to wiki/ (`SDK.md`, `SHELL_INTEGRATION.md`). |
-| `examples/rpc_client/` | Minimal Go SDK example — connect, `Echo()`, `Ls()`, `ShellExec()`. |
 | `AGENTS.md` | AI coding agent instructions — invariants, workflow, architecture rules. |
 | `CONTRIBUTING.md` | Human-facing contributing guide — 8-step utility checklist, coverage policy. |
-| `README.md` | Project homepage — SDK quickstart, benchmark numbers, key features. |
+| `README.md` | Project homepage — quickstart, benchmark numbers, key features. |
 | `Makefile` | Build, test, CI, Docker, benchmark targets. |
 | `.goreleaser.yml` | Multi-arch release: daemon image (primary) + CLI image (secondary). |
 

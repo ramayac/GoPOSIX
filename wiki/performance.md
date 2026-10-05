@@ -254,7 +254,7 @@ make bench-report
 | 11 | ls: `DirEntry.Info()` instead of re-statting | 🟢 Medium | ls |
 | 12 | find: parallelize directory walk | 🟡 High | find |
 | 13 | dd: larger default block sizes | 🟢 Medium | dd |
-| 14 | Client SDK: buffer RPC writes | 🟢 Medium | client |
+| 14 | daemon: buffer RPC response writes | 🟢 Medium | daemon |
 | 15 | wc: memory-mapped I/O for large files | 🟢 Medium | wc |
 | 16 | tr: use `bytes.Map` for single-byte translations | 🟢 Medium | tr |
 | 17 | cp: `io.CopyBuffer` with larger buffer | 🟢 Medium | cp |

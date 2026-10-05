@@ -1,7 +1,7 @@
 # System Architecture
 
 GoPOSIX is a POSIX-compliant userland implemented as a single, statically-linked Go binary.
-The primary interface is a persistent JSON-RPC 2.0 daemon with a typed Go SDK (60µs/call).
+The primary interface is a persistent JSON-RPC 2.0 daemon (60µs/call).
 A multicall CLI binary is available as a secondary interface.
 
 **Version:** see [releases](https://github.com/ramayac/goposix/releases) | **Go:** 1.26 | **Binary:** <12 MB fully static
@@ -20,7 +20,7 @@ A multicall CLI binary is available as a secondary interface.
 
 | Interface | Per-call latency | vs BusyBox (680µs fork+exec) |
 |-----------|:---:|:---:|
-| **Go SDK (persistent conn)** | **60µs** | **11× faster** |
+| **JSON-RPC (persistent conn)** | **60µs** | **11× faster** |
 | `socat` (per-call overhead) | 2,000µs | 3× slower |
 | CLI cold start | 7,000µs | 10× slower |
 
@@ -30,9 +30,9 @@ Other wins: `grep` on 100MB file is 0.16s vs BusyBox 0.86s (5.4× faster, RE2 vs
 
 ```
                          ┌─────────────────────────────┐
-                         │  Go SDK Client (primary)     │
-                         │  c.Ls(ctx, "/", nil)         │
-                         │  60µs/call, typed methods    │
+                         │  JSON-RPC Client (primary)  │
+                         │  {"method":"goposix.ls",...}│
+                         │  60µs/call                  │
                          └──────────┬──────────────────┘
                                     │
                                     ▼
@@ -85,7 +85,6 @@ GoPOSIX/
 │   └── shell/           Sandboxed shell execution (mvdan.cc/sh, timeout, limits)
 ├── pkg/
 │   ├── common/          Foundation: flags.go, compiled.go, output.go, security.go, json.go
-│   ├── client/          Go JSON-RPC client (connection pool, retry, typed helpers)
 │   ├── daemon/          Daemon bootstrap + CLI entry point
 │   ├── shell/           Shell CLI wrapper
 │   └── <utility>/       115 POSIX utility implementations
@@ -119,7 +118,6 @@ to preserve directory ownership in `FROM scratch`. The daemon socket lives at
 | `internal/daemon` | JSON-RPC 2.0 server over Unix socket. Dispatches to registered commands. |
 | `internal/shell` | Sandbox for `shell.exec` RPC. Configurable timeout, output limits, path confinement. |
 | `pkg/common` | Shared: POSIX flag parser (`ParseFlags`), JSON envelope output (`Render`/`RenderError`), path security guards, signal parsing (`ParseSignal`/`SignalName`/`SignalNames`). |
-| `pkg/client` | Go SDK for JSON-RPC clients. Connection pooling, batch requests, exponential backoff, typed wrappers for every utility. |
 | `pkg/<util>` | One package per POSIX utility. Library layer (testable `Run()`) + CLI layer (`run()`) wired via `init()` → dispatch. |
 
 ## Utilities Implemented (115)
@@ -135,9 +133,9 @@ All 31 phases are complete. See [phases.md](phases.md) for the full phase index 
 
 - [phases.md](phases.md) — Project roadmap, current state, and phase index
 - [security.md](security.md) — Security model, shell sandbox, deployment posture
-- [rpc_api.md](rpc_api.md) — JSON-RPC client API reference (`pkg/client`)
+- [rpc_quickstart.md](rpc_quickstart.md) — JSON-RPC protocol reference
 - [json_schema.md](json_schema.md) — `--json` output envelope and per-utility schemas
-- [usage.md](usage.md) — Usage guide: CLI, daemon, Docker Compose, Go SDK, recipes
+- [usage.md](usage.md) — Usage guide: CLI, daemon, Docker Compose, JSON-RPC, recipes
 - [self_upgrade.md](self_upgrade.md) — Self-upgrade (`--version`, `--upgrade`)
 - [deferred.md](deferred.md) — Deferred and planned future work
 - [todos.md](todos.md) — Open TODOs and remaining BusyBox failures

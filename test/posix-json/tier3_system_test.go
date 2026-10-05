@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/date"
 	_ "github.com/ramayac/goposix/pkg/df"
 	_ "github.com/ramayac/goposix/pkg/du"
@@ -16,6 +15,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/pwd"
 	_ "github.com/ramayac/goposix/pkg/uname"
 	_ "github.com/ramayac/goposix/pkg/whoami"
+	client "github.com/ramayac/goposix/test/testutil"
 )
 
 func TestTier3_Date(t *testing.T) {

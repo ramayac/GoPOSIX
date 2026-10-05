@@ -118,43 +118,41 @@ Short flags also work:
 
 ## 3. Talking to the Daemon
 
-### Go SDK (recommended — 60µs per call)
+### Go over the Unix socket
 
 ```go
 package main
 
 import (
-    "context"
+    "encoding/json"
     "fmt"
     "log"
-
-    "github.com/ramayac/goposix/pkg/client"
+    "net"
+    "time"
 )
 
 func main() {
-    c, err := client.New("/home/goposix/goposix.sock")
+    conn, err := net.DialTimeout("unix", "/tmp/goposix.sock", 5*time.Second)
     if err != nil {
         log.Fatal(err)
     }
-    defer c.Close()
+    defer conn.Close()
 
-    ctx := context.Background()
+    enc := json.NewEncoder(conn)
+    enc.Encode(map[string]interface{}{
+        "jsonrpc": "2.0",
+        "method":  "goposix.echo",
+        "params":  map[string]string{"text": "hello"},
+        "id":      1,
+    })
 
-    // Echo
-    result, _ := c.Echo(ctx, "hello")
-    fmt.Println(result.Text) // → hello
-
-    // List files
-    files, _ := c.Ls(ctx, "/etc", nil)
-    fmt.Printf("%d files\n", len(files.Files))
-
-    // Multi-step with a session
-    sess, _ := c.SessionCreate(ctx)
-    c.SessionSetCwd(ctx, sess.SessionId, "/etc")
-    result2, _ := c.Cat(ctx, "hosts", sess.SessionId)
-    fmt.Println(result2.LineCount)
+    var resp map[string]interface{}
+    json.NewDecoder(conn).Decode(&resp)
+    fmt.Println(resp)
 }
 ```
+
+See [rpc_quickstart.md](rpc_quickstart.md) for the full protocol reference.
 
 ### Raw JSON-RPC over Unix socket
 
