@@ -8,8 +8,14 @@ A multicall CLI binary is available as a secondary interface.
 
 ## Core Design Principles
 
-1. **Minimal Dependencies:** Only `mvdan.cc/sh/v3` (shell interpreter) and
-   `golang.org/x/sys` (macOS/BSD compatibility). No other third-party libraries.
+1. **Minimal Dependencies:** Twelve external Go modules — ten direct and two
+   indirect. Direct: `mvdan.cc/sh/v3` (shell), `github.com/benhoyt/goawk`
+   (`awk`), `github.com/blakesmith/ar` (`ar`), `github.com/cavaliergopher/cpio`
+   (`cpio`), `github.com/hotei/dcompress` (`uncompress`),
+   `github.com/sergeymakinen/go-crypt` and `github.com/tredoe/crypt` (`cryptpw`),
+   `github.com/ulikunitz/xz` (`tar`, `unlzma`), `golang.org/x/sys` (syscalls),
+   `golang.org/x/crypto` (`sha3sum`). Indirect: `github.com/hotei/mdr`,
+   `golang.org/x/term`. No other third-party libraries.
 2. **Dual-Mode Execution:**
    - **CLI Mode:** Standard POSIX stdout/stderr, exit codes.
    - **JSON Mode:** `--json` flag or daemon invocation → structured JSON envelope output.
@@ -89,16 +95,22 @@ GoPOSIX/
 │   ├── shell/           Shell CLI wrapper
 │   └── <utility>/       115 POSIX utility implementations
 ├── docker/              Dockerfiles
-│   ├── Dockerfile       Default: daemon (FROM scratch, ~10 MB)
-│   ├── Dockerfile.cli   CLI-only (FROM scratch, ~10 MB)
-│   └── Dockerfile.debug Alpine + shell + strace for debugging
+│   ├── Dockerfile       Unified multi-stage: daemon, cli, debug, alpine-mvp targets
+│   ├── Dockerfile.goreleaser           Release build (GoReleaser)
+│   ├── Dockerfile.goreleaser.daemon    Release daemon build (GoReleaser)
+│   └── Dockerfile.openbox              OpenBox image
 ├── upgrade.go           Self-upgrade: GitHub release fetching, tar.gz extraction, atomic binary replacement
 ├── forwarder.go         Smart forwarding: CLI → daemon when socket available
-├── test/                Integration tests
+├── test/                Tests and benchmarks
 │   ├── benchmark/       GoPOSIX vs BusyBox performance benchmarks
-│   └── busybox_testsuite/  Ported BusyBox test suite (552 tests)
+│   ├── busybox_testsuite/  Ported BusyBox test suite
+│   ├── compliance/      Shell scripts comparing against host utilities
+│   ├── integration/     Daemon integration tests
+│   ├── posix-json/      JSON-RPC contract tests per tier
+│   ├── schemas/         JSON output schemas
+│   └── testutil/        Minimal raw JSON-RPC test client
 ├── testdata/            Shared test fixtures
-├── wiki/                Architecture, security, RPC API, JSON schema, deploy guides
+├── wiki/                Architecture, JSON-RPC protocol, JSON schema, deploy guides
 ```
 
 ## Docker Images
@@ -131,7 +143,11 @@ All 31 phases are complete. See [phases.md](phases.md) for the full phase index 
 
 ## Related Documentation
 
+- [index.md](index.md) — Wiki index
+- [repo-map.md](repo-map.md) — Current repo architecture and exclusions
 - [phases.md](phases.md) — Project roadmap, current state, and phase index
+- [test_coverage_matrix.md](test_coverage_matrix.md) — Per-utility coverage and BusyBox status
+- [performance.md](performance.md) — Benchmark commands and results
 - [security.md](security.md) — Security model, shell sandbox, deployment posture
 - [rpc_quickstart.md](rpc_quickstart.md) — JSON-RPC protocol reference
 - [json_schema.md](json_schema.md) — `--json` output envelope and per-utility schemas
