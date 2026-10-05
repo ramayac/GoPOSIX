@@ -1,3 +1,8 @@
+---
+status: current
+description: "Current repo architecture and exclusions."
+---
+
 # Repo Map
 
 ## Purpose

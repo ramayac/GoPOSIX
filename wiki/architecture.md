@@ -1,3 +1,8 @@
+---
+status: current
+description: "System architecture: component flow, key packages, Docker images."
+---
+
 # System Architecture
 
 GoPOSIX is a POSIX-compliant userland implemented as a single, statically-linked Go binary.

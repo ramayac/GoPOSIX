@@ -1,3 +1,8 @@
+---
+status: current
+description: "Per-utility test coverage and BusyBox status."
+---
+
 # GoPOSIX — Test Coverage & Compliance Matrix
 
 > **Last updated:** 2026-10-04 | **BusyBox:** 870 pass / 17 fail / 30 skip | **Branch:** `audit/whatsleft` | **Overall Coverage:** 88.1% | **JSON-RPC:** 115/115 (100.0%)

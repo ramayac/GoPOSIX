@@ -1,8 +1,45 @@
+---
+status: current
+description: "Append-only wiki maintenance timeline."
+---
+
 # Wiki Log
 
 > **Note:** References to "agent," "agentic," or "AI agent" in historical entries below predate the Phase 21 honest-takes audit (2026-05-18). The project's positioning has been corrected to "programmatic consumer" / "JSON-RPC client."
 
 Append-only timeline of wiki maintenance activity.
+
+## [2026-10-04] fix | Phase 28 open findings F16, P1, P2, P4 closed (`audit/whatsleft`)
+
+- F16: JSON stdout modes no longer mix the raw payload with the envelope. The payload is captured (50 MB cap) and embedded as base64 `content` in the envelope: `DecompFileInfo.Content` (F7 core), `GzipStat.Content` (`pkg/gzip`), `CpioResult.Content` (`cpio -o` without `-F`). Text mode is unchanged. Schemas updated for bunzip2, bzcat, unlzma, uncompress, gzip, cpio; new gunzip schema. `make validate-schemas`: 115 passed, 0 failed, 0 skipped.
+- P1: `logger.Run` takes the injected `errOut io.Writer`; the package-global `stderrWriter` and its swap logic are deleted. The `-s` test asserts the injected writer.
+- P2: all 115 coverage cells in [test_coverage_matrix.md](test_coverage_matrix.md) refreshed from a `go test -cover` run (84 rows changed). Overall coverage 88.1%.
+- P4: the BusyBox harness now builds applet links in a per-run `mktemp -d` (cleaned on exit) and uses `.tmpdir.$applet.$$`. The tracked `runtest-tempdir-links/` symlink tree is deleted from the repo. Concurrent same-applet runs verified: zero failures.
+- Plan §6 lists the remaining work: Phase 4 for bc/sed/date/tar/dc/diff, Phase 5 for 13 M/S verdicts.
+
+## [2026-10-04] resume | Phase 28 5d JSON changes complete (PR #46, `audit/5d-json`)
+
+- F12: 37 new schemas plus golden fixtures. `make validate-schemas` reports 114 passed, 0 failed, 0 skipped (was 31 skipped). `dd` and `daemon` are documented exemptions in [json_schema.md](json_schema.md).
+- F15: `shell` parses `--json` in inline, file, and pipe modes; data = `{exitCode, stdout, stderr}`. The daemon test asserts it.
+- New `test/posix-json/tier9_json_contract_test.go` covers bc, mount, hexdump, makedevs, mdev, mkfs.minix, wget, xxd, rx, shell.
+- Usage-error paths now honour `--json` in wget, which, seq, pidof, mdev, rx, shell. rx stops writing XMODEM handshake bytes to stdout in JSON mode. who emits `users: []` instead of `null`.
+- `gen_golden.sh` fixed (pre-existing `set -u` bug, `%b` escapes, absolute paths) and extended; regenerates all 114 fixtures.
+- New open finding F16: raw payload mixes with the envelope on stdout (`bzcat`, `-c` decompress modes, `gzip -c`, `cpio -o`). Recorded in plan §6.
+- Codecov reported 76% patch coverage; plain-text branch tests closed all 18 missing lines (100% patch coverage on the follow-up commit).
+- What's left is listed in plan §6: Phase 4 for bc/sed/date/tar/dc/diff, Phase 5 for 14 M/S verdicts, P1/P2/P4.
+
+## [2026-10-03] rename | posix_command_audit.md → 28_posix_command_audit.md
+
+- The audit plan is Phase 28. The file name follows the wiki phase convention (23_, 25_, 26_, 27_).
+- Links updated in `index.md`, `todos.md`, and `phases.md` (Active Work). Historical log entries keep the old name.
+
+
+## [2026-10-03] pause | Phase 28 audit paused — repository phases done, per-tool work deferred
+
+- The audit stops here for now. Phases 0–3 and findings F1–F7 are complete (PR #43, 13 commits, 100% patch coverage, coverage 87.6%, BusyBox 871/16/30).
+- Next when work resumes: Phase 4 deep audits of 7 XL/L commands (bc, sed, printf, date, tar, dc, diff), then the Phase 5 sweep. See the updated [todos.md](todos.md).
+- The plan gained a preflight review: corrected XL/L scope (7, not 24), added a PreAudit score per command, and recorded open items F8 (parser helpers duplicated across bc/expr/sed/testcmd) and P1 (logger package-global writer), plus P2 (companion coverage matrix is stale) and P4 (concurrent make testsuite runs corrupt each other).
+
 
 ## [2026-10-03] test | 100% patch coverage — resolve Codecov comment on PR #43
 
@@ -937,37 +974,3 @@ Added `[pkg/<name>/]` source links to every utility header in phase
 pages (01, 03, 04, 06, 07). Also linked infrastructure packages in phases 00
 and 05. All 55 utility packages now have clickable source links from their
 wiki documentation.
-
-
-
-
-## [2026-10-04] fix | Phase 28 open findings F16, P1, P2, P4 closed (`audit/whatsleft`)
-
-- F16: JSON stdout modes no longer mix the raw payload with the envelope. The payload is captured (50 MB cap) and embedded as base64 `content` in the envelope: `DecompFileInfo.Content` (F7 core), `GzipStat.Content` (`pkg/gzip`), `CpioResult.Content` (`cpio -o` without `-F`). Text mode is unchanged. Schemas updated for bunzip2, bzcat, unlzma, uncompress, gzip, cpio; new gunzip schema. `make validate-schemas`: 115 passed, 0 failed, 0 skipped.
-- P1: `logger.Run` takes the injected `errOut io.Writer`; the package-global `stderrWriter` and its swap logic are deleted. The `-s` test asserts the injected writer.
-- P2: all 115 coverage cells in [test_coverage_matrix.md](test_coverage_matrix.md) refreshed from a `go test -cover` run (84 rows changed). Overall coverage 88.1%.
-- P4: the BusyBox harness now builds applet links in a per-run `mktemp -d` (cleaned on exit) and uses `.tmpdir.$applet.$$`. The tracked `runtest-tempdir-links/` symlink tree is deleted from the repo. Concurrent same-applet runs verified: zero failures.
-- Plan §6 lists the remaining work: Phase 4 for bc/sed/date/tar/dc/diff, Phase 5 for 13 M/S verdicts.
-
-## [2026-10-04] resume | Phase 28 5d JSON changes complete (PR #46, `audit/5d-json`)
-
-- F12: 37 new schemas plus golden fixtures. `make validate-schemas` reports 114 passed, 0 failed, 0 skipped (was 31 skipped). `dd` and `daemon` are documented exemptions in [json_schema.md](json_schema.md).
-- F15: `shell` parses `--json` in inline, file, and pipe modes; data = `{exitCode, stdout, stderr}`. The daemon test asserts it.
-- New `test/posix-json/tier9_json_contract_test.go` covers bc, mount, hexdump, makedevs, mdev, mkfs.minix, wget, xxd, rx, shell.
-- Usage-error paths now honour `--json` in wget, which, seq, pidof, mdev, rx, shell. rx stops writing XMODEM handshake bytes to stdout in JSON mode. who emits `users: []` instead of `null`.
-- `gen_golden.sh` fixed (pre-existing `set -u` bug, `%b` escapes, absolute paths) and extended; regenerates all 114 fixtures.
-- New open finding F16: raw payload mixes with the envelope on stdout (`bzcat`, `-c` decompress modes, `gzip -c`, `cpio -o`). Recorded in plan §6.
-- Codecov reported 76% patch coverage; plain-text branch tests closed all 18 missing lines (100% patch coverage on the follow-up commit).
-- What's left is listed in plan §6: Phase 4 for bc/sed/date/tar/dc/diff, Phase 5 for 14 M/S verdicts, P1/P2/P4.
-
-## [2026-10-03] rename | posix_command_audit.md → 28_posix_command_audit.md
-
-- The audit plan is Phase 28. The file name follows the wiki phase convention (23_, 25_, 26_, 27_).
-- Links updated in `index.md`, `todos.md`, and `phases.md` (Active Work). Historical log entries keep the old name.
-
-
-## [2026-10-03] pause | Phase 28 audit paused — repository phases done, per-tool work deferred
-
-- The audit stops here for now. Phases 0–3 and findings F1–F7 are complete (PR #43, 13 commits, 100% patch coverage, coverage 87.6%, BusyBox 871/16/30).
-- Next when work resumes: Phase 4 deep audits of 7 XL/L commands (bc, sed, printf, date, tar, dc, diff), then the Phase 5 sweep. See the updated [todos.md](todos.md).
-- The plan gained a preflight review: corrected XL/L scope (7, not 24), added a PreAudit score per command, and recorded open items F8 (parser helpers duplicated across bc/expr/sed/testcmd) and P1 (logger package-global writer), plus P2 (companion coverage matrix is stale) and P4 (concurrent make testsuite runs corrupt each other).

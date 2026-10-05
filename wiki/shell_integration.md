@@ -1,3 +1,8 @@
+---
+status: current
+description: "CLI-to-daemon forwarding for shell users."
+---
+
 # Shell Integration — CLI-to-Daemon Forwarding
 
 > Moved from `docs/SHELL_INTEGRATION.md`.
@@ -317,3 +322,12 @@ fi
   all output would be JSON envelopes, not human-readable text.
 - For projects that embed GoPOSIX's daemon but use a different socket path,
   set `GOPOSIX_SOCKET` before sourcing this script.
+
+---
+
+## See Also
+
+- [index.md](index.md) | Wiki index.
+- [rpc_quickstart.md](rpc_quickstart.md) | JSON-RPC protocol reference.
+- [usage.md](usage.md) | CLI and daemon usage.
+- [security.md](security.md) | Security model.

@@ -1,3 +1,8 @@
+---
+status: legacy
+description: "Phase 27: high-complexity and privileged Tier 5 utilities (completed)."
+---
+
 # Phase 27 — High Complexity & Privileged Utilities (Tier 5)
 
 > **Version:** 2.1 | **Date:** 2026-05-24 | **Status:** COMPLETED (with known gaps) ⚠️

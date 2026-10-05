@@ -1,3 +1,8 @@
+---
+status: current
+description: "Usage guide: CLI, daemon, Docker, JSON-RPC."
+---
+
 # Usage Guide
 
 GoPOSIX is a single, statically-linked binary that works as both a CLI multicall tool
@@ -30,6 +35,8 @@ make build
 ```
 
 ### Docker (CLI image — FROM scratch, ~10 MB)
+
+```bash
 docker build -t goposix:cli -f docker/Dockerfile.cli .
 
 # One-shot invocation

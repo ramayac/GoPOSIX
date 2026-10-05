@@ -1,3 +1,8 @@
+---
+status: legacy
+description: "Phase 26: analysis of missing BusyBox tools (completed)."
+---
+
 # Phase 26 — Missing BusyBox Tools Analysis
 
 > **Version:** 7.0 | **Date:** 2026-05-24 | **Tier:** GOLD | **Status:** COMPLETED ✅

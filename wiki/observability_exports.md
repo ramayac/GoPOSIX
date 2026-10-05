@@ -1,3 +1,8 @@
+---
+status: current
+description: "Options for exposing daemon metrics to OS tools."
+---
+
 # GoPOSIX Observability
 
 How to expose GoPOSIX daemon internals (goroutines, memory, sessions, per-method
@@ -401,5 +406,5 @@ RPC endpoint: `goposix.session.log` — returns events filtered by time range an
 - [Session manager](../internal/daemon/session.go) — Session lifecycle, TTL, total_created counter
 - [Observability server](../internal/daemon/observability.go) — Prometheus metrics, health, /status, runtime stats
 - [Daemon server](../internal/daemon/server.go) — RPC dispatch, structured logging, metrics recording, thread naming
-- [Phase 22 — Hardening III](22_hardening_iii.md) — Daemon-first pivot (prerequisite)
+- [Phase 22 — Hardening III](hardening.md) — Daemon-first pivot (prerequisite)
 - [deferred.md](deferred.md) — Phase 23 (Multi-Tenant Sandbox) for audit trail and quota design

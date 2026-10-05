@@ -1,3 +1,8 @@
+---
+status: current
+description: "Wiki structure contract."
+---
+
 # Wiki Schema (Structure Contract)
 
 > **Not to be confused with [json_schema.md](json_schema.md)**, which documents the `--json` output schemas for each utility. This page describes the wiki's own structural requirements.

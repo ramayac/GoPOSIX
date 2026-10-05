@@ -1,3 +1,8 @@
+---
+status: current
+description: "Wiki index: canonical page list."
+---
+
 # Wiki Index
 
 ## Core
@@ -55,6 +60,6 @@
 ## Deploy
 
 - [alpine_plan.md](alpine_plan.md) | Alpine integration blueprint (daemon mode, BusyBox override, tradeoffs).
-- [deploy/docker-compose.md](deploy/docker-compose.md)
-- [deploy/kubernetes.md](deploy/kubernetes.md)
-- [deploy/systemd.md](deploy/systemd.md)
+- [deploy/docker-compose.md](deploy/docker-compose.md) | Sidecar via Docker Compose.
+- [deploy/kubernetes.md](deploy/kubernetes.md) | Sidecar container sharing a Unix socket.
+- [deploy/systemd.md](deploy/systemd.md) | Persistent daemon on a Linux host.

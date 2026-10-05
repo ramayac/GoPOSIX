@@ -1,6 +1,11 @@
+---
+status: current
+description: "Performance benchmark commands, scale, and results."
+---
+
 # Performance Benchmarking — Quick Reference
 
-> **Branch:** `feat/performance` | **Status:** IMPLEMENTING | **Plan:** [30_performance_improvements.md](30_performance_improvements.md)
+> **Status:** current | **See:** [architecture.md](architecture.md) for the component flow
 
 ---
 

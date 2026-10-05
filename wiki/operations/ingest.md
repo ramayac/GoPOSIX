@@ -1,3 +1,8 @@
+---
+status: current
+description: "How to absorb a repo change into the wiki."
+---
+
 # Ingest Workflow
 
 ## Goal
@@ -45,3 +50,10 @@ Use this exact heading pattern:
 ## [YYYY-MM-DD] ingest | short summary
 ```
 
+---
+
+## See Also
+
+- [index.md](../index.md) | Wiki index.
+- [lint.md](lint.md) | Lint workflow.
+- [query.md](query.md) | Query workflow.

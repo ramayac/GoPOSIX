@@ -1,3 +1,8 @@
+---
+status: current
+description: "Consolidated hardening phases across earlier project stages."
+---
+
 # Hardening Phases — Consolidated
 
 > **Last updated:** 2026-05-30 | **Overall coverage:** 84.1% | **BusyBox:** 877/17/25 (98.1%)
@@ -79,3 +84,12 @@ Comprehensive compliance gap audit. All 27 findings resolved.
 | 18 performance optimizations | 12/30 done | `wiki/performance.md` |
 | Daemon pipeline composition | Planning | `wiki/deferred.md` |
 | Alpine daemon target | Planning | `wiki/alpine_plan.md` |
+
+---
+
+## See Also
+
+- [security.md](security.md) | Security model and deployment posture.
+- [performance.md](performance.md) | Benchmark results.
+- [deferred.md](deferred.md) | Deferred work.
+- [todos.md](todos.md) | Remaining work.

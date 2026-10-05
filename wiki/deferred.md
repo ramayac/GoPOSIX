@@ -1,3 +1,8 @@
+---
+status: current
+description: "Canonical registry of deferred and future work."
+---
+
 # Deferred & Future Work
 
 This document serves as the single canonical registry for all active planning phases, deferred architectural enhancements, completed transitions, and documented engine limitations for GoPOSIX.
@@ -8,7 +13,7 @@ This document serves as the single canonical registry for all active planning ph
 
 ### Multi-Agent Observability (Phase 24)
 * **Status:** PLANNING
-* **Reference Document:** [wiki/24_multi_agent_observability.md](24_multi_agent_observability.md)
+* **Reference Document:** none yet (planning only)
 * **Details:**
   Adds agent-aware sessions, per-agent audit trails, fine-grained file-level read/write tracking, and performance metrics. Designed for multi-agent collaboration environments sharing a common sandbox workspace directory, allowing developers/agents to audit who performed what filesystem mutations.
 

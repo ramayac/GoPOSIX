@@ -1,3 +1,8 @@
+---
+status: current
+description: "Self-upgrade (--version, --upgrade) and versioning."
+---
+
 # Self-Upgrade & Versioning
 
 > **Status:** IMPLEMENTED | **Date:** 2026-05-18
@@ -182,6 +187,6 @@ It upgrades the binary on disk, which will take effect on the next invocation.
 
 ## 7. References
 
-- [Phase 22 — Hardening III](22_hardening_iii.md) — Daemon-first pivot (version is embedded in daemon JSON-RPC envelopes)
+- [Phase 22 — Hardening III](hardening.md) — Daemon-first pivot (version is embedded in daemon JSON-RPC envelopes)
 - [Architecture](architecture.md) — Build pipeline, ldflags injection
 - [JSON Schema](json_schema.md) — `common.Version` in the `--json` output envelope

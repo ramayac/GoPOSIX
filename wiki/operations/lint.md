@@ -1,3 +1,8 @@
+---
+status: current
+description: "How to health-check and repair wiki drift."
+---
+
 # Lint Workflow
 
 ## Goal
@@ -33,3 +38,11 @@ Use this exact heading pattern:
 ```md
 ## [YYYY-MM-DD] lint | short summary
 ```
+
+---
+
+## See Also
+
+- [index.md](../index.md) | Wiki index.
+- [ingest.md](ingest.md) | Ingest workflow.
+- [query.md](query.md) | Query workflow.

@@ -1,3 +1,8 @@
+---
+status: legacy
+description: "Phase 25: Awesome-Go submission plan and checklist (merged)."
+---
+
 # Phase 25 — Awesome-Go Submission Plan & Checklist
 
 > **Version:** 5.7 | **Date:** 2026-10-03 | **Tier:** GOLD | **Status:** MERGED

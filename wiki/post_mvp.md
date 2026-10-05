@@ -1,3 +1,8 @@
+---
+status: legacy
+description: "Post-MVP fixes and utilities from Phases 14 to 18 (completed)."
+---
+
 # Post-MVP — Fixes & Utilities
 
 > **Status:** ✅ COMPLETED | **Date:** 2026-05-17

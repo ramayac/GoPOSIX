@@ -1,3 +1,8 @@
+---
+status: current
+description: "JSON-RPC 2.0 protocol reference."
+---
+
 # JSON-RPC Protocol Reference
 
 GoPOSIX uses JSON-RPC 2.0 over a Unix socket as its wire protocol. This document
@@ -171,3 +176,12 @@ The response envelope includes `exitCode` for utility errors (non-zero = failure
 
 The lifecycle above (ping, session, execute, destroy) covers the full multi-step
 task. Send the requests in order over one connection.
+
+---
+
+## See Also
+
+- [index.md](index.md) | Wiki index.
+- [json_schema.md](json_schema.md) | JSON output schemas.
+- [security.md](security.md) | Security model.
+- [usage.md](usage.md) | CLI and daemon usage.

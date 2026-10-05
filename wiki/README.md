@@ -1,3 +1,8 @@
+---
+status: current
+description: "Wiki entry point: purpose, rules, and navigation."
+---
+
 # Wiki
 
 This directory is the repository-local knowledge base.
@@ -38,3 +43,12 @@ wiki-engine search <term>
 4. Read only the topic pages needed for the task.
 5. Read source files when the wiki lacks detail or needs verification.
 6. Write durable findings back into the wiki.
+
+---
+
+## See Also
+
+- [index.md](index.md) | Canonical page list.
+- [schema.md](schema.md) | Wiki structure contract.
+- [log.md](log.md) | Maintenance timeline.
+- [operations/ingest.md](operations/ingest.md) | Ingest workflow.

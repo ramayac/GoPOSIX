@@ -1,3 +1,8 @@
+---
+status: current
+description: "Project roadmap, current state, and phase index."
+---
+
 # GoPOSIX — Project Roadmap & State
 
 > **Version:** 7.0 | **Date:** 2026-05-30 | **Tier:** GOLD | **Branch:** `feat/hardening_v`
@@ -79,7 +84,10 @@ goposix binary (single static ELF, <12MB)
 | 12 | Road to Gold — supply chain, macOS, coverage, BusyBox parity | completed |
 | 13 | Coverage & hardening (76.7% reached) | completed |
 | 14 | JSON gap fill, BusyBox regression fix, JSON-RPC daemon coverage | completed |
-| 15–18 | Post-MVP utilities (dd, od, patch, expand, comm, paste, fold, sum, nl, cmp, strings, which, realpath, pidof, seq, cal, hostid, factor, uptime, wget, rev, tree, tsort, sha*) — consolidated into [wiki/post_mvp.md](post_mvp.md) | completed |
+| 15 | Post-MVP utilities — `dd`, `od` (10 BusyBox tests) | completed |
+| 16 | Post-MVP utilities — `patch`, `egrep`, `fgrep`, `expand`, `unexpand` | completed |
+| 17 | Post-MVP utilities — `comm`, `paste`, `fold`, `sum`, `nl`, `cmp`, `strings` | completed |
+| 18 | Post-MVP utilities — `which`, `realpath`, `pidof`, `seq`, `cal`, `hostid`, `factor`, `uptime`, `wget`, `rev`, `tree`, `tsort`, `sha*`; coverage ramp & docs sweep — consolidated into [wiki/post_mvp.md](post_mvp.md) | completed |
 | 19 | Performance benchmarking | completed |
 | 20 | Hardening II — flag audit, code cleanup, coverage, input safety | completed |
 | 21 | Honest-takes audit | completed |
