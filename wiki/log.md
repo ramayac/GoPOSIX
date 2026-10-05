@@ -9,6 +9,18 @@ description: "Append-only wiki maintenance timeline."
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-10-04] ingest | Remove the Go SDK; document CI and the wiki contract
+
+Branch `docs/split-readme-history`.
+
+- **Go SDK removed.** `pkg/client` is deleted, so the JSON-RPC daemon is the only programmatic interface. Tests use the minimal client in `test/testutil`. The benchmark client is now `bench-rpc-client`, which measures a persistent JSON-RPC connection. See [architecture.md](architecture.md) and [repo-map.md](repo-map.md).
+- **Dependency list corrected.** Twelve external modules (ten direct, two indirect). `go mod tidy` moved six direct imports out of the indirect block. README, HISTORY.md, and architecture.md updated.
+- **New page [ci.md](ci.md).** Documents the CI jobs, the gates (coverage 80%, binary under 15 MB, Trivy, BusyBox floor of 750), and the Codecov `report_type: test_results` wiring. `codecov/test-results-action` is deprecated; use `codecov-action@v5` twice.
+- **[schema.md](schema.md) gained the front matter and lint gate contract.** Every page needs `status`; `description` is recommended; `legacy` and `deprecated` pages leave the active graph.
+- **[operations/lint.md](operations/lint.md) lists every lint checker and its severity.** The gate fails on `warn` and `error` findings.
+- **[repo-map.md](repo-map.md) refreshed:** Dockerfile names, forwarder wiring, dependency count, and the coverage gate (80%).
+- **Wiki lint is clean.** All 34 pages carry front matter. Historical pages are `legacy`. Fixed four broken links, three index descriptions, the log order, the phase table numbering, one broken external link, and a missing code fence in usage.md.
+
 ## [2026-10-04] fix | Phase 28 open findings F16, P1, P2, P4 closed (`audit/whatsleft`)
 
 - F16: JSON stdout modes no longer mix the raw payload with the envelope. The payload is captured (50 MB cap) and embedded as base64 `content` in the envelope: `DecompFileInfo.Content` (F7 core), `GzipStat.Content` (`pkg/gzip`), `CpioResult.Content` (`cpio -o` without `-F`). Text mode is unchanged. Schemas updated for bunzip2, bzcat, unlzma, uncompress, gzip, cpio; new gunzip schema. `make validate-schemas`: 115 passed, 0 failed, 0 skipped.

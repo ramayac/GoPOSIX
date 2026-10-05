@@ -22,6 +22,7 @@ description: "Wiki index: canonical page list."
 - [security.md](security.md) | Security model, shell sandbox, deployment posture.
 - [observability_exports.md](observability_exports.md) | Options for exposing daemon metrics to OS tools and external consumers.
 - [self_upgrade.md](self_upgrade.md) | Self-upgrade (`--version`, `--upgrade`).
+- [ci.md](ci.md) | CI pipeline: jobs, gates, Codecov wiring, and the test harness.
 
 ## JSON-RPC API
 
@@ -42,14 +43,12 @@ description: "Wiki index: canonical page list."
 - [lessons_learned.md](lessons_learned.md) | Architectural lessons, gotchas, and validated patterns.
 - [post_mvp.md](post_mvp.md) | Post-MVP: JSON gap fill, BusyBox regression fix, coverage drive, phases 15–18 utilities.
 - [hardening.md](hardening.md) | Hardening II–V: flag audit, daemon-first pivot, compliance, coverage, tar audit.
-- [performance.md](performance.md) | Benchmark results (Phase 19) + optimizations tracker (Phase 30, 12/30 done).
 - [23_flags_rewrite.md](23_flags_rewrite.md) | Flags Rewrite: zero-allocation POSIX scanner (COMPLETED).
 - [25_awesome_go_submission.md](25_awesome_go_submission.md) | Awesome-Go submission plan, checklists, and compliance validation.
 
 ## Deferred / Future
 
 - [deferred.md](deferred.md) | Canonical registry of deferred architectural work and future phases.
-- [observability_exports.md](observability_exports.md) | Multi-agent observability (deferred discussion — see Part 2).
 
 ## Operations
 
