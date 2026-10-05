@@ -24,13 +24,13 @@ Full-architecture audit resolving all CRITICAL and HIGH items. Score: 87 → 95/
 
 **Date:** 2026-05-18
 
-Benchmark-driven architecture pivot. Discovery: Go SDK with persistent connection achieves **60µs per RPC call — 11× faster than BusyBox fork+exec**. The old socat-per-call approach was 3× slower than BusyBox.
+Benchmark-driven architecture pivot. Discovery: a persistent JSON-RPC connection achieves **60µs per RPC call — 11× faster than BusyBox fork+exec**. The old socat-per-call approach was 3× slower than BusyBox.
 
 **Key outcomes:**
 - Rebranded project messaging: "daemon-first" with CLI as secondary interface
 - Daemon benchmark infrastructure (`make bench-quick`, `make bench-all`)
 - Documented that daemon benchmarking through socat measures socat overhead, not daemon performance
-- Established Go SDK (`pkg/client/`) as the primary programmatic interface
+- Established the JSON-RPC daemon as the primary programmatic interface
 - Removed all socat-based forwarding; CLI forwarding through forwarder.go
 - Daemon stdin support via `dispatch.Command.Run` signature expansion
 

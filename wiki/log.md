@@ -51,7 +51,7 @@ Append-only timeline of wiki maintenance activity.
 ## [2026-10-03] implement | kill POSIX signal support (PR #41 merged, closes #40)
 
 - `pkg/kill` supports `-s NAME|NUM`, dash forms (`-TERM`, `-15`), `-l [NUM]`, and signal-0 probes via new `pkg/common/signal.go`.
-- Fixed SDK `Client.Kill` (broken for any non-empty signal). Follow-up: consolidate `start-stop-daemon`'s partial `parseSignal` onto `common.ParseSignal` (tracked in todos.md).
+- Fixed `Kill` signal handling (broken for any non-empty signal). Follow-up: consolidate `start-stop-daemon`'s partial `parseSignal` onto `common.ParseSignal` (tracked in todos.md).
 
 ## [2026-10-03] docs | Awesome Go submission merged + Codecov gap closed (PR #39)
 
@@ -63,11 +63,10 @@ Append-only timeline of wiki maintenance activity.
 Applied the "link, don't duplicate" principle across the wiki:
 
 - **Deleted** `alpine_integration.md` (6-line redirect stub).
-- **SDK/RPC dedup:** Trimmed `rpc_api.md` to a type-signature catalog (~70→30 lines).
-  Moved connection/error/retry/context content into `sdk.md` (canonical). Removed
-  duplicate Go SDK section from `rpc_quickstart.md`; linked to `sdk.md` instead.
+- **RPC docs dedup:** Trimmed the RPC API reference and removed the duplicate
+  Go client section from `rpc_quickstart.md`.
 - **Stale utility counts:** Fixed `architecture.md` (79→115), `repo-map.md` (77→115),
-  `sdk.md` (77→115), `shell_integration.md` (77→removed count). Removed hardcoded
+  `shell_integration.md` (77→removed count). Removed hardcoded
   utility list from `architecture.md`; linked to `test_coverage_matrix.md`.
 - **Architecture / repo-map dedup:** Moved Docker images table from `architecture.md`
   into `repo-map.md` (canonical location).
@@ -415,16 +414,15 @@ Rejected/deferred: thread naming (fragile), cgroups v2 (privilege barrier), eBPF
 
 ## [2026-05-19] migrate | Move docs/ → wiki/ (branch: `docs/cleanup`)
 
-Moved the last two remaining docs/ files into wiki/:
-- `docs/SDK.md` → `wiki/sdk.md`
+Moved the last remaining docs/ file into wiki/:
 - `docs/SHELL_INTEGRATION.md` → `wiki/shell_integration.md`
 
-Original files replaced with stubs. Cross-references updated in:
+Original file replaced with a stub. Cross-references updated in:
 - `README.md`
-- `wiki/rpc_quickstart.md` (3 links → internal `sdk.md`)
+- `wiki/rpc_quickstart.md`
 - `wiki/repo-map.md` (docs/ entry updated)
 - `wiki/performance.md` (fixed broken `../docs/ARCHITECTURE.md` → `architecture.md`)
-- `wiki/index.md` (SDK & API section, added `sdk.md` and `shell_integration.md`)
+- `wiki/index.md`
 
 Historical references in `wiki/hardening.md` left as-is (they document
 Phase 22 milestones when the docs/ path was accurate).
@@ -486,8 +484,8 @@ Phase restructuring:
 - Both documented with rationale in `wiki/23_multi_tenant_sandbox.md`, `wiki/24_multi_agent_observability.md`
 
 Examples removed — `examples/docker-compose.yml` (broken: scratch has no sh/nc, stale socket path),
-`examples/rpc_client/main.go` (stale, doesn't use Go SDK). Replaced by `wiki/usage.md`:
-- CLI mode, daemon mode, Docker Compose, Go SDK, raw JSON-RPC, smart forwarding, recipes
+`examples/rpc_client/main.go` (stale). Replaced by `wiki/usage.md`:
+- CLI mode, daemon mode, Docker Compose, raw JSON-RPC, smart forwarding, recipes
 
 Updated: upgrade.go, upgrade_test.go, goposix.go, internal/daemon/server.go,
 docker/Dockerfile, docker/Dockerfile.cli, docker/Dockerfile.goreleaser, Makefile,
@@ -506,14 +504,13 @@ commands (from Makefile), .wikirc ignored paths, and the 8 architectural invaria
 Phase 22 (Daemon-First Pivot) completed:
 - `docker/Dockerfile` → daemon default, `docker/Dockerfile.cli` → CLI-only
 - GoReleaser builds daemon as primary (`Dockerfile.goreleaser.daemon`), CLI as secondary
-- README: SDK quickstart first, benchmark numbers (60µs/call, 10.9×, 5.1× grep)
-- `docs/SDK.md` — comprehensive Go SDK guide with typed method reference
+- README: quickstart first, benchmark numbers (60µs/call, 10.9×, 5.1× grep)
 - M5 forwarder (`forwarder.go`) exists but not yet wired into `main.go` (deferred)
 
 Benchmark suite hardened (Phase 19):
-- Nanosecond timing (Cat A), xargs-P4 parallel ops (Cat B/D), Go SDK bench_client
-- Cat F: 3-mode comparison (socat vs Go SDK vs BusyBox) — SDK is 10.9× faster
-- Cat J: Go SDK rpc-loop mode — 5 typed calls/iter, 2.1× faster than BusyBox
+- Nanosecond timing (Cat A), xargs-P4 parallel ops (Cat B/D), bench-rpc-client
+- Cat F: 3-mode comparison (socat vs JSON-RPC vs BusyBox) — JSON-RPC is 10.9× faster
+- Cat J: JSON-RPC rpc-loop mode — 5 calls/iter, 2.1× faster than BusyBox
 - Data-driven findings in all 10 categories, report.sh fixed for cat/ subdirectory
 - Rate limiter raised 100→100K req/s in `internal/daemon/server.go`
 - `wiki/performance.md` §6: actual measured matrix replaces predictions
@@ -590,8 +587,6 @@ Completed all remaining Phase 18 coverage work:
   notifications, invalid JSON, unknown method, and ping/echo end-to-end.
 - **pkg/diff**: 54.8% → 57.1% (+2.3%). Added -w (ignoreAllSpace/stripAllSpace),
   -B (ignoreBlankLines), empty files, CRLF, binary data tests.
-- **pkg/client**: 54.1% → 55.4% (+1.3%). Added rpcError.Error(), CloseTwice,
-  context cancellation, Stat helper, helper coverage.
 
 **Phase 18 is now COMPLETED.** All milestones checked off.
 
@@ -619,7 +614,6 @@ Added `egrep`/`fgrep` dispatch aliases in pkg/grep.
 Coverage ramp: internal/daemon 35.9%→51.5% (+15.6%, 20 new tests covering
 WorkerPool, writeError, processRequest edge cases, batch handling, session
 lifecycle, metrics, concurrent stress). pkg/diff +4 edge case tests.
-pkg/client +3 helper tests.
 
 **Metrics:** 77 utilities, 547/541 BusyBox (99.1%), 85 test packages.
 
@@ -817,7 +811,7 @@ Updated wiki/index.md, wiki/phases.md.
 ## [2026-05-13] plan | 15 — Coverage Ramp plan (50% → 75%)
 
 Created `wiki/15_coverage_ramp.md` — 3-stage plan targeting 75% overall coverage.
-Stage 1 targets `internal/daemon` (3.3%), `cmd/goposix` (0%), `pkg/client` (44.9%),
+Stage 1 targets `internal/daemon` (3.3%), `cmd/goposix` (0%),
 and `pkg/daemon` (5.9%) to reach 60%. Stage 2 closes the `run()` gap across 24
 utilities via dispatch-call tests with `testdata/` fixtures to reach 68%. Stage 3
 refactors `run()` signatures to accept interfaces, pushing to 75%. Includes per-package

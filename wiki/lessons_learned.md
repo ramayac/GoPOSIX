@@ -231,9 +231,9 @@ In a single `local` declaration, the second assignment sees the **old** value of
 
 ## Performance & Benchmarking
 
-### Benchmark through the SDK, not socat
+### Benchmark through a persistent connection, not socat
 
-Socat-per-call measures socat process overhead, not daemon performance. The Go SDK with a persistent connection is the only valid way to benchmark (see [performance.md](performance.md) for numbers).
+Socat-per-call measures socat process overhead, not daemon performance. A persistent JSON-RPC connection is the only valid way to benchmark (see [performance.md](performance.md) for numbers).
 
 ### Quick smoke before full benchmark
 
