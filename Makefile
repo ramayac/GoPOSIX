@@ -506,11 +506,6 @@ validate-schemas: build
 	@echo "--- Validate JSON output against schemas ---"
 	bash test/validate_schemas.sh
 
-.PHONY: example-rpc
-example-rpc: build
-	@echo "--- Running RPC integration example ---"
-	go run ./examples/rpc_client/main.go
-
 .PHONY: bench
 bench:
 	@echo "--- Running benchmarks ---"
@@ -539,7 +534,7 @@ bench-daemon: daemon-image
 	@sleep 2
 	@echo "Daemon running. Socket: /home/goposix/goposix.sock (inside container)"
 	@echo "Test: docker exec goposix-bench-daemon /bin/goposix echo hello"
-	@echo "Bench: docker exec goposix-bench-daemon /bench/bench_client -op echo 1000"
+	@echo "Bench: docker exec goposix-bench-daemon /bench/bench-rpc-client -op echo 1000"
 	@echo "Stop:  docker rm -f goposix-bench-daemon"
 
 .PHONY: bench-all
