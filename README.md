@@ -14,6 +14,10 @@ A Go-native, single-binary POSIX userland with 115 tools. Runs as a persistent J
 
 Yes! yes it does! see how GoPOSIX replaces BusyBox in Alpine here: **[docker/Dockerfile](docker/Dockerfile)** (target: `alpine-mvp`).
 
+### Why?
+
+Check out **[HISTORY.md](HISTORY.md)** for the story behind GoPOSIX, the projects that made it possible, and the reasons why it exists.
+
 ## Quickstart
 
 See **[wiki/sdk.md](wiki/sdk.md)** for the full Go SDK guide and **[wiki/usage.md](wiki/usage.md)** for CLI usage and Docker recipes.
