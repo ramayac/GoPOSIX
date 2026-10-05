@@ -9,18 +9,19 @@ Answer the user's repository question from the wiki first.
 
 ## Required context
 
-- Read [wiki/index.md](../../wiki/index.md).
-- Read recent entries in [wiki/log.md](../../wiki/log.md).
-- Read [wiki/operations/query.md](../../wiki/operations/query.md).
-- Search the wiki before widening to source files.
+- Run `wiki-engine graph` for the human navigation map (ASCII tree from `index.md`), or `wiki-engine context --active --sort=topo` for the compact agent map (parents before children). Use `--sort=chrono` for recency, `wiki-engine --json context --active` for a structured nodes/edges map, and `wiki-engine graph <page>` to inspect one page's backlinks, outgoing links, and declared references.
+- Search the wiki with `wiki-engine search <term>` or `wiki-engine relevant <term>`.
+- Read only the active wiki pages needed to answer the question.
+- Follow the guidelines in [wiki-maintainer.md](wiki-maintainer.md).
+- If wiki-engine is not installed, read [wiki/index.md](../../wiki/index.md) and [wiki/log.md](../../wiki/prologue/log.md) instead.
 
 ## Execution steps
 
-1. Search the wiki using `wiki-engine search <term>` or equivalent targeted reads.
-2. Read only the wiki pages needed to answer the question.
-3. Use source files only if the wiki lacks enough evidence.
-4. If the answer reveals a durable repo fact that is missing or stale in the wiki, update the relevant page.
-5. If durable wiki content changed, append a dated entry to [wiki/log.md](../../wiki/log.md) and run `wiki-engine lint`.
+1. Map first, then search: run `wiki-engine graph` (or `wiki-engine context --active`), locate the topic with `wiki-engine search <term>` or `wiki-engine relevant <term>`, and follow the graph's `->` links to related pages.
+2. Read only the active wiki pages needed to answer the question. Skip pages marked `deprecated` or `legacy`.
+3. Use source files only if the active wiki pages lack enough evidence.
+4. If the answer reveals a durable repo fact that is missing or stale in the wiki, update the relevant active page (ensuring it contains proper front matter, standard relative Markdown links, and cross-links to its related pages).
+5. If durable wiki content changed, append a dated entry to [wiki/log.md](../../wiki/prologue/log.md) and run `wiki-engine lint`.
 
 In the final response:
 
