@@ -1,3 +1,9 @@
+---
+status: current
+description: "How to answer questions from the wiki first."
+references: [external:https://github.com/ramayac/go-wiki-engine, source:wiki/index.md]
+---
+
 # Query Workflow
 
 ## Goal
@@ -29,3 +35,11 @@ File the answer back into the wiki when it is any of these:
 - A repo workflow that will be reused.
 - A non-obvious cross-file connection.
 - A limitation, exclusion, or decision that future sessions should not rediscover.
+
+---
+
+## See Also
+
+- [index.md](../index.md) | Wiki index.
+- [ingest.md](ingest.md) | Ingest workflow.
+- [lint.md](lint.md) | Lint workflow.

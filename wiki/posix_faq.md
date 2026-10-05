@@ -1,3 +1,9 @@
+---
+status: current
+description: "POSIX compliance FAQ."
+references: [external:https://pubs.opengroup.org/onlinepubs/9699919799/, external:https://busybox.net/downloads/BusyBox.html, external:https://unix.org/what_is_unix/single_unix_specification.html]
+---
+
 # POSIX Compliance FAQ
 
 > **Purpose:** Demystify what "POSIX-compliant" actually means, what utilities are
@@ -230,3 +236,11 @@ library (MIT, zero deps, pure Go).
 - [IEEE Std 1003.1-2017](https://standards.ieee.org/standard/1003_1-2017.html)
 - [The UNIX® Standard](https://unix.org/what_is_unix/single_unix_specification.html)
 - [BusyBox utility coverage](https://busybox.net/downloads/BusyBox.html)
+
+---
+
+## See Also
+
+- [index.md](index.md) | Wiki index.
+- [json_schema.md](json_schema.md) | JSON output schemas.
+- [test_coverage_matrix.md](test_coverage_matrix.md) | Coverage and BusyBox status.

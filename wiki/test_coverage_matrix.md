@@ -1,3 +1,9 @@
+---
+status: current
+description: "Per-utility test coverage and BusyBox status."
+references: [source:test/busybox_testsuite, source:test/posix-json]
+---
+
 # GoPOSIX — Test Coverage & Compliance Matrix
 
 > **Last updated:** 2026-10-04 | **BusyBox:** 870 pass / 17 fail / 30 skip | **Branch:** `audit/whatsleft` | **Overall Coverage:** 88.1% | **JSON-RPC:** 115/115 (100.0%)
@@ -178,12 +184,6 @@
 | `xxd` | 86.3% | 7 | ✅ 7/7 | ✅ |
 | `bc` | 84.8% | 81 | ✅ 81/81 | ✅ |
 | `mkfs.minix` | 87.8% | 1 | ✅ 1/1 | ✅ |
-## SDK / Client Library
-
-| Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
-|---------|:------------:|:-------------:|:--------------:|:--------:|
-| `client` | 83.7% | — | — | — |
-
 ## Infrastructure
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
@@ -194,7 +194,7 @@
 
 | Suite | Count | Status |
 |-------|-------|--------|
-| Total packages | 115 | 115 utilities + client SDK |
+| Total packages | 115 | 115 utilities |
 | Unit tests passing | 115/115 | 100% |
 | BusyBox tests run | 919 | 919 total applicable tests |
 | BusyBox passed | 877 | 98.1% (877 of 919) |

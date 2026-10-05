@@ -9,19 +9,19 @@ Run the repository wiki refresh workflow.
 
 ## Required context
 
-- Read [wiki/index.md](../../wiki/index.md).
-- Read recent entries in [wiki/log.md](../../wiki/log.md).
-- Read [wiki/operations/ingest.md](../../wiki/operations/ingest.md), [wiki/operations/query.md](../../wiki/operations/query.md), and [wiki/operations/lint.md](../../wiki/operations/lint.md).
-- Use [wiki/repo-map.md](../../wiki/repo-map.md) for repo-specific exclusions and architecture facts.
+- Run `wiki-engine context --active` to get the current snapshot of active wiki pages.
+- Use `wiki-engine refresh` for the full maintenance report.
+- Follow the guidelines in [wiki-maintainer.md](wiki-maintainer.md).
+- If wiki-engine is not installed, read [wiki/index.md](../../wiki/index.md) and [wiki/repo-map.md](../../wiki/prologue/repo-map.md).
 
 ## Execution steps
 
 1. Run `wiki-engine refresh`.
 2. If it reports no ingest candidates, stop and explain that no wiki update is needed.
 3. Review the output from `wiki-engine changed` and `wiki-engine candidates`.
-4. If the repo changes require wiki maintenance, update the relevant pages under `wiki/`.
-5. If a page is added or its role changes, update [wiki/index.md](../../wiki/index.md).
-6. Append a dated entry to [wiki/log.md](../../wiki/log.md) using the log heading convention.
+4. If the repo changes require wiki maintenance, update the relevant active pages under `wiki/` (creating them with proper YAML front matter if new). Cross-link updated pages to their related pages.
+5. If a page is added, its status changes, or its role changes, update [wiki/index.md](../../wiki/index.md) using standard relative Markdown links.
+6. Append a dated entry to [wiki/log.md](../../wiki/prologue/log.md) using the log heading convention.
 7. Run `wiki-engine lint`.
 8. Summarize:
    - what changed in the wiki

@@ -1,3 +1,9 @@
+---
+status: current
+description: "Run GoPOSIX as a systemd daemon on a Linux host."
+references: [source:docker/Dockerfile, external:https://github.com/ramayac/goposix]
+---
+
 # systemd
 
 Run GoPOSIX as a persistent daemon on a Linux host managed by systemd.
@@ -112,3 +118,12 @@ sudo systemctl restart goposix
 ```bash
 sudo usermod -aG nogroup myapp
 ```
+
+---
+
+## See Also
+
+- [index.md](../index.md) | Wiki index.
+- [docker-compose.md](docker-compose.md) | Docker Compose sidecar.
+- [kubernetes.md](kubernetes.md) | Kubernetes sidecar deployment.
+- [security.md](../security.md) | Security model.

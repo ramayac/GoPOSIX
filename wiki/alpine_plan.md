@@ -1,3 +1,9 @@
+---
+status: legacy
+description: "Blueprint for the Go-Alpine MVP: BusyBox replacement and tradeoffs."
+references: [source:docker/Dockerfile.openbox]
+---
+
 # Blueprint: Go-Alpine MVP Plan
 
 This document outlines the design blueprint for the **Go-Alpine** project—swapping out Alpine Linux's standard C-based BusyBox userland and routing it entirely through the official GoPOSIX multicall binary.

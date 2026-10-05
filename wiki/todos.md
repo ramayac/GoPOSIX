@@ -1,3 +1,9 @@
+---
+status: current
+description: "Open TODOs and remaining work."
+references: [source:wiki/28_posix_command_audit.md, external:https://github.com/ramayac/GoPOSIX/pull/43]
+---
+
 # GoPOSIX — Open TODOs & Remaining Work
 
 > **Last updated:** 2026-10-04 | **Utilities:** 115 | **Coverage:** 88.1% | **BusyBox:** 870/17/30 (98.1%) | **JSON-RPC Daemon:** 115/115 (100.0%)

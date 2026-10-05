@@ -11,7 +11,6 @@ import (
 
 	"github.com/ramayac/goposix/internal/daemon"
 	_ "github.com/ramayac/goposix/pkg/cat"
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/echo"
 	_ "github.com/ramayac/goposix/pkg/sed"
 	_ "github.com/ramayac/goposix/pkg/sleep"
@@ -20,6 +19,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/tr"
 	_ "github.com/ramayac/goposix/pkg/truefalse"
 	_ "github.com/ramayac/goposix/pkg/yes"
+	client "github.com/ramayac/goposix/test/testutil"
 )
 
 // ResultWrapper represents the standardized output structure for GoPOSIX JSON-RPC

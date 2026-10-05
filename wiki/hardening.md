@@ -1,3 +1,9 @@
+---
+status: current
+description: "Consolidated hardening phases across earlier project stages."
+references: [source:pkg/common/security.go, source:internal/shell/interpreter.go, source:docker/Dockerfile]
+---
+
 # Hardening Phases — Consolidated
 
 > **Last updated:** 2026-05-30 | **Overall coverage:** 84.1% | **BusyBox:** 877/17/25 (98.1%)
@@ -24,13 +30,13 @@ Full-architecture audit resolving all CRITICAL and HIGH items. Score: 87 → 95/
 
 **Date:** 2026-05-18
 
-Benchmark-driven architecture pivot. Discovery: Go SDK with persistent connection achieves **60µs per RPC call — 11× faster than BusyBox fork+exec**. The old socat-per-call approach was 3× slower than BusyBox.
+Benchmark-driven architecture pivot. Discovery: a persistent JSON-RPC connection achieves **60µs per RPC call — 11× faster than BusyBox fork+exec**. The old socat-per-call approach was 3× slower than BusyBox.
 
 **Key outcomes:**
 - Rebranded project messaging: "daemon-first" with CLI as secondary interface
 - Daemon benchmark infrastructure (`make bench-quick`, `make bench-all`)
 - Documented that daemon benchmarking through socat measures socat overhead, not daemon performance
-- Established Go SDK (`pkg/client/`) as the primary programmatic interface
+- Established the JSON-RPC daemon as the primary programmatic interface
 - Removed all socat-based forwarding; CLI forwarding through forwarder.go
 - Daemon stdin support via `dispatch.Command.Run` signature expansion
 
@@ -79,3 +85,12 @@ Comprehensive compliance gap audit. All 27 findings resolved.
 | 18 performance optimizations | 12/30 done | `wiki/performance.md` |
 | Daemon pipeline composition | Planning | `wiki/deferred.md` |
 | Alpine daemon target | Planning | `wiki/alpine_plan.md` |
+
+---
+
+## See Also
+
+- [security.md](security.md) | Security model and deployment posture.
+- [performance.md](performance.md) | Benchmark results.
+- [deferred.md](deferred.md) | Deferred work.
+- [todos.md](todos.md) | Remaining work.

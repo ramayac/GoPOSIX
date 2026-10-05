@@ -1,3 +1,9 @@
+---
+status: current
+description: "Phase 28: POSIX command audit plan, matrix, and remaining work."
+references: [source:wiki/test_coverage_matrix.md, source:test/posix-json]
+---
+
 # Phase 28 — POSIX Command Audit (Plan & Matrix)
 
 > **Created:** 2026-10-03 | **Commands:** 115 | **Status:** ✅ all findings F1–F16 and P1–P7 resolved — PR #44 (F8–F14) and PR #46 (5d JSON) merged, PR #47 (F16/P1/P2/P4) in review · remaining work: §6 |

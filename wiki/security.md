@@ -1,3 +1,9 @@
+---
+status: current
+description: "Security model and deployment posture."
+references: [source:pkg/common/security.go, source:internal/shell/interpreter.go, external:https://github.com/ramayac/GoPOSIX/security]
+---
+
 # Security Model
 
 ## Trust Level
@@ -110,3 +116,12 @@ slsa-verifier verify-image ghcr.io/ramayac/goposix:latest \
 
 Please report security issues via GitHub's private vulnerability reporting on the
 repository. Do not open public issues for security bugs.
+
+---
+
+## See Also
+
+- [index.md](index.md) | Wiki index.
+- [architecture.md](architecture.md) | Component flow and packages.
+- [rpc_quickstart.md](rpc_quickstart.md) | JSON-RPC protocol reference.
+- [shell_integration.md](shell_integration.md) | CLI-to-daemon forwarding.

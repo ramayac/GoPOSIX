@@ -1,3 +1,9 @@
+---
+status: current
+description: "How to absorb a repo change into the wiki."
+references: [external:https://github.com/ramayac/go-wiki-engine, source:wiki/log.md]
+---
+
 # Ingest Workflow
 
 ## Goal
@@ -45,3 +51,10 @@ Use this exact heading pattern:
 ## [YYYY-MM-DD] ingest | short summary
 ```
 
+---
+
+## See Also
+
+- [index.md](../index.md) | Wiki index.
+- [lint.md](lint.md) | Lint workflow.
+- [query.md](query.md) | Query workflow.

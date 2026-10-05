@@ -18,7 +18,6 @@ import (
 	_ "github.com/ramayac/goposix/pkg/bunzip2"
 	_ "github.com/ramayac/goposix/pkg/bzcat"
 	_ "github.com/ramayac/goposix/pkg/cal"
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/cpio"
 	_ "github.com/ramayac/goposix/pkg/cryptpw"
 	_ "github.com/ramayac/goposix/pkg/dc"
@@ -42,6 +41,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/uuencode"
 	_ "github.com/ramayac/goposix/pkg/wget"
 	_ "github.com/ramayac/goposix/pkg/which"
+	client "github.com/ramayac/goposix/test/testutil"
 )
 
 // ---------------------------------------------------------------------------

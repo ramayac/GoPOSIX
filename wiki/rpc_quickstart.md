@@ -1,9 +1,14 @@
+---
+status: current
+description: "JSON-RPC 2.0 protocol reference."
+references: [source:internal/daemon/server.go]
+---
+
 # JSON-RPC Protocol Reference
 
-GoPOSIX uses JSON-RPC 2.0 over a Unix socket as its wire protocol. The typed
-[Go SDK](sdk.md) is the recommended client for Go users (60µs/call, connection
-pooling, retry). This document covers the **raw protocol** for non-Go clients,
-debugging, and understanding what the SDK does under the hood.
+GoPOSIX uses JSON-RPC 2.0 over a Unix socket as its wire protocol. This document
+is the reference for the raw protocol. Any language that can open a Unix socket
+and encode JSON can call the daemon.
 
 ## Overview
 
@@ -17,24 +22,26 @@ The daemon exposes a Unix socket-based JSON-RPC 2.0 API that lets any program:
 
 ## Quick Start
 
-### Go (recommended)
-
 ```go
-c, _ := client.New("/tmp/goposix.sock")
-defer c.Close()
-result, _ := c.Ls(ctx, "/etc", nil)  // typed, 60µs
+conn, err := net.DialTimeout("unix", "/tmp/goposix.sock", 5*time.Second)
+if err != nil {
+    log.Fatal(err)
+}
+defer conn.Close()
+
+enc := json.NewEncoder(conn)
+enc.Encode(map[string]interface{}{
+    "jsonrpc": "2.0",
+    "method":  "goposix.ls",
+    "params":  map[string]interface{}{"path": "/etc"},
+    "id":      1,
+})
+
+var resp map[string]interface{}
+json.NewDecoder(conn).Decode(&resp)
 ```
 
-See **[sdk.md](sdk.md)** for the full Go SDK guide.
-
-### Any Language (raw protocol)
-
-```bash
-make example-rpc
-```
-
-This runs `examples/rpc_client/main.go` — a self-contained Go program that demonstrates
-the full lifecycle using raw JSON-RPC. For non-Go languages, read on.
+All communication is newline-delimited JSON. Each request gets one response.
 
 ## Architecture
 
@@ -168,23 +175,14 @@ The response envelope includes `exitCode` for utility errors (non-zero = failure
 
 ## Example: Multi-Step RPC Task
 
-The full example at `examples/rpc_client/main.go` demonstrates:
+The lifecycle above (ping, session, execute, destroy) covers the full multi-step
+task. Send the requests in order over one connection.
 
-1. Start daemon
-2. Ping
-3. Create session
-4. Set CWD to `/etc`
-5. List files with `goposix.ls`
-6. Count lines with `goposix.wc`
-7. Run shell command with `goposix.shell.exec`
-8. Read file contents with `goposix.cat`
-9. Destroy session
-10. Stop daemon
+---
 
-```bash
-go run ./examples/rpc_client/main.go
-```
+## See Also
 
-## Go Client SDK
-
-For production Go use, see [sdk.md](sdk.md) for connection pooling, retry, context propagation, and typed helpers at 60µs/call. For the typed method signature catalog, see [rpc_api.md](rpc_api.md).
+- [index.md](index.md) | Wiki index.
+- [json_schema.md](json_schema.md) | JSON output schemas.
+- [security.md](security.md) | Security model.
+- [usage.md](usage.md) | CLI and daemon usage.

@@ -1,3 +1,9 @@
+---
+status: legacy
+description: "Phase 25: Awesome-Go submission plan and checklist (merged)."
+references: [external:https://github.com/avelino/awesome-go, external:https://github.com/ramayac/GoPOSIX/pull/39, source:cmd/goposix/main.go]
+---
+
 # Phase 25 — Awesome-Go Submission Plan & Checklist
 
 > **Version:** 5.7 | **Date:** 2026-10-03 | **Tier:** GOLD | **Status:** MERGED

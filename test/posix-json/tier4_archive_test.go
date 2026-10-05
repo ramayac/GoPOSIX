@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/gzip"
 	_ "github.com/ramayac/goposix/pkg/md5sum"
 	_ "github.com/ramayac/goposix/pkg/sha256sum"
 	_ "github.com/ramayac/goposix/pkg/tar"
+	client "github.com/ramayac/goposix/test/testutil"
 )
 
 func TestTier4_Tar(t *testing.T) {

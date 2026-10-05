@@ -1,11 +1,17 @@
+---
+status: current
+description: "Current repo architecture and exclusions."
+references: [source:cmd/goposix/main.go, source:goposix.go, source:forwarder.go, source:Makefile, source:.goreleaser.yml, source:internal/daemon/server.go, source:docker/Dockerfile]
+---
+
 # Repo Map
 
 ## Purpose
 
-GoPOSIX is a Go-native POSIX userland with a persistent JSON-RPC 2.0 daemon and typed Go SDK.
+GoPOSIX is a Go-native POSIX userland with a persistent JSON-RPC 2.0 daemon.
 It replaces GNU Coreutils in Docker containers, delivering 60µs per RPC call (10.9× faster
-than BusyBox fork+exec). Primary consumers: Go programs making repeated filesystem calls
-via the SDK, and `FROM scratch` containers needing a minimal POSIX userland.
+than BusyBox fork+exec). Primary consumers: programs making repeated calls over JSON-RPC,
+and `FROM scratch` containers needing a minimal POSIX userland.
 
 ## High-Signal Areas
 
@@ -13,23 +19,22 @@ via the SDK, and `FROM scratch` containers needing a minimal POSIX userland.
 |------|------|
 | `cmd/goposix/main.go` | Multicall binary entry point. Symlink dispatch + subcommand dispatch. Blank-imports all utility packages. |
 | `goposix.go` | Public API for downstream multicall binaries. `Main()`, `Run()`, `RunWithWriter()`. |
-| `forwarder.go` | M5 daemon forwarding — detects running daemon socket and forwards CLI commands (not yet wired into `main.go`). |
+| `forwarder.go` | M5 daemon forwarding — detects a running daemon socket and forwards CLI commands. Wired into `main.go` via `goposix.TryForward()`. |
 | `pkg/common/` | Foundation libraries: `flags.go` (POSIX flag parser), `output.go` (JSON/text rendering), `security.go` (path traversal prevention), `io.go` (LimitWriter). |
-| `pkg/client/` | Go SDK for JSON-RPC daemon. Typed methods for all 115 utilities. Connection pooling, retry, batch requests. |
 | `pkg/<utility>/` | 115 POSIX utility packages. Each has `Run()` (library) + `run()` (CLI glue). Register via `dispatch.Register()` in `init()`. See [test_coverage_matrix.md](test_coverage_matrix.md) for the full catalog. |
 | `internal/daemon/` | JSON-RPC 2.0 daemon server. Session manager, rate limiter, observability (Prometheus + Go runtime stats + JSON /status + healthz/readyz), thread naming (`proctitle_*.go`, `threadname_*.go`), connection tracking for graceful shutdown. |
 | `internal/dispatch/` | Command registry. `Register()`, `Lookup()`, `List()`. |
 | `internal/shell/` | Sandboxed shell interpreter via `mvdan.cc/sh`. Path confinement, output limits. |
-| `docker/` | Dockerfiles: `Dockerfile` (daemon default), `Dockerfile.cli` (scratch CLI), `Dockerfile.debug` (Alpine+shell), `Dockerfile.goreleaser*` (release). |
+| `docker/` | Dockerfiles: `Dockerfile` (unified multi-stage — `daemon`, `cli`, `debug`, `alpine-mvp` targets), `Dockerfile.goreleaser`, `Dockerfile.goreleaser.daemon`, `Dockerfile.openbox`. |
 | `test/` | Unit tests (per-package `_test.go`), BusyBox integration suite, benchmark suite, JSON-RPC compliance tests. |
+| `test/testutil/` | Minimal raw JSON-RPC client used by the integration and posix-json tests. |
 | `wiki/` | Project documentation: phase plans, architecture, coverage matrix, performance, operations guides. |
-| `docs/` | Stubs redirecting to wiki/ (`SDK.md`, `SHELL_INTEGRATION.md`). |
-| `examples/rpc_client/` | Minimal Go SDK example — connect, `Echo()`, `Ls()`, `ShellExec()`. |
 | `AGENTS.md` | AI coding agent instructions — invariants, workflow, architecture rules. |
 | `CONTRIBUTING.md` | Human-facing contributing guide — 8-step utility checklist, coverage policy. |
-| `README.md` | Project homepage — SDK quickstart, benchmark numbers, key features. |
+| `README.md` | Project homepage — quickstart, benchmark numbers, key features. |
 | `Makefile` | Build, test, CI, Docker, benchmark targets. |
 | `.goreleaser.yml` | Multi-arch release: daemon image (primary) + CLI image (secondary). |
+| `.github/workflows/` | CI pipeline: `ci.yml` (test, gates, Docker smoke, Trivy, BusyBox suite) and `lint.yml` (golangci-lint). See [ci.md](ci.md). |
 
 ## Generated Artifacts
 
@@ -41,7 +46,7 @@ via the SDK, and `FROM scratch` containers needing a minimal POSIX userland.
 | Docker images | `make image` (daemon), `make image-cli` (CLI), `make bench-image` (benchmark) |
 | Benchmark results | `make bench-all` → Docker volume `goposix-bench-data` |
 
-## ## Docker Images
+## Docker Images
 
 | Image | Base | Size | Use case |
 |-------|------|:---:|----------|
@@ -61,7 +66,7 @@ make build-race
 # Run all unit tests.
 make test
 
-# Run BusyBox integration tests (548 passed, 4 failed, 10 skipped baseline).
+# Run BusyBox integration tests (see test_coverage_matrix.md for the current baseline).
 make testsuite
 
 # Full CI pipeline (test + testsuite + coverage gate + build).
@@ -89,7 +94,7 @@ make bench-fetch               # copy results from Docker volume
 make vet       # go vet
 make fmt-check # verify formatting
 make cover     # coverage report
-make cover-gate # CI coverage gate (≥70%)
+make cover-gate # CI coverage gate (≥80%, COVERAGE_THRESHOLD in Makefile)
 ```
 
 ## Ignored Paths (from .wikirc)
@@ -104,7 +109,7 @@ bin/      — build output
 ## Key Architectural Invariants
 
 1. **No CGO** — `CGO_ENABLED=0` always. Must compile statically for `FROM scratch`.
-2. **Near-zero dependencies** — only `mvdan.cc/sh/v3` (shell), `golang.org/x/sys`, `golang.org/x/term`.
+2. **Low dependencies** — twelve external modules (ten direct, two indirect). The full list lives in [architecture.md](architecture.md#core-design-principles).
 3. **Custom flag parser** — `common.ParseFlags()` in `pkg/common/flags.go`. Never use `flag` or `pflag`.
 4. **Injected output** — always pass `out io.Writer` to `Run()`; never write directly to `os.Stdout`.
 5. **Library/CLI separation** — core logic in exported `Run()`, CLI parsing in `run()`. Enables daemon reuse.

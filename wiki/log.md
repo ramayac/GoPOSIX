@@ -1,8 +1,58 @@
+---
+status: current
+description: "Append-only wiki maintenance timeline."
+references: [source:.wiki-instructions/wiki-maintainer.md]
+---
+
 # Wiki Log
 
 > **Note:** References to "agent," "agentic," or "AI agent" in historical entries below predate the Phase 21 honest-takes audit (2026-05-18). The project's positioning has been corrected to "programmatic consumer" / "JSON-RPC client."
 
 Append-only timeline of wiki maintenance activity.
+
+## [2026-10-04] ingest | Remove the Go SDK; document CI and the wiki contract
+
+Branch `docs/split-readme-history`.
+
+- **Go SDK removed.** `pkg/client` is deleted, so the JSON-RPC daemon is the only programmatic interface. Tests use the minimal client in `test/testutil`. The benchmark client is now `bench-rpc-client`, which measures a persistent JSON-RPC connection. See [architecture.md](architecture.md) and [repo-map.md](repo-map.md).
+- **Dependency list corrected.** Twelve external modules (ten direct, two indirect). `go mod tidy` moved six direct imports out of the indirect block. README, HISTORY.md, and architecture.md updated.
+- **New page [ci.md](ci.md).** Documents the CI jobs, the gates (coverage 80%, binary under 15 MB, Trivy, BusyBox floor of 750), and the Codecov `report_type: test_results` wiring. `codecov/test-results-action` is deprecated; use `codecov-action@v5` twice.
+- **[schema.md](schema.md) gained the front matter and lint gate contract.** Every page needs `status`; `description` is recommended; `legacy` and `deprecated` pages leave the active graph.
+- **[operations/lint.md](operations/lint.md) lists every lint checker and its severity.** The gate fails on `warn` and `error` findings.
+- **[repo-map.md](repo-map.md) refreshed:** Dockerfile names, forwarder wiring, dependency count, and the coverage gate (80%).
+- **Wiki lint is clean.** All 34 pages carry front matter. Historical pages are `legacy`. Fixed four broken links, three index descriptions, the log order, the phase table numbering, one broken external link, and a missing code fence in usage.md.
+
+## [2026-10-04] fix | Phase 28 open findings F16, P1, P2, P4 closed (`audit/whatsleft`)
+
+- F16: JSON stdout modes no longer mix the raw payload with the envelope. The payload is captured (50 MB cap) and embedded as base64 `content` in the envelope: `DecompFileInfo.Content` (F7 core), `GzipStat.Content` (`pkg/gzip`), `CpioResult.Content` (`cpio -o` without `-F`). Text mode is unchanged. Schemas updated for bunzip2, bzcat, unlzma, uncompress, gzip, cpio; new gunzip schema. `make validate-schemas`: 115 passed, 0 failed, 0 skipped.
+- P1: `logger.Run` takes the injected `errOut io.Writer`; the package-global `stderrWriter` and its swap logic are deleted. The `-s` test asserts the injected writer.
+- P2: all 115 coverage cells in [test_coverage_matrix.md](test_coverage_matrix.md) refreshed from a `go test -cover` run (84 rows changed). Overall coverage 88.1%.
+- P4: the BusyBox harness now builds applet links in a per-run `mktemp -d` (cleaned on exit) and uses `.tmpdir.$applet.$$`. The tracked `runtest-tempdir-links/` symlink tree is deleted from the repo. Concurrent same-applet runs verified: zero failures.
+- Plan §6 lists the remaining work: Phase 4 for bc/sed/date/tar/dc/diff, Phase 5 for 13 M/S verdicts.
+
+## [2026-10-04] resume | Phase 28 5d JSON changes complete (PR #46, `audit/5d-json`)
+
+- F12: 37 new schemas plus golden fixtures. `make validate-schemas` reports 114 passed, 0 failed, 0 skipped (was 31 skipped). `dd` and `daemon` are documented exemptions in [json_schema.md](json_schema.md).
+- F15: `shell` parses `--json` in inline, file, and pipe modes; data = `{exitCode, stdout, stderr}`. The daemon test asserts it.
+- New `test/posix-json/tier9_json_contract_test.go` covers bc, mount, hexdump, makedevs, mdev, mkfs.minix, wget, xxd, rx, shell.
+- Usage-error paths now honour `--json` in wget, which, seq, pidof, mdev, rx, shell. rx stops writing XMODEM handshake bytes to stdout in JSON mode. who emits `users: []` instead of `null`.
+- `gen_golden.sh` fixed (pre-existing `set -u` bug, `%b` escapes, absolute paths) and extended; regenerates all 114 fixtures.
+- New open finding F16: raw payload mixes with the envelope on stdout (`bzcat`, `-c` decompress modes, `gzip -c`, `cpio -o`). Recorded in plan §6.
+- Codecov reported 76% patch coverage; plain-text branch tests closed all 18 missing lines (100% patch coverage on the follow-up commit).
+- What's left is listed in plan §6: Phase 4 for bc/sed/date/tar/dc/diff, Phase 5 for 14 M/S verdicts, P1/P2/P4.
+
+## [2026-10-03] rename | posix_command_audit.md → 28_posix_command_audit.md
+
+- The audit plan is Phase 28. The file name follows the wiki phase convention (23_, 25_, 26_, 27_).
+- Links updated in `index.md`, `todos.md`, and `phases.md` (Active Work). Historical log entries keep the old name.
+
+
+## [2026-10-03] pause | Phase 28 audit paused — repository phases done, per-tool work deferred
+
+- The audit stops here for now. Phases 0–3 and findings F1–F7 are complete (PR #43, 13 commits, 100% patch coverage, coverage 87.6%, BusyBox 871/16/30).
+- Next when work resumes: Phase 4 deep audits of 7 XL/L commands (bc, sed, printf, date, tar, dc, diff), then the Phase 5 sweep. See the updated [todos.md](todos.md).
+- The plan gained a preflight review: corrected XL/L scope (7, not 24), added a PreAudit score per command, and recorded open items F8 (parser helpers duplicated across bc/expr/sed/testcmd) and P1 (logger package-global writer), plus P2 (companion coverage matrix is stale) and P4 (concurrent make testsuite runs corrupt each other).
+
 
 ## [2026-10-03] test | 100% patch coverage — resolve Codecov comment on PR #43
 
@@ -51,7 +101,7 @@ Append-only timeline of wiki maintenance activity.
 ## [2026-10-03] implement | kill POSIX signal support (PR #41 merged, closes #40)
 
 - `pkg/kill` supports `-s NAME|NUM`, dash forms (`-TERM`, `-15`), `-l [NUM]`, and signal-0 probes via new `pkg/common/signal.go`.
-- Fixed SDK `Client.Kill` (broken for any non-empty signal). Follow-up: consolidate `start-stop-daemon`'s partial `parseSignal` onto `common.ParseSignal` (tracked in todos.md).
+- Fixed `Kill` signal handling (broken for any non-empty signal). Follow-up: consolidate `start-stop-daemon`'s partial `parseSignal` onto `common.ParseSignal` (tracked in todos.md).
 
 ## [2026-10-03] docs | Awesome Go submission merged + Codecov gap closed (PR #39)
 
@@ -63,11 +113,10 @@ Append-only timeline of wiki maintenance activity.
 Applied the "link, don't duplicate" principle across the wiki:
 
 - **Deleted** `alpine_integration.md` (6-line redirect stub).
-- **SDK/RPC dedup:** Trimmed `rpc_api.md` to a type-signature catalog (~70→30 lines).
-  Moved connection/error/retry/context content into `sdk.md` (canonical). Removed
-  duplicate Go SDK section from `rpc_quickstart.md`; linked to `sdk.md` instead.
+- **RPC docs dedup:** Trimmed the RPC API reference and removed the duplicate
+  Go client section from `rpc_quickstart.md`.
 - **Stale utility counts:** Fixed `architecture.md` (79→115), `repo-map.md` (77→115),
-  `sdk.md` (77→115), `shell_integration.md` (77→removed count). Removed hardcoded
+  `shell_integration.md` (77→removed count). Removed hardcoded
   utility list from `architecture.md`; linked to `test_coverage_matrix.md`.
 - **Architecture / repo-map dedup:** Moved Docker images table from `architecture.md`
   into `repo-map.md` (canonical location).
@@ -415,16 +464,15 @@ Rejected/deferred: thread naming (fragile), cgroups v2 (privilege barrier), eBPF
 
 ## [2026-05-19] migrate | Move docs/ → wiki/ (branch: `docs/cleanup`)
 
-Moved the last two remaining docs/ files into wiki/:
-- `docs/SDK.md` → `wiki/sdk.md`
+Moved the last remaining docs/ file into wiki/:
 - `docs/SHELL_INTEGRATION.md` → `wiki/shell_integration.md`
 
-Original files replaced with stubs. Cross-references updated in:
+Original file replaced with a stub. Cross-references updated in:
 - `README.md`
-- `wiki/rpc_quickstart.md` (3 links → internal `sdk.md`)
+- `wiki/rpc_quickstart.md`
 - `wiki/repo-map.md` (docs/ entry updated)
 - `wiki/performance.md` (fixed broken `../docs/ARCHITECTURE.md` → `architecture.md`)
-- `wiki/index.md` (SDK & API section, added `sdk.md` and `shell_integration.md`)
+- `wiki/index.md`
 
 Historical references in `wiki/hardening.md` left as-is (they document
 Phase 22 milestones when the docs/ path was accurate).
@@ -486,8 +534,8 @@ Phase restructuring:
 - Both documented with rationale in `wiki/23_multi_tenant_sandbox.md`, `wiki/24_multi_agent_observability.md`
 
 Examples removed — `examples/docker-compose.yml` (broken: scratch has no sh/nc, stale socket path),
-`examples/rpc_client/main.go` (stale, doesn't use Go SDK). Replaced by `wiki/usage.md`:
-- CLI mode, daemon mode, Docker Compose, Go SDK, raw JSON-RPC, smart forwarding, recipes
+`examples/rpc_client/main.go` (stale). Replaced by `wiki/usage.md`:
+- CLI mode, daemon mode, Docker Compose, raw JSON-RPC, smart forwarding, recipes
 
 Updated: upgrade.go, upgrade_test.go, goposix.go, internal/daemon/server.go,
 docker/Dockerfile, docker/Dockerfile.cli, docker/Dockerfile.goreleaser, Makefile,
@@ -506,14 +554,13 @@ commands (from Makefile), .wikirc ignored paths, and the 8 architectural invaria
 Phase 22 (Daemon-First Pivot) completed:
 - `docker/Dockerfile` → daemon default, `docker/Dockerfile.cli` → CLI-only
 - GoReleaser builds daemon as primary (`Dockerfile.goreleaser.daemon`), CLI as secondary
-- README: SDK quickstart first, benchmark numbers (60µs/call, 10.9×, 5.1× grep)
-- `docs/SDK.md` — comprehensive Go SDK guide with typed method reference
+- README: quickstart first, benchmark numbers (60µs/call, 10.9×, 5.1× grep)
 - M5 forwarder (`forwarder.go`) exists but not yet wired into `main.go` (deferred)
 
 Benchmark suite hardened (Phase 19):
-- Nanosecond timing (Cat A), xargs-P4 parallel ops (Cat B/D), Go SDK bench_client
-- Cat F: 3-mode comparison (socat vs Go SDK vs BusyBox) — SDK is 10.9× faster
-- Cat J: Go SDK rpc-loop mode — 5 typed calls/iter, 2.1× faster than BusyBox
+- Nanosecond timing (Cat A), xargs-P4 parallel ops (Cat B/D), bench-rpc-client
+- Cat F: 3-mode comparison (socat vs JSON-RPC vs BusyBox) — JSON-RPC is 10.9× faster
+- Cat J: JSON-RPC rpc-loop mode — 5 calls/iter, 2.1× faster than BusyBox
 - Data-driven findings in all 10 categories, report.sh fixed for cat/ subdirectory
 - Rate limiter raised 100→100K req/s in `internal/daemon/server.go`
 - `wiki/performance.md` §6: actual measured matrix replaces predictions
@@ -590,8 +637,6 @@ Completed all remaining Phase 18 coverage work:
   notifications, invalid JSON, unknown method, and ping/echo end-to-end.
 - **pkg/diff**: 54.8% → 57.1% (+2.3%). Added -w (ignoreAllSpace/stripAllSpace),
   -B (ignoreBlankLines), empty files, CRLF, binary data tests.
-- **pkg/client**: 54.1% → 55.4% (+1.3%). Added rpcError.Error(), CloseTwice,
-  context cancellation, Stat helper, helper coverage.
 
 **Phase 18 is now COMPLETED.** All milestones checked off.
 
@@ -619,7 +664,6 @@ Added `egrep`/`fgrep` dispatch aliases in pkg/grep.
 Coverage ramp: internal/daemon 35.9%→51.5% (+15.6%, 20 new tests covering
 WorkerPool, writeError, processRequest edge cases, batch handling, session
 lifecycle, metrics, concurrent stress). pkg/diff +4 edge case tests.
-pkg/client +3 helper tests.
 
 **Metrics:** 77 utilities, 547/541 BusyBox (99.1%), 85 test packages.
 
@@ -817,7 +861,7 @@ Updated wiki/index.md, wiki/phases.md.
 ## [2026-05-13] plan | 15 — Coverage Ramp plan (50% → 75%)
 
 Created `wiki/15_coverage_ramp.md` — 3-stage plan targeting 75% overall coverage.
-Stage 1 targets `internal/daemon` (3.3%), `cmd/goposix` (0%), `pkg/client` (44.9%),
+Stage 1 targets `internal/daemon` (3.3%), `cmd/goposix` (0%),
 and `pkg/daemon` (5.9%) to reach 60%. Stage 2 closes the `run()` gap across 24
 utilities via dispatch-call tests with `testdata/` fixtures to reach 68%. Stage 3
 refactors `run()` signatures to accept interfaces, pushing to 75%. Includes per-package
@@ -943,37 +987,3 @@ Added `[pkg/<name>/]` source links to every utility header in phase
 pages (01, 03, 04, 06, 07). Also linked infrastructure packages in phases 00
 and 05. All 55 utility packages now have clickable source links from their
 wiki documentation.
-
-
-
-
-## [2026-10-04] fix | Phase 28 open findings F16, P1, P2, P4 closed (`audit/whatsleft`)
-
-- F16: JSON stdout modes no longer mix the raw payload with the envelope. The payload is captured (50 MB cap) and embedded as base64 `content` in the envelope: `DecompFileInfo.Content` (F7 core), `GzipStat.Content` (`pkg/gzip`), `CpioResult.Content` (`cpio -o` without `-F`). Text mode is unchanged. Schemas updated for bunzip2, bzcat, unlzma, uncompress, gzip, cpio; new gunzip schema. `make validate-schemas`: 115 passed, 0 failed, 0 skipped.
-- P1: `logger.Run` takes the injected `errOut io.Writer`; the package-global `stderrWriter` and its swap logic are deleted. The `-s` test asserts the injected writer.
-- P2: all 115 coverage cells in [test_coverage_matrix.md](test_coverage_matrix.md) refreshed from a `go test -cover` run (84 rows changed). Overall coverage 88.1%.
-- P4: the BusyBox harness now builds applet links in a per-run `mktemp -d` (cleaned on exit) and uses `.tmpdir.$applet.$$`. The tracked `runtest-tempdir-links/` symlink tree is deleted from the repo. Concurrent same-applet runs verified: zero failures.
-- Plan §6 lists the remaining work: Phase 4 for bc/sed/date/tar/dc/diff, Phase 5 for 13 M/S verdicts.
-
-## [2026-10-04] resume | Phase 28 5d JSON changes complete (PR #46, `audit/5d-json`)
-
-- F12: 37 new schemas plus golden fixtures. `make validate-schemas` reports 114 passed, 0 failed, 0 skipped (was 31 skipped). `dd` and `daemon` are documented exemptions in [json_schema.md](json_schema.md).
-- F15: `shell` parses `--json` in inline, file, and pipe modes; data = `{exitCode, stdout, stderr}`. The daemon test asserts it.
-- New `test/posix-json/tier9_json_contract_test.go` covers bc, mount, hexdump, makedevs, mdev, mkfs.minix, wget, xxd, rx, shell.
-- Usage-error paths now honour `--json` in wget, which, seq, pidof, mdev, rx, shell. rx stops writing XMODEM handshake bytes to stdout in JSON mode. who emits `users: []` instead of `null`.
-- `gen_golden.sh` fixed (pre-existing `set -u` bug, `%b` escapes, absolute paths) and extended; regenerates all 114 fixtures.
-- New open finding F16: raw payload mixes with the envelope on stdout (`bzcat`, `-c` decompress modes, `gzip -c`, `cpio -o`). Recorded in plan §6.
-- Codecov reported 76% patch coverage; plain-text branch tests closed all 18 missing lines (100% patch coverage on the follow-up commit).
-- What's left is listed in plan §6: Phase 4 for bc/sed/date/tar/dc/diff, Phase 5 for 14 M/S verdicts, P1/P2/P4.
-
-## [2026-10-03] rename | posix_command_audit.md → 28_posix_command_audit.md
-
-- The audit plan is Phase 28. The file name follows the wiki phase convention (23_, 25_, 26_, 27_).
-- Links updated in `index.md`, `todos.md`, and `phases.md` (Active Work). Historical log entries keep the old name.
-
-
-## [2026-10-03] pause | Phase 28 audit paused — repository phases done, per-tool work deferred
-
-- The audit stops here for now. Phases 0–3 and findings F1–F7 are complete (PR #43, 13 commits, 100% patch coverage, coverage 87.6%, BusyBox 871/16/30).
-- Next when work resumes: Phase 4 deep audits of 7 XL/L commands (bc, sed, printf, date, tar, dc, diff), then the Phase 5 sweep. See the updated [todos.md](todos.md).
-- The plan gained a preflight review: corrected XL/L scope (7, not 24), added a PreAudit score per command, and recorded open items F8 (parser helpers duplicated across bc/expr/sed/testcmd) and P1 (logger package-global writer), plus P2 (companion coverage matrix is stale) and P4 (concurrent make testsuite runs corrupt each other).

@@ -1,3 +1,9 @@
+---
+status: current
+description: "Permanent record of insights and design decisions."
+references: [source:test/validate_schemas.sh, source:wiki/test_coverage_matrix.md]
+---
+
 # Lessons Learned
 
 > **Permanent record** of insights, gotchas, and design decisions across all GoPOSIX development phases.
@@ -7,15 +13,15 @@
 
 ## Architecture & Design
 
-### Generic `callUtility[T]` eliminated 42× boilerplate
+### The JSON-RPC wire protocol needs no typed client layer
 
-Rather than writing bespoke JSON unmarshaling for every utility helper, a single Go generic function handles all of them:
+The daemon speaks newline-delimited JSON-RPC 2.0, so a caller only needs a socket and a
+JSON encoder. A typed wrapper per utility added maintenance bulk without adding safety,
+and every new utility forced a matching wrapper plus tests. The project now calls the
+daemon directly.
 
-```go
-func callUtility[T any](c *Client, ctx context.Context, method string, params interface{}) (*T, error)
-```
-
-Each of 42 helpers is now 3–4 lines. Reusable for future utilities.
+In-process tests share a small helper, `Dial` and `Call`, in `test/testutil`. Benchmarks
+use the same wire format through `bench-rpc-client`.
 
 ### Connection pool semaphore pattern
 
@@ -231,9 +237,9 @@ In a single `local` declaration, the second assignment sees the **old** value of
 
 ## Performance & Benchmarking
 
-### Benchmark through the SDK, not socat
+### Benchmark through a persistent connection, not socat
 
-Socat-per-call measures socat process overhead, not daemon performance. The Go SDK with a persistent connection is the only valid way to benchmark (see [performance.md](performance.md) for numbers).
+Socat-per-call measures socat process overhead, not daemon performance. A persistent JSON-RPC connection is the only valid way to benchmark (see [performance.md](performance.md) for numbers).
 
 ### Quick smoke before full benchmark
 

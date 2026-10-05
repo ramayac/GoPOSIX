@@ -8,7 +8,6 @@ import (
 	"time"
 
 	_ "github.com/ramayac/goposix/pkg/cksum"
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/join"
 	_ "github.com/ramayac/goposix/pkg/link"
 	_ "github.com/ramayac/goposix/pkg/logger"
@@ -20,6 +19,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/tty"
 	_ "github.com/ramayac/goposix/pkg/unlink"
 	_ "github.com/ramayac/goposix/pkg/who"
+	client "github.com/ramayac/goposix/test/testutil"
 )
 
 func TestTier6_Link(t *testing.T) {

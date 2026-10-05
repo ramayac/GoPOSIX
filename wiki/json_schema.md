@@ -1,3 +1,9 @@
+---
+status: current
+description: "The --json output envelope and per-utility schemas."
+references: [source:test/schemas, source:test/validate_schemas.sh]
+---
+
 # JSON Output Schemas
 
 All GoPOSIX utilities support structured machine-readable output via the `--json` flag or when invoked via the JSON-RPC daemon.
@@ -179,3 +185,12 @@ The `schemaVersion` field in the envelope allows consumers to detect breaking ch
 ## CI
 
 `make validate-schemas` runs in CI and fails the build if any golden fixture does not validate against its published schema.
+
+---
+
+## See Also
+
+- [index.md](index.md) | Wiki index.
+- [usage.md](usage.md) | CLI and daemon usage.
+- [rpc_quickstart.md](rpc_quickstart.md) | JSON-RPC protocol reference.
+- [schema.md](schema.md) | Wiki structure contract.

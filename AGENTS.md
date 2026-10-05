@@ -14,7 +14,7 @@
 
 ## 1. Project Identity & Goal
 
-GoPOSIX is a 100% Go-native, POSIX-compliant userland designed for **programmatic consumption** in containerized environments. It runs as a persistent JSON-RPC 2.0 daemon with a typed Go SDK (60µs per RPC call, 11× faster than BusyBox fork+exec). A multicall CLI binary (like BusyBox) is also available as a secondary interface.
+GoPOSIX is a 100% Go-native, POSIX-compliant userland designed for **programmatic consumption** in containerized environments. It runs as a persistent JSON-RPC 2.0 daemon (60µs per RPC call, 11× faster than BusyBox fork+exec). A multicall CLI binary (like BusyBox) is also available as a secondary interface.
 
 GoPOSIX is designed for **programmatic consumption** in containerized environments:
 1. Every utility supports structured machine-readable output via a `--json` flag.
@@ -56,7 +56,6 @@ Whenever you write or modify code in this repository, you **MUST** adhere to the
 - `cmd/goposix/main.go`: The multicall entry point. Handles symlink invocation (e.g., `/bin/ls -> /bin/goposix`), subcommand invocation (`goposix ls`), and daemon mode (`goposix daemon`).
 - `internal/dispatch/`: The command registry.
 - `internal/daemon/`: The JSON-RPC 2.0 persistent daemon server.
-- `pkg/client/`: The typed Go SDK for programmatic daemon access (60µs/call).
 - `pkg/common/`: Foundation libraries (flags, JSON envelope, JSON-RPC types).
 - `pkg/<utility>/`: Implementation of specific POSIX utilities (e.g., `pkg/cat/`, `pkg/ls/`).
 - `test/compliance/`: Bash scripts that compare GoPOSIX's output and exit codes against the host OS (GNU/Linux) equivalents.
@@ -92,7 +91,7 @@ When implementing a new utility or feature, follow this checklist:
 
 ## 5. Security & Safety
 
-- **Daemon-First:** The default Docker image (`goposix:latest`) starts the persistent JSON-RPC daemon. CLI access is available as a secondary interface (`goposix:cli`). The Go SDK (`pkg/client/`) is the primary programmatic interface at 60µs/call.
+- **Daemon-First:** The default Docker image (`goposix:latest`) starts the persistent JSON-RPC daemon. CLI access is available as a secondary interface (`goposix:cli`). The JSON-RPC daemon is the primary programmatic interface at 60µs/call.
 - **Root Protection:** Utilities that perform destructive operations (like `rm`) must include guards against destroying the root filesystem (e.g., `rm -rf /` must be refused without `--no-preserve-root`).
 - **BusyBox Test Suite:** Run `make testsuite` before every commit to prevent regressions. The canonical per-utility pass/fail counts live in [wiki/test_coverage_matrix.md](wiki/test_coverage_matrix.md). Do not copy the numbers into this file; they drift quickly.
 

@@ -1,3 +1,9 @@
+---
+status: current
+description: "Deploy GoPOSIX as a Docker Compose sidecar."
+references: [source:docker/Dockerfile]
+---
+
 # Docker Compose
 
 Run GoPOSIX as a Unix socket sidecar alongside an application container.
@@ -65,3 +71,12 @@ healthcheck:
 **"Permission denied"**: Socket permissions (`0660`) don't match the client container's user. Either:
 - Run both containers as the same uid, or
 - Add both users to a shared group
+
+---
+
+## See Also
+
+- [index.md](../index.md) | Wiki index.
+- [kubernetes.md](kubernetes.md) | Kubernetes sidecar deployment.
+- [systemd.md](systemd.md) | systemd deployment.
+- [usage.md](../usage.md) | CLI and daemon usage.

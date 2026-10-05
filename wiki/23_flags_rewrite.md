@@ -1,3 +1,9 @@
+---
+status: legacy
+description: "Phase 23: zero-allocation POSIX flag scanner rewrite (completed)."
+references: [source:pkg/common/flags.go, source:pkg/common/compiled.go]
+---
+
 # Phase 23 — Zero-Allocation POSIX Flag Scanner Rewrite
 
 > **Status:** COMPLETED | **Date:** 2026-05-19 | **Branch:** `feat/flags-rewrite`

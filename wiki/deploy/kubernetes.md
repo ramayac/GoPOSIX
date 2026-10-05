@@ -1,3 +1,9 @@
+---
+status: current
+description: "Deploy GoPOSIX as a Kubernetes sidecar."
+references: [source:docker/Dockerfile]
+---
+
 # Kubernetes
 
 Run GoPOSIX as a sidecar container sharing a Unix socket via `emptyDir` volume.
@@ -127,3 +133,12 @@ readinessProbe:
   initialDelaySeconds: 2
   periodSeconds: 5
 ```
+
+---
+
+## See Also
+
+- [index.md](../index.md) | Wiki index.
+- [docker-compose.md](docker-compose.md) | Docker Compose sidecar.
+- [systemd.md](systemd.md) | systemd deployment.
+- [security.md](../security.md) | Security model.

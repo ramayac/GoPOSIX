@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/goposix/pkg/client"
 	_ "github.com/ramayac/goposix/pkg/cmp"
 	_ "github.com/ramayac/goposix/pkg/comm"
 	_ "github.com/ramayac/goposix/pkg/daemon"
@@ -23,6 +22,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/strings"
 	_ "github.com/ramayac/goposix/pkg/sum"
 	_ "github.com/ramayac/goposix/pkg/unexpand"
+	client "github.com/ramayac/goposix/test/testutil"
 )
 
 func TestTier7_Cmp(t *testing.T) {
